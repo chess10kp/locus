@@ -580,7 +580,7 @@ class StatusBar(Gtk.ApplicationWindow):
         self.apply_status_bar_styles()
         self.i3 = i3ipc.Connection()
         self.i3.on("workspace", self.on_workspace)
-        self.i3.on("mode", self.on_mode)
+        # self.i3.on("mode", self.on_mode)
 
         self.i3_thread = threading.Thread(target=self.i3.main)
         self.i3_thread.daemon = True
@@ -624,22 +624,22 @@ class StatusBar(Gtk.ApplicationWindow):
         except Exception:
             self.workspaces_label.set_text("?")
 
-    def update_submap(self):
-        """Update submap display"""
-        try:
-            state = self.i3.get_binding_state()
-            mode = state.name
-            self.submap_label.set_text(mode)
-        except Exception:
-            self.submap_label.set_text("default")
+    # def update_submap(self):
+    #     """Update submap display"""
+    #     try:
+    #         state = self.i3.get_binding_state()
+    #         mode = state.name
+    #         self.submap_label.set_text(mode)
+    #     except Exception:
+    #         self.submap_label.set_text("default")
 
     def on_workspace(self, i3, e):
         """Handle workspace event"""
         GLib.idle_add(self.update_workspaces)
 
-    def on_mode(self, i3, e):
-        """Handle mode event"""
-        GLib.idle_add(self.update_submap)
+    # def on_mode(self, i3, e):
+    #     """Handle mode event"""
+    #     GLib.idle_add(self.update_submap)
 
     def update_time_callback(self) -> bool:
         """Callback for time updates"""
@@ -651,10 +651,10 @@ class StatusBar(Gtk.ApplicationWindow):
         self.update_battery()
         return True
 
-    def update_submap_callback(self) -> bool:
-        """Callback for submap updates"""
-        self.update_submap()
-        return True
+    # def update_submap_callback(self) -> bool:
+    #     """Callback for submap updates"""
+    #     self.update_submap()
+    #     return True
 
     def apply_status_bar_styles(self):
         """Apply CSS styling to the status bar like Emacs modeline"""
@@ -709,7 +709,7 @@ class StatusBar(Gtk.ApplicationWindow):
         apply_styles(self.time_label, label_style)
         apply_styles(self.battery_label, label_style)
         apply_styles(self.workspaces_label, label_style)
-        apply_styles(self.submap_label, label_style)
+        # apply_styles(self.submap_label, label_style)
         apply_styles(self.sep_left, sep_style)
         apply_styles(self.sep_right, sep_style)
 
@@ -734,7 +734,7 @@ def on_activate(app: Gtk.Application):
         GtkLayerShell.init_for_window(status_win)
         GtkLayerShell.set_monitor(status_win, monitor)
 
-        GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.TOP)
+        GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.BOTTOM)
 
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.LEFT, True)
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.RIGHT, True)
@@ -746,7 +746,7 @@ def on_activate(app: Gtk.Application):
 
         status_win.set_size_request(geometry.width, BAR_HEIGHT)
 
-        GtkLayerShell.set_exclusive_zone(status_win, BAR_HEIGHT)
+        GtkLayerShell.auto_exclusive_zone_enable(status_win)
 
         status_win.present()
 
