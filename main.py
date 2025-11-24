@@ -178,7 +178,7 @@ def get_battery_status() -> str:
         with open(f"{battery_path}/status", "r") as f:
             status = f.read().strip()
 
-        return f"{capacity}%"
+        return f"{capacity}"
 
     except (FileNotFoundError, ValueError, IOError):
         # Fallback to upower if available
@@ -547,7 +547,7 @@ class StatusBar(Gtk.ApplicationWindow):
         self.left_box = HBox(spacing=5)
         self.workspaces_label = Gtk.Label()
         self.sep_left = Gtk.Label.new(" | ")
-        self.submap_label = Gtk.Label()
+        # self.submap_label = Gtk.Label()
 
         # Create right section: time | battery
         self.right_box = HBox(spacing=5)
@@ -558,12 +558,12 @@ class StatusBar(Gtk.ApplicationWindow):
         self.update_time()
         self.update_battery()
         self.update_workspaces()
-        self.update_submap()
+        # self.update_submap()
 
         # Add to left box
         self.left_box.append(self.workspaces_label)
         self.left_box.append(self.sep_left)
-        self.left_box.append(self.submap_label)
+        # self.left_box.append(self.submap_label)
 
         # Add to right box
         self.right_box.append(self.time_label)
@@ -586,8 +586,9 @@ class StatusBar(Gtk.ApplicationWindow):
         self.i3_thread.daemon = True
         self.i3_thread.start()
 
-        GLib.timeout_add_seconds(1, self.update_time_callback)
-        GLib.timeout_add_seconds(30, self.update_battery_callback)
+        GLib.timeout_add_seconds(60, self.update_time_callback)
+        GLib.timeout_add_seconds(60, self.update_battery_callback)
+        # GLib.timeout_add_seconds(1, self.update_submap_callback)
 
     def update_time(self):
         """Update time display"""
@@ -603,8 +604,23 @@ class StatusBar(Gtk.ApplicationWindow):
         """Update workspaces display"""
         try:
             workspaces = self.i3.get_workspaces()
-            ws_nums = sorted([str(ws.num) for ws in workspaces])
-            self.workspaces_label.set_text(" ".join(ws_nums))
+            ws_sorted = sorted(
+                workspaces,
+                key=lambda ws: (
+                    not ws.name.isdigit(),
+                    int(ws.name) if ws.name.isdigit() else 0,
+                    ws.name,
+                ),
+            )
+            text_parts = []
+            for ws in ws_sorted:
+                name = ws.name
+                if ws.focused:
+                    name = (
+                        f'<span background="#ebdbb2" foreground="#0e1419">{name}</span>'
+                    )
+                text_parts.append(name)
+            self.workspaces_label.set_markup(" ".join(text_parts))
         except Exception:
             self.workspaces_label.set_text("?")
 
@@ -635,13 +651,18 @@ class StatusBar(Gtk.ApplicationWindow):
         self.update_battery()
         return True
 
+    def update_submap_callback(self) -> bool:
+        """Callback for submap updates"""
+        self.update_submap()
+        return True
+
     def apply_status_bar_styles(self):
         """Apply CSS styling to the status bar like Emacs modeline"""
         apply_styles(
             self,
             """
             window {
-                background: #000000;
+                background: #0e1418;
             }
             """,
         )
@@ -651,15 +672,26 @@ class StatusBar(Gtk.ApplicationWindow):
             """
             box {
                 background: transparent;
-                padding: 2px 8px;
+                padding: 0;
             }
             """,
         )
 
         label_style = """
             label {
-                color: #ffffff;
-                font-size: 12px;
+                color: #ebdbb2;
+                font-size: 18px;
+                font-weight: normal;
+                font-family: Iosevka;
+                margin: 0;
+                padding: 0;
+            }
+        """
+
+        sep_style = """
+            label {
+                color: #ebdbb2;
+                font-size: 32px;
                 font-weight: normal;
                 font-family: monospace;
             }
@@ -691,7 +723,7 @@ def on_activate(app: Gtk.Application):
     n_monitors = monitors.get_n_items()
 
     # Define height once to ensure window size and reserved space match
-    BAR_HEIGHT = 40
+    BAR_HEIGHT = 20
 
     for i in range(n_monitors):
         monitor = monitors.get_item(i)
