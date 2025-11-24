@@ -544,10 +544,7 @@ class StatusBar(Gtk.ApplicationWindow):
         self.main_box = HBox(spacing=0, hexpand=True)
         self.set_child(self.main_box)
 
-        self.set_size_request(-1, 24)  # Full width, fixed height
-
-        # Create left section: workspaces | submap
-        self.left_box = HBox(spacing=5, hexpand=True)
+        self.left_box = HBox(spacing=5)
         self.workspaces_label = Gtk.Label()
         self.sep_left = Gtk.Label.new(" | ")
         self.submap_label = Gtk.Label()
@@ -573,9 +570,12 @@ class StatusBar(Gtk.ApplicationWindow):
         self.right_box.append(self.sep_right)
         self.right_box.append(self.battery_label)
 
-        # Add to main box: left expands, right on end
+        # Add to main box: left, spacer, right
         self.main_box.append(self.left_box)
-        self.main_box.prepend(self.right_box)
+        spacer = Gtk.Label()
+        spacer.set_hexpand(True)
+        self.main_box.append(spacer)
+        self.main_box.append(self.right_box)
 
         self.apply_status_bar_styles()
         self.i3 = i3ipc.Connection()
@@ -701,9 +701,9 @@ def on_activate(app: Gtk.Application):
         status_win = StatusBar(application=app)
         GtkLayerShell.init_for_window(status_win)
         GtkLayerShell.set_monitor(status_win, monitor)
-        
+
         GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.TOP)
-        
+
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.LEFT, True)
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.RIGHT, True)
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.BOTTOM, True)
@@ -713,7 +713,7 @@ def on_activate(app: Gtk.Application):
         GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.BOTTOM, 0)
 
         status_win.set_size_request(geometry.width, BAR_HEIGHT)
-        
+
         GtkLayerShell.set_exclusive_zone(status_win, BAR_HEIGHT)
 
         status_win.present()
