@@ -490,8 +490,6 @@ class Dashboard(Gtk.ApplicationWindow):
             show_menubar=False,
             child=None,
             fullscreened=False,
-            default_width=400,
-            default_height=500,
             destroy_with_parent=True,
             hide_on_close=False,
             resizable=False,
@@ -543,31 +541,41 @@ class StatusBar(Gtk.ApplicationWindow):
             visible=True,
         )
 
-        self.main_box = HBox(spacing=5, hexpand=True)
+        self.main_box = HBox(spacing=0, hexpand=True)
         self.set_child(self.main_box)
 
-        self.set_size_request(300, 40)
+        self.set_size_request(-1, 24)  # Full width, fixed height
 
-        self.time_label = Gtk.Label()
-        self.sep1 = Gtk.Label.new(" | ")
-        self.battery_label = Gtk.Label()
-        self.sep2 = Gtk.Label.new(" | ")
+        # Create left section: workspaces | submap
+        self.left_box = HBox(spacing=5, hexpand=True)
         self.workspaces_label = Gtk.Label()
-        self.sep3 = Gtk.Label.new(" | ")
+        self.sep_left = Gtk.Label.new(" | ")
         self.submap_label = Gtk.Label()
+
+        # Create right section: time | battery
+        self.right_box = HBox(spacing=5)
+        self.time_label = Gtk.Label()
+        self.sep_right = Gtk.Label.new(" | ")
+        self.battery_label = Gtk.Label()
 
         self.update_time()
         self.update_battery()
         self.update_workspaces()
         self.update_submap()
 
-        self.main_box.append(self.time_label)
-        self.main_box.append(self.sep1)
-        self.main_box.append(self.battery_label)
-        self.main_box.append(self.sep2)
-        self.main_box.append(self.workspaces_label)
-        self.main_box.append(self.sep3)
-        self.main_box.append(self.submap_label)
+        # Add to left box
+        self.left_box.append(self.workspaces_label)
+        self.left_box.append(self.sep_left)
+        self.left_box.append(self.submap_label)
+
+        # Add to right box
+        self.right_box.append(self.time_label)
+        self.right_box.append(self.sep_right)
+        self.right_box.append(self.battery_label)
+
+        # Add to main box: left expands, right on end
+        self.main_box.append(self.left_box)
+        self.main_box.prepend(self.right_box)
 
         self.apply_status_bar_styles()
         self.i3 = i3ipc.Connection()
@@ -620,12 +628,12 @@ class StatusBar(Gtk.ApplicationWindow):
     def update_time_callback(self) -> bool:
         """Callback for time updates"""
         self.update_time()
-        return True  
+        return True
 
     def update_battery_callback(self) -> bool:
         """Callback for battery updates"""
         self.update_battery()
-        return True  
+        return True
 
     def apply_status_bar_styles(self):
         """Apply CSS styling to the status bar like Emacs modeline"""
@@ -670,42 +678,54 @@ class StatusBar(Gtk.ApplicationWindow):
         apply_styles(self.battery_label, label_style)
         apply_styles(self.workspaces_label, label_style)
         apply_styles(self.submap_label, label_style)
-        apply_styles(self.sep1, sep_style)
-        apply_styles(self.sep2, sep_style)
-        apply_styles(self.sep3, sep_style)
+        apply_styles(self.sep_left, sep_style)
+        apply_styles(self.sep_right, sep_style)
 
 
 def on_activate(app: Gtk.Application):
-    dashboard_win = Dashboard(application=app)
+    display = Gdk.Display.get_default()
+    if not display:
+        return
 
-    GtkLayerShell.init_for_window(dashboard_win)
-    GtkLayerShell.set_layer(dashboard_win, GtkLayerShell.Layer.BOTTOM)
-    GtkLayerShell.set_anchor(dashboard_win, GtkLayerShell.Edge.TOP, True)
-    GtkLayerShell.set_anchor(dashboard_win, GtkLayerShell.Edge.RIGHT, True)
+    monitors = display.get_monitors()
+    n_monitors = monitors.get_n_items()
 
-    dashboard_win.present()
+    # Define height once to ensure window size and reserved space match
+    BAR_HEIGHT = 40
 
-    status_win = StatusBar(application=app)
+    for i in range(n_monitors):
+        monitor = monitors.get_item(i)
 
-    try:
+        geometry = monitor.get_geometry()
+
+        status_win = StatusBar(application=app)
         GtkLayerShell.init_for_window(status_win)
-        GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.OVERLAY)
-        GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.BOTTOM, True)
-        GtkLayerShell.auto_exclusive_zone_enable(status_win)
+        GtkLayerShell.set_monitor(status_win, monitor)
+        
+        GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.TOP)
+        
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.LEFT, True)
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.RIGHT, True)
+        GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.BOTTOM, True)
 
-        GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.BOTTOM, 0)
         GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.LEFT, 0)
         GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.RIGHT, 0)
-    except Exception as e:
-        print(f"Layer shell not available for status bar, using regular window: {e}")
-        try:
-            status_win.set_default_size(300, 40)
-        except Exception:
-            pass
+        GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.BOTTOM, 0)
 
-    status_win.present()
+        status_win.set_size_request(geometry.width, BAR_HEIGHT)
+        
+        GtkLayerShell.set_exclusive_zone(status_win, BAR_HEIGHT)
+
+        status_win.present()
+
+        if i == 0:
+            dashboard_win = Dashboard(application=app)
+            GtkLayerShell.init_for_window(dashboard_win)
+            GtkLayerShell.set_monitor(dashboard_win, monitor)
+            GtkLayerShell.set_layer(dashboard_win, GtkLayerShell.Layer.BOTTOM)
+            GtkLayerShell.set_anchor(dashboard_win, GtkLayerShell.Edge.TOP, True)
+            GtkLayerShell.set_anchor(dashboard_win, GtkLayerShell.Edge.RIGHT, True)
+            dashboard_win.present()
 
 
 app = Gtk.Application(application_id="com.example")
