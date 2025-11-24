@@ -10,8 +10,10 @@
 
 import sys
 import os
+import setproctitle
 
 import subprocess
+import json
 from typing_extensions import final
 from exceptions import (
     EmacsUnavailableException,
@@ -21,9 +23,10 @@ from exceptions import (
 
 import style
 from datetime import datetime as dt
-
+from config import CITY, APPNAME
 import asyncio
 import gi
+import threading
 
 
 # For GTK4 Layer Shell to get linked before libwayland-client we must explicitly load it before importing with gi
@@ -31,11 +34,14 @@ from ctypes import CDLL
 
 CDLL("libgtk4-layer-shell.so")
 
-
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
 
 from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # noqa: E402
+
+import i3ipc  # noqa: E402
+
+setproctitle.setproctitle(APPNAME)
 
 
 TIME_PATH = os.path.expanduser("~/.time")
@@ -133,7 +139,6 @@ async def parse_agenda() -> list[str]:
 
 def VBox(spacing: int = 6, hexpand: bool = False, vexpand: bool = False) -> Gtk.Box:
     return Gtk.Box(
-
         orientation=Gtk.Orientation.VERTICAL,
         spacing=spacing,
         hexpand=hexpand,
@@ -148,6 +153,118 @@ def HBox(spacing: int = 6, hexpand: bool = False, vexpand: bool = False) -> Gtk.
         hexpand=hexpand,
         vexpand=vexpand,
     )
+
+
+def get_battery_status() -> str:
+    """Get battery percentage and charging status"""
+    try:
+        # Try to get battery info from /sys/class/power_supply/
+        battery_path = "/sys/class/power_supply/BAT0"  # Most common battery path
+        if not os.path.exists(battery_path):
+            # Try alternative battery paths
+            for i in range(10):
+                alt_path = f"/sys/class/power_supply/BAT{i}"
+                if os.path.exists(alt_path):
+                    battery_path = alt_path
+                    break
+            else:
+                return "No Battery"
+
+        # Read capacity
+        with open(f"{battery_path}/capacity", "r") as f:
+            capacity = int(f.read().strip())
+
+        # Read status
+        with open(f"{battery_path}/status", "r") as f:
+            status = f.read().strip()
+
+        return f"{capacity}%"
+
+    except (FileNotFoundError, ValueError, IOError):
+        # Fallback to upower if available
+        try:
+            result = subprocess.run(
+                ["upower", "-i", "/org/freedesktop/UPower/devices/battery_BAT0"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                lines = result.stdout.split("\n")
+                percentage = None
+                state = None
+
+                for line in lines:
+                    if "percentage" in line.lower():
+                        percentage = line.split(":")[-1].strip()
+                    elif "state" in line.lower():
+                        state = line.split(":")[-1].strip()
+
+                if percentage:
+                    return percentage
+
+            return "Battery Unknown"
+        except (
+            subprocess.TimeoutExpired,
+            subprocess.CalledProcessError,
+            FileNotFoundError,
+        ):
+            return "No Battery"
+
+
+def get_sway_workspaces() -> str:
+    """Get open Sway workspaces"""
+    try:
+        # Use swaymsg to get workspaces
+        result = subprocess.run(
+            ["swaymsg", "-t", "get_workspaces"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+
+        if result.returncode == 0:
+            workspaces = json.loads(result.stdout)
+            # Get workspace numbers, sorted
+            ws_nums = sorted([str(ws["num"]) for ws in workspaces])
+            return f"󰍹 {' '.join(ws_nums)}"
+        else:
+            return "󰍹 ?"
+
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+        json.JSONDecodeError,
+        FileNotFoundError,
+    ):
+        return "󰍹 ?"
+
+
+def get_sway_submap() -> str:
+    """Get current Sway submap/mode"""
+    try:
+        # Use swaymsg to get binding state
+        result = subprocess.run(
+            ["swaymsg", "-t", "get_binding_state"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+
+        if result.returncode == 0:
+            state = json.loads(result.stdout)
+            mode = state.get("name", "default")
+            return f"Mode: {mode}"
+        else:
+            return "Mode: default"
+
+    except (
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+        json.JSONDecodeError,
+        FileNotFoundError,
+    ):
+        return "Mode: default"
 
 
 def timeBox() -> Gtk.Box:
@@ -169,7 +286,6 @@ def timeBox() -> Gtk.Box:
     timeBox.append(timeButton)
 
     return timeBox
-
 
 
 def Time() -> Gtk.Box:
@@ -234,12 +350,27 @@ def Time() -> Gtk.Box:
         ),
     )
 
-    apply_styles(time_widget, "label {font-size: 100px; font-weight: bold; color: #ffffff; text-shadow: 3px 3px 6px rgba(0,0,0,0.8), 0px 0px 20px rgba(0,0,0,0.5);}")
-    apply_styles(dayDataButton, "label {font-size: 26px; color: #ffb000; font-weight: 500; margin-bottom: 12px; font-family: monospace; text-shadow: 0 0 8px rgba(255,176,0,0.3);}")
+    apply_styles(
+        time_widget,
+        "label {font-size: 100px; font-weight: bold; color: #ffffff; text-shadow: 3px 3px 6px rgba(0,0,0,0.8), 0px 0px 20px rgba(0,0,0,0.5);}",
+    )
+    apply_styles(
+        dayDataButton,
+        "label {font-size: 26px; color: #ffb000; font-weight: 500; margin-bottom: 12px; font-family: monospace; text-shadow: 0 0 8px rgba(255,176,0,0.3);}",
+    )
 
-    apply_styles(numDaysInThisYearPassedButton, "label {font-size: 16px; color: #ffffff; font-weight: 400; margin: 4px 12px; font-family: monospace;}")
-    apply_styles(numHoursPassedThisYearButton, "label {font-size: 16px; color: #ffffff; font-weight: 400; margin: 4px 12px; font-family: monospace;}")
-    apply_styles(numMinutesPassedThisYearButton, "label {font-size: 16px; color: #ffffff; font-weight: 400; margin: 4px 12px; font-family: monospace;}")
+    apply_styles(
+        numDaysInThisYearPassedButton,
+        "label {font-size: 16px; color: #ffffff; font-weight: 400; margin: 4px 12px; font-family: monospace;}",
+    )
+    apply_styles(
+        numHoursPassedThisYearButton,
+        "label {font-size: 16px; color: #ffffff; font-weight: 400; margin: 4px 12px; font-family: monospace;}",
+    )
+    apply_styles(
+        numMinutesPassedThisYearButton,
+        "label {font-size: 16px; color: #ffffff; font-weight: 400; margin: 4px 12px; font-family: monospace;}",
+    )
 
     # Add calendar icon to date
     dayDataButton.set_label(f"{read_day_date()}")
@@ -377,7 +508,10 @@ class Dashboard(Gtk.ApplicationWindow):
         self.set_child(self.main_box)
 
         # Make the window background transparent with terminal-like shadow
-        apply_styles(self, "window { background: transparent; box-shadow: 0 0 0 1px #333, 0 6px 24px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); }")
+        apply_styles(
+            self,
+            "window { background: transparent; box-shadow: 0 0 0 1px #333, 0 6px 24px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05); }",
+        )
 
         # Single unified section containing both time and agenda
         self.unified_section = VBox(12)
@@ -386,19 +520,192 @@ class Dashboard(Gtk.ApplicationWindow):
         self.main_box.append(self.unified_section)
 
         apply_styles(self.main_box, "box { background: transparent; padding: 8px; }")
-        apply_styles(self.unified_section, "box {background: rgba(0,0,0,0.85); padding: 14px; border-radius: 6px; margin: 2px; box-shadow: 0 3px 12px rgba(0,0,0,0.6); backdrop-filter: blur(6px); border: 1px solid #444;}")
+        apply_styles(
+            self.unified_section,
+            "box {background: rgba(0,0,0,0.85); padding: 14px; border-radius: 6px; margin: 2px; box-shadow: 0 3px 12px rgba(0,0,0,0.6); backdrop-filter: blur(6px); border: 1px solid #444;}",
+        )
+
+
+@final
+class StatusBar(Gtk.ApplicationWindow):
+    def __init__(self, **kwargs):
+        super().__init__(
+            **kwargs,
+            title="statusbar",
+            show_menubar=False,
+            child=None,
+            fullscreened=False,
+            default_width=300,
+            default_height=40,
+            destroy_with_parent=True,
+            hide_on_close=False,
+            resizable=False,
+            visible=True,
+        )
+
+        self.main_box = HBox(spacing=5, hexpand=True)
+        self.set_child(self.main_box)
+
+        self.set_size_request(300, 40)
+
+        self.time_label = Gtk.Label()
+        self.sep1 = Gtk.Label.new(" | ")
+        self.battery_label = Gtk.Label()
+        self.sep2 = Gtk.Label.new(" | ")
+        self.workspaces_label = Gtk.Label()
+        self.sep3 = Gtk.Label.new(" | ")
+        self.submap_label = Gtk.Label()
+
+        self.update_time()
+        self.update_battery()
+        self.update_workspaces()
+        self.update_submap()
+
+        self.main_box.append(self.time_label)
+        self.main_box.append(self.sep1)
+        self.main_box.append(self.battery_label)
+        self.main_box.append(self.sep2)
+        self.main_box.append(self.workspaces_label)
+        self.main_box.append(self.sep3)
+        self.main_box.append(self.submap_label)
+
+        self.apply_status_bar_styles()
+        self.i3 = i3ipc.Connection()
+        self.i3.on("workspace", self.on_workspace)
+        self.i3.on("mode", self.on_mode)
+
+        self.i3_thread = threading.Thread(target=self.i3.main)
+        self.i3_thread.daemon = True
+        self.i3_thread.start()
+
+        GLib.timeout_add_seconds(1, self.update_time_callback)
+        GLib.timeout_add_seconds(30, self.update_battery_callback)
+
+    def update_time(self):
+        """Update time display"""
+        current_time = dt.now().strftime("%H:%M:%S")
+        self.time_label.set_text(current_time)
+
+    def update_battery(self):
+        """Update battery display"""
+        battery_status = get_battery_status()
+        self.battery_label.set_text(battery_status)
+
+    def update_workspaces(self):
+        """Update workspaces display"""
+        try:
+            workspaces = self.i3.get_workspaces()
+            ws_nums = sorted([str(ws.num) for ws in workspaces])
+            self.workspaces_label.set_text(" ".join(ws_nums))
+        except Exception:
+            self.workspaces_label.set_text("?")
+
+    def update_submap(self):
+        """Update submap display"""
+        try:
+            state = self.i3.get_binding_state()
+            mode = state.name
+            self.submap_label.set_text(mode)
+        except Exception:
+            self.submap_label.set_text("default")
+
+    def on_workspace(self, i3, e):
+        """Handle workspace event"""
+        GLib.idle_add(self.update_workspaces)
+
+    def on_mode(self, i3, e):
+        """Handle mode event"""
+        GLib.idle_add(self.update_submap)
+
+    def update_time_callback(self) -> bool:
+        """Callback for time updates"""
+        self.update_time()
+        return True  
+
+    def update_battery_callback(self) -> bool:
+        """Callback for battery updates"""
+        self.update_battery()
+        return True  
+
+    def apply_status_bar_styles(self):
+        """Apply CSS styling to the status bar like Emacs modeline"""
+        apply_styles(
+            self,
+            """
+            window {
+                background: #000000;
+            }
+            """,
+        )
+
+        apply_styles(
+            self.main_box,
+            """
+            box {
+                background: transparent;
+                padding: 2px 8px;
+            }
+            """,
+        )
+
+        label_style = """
+            label {
+                color: #ffffff;
+                font-size: 12px;
+                font-weight: normal;
+                font-family: monospace;
+            }
+        """
+
+        sep_style = """
+            label {
+                color: #888888;
+                font-size: 12px;
+                font-weight: normal;
+                font-family: monospace;
+            }
+        """
+
+        apply_styles(self.time_label, label_style)
+        apply_styles(self.battery_label, label_style)
+        apply_styles(self.workspaces_label, label_style)
+        apply_styles(self.submap_label, label_style)
+        apply_styles(self.sep1, sep_style)
+        apply_styles(self.sep2, sep_style)
+        apply_styles(self.sep3, sep_style)
 
 
 def on_activate(app: Gtk.Application):
-    # set to layer shell
-    win = Dashboard(application=app)
+    dashboard_win = Dashboard(application=app)
 
-    GtkLayerShell.init_for_window(win)
-    GtkLayerShell.set_layer(win, GtkLayerShell.Layer.BOTTOM)
-    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.TOP, True)
-    GtkLayerShell.set_anchor(win, GtkLayerShell.Edge.RIGHT, True)
+    GtkLayerShell.init_for_window(dashboard_win)
+    GtkLayerShell.set_layer(dashboard_win, GtkLayerShell.Layer.BOTTOM)
+    GtkLayerShell.set_anchor(dashboard_win, GtkLayerShell.Edge.TOP, True)
+    GtkLayerShell.set_anchor(dashboard_win, GtkLayerShell.Edge.RIGHT, True)
 
-    win.present()
+    dashboard_win.present()
+
+    status_win = StatusBar(application=app)
+
+    try:
+        GtkLayerShell.init_for_window(status_win)
+        GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.OVERLAY)
+        GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.BOTTOM, True)
+        GtkLayerShell.auto_exclusive_zone_enable(status_win)
+        GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.LEFT, True)
+        GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.RIGHT, True)
+
+        GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.BOTTOM, 0)
+        GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.LEFT, 0)
+        GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.RIGHT, 0)
+    except Exception as e:
+        print(f"Layer shell not available for status bar, using regular window: {e}")
+        try:
+            status_win.set_default_size(300, 40)
+        except Exception:
+            pass
+
+    status_win.present()
 
 
 app = Gtk.Application(application_id="com.example")
