@@ -30,6 +30,7 @@ CUSTOM_LAUNCHERS = {
     "bookmark": {"type": "builtin", "handler": "bookmark"},
     "bluetooth": {"type": "builtin", "handler": "bluetooth"},
     "wallpaper": {"type": "builtin", "handler": "wallpaper"},
+    "timer": {"type": "builtin", "handler": "timer"},
     "todo": {"type": "function", "func": todo_capture},
     "shutdown": {"type": "command", "cmd": "systemctl poweroff"},
     "reboot": {"type": "command", "cmd": "systemctl reboot"},

@@ -7,14 +7,13 @@
 # pyright: basic
 # ruff: ignore
 
-from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell
+from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell, GdkPixbuf
 from typing_extensions import final
 import subprocess
 import os
 import glob
 import random
 import re
-
 from utils import apply_styles, load_desktop_apps, VBox
 from config import CUSTOM_LAUNCHERS
 from calculator import sanitize_expr, evaluate_calculator
@@ -33,6 +32,20 @@ from bluetooth import (
 )
 from bookmarks import get_bookmarks
 import webbrowser
+
+
+def parse_time(time_str):
+    match = re.match(r"^(\d+)([hms])$", time_str)
+    if match:
+        num = int(match.group(1))
+        unit = match.group(2)
+        if unit == "h":
+            return num * 3600
+        elif unit == "m":
+            return num * 60
+        elif unit == "s":
+            return num
+    return None
 
 
 def handle_custom_launcher(command, apps):
@@ -81,6 +94,7 @@ def handle_custom_launcher(command, apps):
                 "bookmark",
                 "bluetooth",
                 "wallpaper",
+                "timer",
             ]:
                 # Handled separately in populate_apps or on_entry_activate
                 return False
@@ -161,6 +175,9 @@ class Launcher(Gtk.ApplicationWindow):
         )
 
         self.apps = load_desktop_apps()
+
+        self.wallpaper_buttons = []
+        self.wallpaper_loaded = False
 
         # Search entry
         self.search_entry = Gtk.Entry()
@@ -370,32 +387,6 @@ class Launcher(Gtk.ApplicationWindow):
                 """,
                 )
                 self.list_box.append(button)
-            elif filter_text == ">wallpaper":
-                wallpapers = glob.glob(os.path.join(wp_dir, "*"))
-                wallpapers = [
-                    os.path.basename(w) for w in wallpapers if os.path.isfile(w)
-                ]
-                for wp in sorted(wallpapers):
-                    button = Gtk.Button(label=wp)
-                    button.connect("clicked", self.on_wallpaper_clicked, wp)
-                    apply_styles(
-                        button,
-                        """
-                        button {
-                            background: #3c3836;
-                            color: #ebdbb2;
-                            border: none;
-                            border-radius: 3px;
-                            padding: 10px;
-                            font-size: 14px;
-                            font-family: Iosevka;
-                        }
-                        button:hover {
-                            background: #504945;
-                        }
-                    """,
-                    )
-                    self.list_box.append(button)
             elif filter_text == ">wallpaper random":
                 button = Gtk.Button(label="Set random wallpaper")
                 button.connect("clicked", self.on_wallpaper_random)
@@ -438,6 +429,123 @@ class Launcher(Gtk.ApplicationWindow):
                 """,
                 )
                 self.list_box.append(button)
+            else:
+                # List wallpapers with optional search
+                if not self.wallpaper_loaded:
+                    wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+                    wallpapers = [
+                        os.path.basename(w) for w in wallpapers if os.path.isfile(w)
+                    ]
+                    self.wallpaper_buttons = []
+                    for wp in sorted(wallpapers):
+                        box = Gtk.Box(
+                            orientation=Gtk.Orientation.HORIZONTAL, spacing=10
+                        )
+                        try:
+                            pixbuf = GdkPixbuf.Pixbuf.new_from_file(
+                                os.path.join(wp_dir, wp)
+                            )
+                            aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
+                            scaled_width = 120
+                            scaled_height = int(scaled_width / aspect_ratio)
+                            scaled_buf = pixbuf.scale_simple(
+                                scaled_width,
+                                scaled_height,
+                                GdkPixbuf.InterpType.BILINEAR,
+                            )
+                            image = Gtk.Image.new_from_pixbuf(scaled_buf)
+                        except Exception:
+                            image = Gtk.Image()  # Fallback if not image
+                        label = Gtk.Label(label=wp)
+                        label.set_halign(Gtk.Align.START)
+                        box.append(image)
+                        box.append(label)
+                        button = Gtk.Button()
+                        button.set_child(box)
+                        button.connect("clicked", self.on_wallpaper_clicked, wp)
+                        apply_styles(
+                            button,
+                            """
+                            button {
+                                background: #3c3836;
+                                color: #ebdbb2;
+                                border: none;
+                                border-radius: 3px;
+                                padding: 10px;
+                                font-size: 14px;
+                                font-family: Iosevka;
+                            }
+                            button:hover {
+                                background: #504945;
+                            }
+                        """,
+                        )
+                        self.wallpaper_buttons.append((button, wp))
+                    self.wallpaper_loaded = True
+                # Now filter
+                search_term = ""
+                if filter_text.startswith(">wallpaper "):
+                    search_term = filter_text[11:].strip().lower()
+                matching = [
+                    (btn, wp)
+                    for btn, wp in self.wallpaper_buttons
+                    if not search_term or search_term in wp.lower()
+                ]
+                if not matching:
+                    msg = (
+                        "No wallpapers found"
+                        if not search_term
+                        else f"No wallpapers match '{search_term}'"
+                    )
+                    button = Gtk.Button(label=msg)
+                    apply_styles(
+                        button,
+                        """
+                        button {
+                            background: #3c3836;
+                            color: #ebdbb2;
+                            border: none;
+                            border-radius: 3px;
+                            padding: 10px;
+                            font-size: 14px;
+                            font-family: Iosevka;
+                        }
+                    """,
+                    )
+                    self.list_box.append(button)
+                else:
+                    for btn, _ in matching:
+                        self.list_box.append(btn)
+            self.current_apps = []  # No apps
+        elif filter_text.startswith(">timer"):
+            time_str = filter_text[6:].strip()
+            if time_str:
+                seconds = parse_time(time_str)
+                if seconds is not None:
+                    button = Gtk.Button(label=f"Set timer for {time_str}")
+                    button.connect("clicked", self.on_timer_clicked, time_str)
+                else:
+                    button = Gtk.Button(label="Invalid time format (e.g., 5m)")
+            else:
+                button = Gtk.Button(label="Usage: >timer 5m")
+            apply_styles(
+                button,
+                """
+                button {
+                    background: #3c3836;
+                    color: #ebdbb2;
+                    border: none;
+                    border-radius: 3px;
+                    padding: 10px;
+                    font-size: 14px;
+                    font-family: Iosevka;
+                }
+                button:hover {
+                    background: #504945;
+                }
+            """,
+            )
+            self.list_box.append(button)
             self.current_apps = []  # No apps
         elif filter_text.startswith(">"):
             # Command mode
@@ -618,6 +726,10 @@ class Launcher(Gtk.ApplicationWindow):
         elif text == ">wallpaper cycle":
             self.on_wallpaper_cycle(None)
             self.hide()
+        elif text.startswith(">timer "):
+            time_str = text[6:].strip()
+            self.start_timer(time_str)
+            self.hide()
         elif text.startswith(">"):
             command = text[1:].strip()
             if not handle_custom_launcher(command, self.apps):
@@ -737,6 +849,24 @@ class Launcher(Gtk.ApplicationWindow):
         # Fallback to random
         self.on_wallpaper_random(button)
 
+    def on_timer_clicked(self, button, time_str):
+        self.start_timer(time_str)
+        self.hide()
+
+    def start_timer(self, time_str):
+        seconds = parse_time(time_str)
+        if seconds is not None:
+            GLib.timeout_add_seconds(seconds, self.on_timer_done)
+            subprocess.run(["notify-send", "-a", "Timer", f"set for {time_str}"])
+        else:
+            subprocess.run(["notify-send", "Invalid time format"])
+
+    def on_timer_done(self):
+        subprocess.run(["notify-send", "-a", "Timer", "-t", "3000", "timer complete"])
+        sound_path = "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
+        subprocess.Popen(["mpv", "--no-video", sound_path])
+        return False
+
     def set_wallpaper(self, wp):
         wp_dir = os.path.expanduser("~/Pictures/wp/")
         wp_path = os.path.join(wp_dir, wp)
@@ -813,7 +943,7 @@ class Launcher(Gtk.ApplicationWindow):
 
     def on_command_selected(self, button, command):
         # Set the search entry to >command and trigger activate
-        if command in ["calc", "bookmark", "bluetooth", "wallpaper"]:
+        if command in ["calc", "bookmark", "bluetooth", "wallpaper", "timer"]:
             self.search_entry.set_text(f">{command} ")
         else:
             self.search_entry.set_text(f">{command}")
@@ -842,7 +972,7 @@ class Launcher(Gtk.ApplicationWindow):
                     # Partial command, find matching
                     for cmd in CUSTOM_LAUNCHERS:
                         if cmd.startswith(command):
-                            if cmd in ["calc", "bookmark", "bluetooth"]:
+                            if cmd in ["calc", "bookmark", "bluetooth", "timer"]:
                                 self.search_entry.set_text(f">{cmd} ")
                             else:
                                 self.search_entry.set_text(f">{cmd}")
