@@ -1,2 +1,2 @@
 CITY: str = "detroit"
-APPNAME = "locus"
+APPNAME = "locus_bar"

@@ -16,16 +16,10 @@ import setproctitle
 import subprocess
 import json
 from typing_extensions import final
-from exceptions import (
-    EmacsUnavailableException,
-    NotLinuxException,
-    NoValueFoundException,
-)
 
 import style
 from datetime import datetime as dt
-from config import CITY, APPNAME
-import asyncio
+from config import APPNAME
 import gi
 import threading
 
@@ -61,12 +55,15 @@ def kill_previous_process():
             for pid in pids:
                 if pid and int(pid) != current_pid:
                     try:
-                        os.kill(int(pid), 15)  # SIGTERM
+                        os.kill(int(pid), 9)  # SIGKILL to ensure immediate termination
                         print(f"Killed previous locus process {pid}")
                     except ProcessLookupError:
                         pass  # Process already terminated
                     except PermissionError:
                         pass  # No permission to kill
+
+            # Wait a bit for processes to fully terminate
+            time.sleep(0.5)
     except Exception:
         pass  # Ignore errors, continue execution
 
@@ -76,7 +73,6 @@ kill_previous_process()
 
 
 TIME_PATH = os.path.expanduser("~/.time")
-TASKS_VIS_PATH = os.path.expanduser("~/.dashboard_tasks_visible")
 
 
 def apply_styles(widget: Gtk.Box | Gtk.Widget | Gtk.Label, css: str):
@@ -93,22 +89,6 @@ def read_time() -> str:
         return "0"  # Default to 0 if file doesn't exist
 
 
-def read_tasks_visible() -> bool:
-    try:
-        return open(TASKS_VIS_PATH).read().strip() == "1"
-    except FileNotFoundError:
-        return True
-
-
-def write_tasks_visible(visible: bool) -> None:
-    try:
-        with open(TASKS_VIS_PATH, "w") as f:
-            f.write("1" if visible else "0")
-    except Exception:
-        # best-effort persistence; ignore errors
-        pass
-
-
 async def is_running(process_name: str) -> bool:
     try:
         if not os.name == "nt":
@@ -116,24 +96,7 @@ async def is_running(process_name: str) -> bool:
             return output.lower() != b""
     except subprocess.CalledProcessError:
         return False
-
-
-async def get_agenda() -> str:
-    """Gets the agenda for today, then closes the agenda buffer"""
-
-    emacs_agenda = "(progn \
-    (require 'org-agenda) \
-    (let ((org-agenda-span 'day)) \
-    (org-batch-agenda \"a\")))"
-
-    output = subprocess.run(
-        ["emacs", "-batch", "-l", "~/.emacs.d/init.el", "-eval", emacs_agenda],
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    ).stdout
-
-    return output
+    return False
 
 
 def get_default_styling() -> str:
@@ -147,23 +110,6 @@ def get_default_styling() -> str:
             style.BORDER_ROUNDING,
         ),
     )
-
-
-async def parse_agenda() -> list[str]:
-    try:
-        agenda = await get_agenda()
-    except EmacsUnavailableException as e:
-        print(f"Error: {e}")
-        sys.exit(-1)
-
-    agenda = agenda.splitlines()
-    todos = list(
-        map(
-            lambda x: x[x.find(":") + 1 :].strip(),
-            filter(lambda x: "todo" in x and "closed" not in x.lower(), agenda),
-        )
-    )
-    return todos
 
 
 def VBox(spacing: int = 6, hexpand: bool = False, vexpand: bool = False) -> Gtk.Box:
@@ -184,32 +130,68 @@ def HBox(spacing: int = 6, hexpand: bool = False, vexpand: bool = False) -> Gtk.
     )
 
 
+# Cache for battery path to avoid repeated filesystem checks
+_battery_path_cache = None
+
+
+def get_battery_path() -> str | None:
+    """Get the battery path, caching the result"""
+    global _battery_path_cache
+    if _battery_path_cache is not None:
+        return _battery_path_cache
+
+    # Try to get battery info from /sys/class/power_supply/
+    battery_path = "/sys/class/power_supply/BAT0"  # Most common battery path
+    if os.path.exists(battery_path):
+        _battery_path_cache = battery_path
+        return battery_path
+
+    # Try alternative battery paths
+    for i in range(10):
+        alt_path = f"/sys/class/power_supply/BAT{i}"
+        if os.path.exists(alt_path):
+            _battery_path_cache = alt_path
+            return alt_path
+
+    _battery_path_cache = None
+    return None
+
+
 def get_battery_status() -> str:
     """Get battery percentage and charging status"""
     try:
-        # Try to get battery info from /sys/class/power_supply/
-        battery_path = "/sys/class/power_supply/BAT0"  # Most common battery path
-        if not os.path.exists(battery_path):
-            # Try alternative battery paths
-            for i in range(10):
-                alt_path = f"/sys/class/power_supply/BAT{i}"
-                if os.path.exists(alt_path):
-                    battery_path = alt_path
-                    break
-            else:
-                return "No Battery"
+        battery_path = get_battery_path()
+        if battery_path is None:
+            return "No Battery"
 
-        # Read capacity
+        # Read capacity and status in one go using subprocess for efficiency
+        result = subprocess.run(
+            ["cat", f"{battery_path}/capacity", f"{battery_path}/status"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        if result.returncode == 0:
+            lines = result.stdout.strip().split("\n")
+            if len(lines) >= 2:
+                capacity = lines[0].strip()
+                status = lines[1].strip()
+                return f"{capacity} {status}"
+
+        # Fallback to individual file reads if cat fails
         with open(f"{battery_path}/capacity", "r") as f:
             capacity = int(f.read().strip())
-
-        # Read status
         with open(f"{battery_path}/status", "r") as f:
             status = f.read().strip()
+        return f"{capacity} {status}"
 
-        return f"{capacity}"
-
-    except (FileNotFoundError, ValueError, IOError):
+    except (
+        FileNotFoundError,
+        ValueError,
+        IOError,
+        subprocess.TimeoutExpired,
+        subprocess.CalledProcessError,
+    ):
         # Fallback to upower if available
         try:
             result = subprocess.run(
@@ -229,7 +211,9 @@ def get_battery_status() -> str:
                     elif "state" in line.lower():
                         state = line.split(":")[-1].strip()
 
-                if percentage:
+                if percentage and state:
+                    return f"{percentage} {state}"
+                elif percentage:
                     return percentage
 
             return "Battery Unknown"
@@ -370,6 +354,63 @@ def detect_wm() -> WMClient:
 
 
 @final
+class Popup(Gtk.ApplicationWindow):
+    def __init__(self, **kwargs):
+        super().__init__(
+            **kwargs,
+            title="popup",
+            show_menubar=False,
+            child=None,
+            default_width=300,
+            default_height=50,
+            destroy_with_parent=True,
+            hide_on_close=True,
+            resizable=False,
+            visible=False,
+        )
+
+        self.entry = Gtk.Entry()
+        self.entry.connect("activate", self.on_entry_activate)
+        self.set_child(self.entry)
+
+        # Layer shell setup
+        GtkLayerShell.init_for_window(self)
+        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 70)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
+
+        apply_styles(
+            self.entry,
+            """
+            entry {
+                background: #0e1418;
+                color: #ebdbb2;
+                border: 1px solid #ebdbb2;
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 16px;
+                font-family: Iosevka;
+            }
+        """,
+        )
+
+    def on_entry_activate(self, entry):
+        command = entry.get_text().strip()
+        if command:
+            try:
+                subprocess.Popen(command, shell=True)
+            except Exception as e:
+                print(f"Failed to run command: {e}")
+        self.hide()
+
+    def show_popup(self):
+        self.show()
+        self.entry.grab_focus()
+
+
+@final
 class StatusBar(Gtk.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(
@@ -391,26 +432,34 @@ class StatusBar(Gtk.ApplicationWindow):
         self.main_box = HBox(spacing=0, hexpand=True)
         self.set_child(self.main_box)
 
-        self.left_box = HBox(spacing=5)
+        self.left_box = HBox(spacing=0)
+        self.fixed = Gtk.Fixed()
         self.workspaces_label = Gtk.Label()
+        self.fixed.put(self.workspaces_label, 0, 0)
         self.sep_left = Gtk.Label.new(" | ")
         self.binding_state_label = Gtk.Label()
+        self.sep_emacs = Gtk.Label.new(" | ")
+        self.emacs_clock_label = Gtk.Label()
 
         # Create right section: time | battery
-        self.right_box = HBox(spacing=5)
+        self.right_box = HBox(spacing=0)
         self.time_label = Gtk.Label()
         self.sep_right = Gtk.Label.new(" | ")
         self.battery_label = Gtk.Label()
 
+        self.previous_focused = None
         self.update_time()
         self.update_battery()
         self.update_workspaces()
         self.update_binding_state()
+        self.update_emacs_clock()
 
         # Add to left box
-        self.left_box.append(self.workspaces_label)
+        self.left_box.append(self.fixed)
         self.left_box.append(self.sep_left)
         self.left_box.append(self.binding_state_label)
+        self.left_box.append(self.sep_emacs)
+        self.left_box.append(self.emacs_clock_label)
 
         # Add to right box
         self.right_box.append(self.time_label)
@@ -432,10 +481,11 @@ class StatusBar(Gtk.ApplicationWindow):
         GLib.timeout_add_seconds(60, self.update_time_callback)
         GLib.timeout_add_seconds(60, self.update_battery_callback)
         GLib.timeout_add_seconds(1, self.update_binding_state_callback)
+        GLib.timeout_add_seconds(10, self.update_emacs_clock_callback)
 
     def update_time(self):
         """Update time display"""
-        current_time = dt.now().strftime("%H:%M:%S")
+        current_time = dt.now().strftime("%H:%M")
         self.time_label.set_text(current_time)
 
     def update_battery(self):
@@ -443,8 +493,20 @@ class StatusBar(Gtk.ApplicationWindow):
         battery_status = get_battery_status()
         self.battery_label.set_text(battery_status)
 
+    def animate_slide(self, start_x, end_x, step=0, total_steps=10):
+        """Animate sliding the workspace label"""
+        if step < total_steps:
+            x = start_x + (end_x - start_x) * (step + 1) / total_steps
+            self.fixed.move(self.workspaces_label, x, 0)
+            GLib.timeout_add(
+                20, self.animate_slide, start_x, end_x, step + 1, total_steps
+            )
+        else:
+            self.fixed.move(self.workspaces_label, end_x, 0)
+        return False
+
     def update_workspaces(self):
-        """Update workspaces display"""
+        """Update workspaces display with slide transition"""
         try:
             workspaces = self.wm_client.get_workspaces()
             ws_sorted = sorted(
@@ -454,6 +516,20 @@ class StatusBar(Gtk.ApplicationWindow):
                     ws.name,
                 ),
             )
+            current_focused = next((ws for ws in ws_sorted if ws.focused), None)
+            current_num = current_focused.num if current_focused else 0
+
+            # Determine slide direction
+            direction = 0
+            if self.previous_focused is not None:
+                if current_num > self.previous_focused:
+                    direction = -50  # Slide from right
+                elif current_num < self.previous_focused:
+                    direction = 50  # Slide from left
+
+            self.previous_focused = current_num
+
+            # Update text
             text_parts = []
             for ws in ws_sorted:
                 name = ws.name
@@ -463,8 +539,15 @@ class StatusBar(Gtk.ApplicationWindow):
                     )
                 text_parts.append(name)
             self.workspaces_label.set_markup(" ".join(text_parts))
+
+            # Animate slide
+            if direction != 0:
+                self.animate_slide(direction, 0)
+            else:
+                self.fixed.move(self.workspaces_label, 0, 0)
         except Exception:
             self.workspaces_label.set_text("?")
+            self.fixed.move(self.workspaces_label, 0, 0)
 
     def update_binding_state(self):
         """Update binding state display"""
@@ -487,6 +570,27 @@ class StatusBar(Gtk.ApplicationWindow):
         except Exception:
             self.binding_state_label.set_text("")
 
+    def update_emacs_clock(self):
+        """Update Emacs clocked task display"""
+        try:
+            result = subprocess.run(
+                [
+                    "emacsclient",
+                    "-e",
+                    '(progn (require \'org-clock) (if (org-clocking-p) org-clock-heading ""))',
+                ],
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+            if result.returncode == 0:
+                task = result.stdout.strip().strip('"')  # Remove quotes if any
+                self.emacs_clock_label.set_text(task)
+            else:
+                self.emacs_clock_label.set_text("")
+        except Exception:
+            self.emacs_clock_label.set_text("")
+
     def update_time_callback(self) -> bool:
         """Callback for time updates"""
         self.update_time()
@@ -502,6 +606,11 @@ class StatusBar(Gtk.ApplicationWindow):
         self.update_binding_state()
         return True
 
+    def update_emacs_clock_callback(self) -> bool:
+        """Callback for Emacs clock updates"""
+        self.update_emacs_clock()
+        return True
+
     def apply_status_bar_styles(self):
         """Apply CSS styling to the status bar like Emacs modeline"""
         apply_styles(
@@ -509,6 +618,8 @@ class StatusBar(Gtk.ApplicationWindow):
             """
             window {
                 background: #0e1418;
+                margin: 0;
+                padding: 0;
             }
             """,
         )
@@ -519,6 +630,27 @@ class StatusBar(Gtk.ApplicationWindow):
             box {
                 background: transparent;
                 padding: 0;
+                margin: 0;
+            }
+            """,
+        )
+
+        apply_styles(
+            self.left_box,
+            """
+            box {
+                padding: 0;
+                margin: 0;
+            }
+            """,
+        )
+
+        apply_styles(
+            self.right_box,
+            """
+            box {
+                padding: 0;
+                margin: 0;
             }
             """,
         )
@@ -531,6 +663,7 @@ class StatusBar(Gtk.ApplicationWindow):
                 font-family: Iosevka;
                 margin: 0;
                 padding: 0;
+                transition: opacity 0.2s ease;
             }
         """
 
@@ -556,8 +689,10 @@ class StatusBar(Gtk.ApplicationWindow):
         apply_styles(self.battery_label, label_style)
         apply_styles(self.workspaces_label, label_style)
         apply_styles(self.binding_state_label, label_style)
+        apply_styles(self.emacs_clock_label, label_style)
         apply_styles(self.sep_left, sep_style)
         apply_styles(self.sep_right, sep_style)
+        apply_styles(self.sep_emacs, sep_style)
 
 
 def on_activate(app: Gtk.Application):
@@ -595,15 +730,6 @@ def on_activate(app: Gtk.Application):
         GtkLayerShell.auto_exclusive_zone_enable(status_win)
 
         status_win.present()
-
-        # if i == 0:
-        # dashboard_win = Dashboard(application=app)
-        # GtkLayerShell.init_for_window(dashboard_win)
-        # GtkLayerShell.set_monitor(dashboard_win, monitor)
-        # GtkLayerShell.set_layer(dashboard_win, GtkLayerShell.Layer.BOTTOM)
-        # GtkLayerShell.set_anchor(dashboard_win, GtkLayerShell.Edge.TOP, True)
-        # GtkLayerShell.set_anchor(dashboard_win, GtkLayerShell.Edge.RIGHT, True)
-        # dashboard_win.present()
 
 
 app = Gtk.Application(application_id="com.example")
