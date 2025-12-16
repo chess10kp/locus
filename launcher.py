@@ -10,180 +10,81 @@
 from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell
 from typing_extensions import final
 import subprocess
+import os
+import glob
+import random
+import re
 
 from utils import apply_styles, load_desktop_apps, VBox
 from config import CUSTOM_LAUNCHERS
-import re
+from calculator import sanitize_expr, evaluate_calculator
+from bluetooth import (
+    bluetooth_power_on,
+    bluetooth_scan_on,
+    bluetooth_pairable_on,
+    bluetooth_discoverable_on,
+    bluetooth_get_devices,
+    bluetooth_device_connected,
+    bluetooth_toggle_power,
+    bluetooth_toggle_scan,
+    bluetooth_toggle_pairable,
+    bluetooth_toggle_discoverable,
+    bluetooth_toggle_connection,
+)
+from bookmarks import get_bookmarks
 import webbrowser
-import os
 
 
-def bluetooth_power_on():
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "show"], capture_output=True, text=True, timeout=5
-        )
-        return "Powered: yes" in result.stdout
-    except Exception:
+def handle_custom_launcher(command, apps):
+    if command not in CUSTOM_LAUNCHERS:
         return False
 
-
-def bluetooth_scan_on():
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "show"], capture_output=True, text=True, timeout=5
-        )
-        return "Discovering: yes" in result.stdout
-    except Exception:
-        return False
-
-
-def bluetooth_pairable_on():
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "show"], capture_output=True, text=True, timeout=5
-        )
-        return "Pairable: yes" in result.stdout
-    except Exception:
-        return False
-
-
-def bluetooth_discoverable_on():
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "show"], capture_output=True, text=True, timeout=5
-        )
-        return "Discoverable: yes" in result.stdout
-    except Exception:
-        return False
-
-
-def bluetooth_get_devices():
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "devices"], capture_output=True, text=True, timeout=5
-        )
-        devices = []
-        for line in result.stdout.splitlines():
-            if line.startswith("Device "):
-                parts = line.split(" ", 2)
-                if len(parts) >= 3:
-                    mac = parts[1]
-                    name = parts[2]
-                    devices.append((mac, name))
-        return devices
-    except Exception:
-        return []
-
-
-def bluetooth_device_connected(mac):
-    try:
-        result = subprocess.run(
-            ["bluetoothctl", "info", mac], capture_output=True, text=True, timeout=5
-        )
-        return "Connected: yes" in result.stdout
-    except Exception:
-        return False
-
-
-def bluetooth_toggle_power():
-    if bluetooth_power_on():
-        subprocess.run(["bluetoothctl", "power", "off"], timeout=5)
-    else:
-        subprocess.run(["bluetoothctl", "power", "on"], timeout=5)
-
-
-def bluetooth_toggle_scan():
-    if bluetooth_scan_on():
-        subprocess.run(["bluetoothctl", "scan", "off"], timeout=5)
-    else:
-        subprocess.run(["bluetoothctl", "scan", "on"], timeout=5)
-
-
-def bluetooth_toggle_pairable():
-    if bluetooth_pairable_on():
-        subprocess.run(["bluetoothctl", "pairable", "off"], timeout=5)
-    else:
-        subprocess.run(["bluetoothctl", "pairable", "on"], timeout=5)
-
-
-def bluetooth_toggle_discoverable():
-    if bluetooth_discoverable_on():
-        subprocess.run(["bluetoothctl", "discoverable", "off"], timeout=5)
-    else:
-        subprocess.run(["bluetoothctl", "discoverable", "on"], timeout=5)
-
-
-def bluetooth_toggle_connection(mac):
-    if bluetooth_device_connected(mac):
-        subprocess.run(["bluetoothctl", "disconnect", mac], timeout=5)
-    else:
-        subprocess.run(["bluetoothctl", "connect", mac], timeout=5)
-
-
-def sanitize_expr(expr):
-    """Sanitize and fix common calculator expression errors"""
-    # Remove spaces
-    expr = expr.replace(" ", "")
-    # Fix double operators
-    expr = re.sub(r"\+\+", "+", expr)
-    expr = re.sub(r"--", "+", expr)
-    expr = re.sub(r"\+\-", "-", expr)
-    expr = re.sub(r"-\+", "-", expr)
-    # Add * for implicit multiplication
-    expr = re.sub(r"(\d)\(", r"\1*(", expr)
-    expr = re.sub(r"\)(\d)", r")*\1", expr)
-    expr = re.sub(r"(\d)([a-zA-Z])", r"\1*\2", expr)  # e.g., 2pi -> 2*pi
-    return expr
-
-
-def evaluate_calculator(expr):
-    """Evaluate calculator expression with proper error handling"""
-    if not expr.strip():
-        return None, "Empty expression"
-
-    if len(expr) > 100:
-        return None, "Expression too long"
-
-    # Check for invalid characters (only allow numbers, operators, parentheses, and common math functions)
-    allowed_chars = set("0123456789+-*/().eEpiPIcosintaqrtlg")
-    if not all(c in allowed_chars for c in expr):
-        return None, "Invalid characters in expression"
-    # Prevent power operator for safety
-    if "**" in expr:
-        return None, "Power operator not allowed"
-
-    try:
-        # Use a restricted environment for eval
-        safe_dict = {
-            "__builtins__": {},
-            "pi": 3.141592653589793,
-            "e": 2.718281828459045,
-            "cos": __import__("math").cos,
-            "sin": __import__("math").sin,
-            "tan": __import__("math").tan,
-            "sqrt": __import__("math").sqrt,
-            "log": __import__("math").log,
-            "lg": __import__("math").log10,
-        }
-        result = eval(expr, safe_dict)
-        if isinstance(result, complex):
-            return None, "Complex numbers not supported"
-        return str(result), None
-    except SyntaxError:
-        return None, "Invalid syntax"
-    except NameError:
-        return None, "Unknown function or variable"
-    except ZeroDivisionError:
-        return None, "Division by zero"
-    except OverflowError:
-        return None, "Result too large"
-    except ValueError as e:
-        if "math domain" in str(e):
-            return None, "Math domain error"
-        return None, f"Value error: {e}"
-    except Exception as e:
-        return None, f"Calculation error: {e}"
+    launcher = CUSTOM_LAUNCHERS[command]
+    if isinstance(launcher, str):
+        # Legacy: app name
+        for app in apps:
+            if launcher.lower() in app["name"].lower():
+                subprocess.Popen([app["exec"]], shell=False)
+                return True
+        # If not found, run as command
+        subprocess.Popen(launcher, shell=True)
+        return True
+    elif isinstance(launcher, dict):
+        launcher_type = launcher.get("type")
+        if launcher_type == "app":
+            app_name = launcher.get("name")
+            if app_name:
+                for app in apps:
+                    if app_name.lower() in app["name"].lower():
+                        subprocess.Popen([app["exec"]], shell=False)
+                        return True
+            return False
+        elif launcher_type == "command":
+            cmd = launcher.get("cmd")
+            if cmd:
+                subprocess.Popen(cmd, shell=True)
+                return True
+        elif launcher_type == "url":
+            url = launcher.get("url")
+            if url:
+                webbrowser.open(url)
+                return True
+        elif launcher_type == "function":
+            func = launcher.get("func")
+            if func and callable(func):
+                func()
+                return True
+        elif launcher_type == "builtin":
+            # Built-in handlers
+            if launcher.get("handler") in [
+                "calculator",
+                "bookmark",
+                "bluetooth",
+                "wallpaper",
+            ]:
+                # Handled separately in populate_apps or on_entry_activate
+                return False
+    return False
 
 
 @final
@@ -265,6 +166,8 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry = Gtk.Entry()
         self.search_entry.connect("changed", self.on_search_changed)
         self.search_entry.connect("activate", self.on_entry_activate)
+
+        self.selected_row = None
         self.search_entry.set_placeholder_text("Search applications...")
 
         # Scrolled window for apps
@@ -367,11 +270,7 @@ class Launcher(Gtk.ApplicationWindow):
             self.current_apps = []  # No apps
         elif filter_text.startswith(">bookmark"):
             # Bookmark mode
-            bookmark_file = os.path.expanduser("~/.bookmarks")
-            bookmarks = []
-            if os.path.exists(bookmark_file):
-                with open(bookmark_file, "r") as f:
-                    bookmarks = [line.strip() for line in f if line.strip()]
+            bookmarks = get_bookmarks()
             # Add actions
             actions = ["add", "remove", "replace"]
             all_items = bookmarks + actions
@@ -428,6 +327,99 @@ class Launcher(Gtk.ApplicationWindow):
             for item in all_items:
                 button = Gtk.Button(label=item)
                 button.connect("clicked", self.on_bluetooth_clicked, item)
+                apply_styles(
+                    button,
+                    """
+                    button {
+                        background: #3c3836;
+                        color: #ebdbb2;
+                        border: none;
+                        border-radius: 3px;
+                        padding: 10px;
+                        font-size: 14px;
+                        font-family: Iosevka;
+                    }
+                    button:hover {
+                        background: #504945;
+                    }
+                """,
+                )
+                self.list_box.append(button)
+            self.current_apps = []  # No apps
+        elif filter_text.startswith(">wallpaper"):
+            wp_dir = os.path.expanduser("~/Pictures/wp/")
+            if not os.path.exists(wp_dir):
+                button = Gtk.Button(
+                    label="Wallpaper directory ~/Pictures/wp/ not found"
+                )
+                apply_styles(
+                    button,
+                    """
+                    button {
+                        background: #3c3836;
+                        color: #ebdbb2;
+                        border: none;
+                        border-radius: 3px;
+                        padding: 10px;
+                        font-size: 14px;
+                        font-family: Iosevka;
+                    }
+                    button:hover {
+                        background: #504945;
+                    }
+                """,
+                )
+                self.list_box.append(button)
+            elif filter_text == ">wallpaper":
+                wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+                wallpapers = [
+                    os.path.basename(w) for w in wallpapers if os.path.isfile(w)
+                ]
+                for wp in sorted(wallpapers):
+                    button = Gtk.Button(label=wp)
+                    button.connect("clicked", self.on_wallpaper_clicked, wp)
+                    apply_styles(
+                        button,
+                        """
+                        button {
+                            background: #3c3836;
+                            color: #ebdbb2;
+                            border: none;
+                            border-radius: 3px;
+                            padding: 10px;
+                            font-size: 14px;
+                            font-family: Iosevka;
+                        }
+                        button:hover {
+                            background: #504945;
+                        }
+                    """,
+                    )
+                    self.list_box.append(button)
+            elif filter_text == ">wallpaper random":
+                button = Gtk.Button(label="Set random wallpaper")
+                button.connect("clicked", self.on_wallpaper_random)
+                apply_styles(
+                    button,
+                    """
+                    button {
+                        background: #3c3836;
+                        color: #ebdbb2;
+                        border: none;
+                        border-radius: 3px;
+                        padding: 10px;
+                        font-size: 14px;
+                        font-family: Iosevka;
+                    }
+                    button:hover {
+                        background: #504945;
+                    }
+                """,
+                )
+                self.list_box.append(button)
+            elif filter_text == ">wallpaper cycle":
+                button = Gtk.Button(label="Cycle wallpaper")
+                button.connect("clicked", self.on_wallpaper_cycle)
                 apply_styles(
                     button,
                     """
@@ -587,9 +579,16 @@ class Launcher(Gtk.ApplicationWindow):
                     self.list_box.append(button)
 
     def on_search_changed(self, entry):
+        self.selected_row = None
         self.populate_apps(entry.get_text())
 
     def on_entry_activate(self, entry):
+        if self.selected_row:
+            button = self.selected_row.get_child()
+            if button:
+                button.emit("clicked")
+                self.hide()
+                return
         text = self.search_entry.get_text()
         if text.startswith(">calc "):
             expr = text[6:].strip()
@@ -613,6 +612,12 @@ class Launcher(Gtk.ApplicationWindow):
                     except subprocess.CalledProcessError:
                         print(f"Failed to copy to clipboard: {result_str}")
                 self.hide()
+        elif text == ">wallpaper random":
+            self.on_wallpaper_random(None)
+            self.hide()
+        elif text == ">wallpaper cycle":
+            self.on_wallpaper_cycle(None)
+            self.hide()
         elif text.startswith(">"):
             command = text[1:].strip()
             if not handle_custom_launcher(command, self.apps):
@@ -679,7 +684,128 @@ class Launcher(Gtk.ApplicationWindow):
                 mac = match.group(1)
                 bluetooth_toggle_connection(mac)
         # Refresh the menu by re-populating
+        self.selected_row = None
         self.populate_apps(">bluetooth")
+
+    def on_wallpaper_clicked(self, button, wp):
+        self.set_wallpaper(wp)
+        self.hide()
+
+    def on_wallpaper_random(self, button):
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+        wallpapers = [w for w in wallpapers if os.path.isfile(w)]
+        if wallpapers:
+            wp_path = random.choice(wallpapers)
+            wp = os.path.basename(wp_path)
+            self.set_wallpaper(wp)
+        self.hide()
+
+    def on_wallpaper_cycle(self, button):
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        default_link = os.path.join(wp_dir, "defaultwp.jpg")
+        if os.path.islink(default_link):
+            current = os.readlink(default_link)
+            current_base = os.path.basename(current)
+            match = re.match(r"(\D+)(\d+)\.(jpg|png)", current_base)
+            if match:
+                style = match.group(1)
+                num = int(match.group(2))
+                ext = match.group(3)
+                num += 1
+                next_file = f"{style}{num}.{ext}"
+                next_path = os.path.join(wp_dir, next_file)
+                if os.path.exists(next_path):
+                    self.set_wallpaper(next_file)
+                    self.hide()
+                    return
+                # Wrap to 1
+                first_file = f"{style}1.{ext}"
+                first_path = os.path.join(wp_dir, first_file)
+                if os.path.exists(first_path):
+                    self.set_wallpaper(first_file)
+                    self.hide()
+                    return
+                # Try other ext
+                alt_ext = "png" if ext == "jpg" else "jpg"
+                alt_file = f"{style}1.{alt_ext}"
+                alt_path = os.path.join(wp_dir, alt_file)
+                if os.path.exists(alt_path):
+                    self.set_wallpaper(alt_file)
+                    self.hide()
+                    return
+        # Fallback to random
+        self.on_wallpaper_random(button)
+
+    def set_wallpaper(self, wp):
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        wp_path = os.path.join(wp_dir, wp)
+        default_link = os.path.join(wp_dir, "defaultwp.jpg")
+        if os.path.exists(default_link) or os.path.islink(default_link):
+            os.remove(default_link)
+        os.symlink(wp_path, default_link)
+        # Assume swaybg
+        walset = "swaybg -i"
+        if walset.startswith("swaybg"):
+            # Kill existing swaybg
+            try:
+                result = subprocess.run(
+                    ["pgrep", "swaybg"], capture_output=True, text=True
+                )
+                if result.returncode == 0:
+                    pids = result.stdout.strip().split("\n")
+                    for pid in pids:
+                        subprocess.run(["kill", pid], check=False)
+            except Exception:
+                pass
+            subprocess.Popen([walset, wp_path])
+
+    def select_next(self):
+        if self.selected_row:
+            next_row = self.selected_row.get_next_sibling()
+            if next_row:
+                self.selected_row = next_row
+                self.list_box.select_row(next_row)
+                button = next_row.get_child()
+                if button:
+                    button.grab_focus()
+        else:
+            first_row = self.list_box.get_row_at_index(0)
+            if first_row:
+                self.selected_row = first_row
+                self.list_box.select_row(first_row)
+                button = first_row.get_child()
+                if button:
+                    button.grab_focus()
+
+    def select_prev(self):
+        if self.selected_row:
+            prev_row = self.selected_row.get_prev_sibling()
+            if prev_row:
+                self.selected_row = prev_row
+                self.list_box.select_row(prev_row)
+                button = prev_row.get_child()
+                if button:
+                    button.grab_focus()
+            else:
+                # No previous, jump back to input
+                self.selected_row = None
+                self.list_box.unselect_all()
+                self.search_entry.grab_focus()
+        else:
+            n_items = 0
+            row = self.list_box.get_first_child()
+            while row:
+                n_items += 1
+                row = row.get_next_sibling()
+            if n_items > 0:
+                last_row = self.list_box.get_row_at_index(n_items - 1)
+                if last_row:
+                    self.selected_row = last_row
+                    self.list_box.select_row(last_row)
+                    button = last_row.get_child()
+                    if button:
+                        button.grab_focus()
 
     def on_custom_launcher_clicked(self, button, command):
         if handle_custom_launcher(command, self.apps):
@@ -687,7 +813,7 @@ class Launcher(Gtk.ApplicationWindow):
 
     def on_command_selected(self, button, command):
         # Set the search entry to >command and trigger activate
-        if command in ["calc", "bookmark", "bluetooth"]:
+        if command in ["calc", "bookmark", "bluetooth", "wallpaper"]:
             self.search_entry.set_text(f">{command} ")
         else:
             self.search_entry.set_text(f">{command}")
@@ -716,7 +842,7 @@ class Launcher(Gtk.ApplicationWindow):
                     # Partial command, find matching
                     for cmd in CUSTOM_LAUNCHERS:
                         if cmd.startswith(command):
-                            if cmd == "calc":
+                            if cmd in ["calc", "bookmark", "bluetooth"]:
                                 self.search_entry.set_text(f">{cmd} ")
                             else:
                                 self.search_entry.set_text(f">{cmd}")
@@ -728,6 +854,12 @@ class Launcher(Gtk.ApplicationWindow):
                 self.search_entry.set_position(-1)
                 return True
             return True  # Prevent default tab behavior
+        if keyval == Gdk.KEY_n and (state & Gdk.ModifierType.CONTROL_MASK):
+            self.select_next()
+            return True
+        if keyval == Gdk.KEY_p and (state & Gdk.ModifierType.CONTROL_MASK):
+            self.select_prev()
+            return True
         if keyval == Gdk.KEY_Escape:
             self.hide()
             return True
