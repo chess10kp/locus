@@ -172,16 +172,16 @@ class Launcher(Gtk.ApplicationWindow):
                     button,
                     """
                     button {
-                        background: transparent;
+                        background: #3c3836;
                         color: #ebdbb2;
-                        border: 1px solid #3c3836;
+                        border: none;
                         border-radius: 3px;
                         padding: 10px;
                         font-size: 14px;
                         font-family: Iosevka;
                     }
                     button:hover {
-                        background: #1a1a1a;
+                        background: #504945;
                     }
                 """,
                 )
@@ -208,6 +208,9 @@ class Launcher(Gtk.ApplicationWindow):
         if keyval == Gdk.KEY_Escape:
             self.hide()
             return True
+        if keyval == Gdk.KEY_c and (state & Gdk.ModifierType.CONTROL_MASK):
+            self.hide()
+            return True
         return False
 
     def on_map(self, widget):
@@ -225,6 +228,7 @@ class Launcher(Gtk.ApplicationWindow):
         return False
 
     def show_launcher(self):
+        self.search_entry.set_text("")
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, -400)
         self.present()
         self.animate_slide_in()
