@@ -43,10 +43,6 @@ class HabitManager:
         with open(self.habit_file, "w") as file:
             return file.write(habits)
 
-    def add_habit(self, habit: str) -> int: 
+    def add_habit(self, habit: str) -> int:
         with open(self.habit_file, "a") as file:
             return file.write(habit)
-
-
-
-

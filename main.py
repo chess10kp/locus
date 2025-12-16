@@ -12,16 +12,19 @@ import sys
 import os
 import time
 import setproctitle
-
+import socket
+import threading
 import subprocess
 import json
+import configparser
+import argparse
+from pathlib import Path
 from typing_extensions import final
 
 import style
 from datetime import datetime as dt
 from config import APPNAME
 import gi
-import threading
 
 
 # For GTK4 Layer Shell to get linked before libwayland-client we must explicitly load it before importing with gi
@@ -37,6 +40,67 @@ from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # noq
 import i3ipc  # noqa: E402
 
 setproctitle.setproctitle(APPNAME)
+
+
+def load_desktop_apps():
+    apps = []
+    dirs = [
+        Path("/usr/share/applications"),
+        Path("~/.local/share/applications").expanduser(),
+    ]
+    for dir_path in dirs:
+        if dir_path.exists():
+            for desktop_file in dir_path.glob("*.desktop"):
+                app = parse_desktop_file(desktop_file)
+                if app:
+                    apps.append(app)
+    return sorted(apps, key=lambda x: x["name"].lower())
+
+
+def parse_desktop_file(file_path):
+    config = configparser.ConfigParser()
+    try:
+        config.read(file_path, encoding="utf-8")
+        if not config.has_section("Desktop Entry"):
+            return None
+        entry = config["Desktop Entry"]
+        if entry.get("NoDisplay", "false").lower() == "true":
+            return None
+        name = entry.get("Name")
+        exec_cmd = entry.get("Exec")
+        if not name or not exec_cmd:
+            return None
+        return {
+            "name": name,
+            "exec": exec_cmd.split()[0],  # Take first part
+            "icon": entry.get("Icon", ""),
+            "file": str(file_path),
+        }
+    except Exception:
+        return None
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--launcher",
+    action="store_true",
+    help="Run launcher in CLI mode, reading from stdin",
+)
+args = parser.parse_args()
+
+if args.launcher:
+    apps = load_desktop_apps()
+    input_text = sys.stdin.read().strip()
+    for app in apps:
+        if input_text.lower() in app["name"].lower():
+            try:
+                subprocess.Popen([app["exec"]], shell=False)
+                sys.exit(0)
+            except Exception as e:
+                print(f"Failed to launch {app['name']}: {e}")
+                sys.exit(1)
+    print("App not found")
+    sys.exit(1)
 
 
 def kill_previous_process():
@@ -73,6 +137,7 @@ kill_previous_process()
 
 
 TIME_PATH = os.path.expanduser("~/.time")
+SOCKET_PATH = "/tmp/locus_socket"
 
 
 def apply_styles(widget: Gtk.Box | Gtk.Widget | Gtk.Label, css: str):
@@ -289,7 +354,7 @@ class HyprlandClient(WMClient):
                 try:
                     active_data = json.loads(active_res.stdout)
                     active_id = active_data.get("id", -1)
-                except:
+                except Exception:
                     pass
 
             workspaces_data = json.loads(result.stdout)
@@ -376,6 +441,7 @@ class Popup(Gtk.ApplicationWindow):
         # Layer shell setup
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
+        GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.EXCLUSIVE)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 70)
@@ -411,6 +477,165 @@ class Popup(Gtk.ApplicationWindow):
 
 
 @final
+class Launcher(Gtk.ApplicationWindow):
+    def __init__(self, **kwargs):
+        super().__init__(
+            **kwargs,
+            title="launcher",
+            show_menubar=False,
+            child=None,
+            default_width=600,
+            default_height=400,
+            destroy_with_parent=True,
+            hide_on_close=True,
+            resizable=True,
+            visible=False,
+        )
+
+        self.apps = load_desktop_apps()
+
+        # Search entry
+        self.search_entry = Gtk.Entry()
+        self.search_entry.connect("changed", self.on_search_changed)
+        self.search_entry.connect("activate", self.on_entry_activate)
+        self.search_entry.set_placeholder_text("Search applications...")
+
+        # Scrolled window for apps
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_vexpand(True)
+
+        # List box for apps
+        self.list_box = Gtk.ListBox()
+        self.list_box.set_selection_mode(Gtk.SelectionMode.NONE)
+        scrolled.set_child(self.list_box)
+
+        # Populate list
+        self.populate_apps()
+
+        # Main box
+        vbox = VBox(spacing=6)
+        vbox.append(self.search_entry)
+        vbox.append(scrolled)
+        self.set_child(vbox)
+
+        # Handle key presses
+        controller = Gtk.EventControllerKey()
+        controller.connect("key-pressed", self.on_key_pressed)
+        self.add_controller(controller)
+
+        # Grab focus on map
+        self.connect("map", self.on_map)
+
+        # Layer shell setup
+        GtkLayerShell.init_for_window(self)
+        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
+        GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.EXCLUSIVE)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 100)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
+
+        apply_styles(
+            self.search_entry,
+            """
+            entry {
+                background: #0e1418;
+                color: #ebdbb2;
+                border: none;
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 16px;
+                font-family: Iosevka;
+            }
+        """,
+        )
+
+        apply_styles(
+            self,
+            """
+            window {
+                background: #0e1418;
+                border: none;
+                border-radius: 5px;
+            }
+        """,
+        )
+
+    def populate_apps(self, filter_text=""):
+        # Clear existing
+        while self.list_box.get_first_child():
+            self.list_box.remove(self.list_box.get_first_child())
+
+        self.current_apps = []
+        for app in self.apps:
+            if filter_text.lower() in app["name"].lower():
+                self.current_apps.append(app)
+                button = Gtk.Button(label=app["name"])
+                button.connect("clicked", self.on_app_clicked, app)
+                apply_styles(
+                    button,
+                    """
+                    button {
+                        background: transparent;
+                        color: #ebdbb2;
+                        border: none;
+                        border-radius: 3px;
+                        padding: 10px;
+                        font-size: 14px;
+                        font-family: Iosevka;
+                    }
+                    button:hover {
+                        background: #1a1a1a;
+                    }
+                """,
+                )
+                self.list_box.append(button)
+
+    def on_search_changed(self, entry):
+        self.populate_apps(entry.get_text())
+
+    def on_entry_activate(self, entry):
+        if self.current_apps:
+            self.launch_app(self.current_apps[0])
+
+    def launch_app(self, app):
+        try:
+            subprocess.Popen([app["exec"]], shell=False)
+        except Exception as e:
+            print(f"Failed to launch {app['name']}: {e}")
+        self.hide()
+
+    def on_app_clicked(self, button, app):
+        self.launch_app(app)
+
+    def on_key_pressed(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            self.hide()
+            return True
+        return False
+
+    def on_map(self, widget):
+        self.search_entry.grab_focus()
+
+    def animate_slide_in(self):
+        current_margin = GtkLayerShell.get_margin(self, GtkLayerShell.Edge.BOTTOM)
+        target = 0
+        if current_margin < target:
+            new_margin = min(target, current_margin + 100)
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, new_margin)
+            GLib.timeout_add(10, self.animate_slide_in)
+        else:
+            self.search_entry.grab_focus()
+        return False
+
+    def show_launcher(self):
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, -400)
+        self.present()
+        self.animate_slide_in()
+
+
+@final
 class StatusBar(Gtk.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(
@@ -428,11 +653,15 @@ class StatusBar(Gtk.ApplicationWindow):
         )
 
         self.wm_client = detect_wm()
+        self.launcher = Launcher(application=app)
 
         self.main_box = HBox(spacing=0, hexpand=True)
         self.set_child(self.main_box)
 
         self.left_box = HBox(spacing=0)
+        self.launcher_button = Gtk.Button(label="🚀")
+        self.launcher_button.connect("clicked", self.on_launcher_clicked)
+        self.sep_launcher = Gtk.Label.new(" | ")
         self.fixed = Gtk.Fixed()
         self.workspaces_label = Gtk.Label()
         self.fixed.put(self.workspaces_label, 0, 0)
@@ -441,11 +670,13 @@ class StatusBar(Gtk.ApplicationWindow):
         self.sep_emacs = Gtk.Label.new(" | ")
         self.emacs_clock_label = Gtk.Label()
 
-        # Create right section: time | battery
+        # Create right section: time | battery | custom_message
         self.right_box = HBox(spacing=0)
         self.time_label = Gtk.Label()
         self.sep_right = Gtk.Label.new(" | ")
         self.battery_label = Gtk.Label()
+        self.sep_custom = Gtk.Label.new(" | ")
+        self.custom_message_label = Gtk.Label()
 
         self.previous_focused = None
         self.update_time()
@@ -455,6 +686,8 @@ class StatusBar(Gtk.ApplicationWindow):
         self.update_emacs_clock()
 
         # Add to left box
+        self.left_box.append(self.launcher_button)
+        self.left_box.append(self.sep_launcher)
         self.left_box.append(self.fixed)
         self.left_box.append(self.sep_left)
         self.left_box.append(self.binding_state_label)
@@ -465,6 +698,8 @@ class StatusBar(Gtk.ApplicationWindow):
         self.right_box.append(self.time_label)
         self.right_box.append(self.sep_right)
         self.right_box.append(self.battery_label)
+        self.right_box.append(self.sep_custom)
+        self.right_box.append(self.custom_message_label)
 
         # Add to main box: left, spacer, right
         self.main_box.append(self.left_box)
@@ -482,6 +717,9 @@ class StatusBar(Gtk.ApplicationWindow):
         GLib.timeout_add_seconds(60, self.update_battery_callback)
         GLib.timeout_add_seconds(1, self.update_binding_state_callback)
         GLib.timeout_add_seconds(10, self.update_emacs_clock_callback)
+
+        # Start IPC socket server
+        self.start_ipc_server()
 
     def update_time(self):
         """Update time display"""
@@ -611,6 +849,61 @@ class StatusBar(Gtk.ApplicationWindow):
         self.update_emacs_clock()
         return True
 
+    def update_custom_message(self, message: str):
+        """Update custom message display"""
+        self.custom_message_label.set_text(message)
+
+    def on_launcher_clicked(self, button):
+        self.launcher.show_launcher()
+
+    def start_ipc_server(self):
+        """Start Unix socket server for IPC"""
+
+        def server_loop():
+            # Remove socket if exists
+            try:
+                os.unlink(SOCKET_PATH)
+            except OSError:
+                pass
+
+            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            server.bind(SOCKET_PATH)
+            server.listen(1)
+
+            while True:
+                try:
+                    conn, _ = server.accept()
+                    data = conn.recv(1024)
+                    if data:
+                        message = data.decode("utf-8").strip()
+                        if message == "launcher":
+                            GLib.idle_add(self.launcher.show_launcher)
+                        elif message.startswith("launcher "):
+                            app_name = message[9:].strip()
+                            # Launch the app
+                            apps = load_desktop_apps()
+                            for app in apps:
+                                if app_name.lower() in app["name"].lower():
+                                    try:
+                                        subprocess.Popen([app["exec"]], shell=False)
+                                    except Exception as e:
+                                        print(f"Failed to launch {app['name']}: {e}")
+                                    break
+                            else:
+                                print(f"App '{app_name}' not found")
+                        else:
+                            GLib.idle_add(self.update_custom_message, message)
+                    conn.close()
+                except Exception as e:
+                    print(f"IPC error: {e}")
+                    break
+
+            server.close()
+
+        thread = threading.Thread(target=server_loop)
+        thread.daemon = True
+        thread.start()
+
     def apply_status_bar_styles(self):
         """Apply CSS styling to the status bar like Emacs modeline"""
         apply_styles(
@@ -690,9 +983,29 @@ class StatusBar(Gtk.ApplicationWindow):
         apply_styles(self.workspaces_label, label_style)
         apply_styles(self.binding_state_label, label_style)
         apply_styles(self.emacs_clock_label, label_style)
+        apply_styles(self.custom_message_label, label_style)
+        apply_styles(
+            self.launcher_button,
+            """
+            button {
+                background: transparent;
+                color: #ebdbb2;
+                border: none;
+                font-size: 18px;
+                font-family: Iosevka;
+                margin: 0;
+                padding: 0;
+            }
+            button:hover {
+                background: #1a1a1a;
+            }
+        """,
+        )
         apply_styles(self.sep_left, sep_style)
         apply_styles(self.sep_right, sep_style)
         apply_styles(self.sep_emacs, sep_style)
+        apply_styles(self.sep_custom, sep_style)
+        apply_styles(self.sep_launcher, sep_style)
 
 
 def on_activate(app: Gtk.Application):
