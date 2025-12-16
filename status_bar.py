@@ -46,7 +46,7 @@ class StatusBar(Gtk.ApplicationWindow):
         self.set_child(self.main_box)
 
         self.left_box = HBox(spacing=0)
-        self.launcher_button = Gtk.Button(label="🚀")
+        self.launcher_button = Gtk.Button(label="󰀻")
         self.launcher_button.connect("clicked", self.on_launcher_clicked)
         self.sep_launcher = Gtk.Label.new(" | ")
         self.fixed = Gtk.Fixed()

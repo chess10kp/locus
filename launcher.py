@@ -153,6 +153,8 @@ class Launcher(Gtk.ApplicationWindow):
                 background: #0e1418;
                 border: none;
                 border-radius: 5px;
+                padding: 0;
+                margin: 0;
             }
         """,
         )
