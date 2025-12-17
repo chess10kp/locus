@@ -142,3 +142,10 @@ NoDisplay=true
 
         assert vbox.props.spacing == 5
         assert vbox.props.vexpand is False
+
+    def test_bar_layout_has_middle(self):
+        """Test that BAR_LAYOUT includes middle section"""
+        from core.config import BAR_LAYOUT
+
+        assert "middle" in BAR_LAYOUT
+        assert isinstance(BAR_LAYOUT["middle"], list)

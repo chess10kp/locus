@@ -81,19 +81,27 @@ class StatusBar(Gtk.ApplicationWindow):
 
         # Build Layout
         self.left_box = HBox(spacing=0)
+        self.middle_box = HBox(spacing=0)
         self.right_box = HBox(spacing=0)
 
         self.construct_modules(BAR_LAYOUT.get("left", []), self.left_box)
 
-        # Spacer
-        spacer = Gtk.Label()
-        spacer.set_hexpand(True)
+        # Spacers for centering middle
+        left_spacer = Gtk.Label()
+        left_spacer.set_hexpand(True)
+
+        self.construct_modules(BAR_LAYOUT.get("middle", []), self.middle_box)
+
+        right_spacer = Gtk.Label()
+        right_spacer.set_hexpand(True)
 
         self.construct_modules(BAR_LAYOUT.get("right", []), self.right_box)
 
         # Assemble main box
         self.main_box.append(self.left_box)
-        self.main_box.append(spacer)
+        self.main_box.append(left_spacer)
+        self.main_box.append(self.middle_box)
+        self.main_box.append(right_spacer)
         self.main_box.append(self.right_box)
 
         self.apply_status_bar_styles()
@@ -103,23 +111,28 @@ class StatusBar(Gtk.ApplicationWindow):
             self.wm_client.start_event_listener(self.update_workspaces)
 
         # Start update loops
-        if "time" in BAR_LAYOUT.get("left", []) + BAR_LAYOUT.get("right", []):
+        all_modules = (
+            BAR_LAYOUT.get("left", [])
+            + BAR_LAYOUT.get("middle", [])
+            + BAR_LAYOUT.get("right", [])
+        )
+        if "time" in all_modules:
             self.update_time()
             GLib.timeout_add_seconds(60, self.update_time_callback)
 
-        if "battery" in BAR_LAYOUT.get("left", []) + BAR_LAYOUT.get("right", []):
+        if "battery" in all_modules:
             self.update_battery()
             GLib.timeout_add_seconds(60, self.update_battery_callback)
 
-        if "binding_mode" in BAR_LAYOUT.get("left", []) + BAR_LAYOUT.get("right", []):
+        if "binding_mode" in all_modules:
             self.update_binding_state()
             GLib.timeout_add_seconds(1, self.update_binding_state_callback)
 
-        if "emacs_clock" in BAR_LAYOUT.get("left", []) + BAR_LAYOUT.get("right", []):
+        if "emacs_clock" in all_modules:
             self.update_emacs_clock()
             GLib.timeout_add_seconds(10, self.update_emacs_clock_callback)
 
-        if "workspaces" in BAR_LAYOUT.get("left", []) + BAR_LAYOUT.get("right", []):
+        if "workspaces" in all_modules:
             self.update_workspaces()
 
         # Start IPC socket server always, as it might be used for launcher or custom messages
@@ -304,11 +317,6 @@ class StatusBar(Gtk.ApplicationWindow):
             # For simplicity, we'll recreate if the list of workspaces changed
             # In a more complex app, we'd diff.
             current_names = [ws.name for ws in ws_sorted]
-            existing_names = sorted(list(self.workspace_widgets.keys()))
-            # We need to sort current_names to match simpler comparison or just compare sets if order doesn't matter for existence but order usually matters for UI.
-            # actually ws_sorted defines the order we want. existing_names from keys() is arbitrary order unless we inserted in order.
-
-            # Let's just compare the lists directly if we assume insertion order is maintained in keys()
             existing_names_list = list(self.workspace_widgets.keys())
 
             if current_names != existing_names_list:
