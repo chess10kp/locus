@@ -24,6 +24,11 @@ def todo_capture():
 #   - 'url': open URL in browser
 #   - 'builtin': special built-in functionality
 #   - 'function': call a Python function (func key)
+# Metadata for launcher entries
+# Keyed by entry identifier (usually the display name or command)
+METADATA = {}
+
+
 CUSTOM_LAUNCHERS = {
     "editor": "Emacs",
     "calc": {"type": "builtin", "handler": "calculator"},
@@ -31,6 +36,7 @@ CUSTOM_LAUNCHERS = {
     "bluetooth": {"type": "builtin", "handler": "bluetooth"},
     "wallpaper": {"type": "builtin", "handler": "wallpaper"},
     "timer": {"type": "builtin", "handler": "timer"},
+    "monitor": {"type": "builtin", "handler": "monitor"},
     "todo": {"type": "function", "func": todo_capture},
     "shutdown": {"type": "command", "cmd": "systemctl poweroff"},
     "reboot": {"type": "command", "cmd": "systemctl reboot"},
@@ -39,6 +45,26 @@ CUSTOM_LAUNCHERS = {
     "logout": {"type": "command", "cmd": "kill -9 -1"},
     "lock": {"type": "command", "cmd": "betterlockscreen -l || i3lock || swaylock"},
 }
+
+# Add default metadata for built-in launchers
+METADATA.update(
+    {
+        "editor": "Text editor",
+        "calc": "Calculator",
+        "bookmark": "Bookmarks",
+        "bluetooth": "Bluetooth",
+        "wallpaper": "Wallpaper",
+        "timer": "Timer",
+        "monitor": "Monitor control",
+        "todo": "Todo capture",
+        "shutdown": "Shutdown",
+        "reboot": "Reboot",
+        "suspend": "Suspend",
+        "hibernate": "Hibernate",
+        "logout": "Logout",
+        "lock": "Lock screen",
+    }
+)
 
 
 def add_custom_launcher(name: str, launcher):
@@ -71,3 +97,22 @@ def add_function_launcher(name: str, func):
 def remove_custom_launcher(name: str):
     """Remove a custom launcher."""
     CUSTOM_LAUNCHERS.pop(name, None)
+
+
+def add_metadata(identifier: str, metadata: str):
+    """Add metadata for a launcher entry.
+
+    Args:
+        identifier: The entry identifier (usually the display name or command)
+        metadata: The metadata string to display
+
+    Examples:
+        add_metadata("Firefox", "Web Browser")
+        add_metadata("calc", "Calculator mode")
+    """
+    METADATA[identifier] = metadata
+
+
+def remove_metadata(identifier: str):
+    """Remove metadata for a launcher entry."""
+    METADATA.pop(identifier, None)

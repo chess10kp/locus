@@ -15,7 +15,7 @@ import glob
 import random
 import re
 from utils import apply_styles, load_desktop_apps, VBox
-from config import CUSTOM_LAUNCHERS
+from config import CUSTOM_LAUNCHERS, METADATA
 from calculator import sanitize_expr, evaluate_calculator
 from bluetooth import (
     bluetooth_power_on,
@@ -31,7 +31,19 @@ from bluetooth import (
     bluetooth_toggle_connection,
 )
 from bookmarks import get_bookmarks
+from monitor import get_monitors, toggle_monitor
 import webbrowser
+
+
+def fuzzy_match(query, target):
+    """Check if query is a fuzzy match for target (case insensitive)."""
+    query = query.lower()
+    target = target.lower()
+    query_idx = 0
+    for char in target:
+        if query_idx < len(query) and char == query[query_idx]:
+            query_idx += 1
+    return query_idx == len(query)
 
 
 def parse_time(time_str):
@@ -95,6 +107,7 @@ def handle_custom_launcher(command, apps):
                 "bluetooth",
                 "wallpaper",
                 "timer",
+                "monitor",
             ]:
                 # Handled separately in populate_apps or on_entry_activate
                 return False
@@ -183,6 +196,7 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry = Gtk.Entry()
         self.search_entry.connect("changed", self.on_search_changed)
         self.search_entry.connect("activate", self.on_entry_activate)
+        self.search_entry.set_halign(Gtk.Align.START)
 
         self.selected_row = None
         self.search_entry.set_placeholder_text("Search applications...")
@@ -251,440 +265,327 @@ class Launcher(Gtk.ApplicationWindow):
         """,
         )
 
-    def populate_apps(self, filter_text=""):
-        # Clear existing
-        while self.list_box.get_first_child():
-            self.list_box.remove(self.list_box.get_first_child())
+    def apply_button_style(self, button):
+        apply_styles(
+            button,
+            """
+            button {
+                background: #3c3836;
+                color: #ebdbb2;
+                border: none;
+                border-radius: 3px;
+                padding: 10px;
+                font-size: 14px;
+                font-family: Iosevka;
+            }
+            button:hover {
+                background: #504945;
+            }
+        """,
+        )
 
-        if filter_text.startswith(">calc "):
-            # Calculator mode
-            expr = filter_text[6:].strip()
-            sanitized = sanitize_expr(expr)
-            result, error = evaluate_calculator(sanitized)
-            if error:
-                button = Gtk.Button(label=f"Error: {error}")
-            else:
-                button = Gtk.Button(label=f"Result: {result}")
-                button.connect("clicked", self.on_result_clicked, result)
+    def create_button_with_metadata(self, main_text, metadata_text=""):
+        """Create a button with main text and optional metadata below in smaller font."""
+        if metadata_text:
+            # Create a vertical box for main text and metadata
+            vbox = VBox(spacing=2)
+            main_label = Gtk.Label(label=main_text)
+            main_label.set_halign(Gtk.Align.START)
+            main_label.set_valign(Gtk.Align.START)
+
+            metadata_label = Gtk.Label(label=metadata_text)
+            metadata_label.set_halign(Gtk.Align.START)
+            metadata_label.set_valign(Gtk.Align.START)
+
+            # Apply smaller font to metadata
             apply_styles(
-                button,
+                metadata_label,
                 """
-                button {
-                    background: #3c3836;
-                    color: #ebdbb2;
-                    border: none;
-                    border-radius: 3px;
-                    padding: 10px;
-                    font-size: 14px;
-                    font-family: Iosevka;
+                label {
+                    font-size: 12px;
+                    color: #928374;
                 }
-                button:hover {
-                    background: #504945;
-                }
-            """,
+                """,
             )
-            self.list_box.append(button)
-            self.current_apps = []  # No apps
-        elif filter_text.startswith(">bookmark"):
-            # Bookmark mode
-            bookmarks = get_bookmarks()
-            # Add actions
-            actions = ["add", "remove", "replace"]
-            all_items = bookmarks + actions
-            for item in all_items:
-                button = Gtk.Button(label=item)
-                if item in bookmarks:
-                    button.connect("clicked", self.on_bookmark_clicked, item)
-                else:
-                    button.connect("clicked", self.on_bookmark_action, item)
-                apply_styles(
-                    button,
-                    """
-                    button {
-                        background: #3c3836;
-                        color: #ebdbb2;
-                        border: none;
-                        border-radius: 3px;
-                        padding: 10px;
-                        font-size: 14px;
-                        font-family: Iosevka;
-                    }
-                    button:hover {
-                        background: #504945;
-                    }
-                """,
-                )
-                self.list_box.append(button)
-            self.current_apps = []  # No apps
-        elif filter_text.startswith(">bluetooth"):
-            # Bluetooth mode
-            power_status = "Power: on" if bluetooth_power_on() else "Power: off"
-            scan_status = "Scan: on" if bluetooth_scan_on() else "Scan: off"
-            pairable_status = (
-                "Pairable: on" if bluetooth_pairable_on() else "Pairable: off"
-            )
-            discoverable_status = (
-                "Discoverable: on"
-                if bluetooth_discoverable_on()
-                else "Discoverable: off"
-            )
-            devices = bluetooth_get_devices()
-            device_items = []
-            for mac, name in devices:
-                status = (
-                    "Connected" if bluetooth_device_connected(mac) else "Disconnected"
-                )
-                device_items.append(f"{name}: {status} ({mac})")
-            all_items = [
-                power_status,
-                scan_status,
-                pairable_status,
-                discoverable_status,
-            ] + device_items
-            for item in all_items:
-                button = Gtk.Button(label=item)
-                button.connect("clicked", self.on_bluetooth_clicked, item)
-                apply_styles(
-                    button,
-                    """
-                    button {
-                        background: #3c3836;
-                        color: #ebdbb2;
-                        border: none;
-                        border-radius: 3px;
-                        padding: 10px;
-                        font-size: 14px;
-                        font-family: Iosevka;
-                    }
-                    button:hover {
-                        background: #504945;
-                    }
-                """,
-                )
-                self.list_box.append(button)
-            self.current_apps = []  # No apps
-        elif filter_text.startswith(">wallpaper"):
-            wp_dir = os.path.expanduser("~/Pictures/wp/")
-            if not os.path.exists(wp_dir):
-                button = Gtk.Button(
-                    label="Wallpaper directory ~/Pictures/wp/ not found"
-                )
-                apply_styles(
-                    button,
-                    """
-                    button {
-                        background: #3c3836;
-                        color: #ebdbb2;
-                        border: none;
-                        border-radius: 3px;
-                        padding: 10px;
-                        font-size: 14px;
-                        font-family: Iosevka;
-                    }
-                    button:hover {
-                        background: #504945;
-                    }
-                """,
-                )
-                self.list_box.append(button)
-            elif filter_text == ">wallpaper random":
-                button = Gtk.Button(label="Set random wallpaper")
-                button.connect("clicked", self.on_wallpaper_random)
-                apply_styles(
-                    button,
-                    """
-                    button {
-                        background: #3c3836;
-                        color: #ebdbb2;
-                        border: none;
-                        border-radius: 3px;
-                        padding: 10px;
-                        font-size: 14px;
-                        font-family: Iosevka;
-                    }
-                    button:hover {
-                        background: #504945;
-                    }
-                """,
-                )
-                self.list_box.append(button)
-            elif filter_text == ">wallpaper cycle":
-                button = Gtk.Button(label="Cycle wallpaper")
-                button.connect("clicked", self.on_wallpaper_cycle)
-                apply_styles(
-                    button,
-                    """
-                    button {
-                        background: #3c3836;
-                        color: #ebdbb2;
-                        border: none;
-                        border-radius: 3px;
-                        padding: 10px;
-                        font-size: 14px;
-                        font-family: Iosevka;
-                    }
-                    button:hover {
-                        background: #504945;
-                    }
-                """,
-                )
-                self.list_box.append(button)
+
+            vbox.append(main_label)
+            vbox.append(metadata_label)
+            button = Gtk.Button()
+            button.set_child(vbox)
+        else:
+            # Simple button with just main text
+            button = Gtk.Button(label=main_text)
+            button.get_child().set_halign(Gtk.Align.START)
+
+        self.apply_button_style(button)
+        return button
+
+    def populate_calc_mode(self, expr):
+        sanitized = sanitize_expr(expr)
+        result, error = evaluate_calculator(sanitized)
+        if error:
+            label_text = f"Error: {error}"
+            metadata = METADATA.get(label_text, "")
+            button = self.create_button_with_metadata(label_text, metadata)
+        else:
+            label_text = f"Result: {result}"
+            metadata = METADATA.get(label_text, "")
+            button = self.create_button_with_metadata(label_text, metadata)
+            button.connect("clicked", self.on_result_clicked, result)
+        self.list_box.append(button)
+        self.current_apps = []
+
+    def populate_bookmark_mode(self):
+        bookmarks = get_bookmarks()
+        actions = ["add", "remove", "replace"]
+        all_items = bookmarks + actions
+        for item in all_items:
+            metadata = METADATA.get("bookmark", "") if item in bookmarks else ""
+            button = self.create_button_with_metadata(item, metadata)
+            if item in bookmarks:
+                button.connect("clicked", self.on_bookmark_clicked, item)
             else:
-                # List wallpapers with optional search
-                if not self.wallpaper_loaded:
-                    wallpapers = glob.glob(os.path.join(wp_dir, "*"))
-                    wallpapers = [
-                        os.path.basename(w) for w in wallpapers if os.path.isfile(w)
-                    ]
-                    self.wallpaper_buttons = []
-                    for wp in sorted(wallpapers):
-                        box = Gtk.Box(
-                            orientation=Gtk.Orientation.HORIZONTAL, spacing=10
+                button.connect("clicked", self.on_bookmark_action, item)
+            self.list_box.append(button)
+        self.current_apps = []
+
+    def populate_bluetooth_mode(self):
+        power_status = "Power: on" if bluetooth_power_on() else "Power: off"
+        scan_status = "Scan: on" if bluetooth_scan_on() else "Scan: off"
+        pairable_status = "Pairable: on" if bluetooth_pairable_on() else "Pairable: off"
+        discoverable_status = (
+            "Discoverable: on" if bluetooth_discoverable_on() else "Discoverable: off"
+        )
+        devices = bluetooth_get_devices()
+        device_items = []
+        for mac, name in devices:
+            status = "Connected" if bluetooth_device_connected(mac) else "Disconnected"
+            device_items.append(f"{name}: {status} ({mac})")
+        all_items = [
+            power_status,
+            scan_status,
+            pairable_status,
+            discoverable_status,
+        ] + device_items
+        for item in all_items:
+            metadata = METADATA.get("bluetooth", "")
+            button = self.create_button_with_metadata(item, metadata)
+            button.connect("clicked", self.on_bluetooth_clicked, item)
+            self.list_box.append(button)
+        self.current_apps = []
+
+    def populate_monitor_mode(self):
+        monitors = get_monitors()
+        monitor_items = []
+        for name, status in monitors:
+            monitor_items.append(f"{name}: {status}")
+        for item in monitor_items:
+            metadata = METADATA.get("monitor", "")
+            button = self.create_button_with_metadata(item, metadata)
+            button.connect("clicked", self.on_monitor_clicked, item)
+            self.list_box.append(button)
+        self.current_apps = []
+
+    def populate_wallpaper_mode(self, filter_text):
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        if not os.path.exists(wp_dir):
+            label_text = "Wallpaper directory ~/Pictures/wp/ not found"
+            metadata = METADATA.get(label_text, "")
+            button = self.create_button_with_metadata(label_text, metadata)
+            self.list_box.append(button)
+        elif filter_text == ">wallpaper random":
+            metadata = METADATA.get("wallpaper", "")
+            button = self.create_button_with_metadata("Set random wallpaper", metadata)
+            button.connect("clicked", self.on_wallpaper_random)
+            self.list_box.append(button)
+        elif filter_text == ">wallpaper cycle":
+            metadata = METADATA.get("wallpaper", "")
+            button = self.create_button_with_metadata("Cycle wallpaper", metadata)
+            button.connect("clicked", self.on_wallpaper_cycle)
+            self.list_box.append(button)
+        else:
+            if not self.wallpaper_loaded:
+                wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+                wallpapers = [
+                    os.path.basename(w) for w in wallpapers if os.path.isfile(w)
+                ]
+                self.wallpaper_buttons = []
+                for wp in sorted(wallpapers):
+                    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+                    try:
+                        pixbuf = GdkPixbuf.Pixbuf.new_from_file(
+                            os.path.join(wp_dir, wp)
                         )
-                        try:
-                            pixbuf = GdkPixbuf.Pixbuf.new_from_file(
-                                os.path.join(wp_dir, wp)
-                            )
-                            aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
-                            scaled_width = 120
-                            scaled_height = int(scaled_width / aspect_ratio)
-                            scaled_buf = pixbuf.scale_simple(
-                                scaled_width,
-                                scaled_height,
-                                GdkPixbuf.InterpType.BILINEAR,
-                            )
-                            image = Gtk.Image.new_from_pixbuf(scaled_buf)
-                        except Exception:
-                            image = Gtk.Image()  # Fallback if not image
+                        aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
+                        scaled_width = 120
+                        scaled_height = int(scaled_width / aspect_ratio)
+                        scaled_buf = pixbuf.scale_simple(
+                            scaled_width, scaled_height, GdkPixbuf.InterpType.BILINEAR
+                        )
+                        image = Gtk.Image.new_from_pixbuf(scaled_buf)
+                    except Exception:
+                        image = Gtk.Image()
+                    metadata = METADATA.get(wp, "")
+                    if metadata:
+                        label_vbox = VBox(spacing=2)
+                        main_label = Gtk.Label(label=wp)
+                        main_label.set_halign(Gtk.Align.START)
+                        main_label.set_valign(Gtk.Align.START)
+
+                        metadata_label = Gtk.Label(label=metadata)
+                        metadata_label.set_halign(Gtk.Align.START)
+                        metadata_label.set_valign(Gtk.Align.START)
+
+                        apply_styles(
+                            metadata_label,
+                            """
+                            label {
+                                font-size: 12px;
+                                color: #928374;
+                            }
+                            """,
+                        )
+
+                        label_vbox.append(main_label)
+                        label_vbox.append(metadata_label)
+                        box.append(image)
+                        box.append(label_vbox)
+                    else:
                         label = Gtk.Label(label=wp)
                         label.set_halign(Gtk.Align.START)
                         box.append(image)
                         box.append(label)
-                        button = Gtk.Button()
-                        button.set_child(box)
-                        button.connect("clicked", self.on_wallpaper_clicked, wp)
-                        apply_styles(
-                            button,
-                            """
-                            button {
-                                background: #3c3836;
-                                color: #ebdbb2;
-                                border: none;
-                                border-radius: 3px;
-                                padding: 10px;
-                                font-size: 14px;
-                                font-family: Iosevka;
-                            }
-                            button:hover {
-                                background: #504945;
-                            }
-                        """,
-                        )
-                        self.wallpaper_buttons.append((button, wp))
-                    self.wallpaper_loaded = True
-                # Now filter
-                search_term = ""
-                if filter_text.startswith(">wallpaper "):
-                    search_term = filter_text[11:].strip().lower()
-                matching = [
-                    (btn, wp)
-                    for btn, wp in self.wallpaper_buttons
-                    if not search_term or search_term in wp.lower()
-                ]
-                if not matching:
-                    msg = (
-                        "No wallpapers found"
-                        if not search_term
-                        else f"No wallpapers match '{search_term}'"
-                    )
-                    button = Gtk.Button(label=msg)
-                    apply_styles(
-                        button,
-                        """
-                        button {
-                            background: #3c3836;
-                            color: #ebdbb2;
-                            border: none;
-                            border-radius: 3px;
-                            padding: 10px;
-                            font-size: 14px;
-                            font-family: Iosevka;
-                        }
-                    """,
-                    )
-                    self.list_box.append(button)
-                else:
-                    for btn, _ in matching:
-                        self.list_box.append(btn)
-            self.current_apps = []  # No apps
-        elif filter_text.startswith(">timer"):
-            time_str = filter_text[6:].strip()
-            if time_str:
-                seconds = parse_time(time_str)
-                if seconds is not None:
-                    button = Gtk.Button(label=f"Set timer for {time_str}")
-                    button.connect("clicked", self.on_timer_clicked, time_str)
-                else:
-                    button = Gtk.Button(label="Invalid time format (e.g., 5m)")
-            else:
-                button = Gtk.Button(label="Usage: >timer 5m")
-            apply_styles(
-                button,
-                """
-                button {
-                    background: #3c3836;
-                    color: #ebdbb2;
-                    border: none;
-                    border-radius: 3px;
-                    padding: 10px;
-                    font-size: 14px;
-                    font-family: Iosevka;
-                }
-                button:hover {
-                    background: #504945;
-                }
-            """,
+                    button = Gtk.Button()
+                    button.set_child(box)
+                    button.get_child().set_halign(Gtk.Align.START)
+                    button.connect("clicked", self.on_wallpaper_clicked, wp)
+                    self.apply_button_style(button)
+                    self.wallpaper_buttons.append((button, wp))
+                self.wallpaper_loaded = True
+            search_term = (
+                filter_text[11:].strip().lower()
+                if filter_text.startswith(">wallpaper ")
+                else ""
             )
-            self.list_box.append(button)
-            self.current_apps = []  # No apps
-        elif filter_text.startswith(">"):
-            # Command mode
-            command = filter_text[1:].strip()
-            if not command:
-                # Show all available commands
-                for cmd_name in CUSTOM_LAUNCHERS:
-                    button = Gtk.Button(label=f">{cmd_name}")
-                    button.connect("clicked", self.on_command_selected, cmd_name)
-                    apply_styles(
-                        button,
-                        """
-                        button {
-                            background: #3c3836;
-                            color: #ebdbb2;
-                            border: none;
-                            border-radius: 3px;
-                            padding: 10px;
-                            font-size: 14px;
-                            font-family: Iosevka;
-                        }
-                        button:hover {
-                            background: #504945;
-                        }
-                    """,
-                    )
-                    self.list_box.append(button)
-                self.current_apps = []  # No apps
-            elif command in CUSTOM_LAUNCHERS:
-                launcher = CUSTOM_LAUNCHERS[command]
-                if isinstance(launcher, str):
-                    # Legacy app name
-                    for app in self.apps:
-                        if launcher.lower() in app["name"].lower():
-                            button = Gtk.Button(label=f"Launch: {app['name']}")
-                            button.connect("clicked", self.on_app_clicked, app)
-                            self.current_apps = [app]  # For enter key
-                            break
-                    else:
-                        button = Gtk.Button(label=f"Run: {launcher}")
-                        button.connect("clicked", self.on_command_clicked, launcher)
-                        self.current_apps = []  # No apps
-                else:
-                    # Dict type
-                    button = Gtk.Button(label=f"Launch: {command}")
-                    button.connect("clicked", self.on_custom_launcher_clicked, command)
-                    self.current_apps = []  # No apps
-                apply_styles(
-                    button,
-                    """
-                    button {
-                        background: #3c3836;
-                        color: #ebdbb2;
-                        border: none;
-                        border-radius: 3px;
-                        padding: 10px;
-                        font-size: 14px;
-                        font-family: Iosevka;
-                    }
-                    button:hover {
-                        background: #504945;
-                    }
-                """,
+            matching = [
+                (btn, wp)
+                for btn, wp in self.wallpaper_buttons
+                if not search_term or search_term in wp.lower()
+            ]
+            if not matching:
+                msg = (
+                    "No wallpapers found"
+                    if not search_term
+                    else f"No wallpapers match '{search_term}'"
                 )
+                metadata = METADATA.get(msg, "")
+                button = self.create_button_with_metadata(msg, metadata)
                 self.list_box.append(button)
             else:
-                matching = [cmd for cmd in CUSTOM_LAUNCHERS if cmd.startswith(command)]
-                if matching:
-                    for cmd in matching:
-                        button = Gtk.Button(label=f">{cmd}")
-                        button.connect("clicked", self.on_command_selected, cmd)
-                        apply_styles(
-                            button,
-                            """
-                            button {
-                                background: #3c3836;
-                                color: #ebdbb2;
-                                border: none;
-                                border-radius: 3px;
-                                padding: 10px;
-                                font-size: 14px;
-                                font-family: Iosevka;
-                            }
-                            button:hover {
-                                background: #504945;
-                            }
-                        """,
-                        )
-                        self.list_box.append(button)
-                    self.current_apps = []  # No apps
-                else:
-                    # Unknown command, run as shell command
-                    button = Gtk.Button(label=f"Run: {command}")
-                    button.connect("clicked", self.on_command_clicked, command)
-                    apply_styles(
-                        button,
-                        """
-                        button {
-                            background: #3c3836;
-                            color: #ebdbb2;
-                            border: none;
-                            border-radius: 3px;
-                            padding: 10px;
-                            font-size: 14px;
-                            font-family: Iosevka;
-                        }
-                        button:hover {
-                            background: #504945;
-                        }
-                    """,
-                    )
-                    self.list_box.append(button)
-                    self.current_apps = []  # No apps
+                for btn, _ in matching:
+                    self.list_box.append(btn)
+        self.current_apps = []
+
+    def populate_timer_mode(self, time_str):
+        if time_str:
+            seconds = parse_time(time_str)
+            if seconds is not None:
+                label_text = f"Set timer for {time_str}"
+                metadata = METADATA.get("timer", "")
+                button = self.create_button_with_metadata(label_text, metadata)
+                button.connect("clicked", self.on_timer_clicked, time_str)
+            else:
+                label_text = "Invalid time format (e.g., 5m)"
+                metadata = METADATA.get("timer", "")
+                button = self.create_button_with_metadata(label_text, metadata)
         else:
-            # App mode
+            label_text = "Usage: >timer 5m"
+            metadata = METADATA.get(label_text, "")
+            button = self.create_button_with_metadata(label_text, metadata)
+        self.list_box.append(button)
+        self.current_apps = []
+
+    def populate_command_mode(self, command):
+        if not command:
+            for cmd_name in CUSTOM_LAUNCHERS:
+                metadata = METADATA.get(cmd_name, "")
+                button = self.create_button_with_metadata(f">{cmd_name}", metadata)
+                button.connect("clicked", self.on_command_selected, cmd_name)
+                self.list_box.append(button)
             self.current_apps = []
-            for app in self.apps:
-                if filter_text.lower() in app["name"].lower():
-                    self.current_apps.append(app)
-                    button = Gtk.Button(label=app["name"])
-                    button.connect("clicked", self.on_app_clicked, app)
-                    apply_styles(
-                        button,
-                        """
-                        button {
-                            background: #3c3836;
-                            color: #ebdbb2;
-                            border: none;
-                            border-radius: 3px;
-                            padding: 10px;
-                            font-size: 14px;
-                            font-family: Iosevka;
-                        }
-                        button:hover {
-                            background: #504945;
-                        }
-                    """,
-                    )
+        elif command in CUSTOM_LAUNCHERS:
+            launcher = CUSTOM_LAUNCHERS[command]
+            if isinstance(launcher, str):
+                for app in self.apps:
+                    if launcher.lower() in app["name"].lower():
+                        metadata = METADATA.get(app["name"], "")
+                        button = self.create_button_with_metadata(
+                            f"Launch: {app['name']}", metadata
+                        )
+                        button.connect("clicked", self.on_app_clicked, app)
+                        self.current_apps = [app]
+                        break
+                else:
+                    button = self.create_button_with_metadata(f"Run: {launcher}", "")
+                    button.connect("clicked", self.on_command_clicked, launcher)
+                    self.current_apps = []
+            else:
+                metadata = METADATA.get(command, "")
+                button = self.create_button_with_metadata(
+                    f"Launch: {command}", metadata
+                )
+                button.connect("clicked", self.on_custom_launcher_clicked, command)
+                self.current_apps = []
+            self.apply_button_style(button)
+            self.list_box.append(button)
+        else:
+            matching = [cmd for cmd in CUSTOM_LAUNCHERS if cmd.startswith(command)]
+            if matching:
+                for cmd in matching:
+                    metadata = METADATA.get(cmd, "")
+                    button = self.create_button_with_metadata(f">{cmd}", metadata)
+                    button.connect("clicked", self.on_command_selected, cmd)
                     self.list_box.append(button)
+                self.current_apps = []
+            else:
+                button = self.create_button_with_metadata(f"Run: {command}", "")
+                button.connect("clicked", self.on_command_clicked, command)
+                self.list_box.append(button)
+                self.current_apps = []
+
+    def populate_app_mode(self, filter_text):
+        self.current_apps = []
+        for app in self.apps:
+            if not filter_text or fuzzy_match(filter_text, app["name"]):
+                self.current_apps.append(app)
+                metadata = METADATA.get(app["name"], "")
+                button = self.create_button_with_metadata(app["name"], metadata)
+                button.connect("clicked", self.on_app_clicked, app)
+                self.list_box.append(button)
+
+    def populate_apps(self, filter_text=""):
+        while self.list_box.get_first_child():
+            self.list_box.remove(self.list_box.get_first_child())
+
+        if filter_text.startswith(">calc "):
+            expr = filter_text[6:].strip()
+            self.populate_calc_mode(expr)
+        elif filter_text.startswith(">bookmark"):
+            self.populate_bookmark_mode()
+        elif filter_text.startswith(">bluetooth"):
+            self.populate_bluetooth_mode()
+        elif filter_text.startswith(">monitor"):
+            self.populate_monitor_mode()
+        elif filter_text.startswith(">wallpaper"):
+            self.populate_wallpaper_mode(filter_text)
+        elif filter_text.startswith(">timer"):
+            time_str = filter_text[6:].strip()
+            self.populate_timer_mode(time_str)
+        elif filter_text.startswith(">"):
+            command = filter_text[1:].strip()
+            self.populate_command_mode(command)
+        else:
+            self.populate_app_mode(filter_text)
 
     def on_search_changed(self, entry):
         self.selected_row = None
@@ -738,6 +639,7 @@ class Launcher(Gtk.ApplicationWindow):
         elif self.current_apps:
             self.launch_app(self.current_apps[0])
 
+    # App methods
     def launch_app(self, app):
         try:
             subprocess.Popen([app["exec"]], shell=False)
@@ -751,6 +653,7 @@ class Launcher(Gtk.ApplicationWindow):
     def on_command_clicked(self, button, command):
         self.run_command(command)
 
+    # Calculator methods
     def on_result_clicked(self, button, result):
         # Copy result to clipboard
         try:
@@ -766,6 +669,7 @@ class Launcher(Gtk.ApplicationWindow):
                 print(f"Failed to copy to clipboard: {result}")
         self.hide()
 
+    # Bookmark methods
     def on_bookmark_clicked(self, button, bookmark):
         # Open bookmark in browser
         webbrowser.open(bookmark)
@@ -777,6 +681,7 @@ class Launcher(Gtk.ApplicationWindow):
         # Could implement dialogs here for add/remove
         self.hide()
 
+    # Bluetooth methods
     def on_bluetooth_clicked(self, button, item):
         if item.startswith("Power:"):
             bluetooth_toggle_power()
@@ -799,6 +704,16 @@ class Launcher(Gtk.ApplicationWindow):
         self.selected_row = None
         self.populate_apps(">bluetooth")
 
+    # Monitor methods
+    def on_monitor_clicked(self, button, item):
+        # Extract monitor name from "NAME: status"
+        name = item.split(":")[0].strip()
+        toggle_monitor(name)
+        # Refresh the menu by re-populating
+        self.selected_row = None
+        self.populate_apps(">monitor")
+
+    # Wallpaper methods
     def on_wallpaper_clicked(self, button, wp):
         self.set_wallpaper(wp)
         self.hide()
@@ -849,6 +764,7 @@ class Launcher(Gtk.ApplicationWindow):
         # Fallback to random
         self.on_wallpaper_random(button)
 
+    # Timer methods
     def on_timer_clicked(self, button, time_str):
         self.start_timer(time_str)
         self.hide()
@@ -890,6 +806,7 @@ class Launcher(Gtk.ApplicationWindow):
                 pass
             subprocess.Popen([walset, wp_path])
 
+    # Navigation methods
     def select_next(self):
         if self.selected_row:
             next_row = self.selected_row.get_next_sibling()
@@ -941,9 +858,17 @@ class Launcher(Gtk.ApplicationWindow):
         if handle_custom_launcher(command, self.apps):
             self.hide()
 
+    # Command methods
     def on_command_selected(self, button, command):
         # Set the search entry to >command and trigger activate
-        if command in ["calc", "bookmark", "bluetooth", "wallpaper", "timer"]:
+        if command in [
+            "calc",
+            "bookmark",
+            "bluetooth",
+            "wallpaper",
+            "timer",
+            "monitor",
+        ]:
             self.search_entry.set_text(f">{command} ")
         else:
             self.search_entry.set_text(f">{command}")
@@ -972,7 +897,13 @@ class Launcher(Gtk.ApplicationWindow):
                     # Partial command, find matching
                     for cmd in CUSTOM_LAUNCHERS:
                         if cmd.startswith(command):
-                            if cmd in ["calc", "bookmark", "bluetooth", "timer"]:
+                            if cmd in [
+                                "calc",
+                                "bookmark",
+                                "bluetooth",
+                                "timer",
+                                "monitor",
+                            ]:
                                 self.search_entry.set_text(f">{cmd} ")
                             else:
                                 self.search_entry.set_text(f">{cmd}")
@@ -998,6 +929,7 @@ class Launcher(Gtk.ApplicationWindow):
             return True
         return False
 
+    # Window methods
     def on_map(self, widget):
         self.search_entry.grab_focus()
 
