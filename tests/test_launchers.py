@@ -10,31 +10,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import the modules directly
 import importlib.util
 
-# Load calc_launcher
-calc_launcher_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "calc_launcher.py"
-)
-calc_launcher_spec = importlib.util.spec_from_file_location(
-    "calc_launcher", calc_launcher_path
-)
-if calc_launcher_spec and calc_launcher_spec.loader:
-    calc_launcher = importlib.util.module_from_spec(calc_launcher_spec)
-    calc_launcher_spec.loader.exec_module(calc_launcher)
-else:
-    raise ImportError("Could not load calc_launcher module")
-
-# Load bluetooth_launcher
-bluetooth_launcher_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bluetooth_launcher.py"
-)
-bluetooth_launcher_spec = importlib.util.spec_from_file_location(
-    "bluetooth_launcher", bluetooth_launcher_path
-)
-if bluetooth_launcher_spec and bluetooth_launcher_spec.loader:
-    bluetooth_launcher = importlib.util.module_from_spec(bluetooth_launcher_spec)
-    bluetooth_launcher_spec.loader.exec_module(bluetooth_launcher)
-else:
-    raise ImportError("Could not load bluetooth_launcher module")
+# Import launchers
+from launchers import calc_launcher
+import launchers.bluetooth_launcher as bluetooth_launcher
 
 
 class TestCalcLauncher:
@@ -54,8 +32,8 @@ class TestCalcLauncher:
 
         self.calc_launcher = calc_launcher.CalcLauncher(self.mock_launcher)
 
-    @patch("calc_launcher.sanitize_expr")
-    @patch("calc_launcher.evaluate_calculator")
+    @patch("launchers.calc_launcher.sanitize_expr")
+    @patch("launchers.calc_launcher.evaluate_calculator")
     def test_populate_success(self, mock_evaluate, mock_sanitize):
         """Test successful calculation population"""
         mock_sanitize.return_value = "2+2"
@@ -69,7 +47,7 @@ class TestCalcLauncher:
         mock_sanitize.assert_called_once_with("2+2")
         mock_evaluate.assert_called_once_with("2+2")
         self.mock_launcher.create_button_with_metadata.assert_called_once_with(
-            "Result: 4.0", ""
+            "Result: 4.0", "", "4.0"
         )
         mock_button.connect.assert_called_once_with(
             "clicked", self.calc_launcher.on_result_clicked, "4.0"
@@ -77,8 +55,8 @@ class TestCalcLauncher:
         self.mock_launcher.list_box.append.assert_called_once_with(mock_button)
         assert self.mock_launcher.current_apps == []
 
-    @patch("calc_launcher.sanitize_expr")
-    @patch("calc_launcher.evaluate_calculator")
+    @patch("launchers.calc_launcher.sanitize_expr")
+    @patch("launchers.calc_launcher.evaluate_calculator")
     def test_populate_error(self, mock_evaluate, mock_sanitize):
         """Test error handling in calculation population"""
         mock_sanitize.return_value = "invalid"

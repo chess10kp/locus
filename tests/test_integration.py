@@ -10,16 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import the modules directly
 import importlib.util
 
-# Load status_bar
-status_bar_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "status_bar.py"
-)
-status_bar_spec = importlib.util.spec_from_file_location("status_bar", status_bar_path)
-if status_bar_spec and status_bar_spec.loader:
-    status_bar = importlib.util.module_from_spec(status_bar_spec)
-    status_bar_spec.loader.exec_module(status_bar)
-else:
-    raise ImportError("Could not load status_bar module")
+# Import status_bar from the core module
+from core import status_bar
 
 
 class TestStatusBarIntegration:

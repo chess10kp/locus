@@ -7,8 +7,8 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from monitor import get_monitors, toggle_monitor
-from hooks import LauncherHook
+from utils import get_monitors, toggle_monitor
+from core.hooks import LauncherHook
 
 
 class MonitorHook(LauncherHook):

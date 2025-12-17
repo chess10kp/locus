@@ -1,7 +1,14 @@
 import subprocess
 
+import os
+
 CITY: str = "detroit"
 APPNAME = "locus_bar"
+
+# Paths
+MUSIC_DIR = os.path.expanduser("~/Music")
+WALLPAPER_DIR = os.path.expanduser("~/Pictures/wp/")
+SOCKET_PATH = "/tmp/locus_socket"
 
 
 def todo_capture():
@@ -13,6 +20,21 @@ def todo_capture():
         return
     # Open org-capture with todo template
     subprocess.Popen(["emacsclient", "-c", "-e", '(org-capture nil "t")'])
+
+
+# Bar Layout Configuration
+# Available modules:
+# - launcher: Application launcher button
+# - workspaces: Workspace indicators
+# - binding_mode: Current Sway binding mode
+# - emacs_clock: Emacs org-mode clock
+# - time: Current time
+# - battery: Battery status
+# - custom_message: Custom status messages via IPC
+BAR_LAYOUT = {
+    "left": ["launcher", "workspaces", "binding_mode", "emacs_clock"],
+    "right": ["time", "battery", "custom_message"],
+}
 
 
 # Custom launchers configuration
@@ -45,6 +67,7 @@ CUSTOM_LAUNCHERS = {
     "hibernate": {"type": "command", "cmd": "systemctl hibernate"},
     "logout": {"type": "command", "cmd": "kill -9 -1"},
     "lock": {"type": "command", "cmd": "betterlockscreen -l || i3lock || swaylock"},
+    "music": {"type": "builtin", "handler": "music"},
 }
 
 # Add default metadata for built-in launchers
@@ -64,6 +87,7 @@ METADATA.update(
         "hibernate": "Hibernate",
         "logout": "Logout",
         "lock": "Lock screen",
+        "music": "Music player",
     }
 )
 

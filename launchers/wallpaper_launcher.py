@@ -15,7 +15,7 @@ import subprocess
 import hashlib
 from pathlib import Path
 from gi.repository import GdkPixbuf, Gtk
-from hooks import LauncherHook
+from core.hooks import LauncherHook
 
 
 class WallpaperHook(LauncherHook):

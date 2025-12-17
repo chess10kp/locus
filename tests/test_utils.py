@@ -7,19 +7,8 @@ import os
 # Add the parent directory to the path so we can import modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Import the modules directly
-import importlib.util
-
-# Load utils
-utils_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils.py"
-)
-utils_spec = importlib.util.spec_from_file_location("utils", utils_path)
-if utils_spec and utils_spec.loader:
-    utils = importlib.util.module_from_spec(utils_spec)
-    utils_spec.loader.exec_module(utils)
-else:
-    raise ImportError("Could not load utils module")
+# Import the utils module
+import utils.utils as utils
 
 
 class TestUtils:

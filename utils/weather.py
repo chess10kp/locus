@@ -1,9 +1,12 @@
 # pyright: reportMissingImports=false
-import python_weather  # pyright: ignore
-from exceptions import WeatherUnavailableException
+try:
+    import python_weather  # pyright: ignore
+except ImportError:
+    python_weather = None
+from core.exceptions import WeatherUnavailableException
 import asyncio
 import os
-from config import CITY
+from core.config import CITY
 
 
 async def get_weather():

@@ -8,8 +8,8 @@
 # ruff: ignore
 
 import webbrowser
-from bookmarks import get_bookmarks
-from hooks import LauncherHook
+from utils import get_bookmarks
+from core.hooks import LauncherHook
 
 
 class BookmarkHook(LauncherHook):

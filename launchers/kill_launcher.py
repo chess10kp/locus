@@ -9,7 +9,7 @@
 
 import subprocess
 import os
-from hooks import LauncherHook
+from core.hooks import LauncherHook
 from typing import Any, Optional
 
 

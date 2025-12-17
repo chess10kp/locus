@@ -1,7 +1,7 @@
 [project]
-name = "dashboard"
+name = "locus"
 version = "0.1.0"
-description = "Add your description here"
+description = "A GTK4-based application launcher with status bar"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -14,6 +14,9 @@ dependencies = [
     "typing-extensions>=4.14.1",
     "i3ipc>=2.2.1",
 ]
+
+[project.scripts]
+locus = "main:main"
 
 [dependency-groups]
 test = [

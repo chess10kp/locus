@@ -8,7 +8,7 @@
 # ruff: ignore
 
 import re
-from bluetooth import (
+from utils import (
     bluetooth_power_on,
     bluetooth_scan_on,
     bluetooth_pairable_on,
@@ -21,7 +21,7 @@ from bluetooth import (
     bluetooth_toggle_discoverable,
     bluetooth_toggle_connection,
 )
-from hooks import LauncherHook
+from core.hooks import LauncherHook
 
 
 class BluetoothHook(LauncherHook):

@@ -14,15 +14,9 @@ import re
 import os
 import glob
 from utils import apply_styles, load_desktop_apps, VBox
-from config import CUSTOM_LAUNCHERS, METADATA
-from calculator import sanitize_expr, evaluate_calculator
-from calc_launcher import CalcLauncher
-from bookmark_launcher import BookmarkLauncher
-from bluetooth_launcher import BluetoothLauncher
-from monitor_launcher import MonitorLauncher
-from wallpaper_launcher import WallpaperLauncher
-from timer_launcher import TimerLauncher
-from kill_launcher import KillLauncher
+from .config import CUSTOM_LAUNCHERS, METADATA, WALLPAPER_DIR
+from utils import sanitize_expr, evaluate_calculator
+
 import webbrowser
 
 
@@ -98,6 +92,7 @@ def handle_custom_launcher(command, apps):
                 "wallpaper",
                 "timer",
                 "monitor",
+                "music",
             ]:
                 return False
     return False
@@ -180,9 +175,20 @@ class Launcher(Gtk.ApplicationWindow):
         self.parse_time = parse_time
 
         # Initialize hook registry before creating launchers
-        from hooks import HookRegistry
+        from .hooks import HookRegistry
 
         self.hook_registry = HookRegistry()
+
+        from launchers import (
+            CalcLauncher,
+            BookmarkLauncher,
+            BluetoothLauncher,
+            MonitorLauncher,
+            WallpaperLauncher,
+            TimerLauncher,
+            KillLauncher,
+            MusicLauncher,
+        )
 
         self.calc_launcher = CalcLauncher(self)
         self.bookmark_launcher = BookmarkLauncher(self)
@@ -191,6 +197,7 @@ class Launcher(Gtk.ApplicationWindow):
         self.wallpaper_launcher = WallpaperLauncher(self)
         self.timer_launcher = TimerLauncher(self)
         self.kill_launcher = KillLauncher(self)
+        self.music_launcher = MusicLauncher(self)
 
         self.wallpaper_buttons = []
         self.wallpaper_loaded = False
@@ -417,6 +424,9 @@ class Launcher(Gtk.ApplicationWindow):
         elif filter_text.startswith(">kill"):
             self.reset_launcher_size()
             self.kill_launcher.populate()
+        elif filter_text.startswith(">music"):
+            self.reset_launcher_size()
+            self.music_launcher.populate(filter_text[6:].strip())
         elif filter_text.startswith(">"):
             self.reset_launcher_size()
             command = filter_text[1:].strip()
@@ -454,7 +464,7 @@ class Launcher(Gtk.ApplicationWindow):
                     self.calc_launcher.on_result_clicked(None, str(result))
         elif text == ">wallpaper":
             # Set the first wallpaper
-            wp_dir = os.path.expanduser("~/Pictures/wp/")
+            wp_dir = WALLPAPER_DIR
             wallpapers = glob.glob(os.path.join(wp_dir, "*"))
             wallpapers = [os.path.basename(w) for w in wallpapers if os.path.isfile(w)]
             if wallpapers:
@@ -579,6 +589,7 @@ class Launcher(Gtk.ApplicationWindow):
             "timer",
             "monitor",
             "kill",
+            "music",
         ]:
             self.search_entry.set_text(f">{command} ")
         else:
@@ -614,6 +625,7 @@ class Launcher(Gtk.ApplicationWindow):
                     "timer",
                     "monitor",
                     "kill",
+                    "music",
                 ]
                 all_commands = builtin + list(CUSTOM_LAUNCHERS.keys())
                 if not command:
@@ -663,7 +675,7 @@ class Launcher(Gtk.ApplicationWindow):
         if current_margin < target:
             new_margin = min(target, current_margin + 100)
             GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, new_margin)
-            GLib.timeout_add(10, self.animate_slide_in)
+            GLib.timeout_add(20, self.animate_slide_in)
         else:
             self.search_entry.grab_focus()
         return False

@@ -15,7 +15,9 @@ import setproctitle  # pyright: ignore
 import subprocess
 import argparse
 
-from config import APPNAME
+# Add current directory to path for absolute imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from core.config import APPNAME
 import gi
 
 from ctypes import CDLL
@@ -28,7 +30,7 @@ gi.require_version("Gtk4LayerShell", "1.0")
 from gi.repository import Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # noqa: E402  # pyright: ignore
 
 from utils import load_desktop_apps  # noqa: E402
-from status_bar import StatusBar  # noqa: E402
+from core.status_bar import StatusBar  # noqa: E402
 
 setproctitle.setproctitle(APPNAME)
 
@@ -132,3 +134,13 @@ monitors = display.get_monitors()
 app.run(None)
 
 app.connect("shutdown", lambda *_: sys.exit(0))
+
+
+def main():
+    """Main entry point for the locus application."""
+    kill_previous_process()
+    app.run(None)
+
+
+if __name__ == "__main__":
+    main()

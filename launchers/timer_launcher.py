@@ -9,7 +9,7 @@
 
 import subprocess
 from gi.repository import GLib
-from hooks import LauncherHook
+from core.hooks import LauncherHook
 from typing import Any, Optional
 from utils import send_status_message
 

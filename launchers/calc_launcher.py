@@ -8,8 +8,8 @@
 # ruff: ignore
 
 import subprocess
-from calculator import sanitize_expr, evaluate_calculator
-from hooks import LauncherHook
+from utils import sanitize_expr, evaluate_calculator
+from core.hooks import LauncherHook
 from typing import Any, Optional
 
 
