@@ -10,6 +10,9 @@ MUSIC_DIR = os.path.expanduser("~/Music")
 WALLPAPER_DIR = os.path.expanduser("~/Pictures/wp/")
 SOCKET_PATH = "/tmp/locus_socket"
 
+# Lock screen configuration
+LOCK_PASSWORD = "password123"  # Default password - change this for security
+
 
 def todo_capture():
     """Open Emacs org-capture for todo."""
@@ -32,8 +35,8 @@ def todo_capture():
 # - battery: Battery status
 # - custom_message: Custom status messages via IPC
 BAR_LAYOUT = {
-    "left": ["workspaces", "binding_mode", "emacs_clock"],
-    "middle": ["launcher"],
+    "left": ["launcher", "binding_mode", "emacs_clock"],
+    "middle": ["workspaces"],
     "right": ["time", "battery", "custom_message"],
 }
 
@@ -67,7 +70,7 @@ CUSTOM_LAUNCHERS = {
     "suspend": {"type": "command", "cmd": "systemctl suspend"},
     "hibernate": {"type": "command", "cmd": "systemctl hibernate"},
     "logout": {"type": "command", "cmd": "kill -9 -1"},
-    "lock": {"type": "command", "cmd": "betterlockscreen -l || i3lock || swaylock"},
+    "lock": {"type": "builtin", "handler": "lock"},
     "music": {"type": "builtin", "handler": "music"},
 }
 

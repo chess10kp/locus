@@ -38,7 +38,7 @@ class BookmarkHook(LauncherHook):
 
     def on_enter(self, launcher, text):
         """Handle enter key for bookmark operations."""
-        # For now, no specific enter handling for bookmarks
+        webbrowser.open(text)
         return False
 
     def on_tab(self, launcher, text):

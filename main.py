@@ -77,7 +77,8 @@ if args.launcher:
     for app in apps:
         if input_text.lower() in app["name"].lower():
             try:
-                subprocess.Popen([app["exec"]], shell=False)
+                print(app)
+                subprocess.Popen([app["exec"].strip('"').strip("'")], shell=False)
                 sys.exit(0)
             except Exception as e:
                 print(f"Failed to launch {app['name']}: {e}")

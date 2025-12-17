@@ -14,7 +14,7 @@ import re
 import os
 import glob
 from utils import apply_styles, load_desktop_apps, VBox
-from .config import CUSTOM_LAUNCHERS, METADATA, WALLPAPER_DIR
+from .config import CUSTOM_LAUNCHERS, METADATA, WALLPAPER_DIR, LOCK_PASSWORD
 from utils import sanitize_expr, evaluate_calculator
 
 import webbrowser
@@ -93,6 +93,7 @@ def handle_custom_launcher(command, apps):
                 "timer",
                 "monitor",
                 "music",
+                "lock",
             ]:
                 return False
     return False
@@ -190,6 +191,9 @@ class Launcher(Gtk.ApplicationWindow):
             MusicLauncher,
         )
 
+        # Import lock launcher separately since it's not part of the main package
+        from launchers.lock_launcher import LockScreen
+
         self.calc_launcher = CalcLauncher(self)
         self.bookmark_launcher = BookmarkLauncher(self)
         self.bluetooth_launcher = BluetoothLauncher(self)
@@ -199,7 +203,8 @@ class Launcher(Gtk.ApplicationWindow):
         self.kill_launcher = KillLauncher(self)
         self.music_launcher = MusicLauncher(self)
 
-        self.wallpaper_buttons = []
+        # Lock screen instance (created when needed)
+        self.lock_screen = None
         self.wallpaper_loaded = False
         self.timer_remaining = 0
         self.timer_update_id = 0
@@ -332,6 +337,8 @@ class Launcher(Gtk.ApplicationWindow):
             # Try hooks first
             if not self.hook_registry.execute_select_hooks(self, hook_data):
                 # Fall back to default behavior if no hook handles it
+                if not self.default_button_handler:
+                    raise Exception("No handler defined for ", hook_data)
                 self.default_button_handler(button, hook_data)
 
         button.connect("clicked", on_clicked_wrapper)
@@ -427,6 +434,9 @@ class Launcher(Gtk.ApplicationWindow):
         elif filter_text.startswith(">music"):
             self.reset_launcher_size()
             self.music_launcher.populate(filter_text[6:].strip())
+        elif filter_text.startswith(">lock"):
+            self.reset_launcher_size()
+            self.show_lock_screen()
         elif filter_text.startswith(">"):
             self.reset_launcher_size()
             command = filter_text[1:].strip()
@@ -481,6 +491,9 @@ class Launcher(Gtk.ApplicationWindow):
             time_str = text[6:].strip()
             self.timer_launcher.start_timer(time_str)
             self.hide()
+        elif text == ">lock":
+            self.show_lock_screen()
+            self.hide()
         elif text.startswith(">"):
             command = text[1:].strip()
             if not handle_custom_launcher(command, self.apps):
@@ -495,6 +508,15 @@ class Launcher(Gtk.ApplicationWindow):
     # App methods
     def launch_app(self, app):
         try:
+            app["exec"] = (
+                app["exec"]
+                .replace("%U", "")
+                .replace("%u", "")
+                .replace("%F", "")
+                .replace("%f", "")
+                .strip("'")
+                .strip("'")
+            )
             subprocess.Popen([app["exec"]], shell=False)
         except Exception as e:
             print(f"Failed to launch {app['name']}: {e}")
@@ -592,6 +614,8 @@ class Launcher(Gtk.ApplicationWindow):
             "music",
         ]:
             self.search_entry.set_text(f">{command} ")
+        elif command == "lock":
+            self.search_entry.set_text(f">{command}")
         else:
             self.search_entry.set_text(f">{command}")
         self.on_entry_activate(self.search_entry)
@@ -626,6 +650,7 @@ class Launcher(Gtk.ApplicationWindow):
                     "monitor",
                     "kill",
                     "music",
+                    "lock",
                 ]
                 all_commands = builtin + list(CUSTOM_LAUNCHERS.keys())
                 if not command:
@@ -680,8 +705,27 @@ class Launcher(Gtk.ApplicationWindow):
             self.search_entry.grab_focus()
         return False
 
-    def show_launcher(self):
+    def show_launcher(self, center_x=None):
         self.search_entry.set_text("")
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, -400)
+
+        if center_x is not None:
+            # Center horizontally by disabling left/right anchors
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
+            GtkLayerShell.set_margin(
+                self, GtkLayerShell.Edge.LEFT, center_x - self.get_width() // 2
+            )
+        else:
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, False)
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
+
         self.present()
         self.animate_slide_in()
+
+    def show_lock_screen(self):
+        """Show the lock screen."""
+        if self.lock_screen is None:
+            self.lock_screen = LockScreen(password=LOCK_PASSWORD, application=self.get_application())
+        self.lock_screen.lock()

@@ -51,10 +51,17 @@ class MusicHook(LauncherHook):
 
     def on_enter(self, launcher, text: str) -> bool:
         """Handle enter on music commands"""
-        if text.strip() == ">music":
-            # Just refresh/populate default view
-            self.music_launcher.populate("")
-            return True
+        if text.startswith(">music"):
+            cmd = text[6:].strip()
+            if cmd in ["clear", "pause", "play"]:
+                self.music_launcher.control(cmd)
+                launcher.hide()
+                return True
+
+            if cmd == "":
+                # Just refresh/populate default view
+                self.music_launcher.populate("")
+                return True
         return False
 
     def on_tab(self, launcher, text: str) -> Optional[str]:
@@ -294,6 +301,10 @@ class MusicLauncher:
     def control(self, command):
         if command == "toggle":
             self._run_mpc(["toggle"])
+        elif command == "play":
+            self._run_mpc(["play"])
+        elif command == "pause":
+            self._run_mpc(["pause"])
         elif command == "next":
             self._run_mpc(["next"])
         elif command == "prev":

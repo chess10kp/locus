@@ -7,7 +7,7 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from gi.repository import GLib, Gtk  # pyright: ignore
+from gi.repository import GLib, Gdk, Gtk  # pyright: ignore
 from typing_extensions import final
 import os
 import subprocess
@@ -59,7 +59,7 @@ class StatusBar(Gtk.ApplicationWindow):
         self.label_style = """
             label {
                 color: #ebdbb2;
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: normal;
                 font-family: Iosevka;
                 margin: 0;
@@ -431,7 +431,21 @@ class StatusBar(Gtk.ApplicationWindow):
             self.custom_message_label.set_text(message)
 
     def on_launcher_clicked(self, button):
-        self.launcher.show_launcher()
+        # Check if launcher is in middle
+        if "launcher" in BAR_LAYOUT.get("middle", []):
+            # Get screen center since middle is centered
+            display = Gdk.Display.get_default()
+            monitor = display.get_primary_monitor()
+            if monitor is None and display.get_n_monitors() > 0:
+                monitor = display.get_monitor(0)
+            if monitor:
+                geometry = monitor.get_geometry()
+                screen_center_x = geometry.x + geometry.width // 2
+                self.launcher.show_launcher(center_x=screen_center_x)
+            else:
+                self.launcher.show_launcher()
+        else:
+            self.launcher.show_launcher()
 
     def start_ipc_server(self):
         """Start Unix socket server for IPC"""
@@ -465,7 +479,9 @@ class StatusBar(Gtk.ApplicationWindow):
                                     try:
                                         subprocess.Popen([app["exec"]], shell=False)
                                     except Exception as e:
-                                        print(f"Failed to launch {app['name']}: {e}")
+                                        print(
+                                            f"Failed to launch {app['name'].strip("'")}: {e}"
+                                        )
                                     break
                             else:
                                 print(f"App '{app_name}' not found")
