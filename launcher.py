@@ -4,34 +4,23 @@
 # pyright: reportAttributeAccessIssue=false
 # pyright: reportUnusedCallResult=false
 # pyright: reportUnknownVariableType=false
-# pyright: basic
+# pyright: reportMissingImports=false
 # ruff: ignore
 
-from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell, GdkPixbuf
+from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # pyright: ignore
 from typing_extensions import final
 import subprocess
-import os
-import glob
-import random
 import re
-from utils import apply_styles, load_desktop_apps, VBox, send_status_message
+from utils import apply_styles, load_desktop_apps, VBox
 from config import CUSTOM_LAUNCHERS, METADATA
 from calculator import sanitize_expr, evaluate_calculator
-from bluetooth import (
-    bluetooth_power_on,
-    bluetooth_scan_on,
-    bluetooth_pairable_on,
-    bluetooth_discoverable_on,
-    bluetooth_get_devices,
-    bluetooth_device_connected,
-    bluetooth_toggle_power,
-    bluetooth_toggle_scan,
-    bluetooth_toggle_pairable,
-    bluetooth_toggle_discoverable,
-    bluetooth_toggle_connection,
-)
-from bookmarks import get_bookmarks
-from monitor import get_monitors, toggle_monitor
+from calc_launcher import CalcLauncher
+from bookmark_launcher import BookmarkLauncher
+from bluetooth_launcher import BluetoothLauncher
+from monitor_launcher import MonitorLauncher
+from wallpaper_launcher import WallpaperLauncher
+from timer_launcher import TimerLauncher
+from kill_launcher import KillLauncher
 import webbrowser
 
 
@@ -71,7 +60,7 @@ def handle_custom_launcher(command, apps):
             if launcher.lower() in app["name"].lower():
                 subprocess.Popen([app["exec"]], shell=False)
                 return True
-        # If not found, run as command
+        # default to running as command
         subprocess.Popen(launcher, shell=True)
         return True
     elif isinstance(launcher, dict):
@@ -100,7 +89,6 @@ def handle_custom_launcher(command, apps):
                 func()
                 return True
         elif launcher_type == "builtin":
-            # Built-in handlers
             if launcher.get("handler") in [
                 "calculator",
                 "bookmark",
@@ -109,7 +97,6 @@ def handle_custom_launcher(command, apps):
                 "timer",
                 "monitor",
             ]:
-                # Handled separately in populate_apps or on_entry_activate
                 return False
     return False
 
@@ -134,7 +121,6 @@ class Popup(Gtk.ApplicationWindow):
         self.entry.connect("activate", self.on_entry_activate)
         self.set_child(self.entry)
 
-        # Layer shell setup
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
@@ -188,6 +174,14 @@ class Launcher(Gtk.ApplicationWindow):
         )
 
         self.apps = load_desktop_apps()
+
+        self.calc_launcher = CalcLauncher(self)
+        self.bookmark_launcher = BookmarkLauncher(self)
+        self.bluetooth_launcher = BluetoothLauncher(self)
+        self.monitor_launcher = MonitorLauncher(self)
+        self.wallpaper_launcher = WallpaperLauncher(self)
+        self.timer_launcher = TimerLauncher(self)
+        self.kill_launcher = KillLauncher(self)
 
         self.wallpaper_buttons = []
         self.wallpaper_loaded = False
@@ -289,7 +283,6 @@ class Launcher(Gtk.ApplicationWindow):
     def create_button_with_metadata(self, main_text, metadata_text=""):
         """Create a button with main text and optional metadata below in smaller font."""
         if metadata_text:
-            # Use markup for metadata below main text
             markup = f"{main_text}\n<span size='smaller' color='#d5c4a1'>{metadata_text}</span>"
             button = Gtk.Button()
             label = Gtk.Label()
@@ -306,177 +299,6 @@ class Launcher(Gtk.ApplicationWindow):
 
         self.apply_button_style(button)
         return button
-
-    def populate_calc_mode(self, expr):
-        sanitized = sanitize_expr(expr)
-        result, error = evaluate_calculator(sanitized)
-        if error:
-            label_text = f"Error: {error}"
-            metadata = METADATA.get(label_text, "")
-            button = self.create_button_with_metadata(label_text, metadata)
-        else:
-            label_text = f"Result: {result}"
-            metadata = METADATA.get(label_text, "")
-            button = self.create_button_with_metadata(label_text, metadata)
-            button.connect("clicked", self.on_result_clicked, result)
-        self.list_box.append(button)
-        self.current_apps = []
-
-    def populate_bookmark_mode(self):
-        bookmarks = get_bookmarks()
-        actions = ["add", "remove", "replace"]
-        all_items = bookmarks + actions
-        for item in all_items:
-            metadata = METADATA.get("bookmark", "") if item in bookmarks else ""
-            button = self.create_button_with_metadata(item, metadata)
-            if item in bookmarks:
-                button.connect("clicked", self.on_bookmark_clicked, item)
-            else:
-                button.connect("clicked", self.on_bookmark_action, item)
-            self.list_box.append(button)
-        self.current_apps = []
-
-    def populate_bluetooth_mode(self):
-        power_status = "Power: on" if bluetooth_power_on() else "Power: off"
-        scan_status = "Scan: on" if bluetooth_scan_on() else "Scan: off"
-        pairable_status = "Pairable: on" if bluetooth_pairable_on() else "Pairable: off"
-        discoverable_status = (
-            "Discoverable: on" if bluetooth_discoverable_on() else "Discoverable: off"
-        )
-        devices = bluetooth_get_devices()
-        device_items = []
-        for mac, name in devices:
-            status = "Connected" if bluetooth_device_connected(mac) else "Disconnected"
-            device_items.append(f"{name}: {status} ({mac})")
-        all_items = [
-            power_status,
-            scan_status,
-            pairable_status,
-            discoverable_status,
-        ] + device_items
-        for item in all_items:
-            metadata = METADATA.get("bluetooth", "")
-            button = self.create_button_with_metadata(item, metadata)
-            button.connect("clicked", self.on_bluetooth_clicked, item)
-            self.list_box.append(button)
-        self.current_apps = []
-
-    def populate_monitor_mode(self):
-        monitors = get_monitors()
-        monitor_items = []
-        for name, status in monitors:
-            monitor_items.append(f"{name}: {status}")
-        for item in monitor_items:
-            metadata = METADATA.get("monitor", "")
-            button = self.create_button_with_metadata(item, metadata)
-            button.connect("clicked", self.on_monitor_clicked, item)
-            self.list_box.append(button)
-        self.current_apps = []
-
-    def populate_wallpaper_mode(self, filter_text):
-        wp_dir = os.path.expanduser("~/Pictures/wp/")
-        if not os.path.exists(wp_dir):
-            label_text = "Wallpaper directory ~/Pictures/wp/ not found"
-            metadata = METADATA.get(label_text, "")
-            button = self.create_button_with_metadata(label_text, metadata)
-            self.list_box.append(button)
-        elif filter_text == ">wallpaper random":
-            metadata = METADATA.get("wallpaper", "")
-            button = self.create_button_with_metadata("Set random wallpaper", metadata)
-            button.connect("clicked", self.on_wallpaper_random)
-            self.list_box.append(button)
-        elif filter_text == ">wallpaper cycle":
-            metadata = METADATA.get("wallpaper", "")
-            button = self.create_button_with_metadata("Cycle wallpaper", metadata)
-            button.connect("clicked", self.on_wallpaper_cycle)
-            self.list_box.append(button)
-        else:
-            if not self.wallpaper_loaded:
-                wallpapers = glob.glob(os.path.join(wp_dir, "*"))
-                wallpapers = [
-                    os.path.basename(w) for w in wallpapers if os.path.isfile(w)
-                ]
-                self.wallpaper_buttons = []
-                for wp in sorted(wallpapers):
-                    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-                    try:
-                        pixbuf = GdkPixbuf.Pixbuf.new_from_file(
-                            os.path.join(wp_dir, wp)
-                        )
-                        aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
-                        scaled_width = 120
-                        scaled_height = int(scaled_width / aspect_ratio)
-                        scaled_buf = pixbuf.scale_simple(
-                            scaled_width, scaled_height, GdkPixbuf.InterpType.BILINEAR
-                        )
-                        image = Gtk.Image.new_from_pixbuf(scaled_buf)
-                    except Exception:
-                        image = Gtk.Image()
-                    metadata = METADATA.get(wp, "")
-                    if metadata:
-                        markup = f"{wp}\n<span size='smaller' color='#d5c4a1'>{metadata}</span>"
-                        label = Gtk.Label()
-                        label.set_markup(markup)
-                        label.set_halign(Gtk.Align.START)
-                        label.set_valign(Gtk.Align.START)
-                        label.set_wrap(True)
-                        label.set_wrap_mode(Gtk.WrapMode.WORD)
-                        box.append(image)
-                        box.append(label)
-                    else:
-                        label = Gtk.Label(label=wp)
-                        label.set_halign(Gtk.Align.START)
-                        box.append(image)
-                        box.append(label)
-                    button = Gtk.Button()
-                    button.set_child(box)
-                    button.get_child().set_halign(Gtk.Align.START)
-                    button.connect("clicked", self.on_wallpaper_clicked, wp)
-                    self.apply_button_style(button)
-                    self.wallpaper_buttons.append((button, wp))
-                self.wallpaper_loaded = True
-            search_term = (
-                filter_text[11:].strip().lower()
-                if filter_text.startswith(">wallpaper ")
-                else ""
-            )
-            matching = [
-                (btn, wp)
-                for btn, wp in self.wallpaper_buttons
-                if not search_term or search_term in wp.lower()
-            ]
-            if not matching:
-                msg = (
-                    "No wallpapers found"
-                    if not search_term
-                    else f"No wallpapers match '{search_term}'"
-                )
-                metadata = METADATA.get(msg, "")
-                button = self.create_button_with_metadata(msg, metadata)
-                self.list_box.append(button)
-            else:
-                for btn, _ in matching:
-                    self.list_box.append(btn)
-        self.current_apps = []
-
-    def populate_timer_mode(self, time_str):
-        if time_str:
-            seconds = parse_time(time_str)
-            if seconds is not None:
-                label_text = f"Set timer for {time_str}"
-                metadata = METADATA.get("timer", "")
-                button = self.create_button_with_metadata(label_text, metadata)
-                button.connect("clicked", self.on_timer_clicked, time_str)
-            else:
-                label_text = "Invalid time format (e.g., 5m)"
-                metadata = METADATA.get("timer", "")
-                button = self.create_button_with_metadata(label_text, metadata)
-        else:
-            label_text = "Usage: >timer 5m"
-            metadata = METADATA.get("timer", "")
-            button = self.create_button_with_metadata(label_text, metadata)
-        self.list_box.append(button)
-        self.current_apps = []
 
     def populate_command_mode(self, command):
         if not command:
@@ -540,20 +362,24 @@ class Launcher(Gtk.ApplicationWindow):
         while self.list_box.get_first_child():
             self.list_box.remove(self.list_box.get_first_child())
 
-        if filter_text.startswith(">calc "):
-            expr = filter_text[6:].strip()
-            self.populate_calc_mode(expr)
+        if filter_text.startswith(">calc") and len(filter_text) > 5:
+            expr = filter_text[5:].strip()
+            if expr:
+                self.calc_launcher.populate(expr)
         elif filter_text.startswith(">bookmark"):
-            self.populate_bookmark_mode()
+            query = filter_text[9:].strip()
+            self.bookmark_launcher.populate(query)
         elif filter_text.startswith(">bluetooth"):
-            self.populate_bluetooth_mode()
+            self.bluetooth_launcher.populate()
         elif filter_text.startswith(">monitor"):
-            self.populate_monitor_mode()
+            self.monitor_launcher.populate()
         elif filter_text.startswith(">wallpaper"):
-            self.populate_wallpaper_mode(filter_text)
+            self.wallpaper_launcher.populate(filter_text)
         elif filter_text.startswith(">timer"):
             time_str = filter_text[6:].strip()
-            self.populate_timer_mode(time_str)
+            self.timer_launcher.populate(time_str)
+        elif filter_text.startswith(">kill"):
+            self.kill_launcher.populate()
         elif filter_text.startswith(">"):
             command = filter_text[1:].strip()
             self.populate_command_mode(command)
@@ -572,37 +398,25 @@ class Launcher(Gtk.ApplicationWindow):
                 self.hide()
                 return
         text = self.search_entry.get_text()
-        if text.startswith(">calc "):
-            expr = text[6:].strip()
-            sanitized = sanitize_expr(expr)
-            result, error = evaluate_calculator(sanitized)
-            if error:
-                print(f"Calculator error: {error}")
-                # Do not hide, let user correct
-            else:
-                # Copy to clipboard
-                result_str = str(result)  # pyright: ignore
-                try:
-                    subprocess.run(["wl-copy", result_str], check=True)
-                except subprocess.CalledProcessError:
-                    try:
-                        subprocess.run(
-                            ["xclip", "-selection", "clipboard"],
-                            input=result_str.encode(),
-                            check=True,
-                        )
-                    except subprocess.CalledProcessError:
-                        print(f"Failed to copy to clipboard: {result_str}")
-                self.hide()
+        if text.startswith(">calc") and len(text) > 5:
+            expr = text[5:].strip()
+            if expr:
+                sanitized = sanitize_expr(expr)
+                result, error = evaluate_calculator(sanitized)
+                if error:
+                    print(f"Calculator error: {error}")
+                    # Do not hide, let user correct
+                else:
+                    self.calc_launcher.on_result_clicked(None, str(result))
         elif text == ">wallpaper random":
-            self.on_wallpaper_random(None)
+            self.wallpaper_launcher.on_wallpaper_random(None)
             self.hide()
         elif text == ">wallpaper cycle":
-            self.on_wallpaper_cycle(None)
+            self.wallpaper_launcher.on_wallpaper_cycle(None)
             self.hide()
         elif text.startswith(">timer "):
             time_str = text[6:].strip()
-            self.start_timer(time_str)
+            self.timer_launcher.start_timer(time_str)
             self.hide()
         elif text.startswith(">"):
             command = text[1:].strip()
@@ -630,186 +444,16 @@ class Launcher(Gtk.ApplicationWindow):
         self.run_command(command)
 
     # Calculator methods
-    def on_result_clicked(self, button, result):
-        # Copy result to clipboard
-        try:
-            subprocess.run(["wl-copy", result], check=True)
-        except subprocess.CalledProcessError:
-            try:
-                subprocess.run(
-                    ["xclip", "-selection", "clipboard"],
-                    input=result.encode(),
-                    check=True,
-                )
-            except subprocess.CalledProcessError:
-                print(f"Failed to copy to clipboard: {result}")
-        self.hide()
 
     # Bookmark methods
-    def on_bookmark_clicked(self, button, bookmark):
-        # Open bookmark in browser
-        webbrowser.open(bookmark)
-        self.hide()
-
-    def on_bookmark_action(self, button, action):
-        # For now, just print or do nothing
-        print(f"Bookmark action: {action}")
-        # Could implement dialogs here for add/remove
-        self.hide()
 
     # Bluetooth methods
-    def on_bluetooth_clicked(self, button, item):
-        if item.startswith("Power:"):
-            bluetooth_toggle_power()
-        elif item.startswith("Scan:"):
-            bluetooth_toggle_scan()
-        elif item.startswith("Pairable:"):
-            bluetooth_toggle_pairable()
-        elif item.startswith("Discoverable:"):
-            bluetooth_toggle_discoverable()
-        else:
-            # Device item
-            # Extract mac from (mac)
-            import re
-
-            match = re.search(r"\(([^)]+)\)", item)
-            if match:
-                mac = match.group(1)
-                bluetooth_toggle_connection(mac)
-        # Refresh the menu by re-populating
-        self.selected_row = None
-        self.populate_apps(">bluetooth")
 
     # Monitor methods
-    def on_monitor_clicked(self, button, item):
-        # Extract monitor name from "NAME: status"
-        name = item.split(":")[0].strip()
-        toggle_monitor(name)
-        # Refresh the menu by re-populating
-        self.selected_row = None
-        self.populate_apps(">monitor")
 
     # Wallpaper methods
-    def on_wallpaper_clicked(self, button, wp):
-        self.set_wallpaper(wp)
-        self.hide()
-
-    def on_wallpaper_random(self, button):
-        wp_dir = os.path.expanduser("~/Pictures/wp/")
-        wallpapers = glob.glob(os.path.join(wp_dir, "*"))
-        wallpapers = [w for w in wallpapers if os.path.isfile(w)]
-        if wallpapers:
-            wp_path = random.choice(wallpapers)
-            wp = os.path.basename(wp_path)
-            self.set_wallpaper(wp)
-        self.hide()
-
-    def on_wallpaper_cycle(self, button):
-        wp_dir = os.path.expanduser("~/Pictures/wp/")
-        default_link = os.path.join(wp_dir, "defaultwp.jpg")
-        if os.path.islink(default_link):
-            current = os.readlink(default_link)
-            current_base = os.path.basename(current)
-            match = re.match(r"(\D+)(\d+)\.(jpg|png)", current_base)
-            if match:
-                style = match.group(1)
-                num = int(match.group(2))
-                ext = match.group(3)
-                num += 1
-                next_file = f"{style}{num}.{ext}"
-                next_path = os.path.join(wp_dir, next_file)
-                if os.path.exists(next_path):
-                    self.set_wallpaper(next_file)
-                    self.hide()
-                    return
-                # Wrap to 1
-                first_file = f"{style}1.{ext}"
-                first_path = os.path.join(wp_dir, first_file)
-                if os.path.exists(first_path):
-                    self.set_wallpaper(first_file)
-                    self.hide()
-                    return
-                # Try other ext
-                alt_ext = "png" if ext == "jpg" else "jpg"
-                alt_file = f"{style}1.{alt_ext}"
-                alt_path = os.path.join(wp_dir, alt_file)
-                if os.path.exists(alt_path):
-                    self.set_wallpaper(alt_file)
-                    self.hide()
-                    return
-        # Fallback to random
-        self.on_wallpaper_random(button)
 
     # Timer methods
-    def on_timer_clicked(self, button, time_str):
-        self.start_timer(time_str)
-        self.hide()
-
-    def start_timer(self, time_str):
-        seconds = parse_time(time_str)
-        if seconds is not None:
-            # Cancel any existing timer
-            if self.timer_update_id > 0:
-                GLib.source_remove(self.timer_update_id)
-                self.timer_update_id = 0
-            self.timer_remaining = seconds
-            # Update status bar immediately with initial time
-            self.update_timer_display()
-            # Set up periodic updates every second
-            self.timer_update_id = GLib.timeout_add_seconds(1, self.update_timer_status)
-            # Set the final timeout
-            GLib.timeout_add_seconds(seconds, self.on_timer_done)
-            subprocess.run(["notify-send", "-a", "Timer", f"set for {time_str}"])
-        else:
-            subprocess.run(["notify-send", "Invalid time format"])
-
-    def update_timer_display(self):
-        """Update the timer display without decrementing the counter."""
-        minutes, seconds = divmod(self.timer_remaining, 60)
-        time_str = f"{minutes:02d}:{seconds:02d}"
-        send_status_message(f"Timer: {time_str}")
-
-    def update_timer_status(self):
-        if self.timer_remaining > 0:
-            self.timer_remaining -= 1
-            self.update_timer_display()
-            return True  # Continue updating
-        else:
-            # Timer finished, clear status and reset
-            send_status_message("")
-            self.timer_update_id = 0
-            return False  # Stop updating
-
-    def on_timer_done(self):
-        # Clear the status message
-        send_status_message("")
-        subprocess.run(["notify-send", "-a", "Timer", "-t", "3000", "timer complete"])
-        sound_path = "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
-        subprocess.Popen(["mpv", "--no-video", sound_path])
-        return False
-
-    def set_wallpaper(self, wp):
-        wp_dir = os.path.expanduser("~/Pictures/wp/")
-        wp_path = os.path.join(wp_dir, wp)
-        default_link = os.path.join(wp_dir, "defaultwp.jpg")
-        if os.path.exists(default_link) or os.path.islink(default_link):
-            os.remove(default_link)
-        os.symlink(wp_path, default_link)
-        # Assume swaybg
-        walset = "swaybg -i"
-        if walset.startswith("swaybg"):
-            # Kill existing swaybg
-            try:
-                result = subprocess.run(
-                    ["pgrep", "swaybg"], capture_output=True, text=True
-                )
-                if result.returncode == 0:
-                    pids = result.stdout.strip().split("\n")
-                    for pid in pids:
-                        subprocess.run(["kill", pid], check=False)
-            except Exception:
-                pass
-            subprocess.Popen([walset, wp_path])
 
     # Navigation methods
     def select_next(self):
@@ -873,6 +517,7 @@ class Launcher(Gtk.ApplicationWindow):
             "wallpaper",
             "timer",
             "monitor",
+            "kill",
         ]:
             self.search_entry.set_text(f">{command} ")
         else:
@@ -891,29 +536,33 @@ class Launcher(Gtk.ApplicationWindow):
             text = self.search_entry.get_text()
             if text.startswith(">"):
                 command = text[1:].strip()
+                builtin = [
+                    "calc",
+                    "bookmark",
+                    "bluetooth",
+                    "wallpaper",
+                    "timer",
+                    "monitor",
+                    "kill",
+                ]
+                all_commands = builtin + list(CUSTOM_LAUNCHERS.keys())
                 if not command:
                     # No command yet, complete to first available
-                    if CUSTOM_LAUNCHERS:
-                        first_cmd = next(iter(CUSTOM_LAUNCHERS))
-                        self.search_entry.set_text(f">{first_cmd} ")
+                    if all_commands:
+                        first_cmd = all_commands[0]
+                        suffix = " " if first_cmd in builtin else ""
+                        self.search_entry.set_text(f">{first_cmd}{suffix}")
                         self.search_entry.set_position(-1)
                         return True
                 else:
                     # Partial command, find matching
-                    for cmd in CUSTOM_LAUNCHERS:
-                        if cmd.startswith(command):
-                            if cmd in [
-                                "calc",
-                                "bookmark",
-                                "bluetooth",
-                                "timer",
-                                "monitor",
-                            ]:
-                                self.search_entry.set_text(f">{cmd} ")
-                            else:
-                                self.search_entry.set_text(f">{cmd}")
-                            self.search_entry.set_position(-1)
-                            return True
+                    matching = [cmd for cmd in all_commands if cmd.startswith(command)]
+                    if matching:
+                        cmd = matching[0]
+                        suffix = " " if cmd in builtin else ""
+                        self.search_entry.set_text(f">{cmd}{suffix}")
+                        self.search_entry.set_position(-1)
+                        return True
             elif self.current_apps:
                 # App mode, complete to first app
                 self.search_entry.set_text(self.current_apps[0]["name"])

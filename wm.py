@@ -4,7 +4,7 @@
 # pyright: reportAttributeAccessIssue=false
 # pyright: reportUnusedCallResult=false
 # pyright: reportUnknownVariableType=false
-# pyright: basic
+# pyright: reportMissingImports=false
 # ruff: ignore
 
 import os
@@ -14,9 +14,9 @@ import threading
 import time
 from typing_extensions import final
 
-from gi.repository import GLib
+from gi.repository import GLib  # pyright: ignore
 
-import i3ipc
+import i3ipc  # pyright: ignore
 
 
 @final
@@ -42,7 +42,7 @@ class SwayClient(WMClient):
     def get_workspaces(self) -> list[Workspace]:
         try:
             workspaces = self.i3.get_workspaces()
-            return [Workspace(ws.name, ws.focused) for ws in workspaces]
+            return [Workspace(ws.name, ws.focused) for ws in workspaces]  # pyright: ignore
         except Exception:
             return []
 
@@ -111,6 +111,7 @@ class HyprlandClient(WMClient):
             import socket
 
             while True:
+                s = None
                 try:
                     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                     s.connect(socket_path)
@@ -130,7 +131,8 @@ class HyprlandClient(WMClient):
                     print(f"Hyprland socket error: {e}")
                     time.sleep(1)
                 finally:
-                    s.close()
+                    if s:
+                        s.close()
                     time.sleep(1)
 
         thread = threading.Thread(target=listen)

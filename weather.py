@@ -1,4 +1,5 @@
-import python_weather
+# pyright: reportMissingImports=false
+import python_weather  # pyright: ignore
 from exceptions import WeatherUnavailableException
 import asyncio
 import os

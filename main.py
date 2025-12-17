@@ -5,13 +5,13 @@
 # pyright: reportAttributeAccessIssue=false
 # pyright: reportUnusedCallResult=false
 # pyright: reportUnknownVariableType=false
-# pyright: basic
+# pyright: reportMissingImports=false
 # ruff: ignore
 
 import sys
 import os
 import time
-import setproctitle
+import setproctitle  # pyright: ignore
 import subprocess
 import argparse
 
@@ -25,7 +25,7 @@ CDLL("libgtk4-layer-shell.so")
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
 
-from gi.repository import Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # noqa: E402
+from gi.repository import Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # noqa: E402  # pyright: ignore
 
 from utils import load_desktop_apps  # noqa: E402
 from status_bar import StatusBar  # noqa: E402
@@ -36,10 +36,8 @@ setproctitle.setproctitle(APPNAME)
 def kill_previous_process():
     """Kill previous locus processes if running"""
     try:
-        # Get current process ID to avoid killing ourselves
         current_pid = os.getpid()
 
-        # Find all locus processes except current one
         result = subprocess.run(
             ["pgrep", "-f", APPNAME], capture_output=True, text=True
         )
@@ -49,17 +47,16 @@ def kill_previous_process():
             for pid in pids:
                 if pid and int(pid) != current_pid:
                     try:
-                        os.kill(int(pid), 9)  # SIGKILL to ensure immediate termination
+                        os.kill(int(pid), 9)  # SIGKILL
                         print(f"Killed previous locus process {pid}")
                     except ProcessLookupError:
-                        pass  # Process already terminated
+                        pass
                     except PermissionError:
-                        pass  # No permission to kill
+                        pass
 
-            # Wait a bit for processes to fully terminate
             time.sleep(0.5)
     except Exception:
-        pass  # Ignore errors, continue execution
+        pass
 
 
 kill_previous_process()
@@ -95,7 +92,6 @@ def on_activate(app: Gtk.Application):
     monitors = display.get_monitors()
     n_monitors = monitors.get_n_items()
 
-    # Define height once to ensure window size and reserved space match
     BAR_HEIGHT = 20
 
     for i in range(n_monitors):
@@ -131,7 +127,6 @@ display = Gdk.Display.get_default()
 if not display:
     sys.exit()
 
-# get all the monitors, then create a window on each monitor
 monitors = display.get_monitors()
 
 app.run(None)

@@ -4,10 +4,10 @@
 # pyright: reportAttributeAccessIssue=false
 # pyright: reportUnusedCallResult=false
 # pyright: reportUnknownVariableType=false
-# pyright: basic
+# pyright: reportMissingImports=false
 # ruff: ignore
 
-from gi.repository import GLib, Gtk
+from gi.repository import GLib, Gtk  # pyright: ignore
 from typing_extensions import final
 import os
 import subprocess

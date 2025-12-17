@@ -4,7 +4,7 @@
 # pyright: reportAttributeAccessIssue=false
 # pyright: reportUnusedCallResult=false
 # pyright: reportUnknownVariableType=false
-# pyright: basic
+# pyright: reportMissingImports=false
 # ruff: ignore
 
 import os
@@ -14,10 +14,10 @@ import glob
 import socket
 from pathlib import Path
 
+from gi.repository import Gtk  # pyright: ignore
+
 
 def apply_styles(widget, css: str):
-    from gi.repository import Gtk
-
     provider = Gtk.CssProvider()
     provider.load_from_data(css.encode())
     context = widget.get_style_context()
@@ -76,8 +76,6 @@ def get_default_styling() -> str:
 
 
 def VBox(spacing: int = 6, hexpand: bool = False, vexpand: bool = False):
-    from gi.repository import Gtk
-
     return Gtk.Box(
         orientation=Gtk.Orientation.VERTICAL,
         spacing=spacing,
@@ -87,8 +85,6 @@ def VBox(spacing: int = 6, hexpand: bool = False, vexpand: bool = False):
 
 
 def HBox(spacing: int = 6, hexpand: bool = False, vexpand: bool = False):
-    from gi.repository import Gtk
-
     return Gtk.Box(
         orientation=Gtk.Orientation.HORIZONTAL,
         spacing=spacing,
