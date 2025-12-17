@@ -14,7 +14,7 @@ import os
 import glob
 import random
 import re
-from utils import apply_styles, load_desktop_apps, VBox
+from utils import apply_styles, load_desktop_apps, VBox, send_status_message
 from config import CUSTOM_LAUNCHERS, METADATA
 from calculator import sanitize_expr, evaluate_calculator
 from bluetooth import (
@@ -191,6 +191,8 @@ class Launcher(Gtk.ApplicationWindow):
 
         self.wallpaper_buttons = []
         self.wallpaper_loaded = False
+        self.timer_remaining = 0
+        self.timer_update_id = 0
 
         # Search entry
         self.search_entry = Gtk.Entry()
@@ -287,31 +289,16 @@ class Launcher(Gtk.ApplicationWindow):
     def create_button_with_metadata(self, main_text, metadata_text=""):
         """Create a button with main text and optional metadata below in smaller font."""
         if metadata_text:
-            # Create a vertical box for main text and metadata
-            vbox = VBox(spacing=2)
-            main_label = Gtk.Label(label=main_text)
-            main_label.set_halign(Gtk.Align.START)
-            main_label.set_valign(Gtk.Align.START)
-
-            metadata_label = Gtk.Label(label=metadata_text)
-            metadata_label.set_halign(Gtk.Align.START)
-            metadata_label.set_valign(Gtk.Align.START)
-
-            # Apply smaller font to metadata
-            apply_styles(
-                metadata_label,
-                """
-                label {
-                    font-size: 12px;
-                    color: #928374;
-                }
-                """,
-            )
-
-            vbox.append(main_label)
-            vbox.append(metadata_label)
+            # Use markup for metadata below main text
+            markup = f"{main_text}\n<span size='smaller' color='#d5c4a1'>{metadata_text}</span>"
             button = Gtk.Button()
-            button.set_child(vbox)
+            label = Gtk.Label()
+            label.set_markup(markup)
+            label.set_halign(Gtk.Align.START)
+            label.set_valign(Gtk.Align.START)
+            label.set_wrap(True)
+            label.set_wrap_mode(Gtk.WrapMode.WORD)
+            button.set_child(label)
         else:
             # Simple button with just main text
             button = Gtk.Button(label=main_text)
@@ -427,29 +414,15 @@ class Launcher(Gtk.ApplicationWindow):
                         image = Gtk.Image()
                     metadata = METADATA.get(wp, "")
                     if metadata:
-                        label_vbox = VBox(spacing=2)
-                        main_label = Gtk.Label(label=wp)
-                        main_label.set_halign(Gtk.Align.START)
-                        main_label.set_valign(Gtk.Align.START)
-
-                        metadata_label = Gtk.Label(label=metadata)
-                        metadata_label.set_halign(Gtk.Align.START)
-                        metadata_label.set_valign(Gtk.Align.START)
-
-                        apply_styles(
-                            metadata_label,
-                            """
-                            label {
-                                font-size: 12px;
-                                color: #928374;
-                            }
-                            """,
-                        )
-
-                        label_vbox.append(main_label)
-                        label_vbox.append(metadata_label)
+                        markup = f"{wp}\n<span size='smaller' color='#d5c4a1'>{metadata}</span>"
+                        label = Gtk.Label()
+                        label.set_markup(markup)
+                        label.set_halign(Gtk.Align.START)
+                        label.set_valign(Gtk.Align.START)
+                        label.set_wrap(True)
+                        label.set_wrap_mode(Gtk.WrapMode.WORD)
                         box.append(image)
-                        box.append(label_vbox)
+                        box.append(label)
                     else:
                         label = Gtk.Label(label=wp)
                         label.set_halign(Gtk.Align.START)
@@ -500,7 +473,7 @@ class Launcher(Gtk.ApplicationWindow):
                 button = self.create_button_with_metadata(label_text, metadata)
         else:
             label_text = "Usage: >timer 5m"
-            metadata = METADATA.get(label_text, "")
+            metadata = METADATA.get("timer", "")
             button = self.create_button_with_metadata(label_text, metadata)
         self.list_box.append(button)
         self.current_apps = []
@@ -638,6 +611,9 @@ class Launcher(Gtk.ApplicationWindow):
                     self.run_command(command)
         elif self.current_apps:
             self.launch_app(self.current_apps[0])
+        else:
+            if text:
+                self.run_command(text)
 
     # App methods
     def launch_app(self, app):
@@ -772,12 +748,41 @@ class Launcher(Gtk.ApplicationWindow):
     def start_timer(self, time_str):
         seconds = parse_time(time_str)
         if seconds is not None:
+            # Cancel any existing timer
+            if self.timer_update_id > 0:
+                GLib.source_remove(self.timer_update_id)
+                self.timer_update_id = 0
+            self.timer_remaining = seconds
+            # Update status bar immediately with initial time
+            self.update_timer_display()
+            # Set up periodic updates every second
+            self.timer_update_id = GLib.timeout_add_seconds(1, self.update_timer_status)
+            # Set the final timeout
             GLib.timeout_add_seconds(seconds, self.on_timer_done)
             subprocess.run(["notify-send", "-a", "Timer", f"set for {time_str}"])
         else:
             subprocess.run(["notify-send", "Invalid time format"])
 
+    def update_timer_display(self):
+        """Update the timer display without decrementing the counter."""
+        minutes, seconds = divmod(self.timer_remaining, 60)
+        time_str = f"{minutes:02d}:{seconds:02d}"
+        send_status_message(f"Timer: {time_str}")
+
+    def update_timer_status(self):
+        if self.timer_remaining > 0:
+            self.timer_remaining -= 1
+            self.update_timer_display()
+            return True  # Continue updating
+        else:
+            # Timer finished, clear status and reset
+            send_status_message("")
+            self.timer_update_id = 0
+            return False  # Stop updating
+
     def on_timer_done(self):
+        # Clear the status message
+        send_status_message("")
         subprocess.run(["notify-send", "-a", "Timer", "-t", "3000", "timer complete"])
         sound_path = "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
         subprocess.Popen(["mpv", "--no-video", sound_path])

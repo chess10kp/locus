@@ -24,6 +24,7 @@ def todo_capture():
 #   - 'url': open URL in browser
 #   - 'builtin': special built-in functionality
 #   - 'function': call a Python function (func key)
+# Plugin authors can update the status bar by calling utils.send_status_message(message)
 # Metadata for launcher entries
 # Keyed by entry identifier (usually the display name or command)
 METADATA = {}
@@ -90,6 +91,8 @@ def add_function_launcher(name: str, func):
     Args:
         name: The command name
         func: A callable Python function
+
+    The function can update the status bar by calling utils.send_status_message(message)
     """
     CUSTOM_LAUNCHERS[name] = {"type": "function", "func": func}
 

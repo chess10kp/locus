@@ -18,7 +18,6 @@ import argparse
 from config import APPNAME
 import gi
 
-# For GTK4 Layer Shell to get linked before libwayland-client we must explicitly load it before importing with gi
 from ctypes import CDLL
 
 CDLL("libgtk4-layer-shell.so")
@@ -63,7 +62,6 @@ def kill_previous_process():
         pass  # Ignore errors, continue execution
 
 
-# Kill previous processes before starting
 kill_previous_process()
 
 parser = argparse.ArgumentParser()

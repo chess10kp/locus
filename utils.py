@@ -11,8 +11,8 @@ import os
 import subprocess
 import configparser
 import glob
+import socket
 from pathlib import Path
-from datetime import datetime as dt
 
 
 def apply_styles(widget, css: str):
@@ -22,6 +22,24 @@ def apply_styles(widget, css: str):
     provider.load_from_data(css.encode())
     context = widget.get_style_context()
     context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+
+def send_status_message(message: str):
+    """Send a message to update the status bar via IPC.
+
+    Args:
+        message: The message to display in the status bar
+    """
+    SOCKET_PATH = "/tmp/locus_socket"
+    try:
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.settimeout(1.0)  # 1 second timeout
+        sock.connect(SOCKET_PATH)
+        sock.sendall(message.encode("utf-8"))
+        sock.close()
+    except (OSError, socket.timeout):
+        # Silently ignore IPC failures to avoid spam
+        pass
 
 
 def read_time() -> str:
