@@ -1,6 +1,6 @@
 """Integration tests for GUI components"""
 
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import sys
 import os
 

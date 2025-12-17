@@ -12,12 +12,16 @@ import glob
 import random
 import re
 import subprocess
+import hashlib
+from pathlib import Path
 from gi.repository import GdkPixbuf, Gtk
 
 
 class WallpaperLauncher:
     def __init__(self, launcher):
         self.launcher = launcher
+        self.cache_dir = Path.home() / ".cache" / "locus" / "wallpaper_thumbnails"
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     def populate(self, filter_text):
         wp_dir = os.path.expanduser("~/Pictures/wp/")
@@ -48,18 +52,11 @@ class WallpaperLauncher:
                 ]
                 self.launcher.wallpaper_buttons = []
                 for wp in sorted(wallpapers):
-                    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+                    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
                     try:
-                        pixbuf = GdkPixbuf.Pixbuf.new_from_file(
-                            os.path.join(wp_dir, wp)
-                        )
-                        aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
-                        scaled_width = 120
-                        scaled_height = int(scaled_width / aspect_ratio)
-                        scaled_buf = pixbuf.scale_simple(
-                            scaled_width, scaled_height, GdkPixbuf.InterpType.BILINEAR
-                        )
-                        image = Gtk.Image.new_from_pixbuf(scaled_buf)
+                        image = self.get_cached_thumbnail(wp_dir, wp)
+                        image.set_hexpand(False)
+                        image.set_vexpand(False)
                     except Exception:
                         image = Gtk.Image()
                     metadata = self.launcher.METADATA.get(wp, "")
@@ -71,18 +68,20 @@ class WallpaperLauncher:
                         label.set_valign(Gtk.Align.START)
                         label.set_wrap(True)
                         label.set_wrap_mode(Gtk.WrapMode.WORD)
+                        label.set_hexpand(True)
                         box.append(image)
                         box.append(label)
                     else:
                         label = Gtk.Label(label=wp)
                         label.set_halign(Gtk.Align.START)
+                        label.set_hexpand(True)
                         box.append(image)
                         box.append(label)
                     button = Gtk.Button()
                     button.set_child(box)
                     button.get_child().set_halign(Gtk.Align.START)
                     button.connect("clicked", self.on_wallpaper_clicked, wp)
-                    self.launcher.apply_button_style(button)
+                    self.apply_wallpaper_button_style(button)
                     self.launcher.wallpaper_buttons.append((button, wp))
                 self.launcher.wallpaper_loaded = True
             search_term = (
@@ -108,6 +107,73 @@ class WallpaperLauncher:
                 for btn, _ in matching:
                     self.launcher.list_box.append(btn)
         self.launcher.current_apps = []
+
+    def get_cache_path(self, wp_path):
+        """Generate cache file path based on image file path and modification time."""
+        file_stat = os.stat(wp_path)
+        cache_key = f"{wp_path}_{file_stat.st_mtime}_{file_stat.st_size}"
+        cache_hash = hashlib.md5(cache_key.encode()).hexdigest()
+        return self.cache_dir / f"{cache_hash}.png"
+
+    def get_cached_thumbnail(self, wp_dir, wp):
+        """Get thumbnail from cache or create and cache it."""
+        wp_path = os.path.join(wp_dir, wp)
+        cache_path = self.get_cache_path(wp_path)
+
+        # Return cached thumbnail if it exists
+        if cache_path.exists():
+            try:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file(str(cache_path))
+                image = Gtk.Image.new_from_pixbuf(pixbuf)
+                image.set_size_request(200, -1)
+                image.set_pixel_size(200)
+                return image
+            except Exception:
+                # Cache corrupted, regenerate
+                pass
+
+        # Generate new thumbnail
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(wp_path)
+        aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
+        scaled_width = 200
+        scaled_height = int(scaled_width / aspect_ratio)
+        scaled_buf = pixbuf.scale_simple(
+            scaled_width, scaled_height, GdkPixbuf.InterpType.BILINEAR
+        )
+
+        # Save to cache
+        try:
+            scaled_buf.savev(str(cache_path), "png", [], [])
+        except Exception:
+            pass  # Cache save failed, but we still have the thumbnail
+
+        image = Gtk.Image.new_from_pixbuf(scaled_buf)
+        image.set_size_request(200, -1)
+        image.set_pixel_size(200)
+        return image
+
+    def apply_wallpaper_button_style(self, button):
+        """Apply larger button styling for wallpaper entries."""
+        from utils import apply_styles
+
+        apply_styles(
+            button,
+            """
+            button {
+                background: #3c3836;
+                color: #ebdbb2;
+                border: none;
+                border-radius: 3px;
+                padding: 15px;
+                font-size: 14px;
+                font-family: Iosevka;
+                min-height: 220px;
+            }
+            button:hover {
+                background: #504945;
+            }
+        """,
+        )
 
     def on_wallpaper_clicked(self, button, wp):
         self.set_wallpaper(wp)
@@ -159,6 +225,24 @@ class WallpaperLauncher:
         # Fallback to random
         self.on_wallpaper_random(button)
 
+    def get_walset(self):
+        try:
+            result = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    "source ~/.config/scripts/configvars.sh && echo $walset",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                walset = result.stdout.strip()
+                return walset if walset else "swaybg -i"
+        except Exception:
+            pass
+        return "swaybg -i"  # default
+
     def set_wallpaper(self, wp):
         wp_dir = os.path.expanduser("~/Pictures/wp/")
         wp_path = os.path.join(wp_dir, wp)
@@ -166,9 +250,9 @@ class WallpaperLauncher:
         if os.path.exists(default_link) or os.path.islink(default_link):
             os.remove(default_link)
         os.symlink(wp_path, default_link)
-        # Assume swaybg
-        walset = "swaybg -i"
-        if walset.startswith("swaybg"):
+        walset = self.get_walset()
+        walset_parts = walset.split()
+        if walset_parts[0] == "swaybg":
             # Kill existing swaybg
             try:
                 result = subprocess.run(
@@ -180,4 +264,7 @@ class WallpaperLauncher:
                         subprocess.run(["kill", pid], check=False)
             except Exception:
                 pass
-            subprocess.Popen([walset, wp_path])
+            subprocess.Popen(walset_parts + [wp_path])
+        else:
+            # For other setters like swww, use the symlink
+            subprocess.Popen(walset_parts + [default_link])

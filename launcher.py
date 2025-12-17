@@ -11,6 +11,8 @@ from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # pyr
 from typing_extensions import final
 import subprocess
 import re
+import os
+import glob
 from utils import apply_styles, load_desktop_apps, VBox
 from config import CUSTOM_LAUNCHERS, METADATA
 from calculator import sanitize_expr, evaluate_calculator
@@ -365,27 +367,36 @@ class Launcher(Gtk.ApplicationWindow):
             self.list_box.remove(self.list_box.get_first_child())
 
         if filter_text.startswith(">calc") and len(filter_text) > 5:
+            self.reset_launcher_size()
             expr = filter_text[5:].strip()
             if expr:
                 self.calc_launcher.populate(expr)
         elif filter_text.startswith(">bookmark"):
+            self.reset_launcher_size()
             query = filter_text[9:].strip()
             self.bookmark_launcher.populate(query)
         elif filter_text.startswith(">bluetooth"):
+            self.reset_launcher_size()
             self.bluetooth_launcher.populate()
         elif filter_text.startswith(">monitor"):
+            self.reset_launcher_size()
             self.monitor_launcher.populate()
         elif filter_text.startswith(">wallpaper"):
+            self.set_wallpaper_mode_size()
             self.wallpaper_launcher.populate(filter_text)
         elif filter_text.startswith(">timer"):
+            self.reset_launcher_size()
             time_str = filter_text[6:].strip()
             self.timer_launcher.populate(time_str)
         elif filter_text.startswith(">kill"):
+            self.reset_launcher_size()
             self.kill_launcher.populate()
         elif filter_text.startswith(">"):
+            self.reset_launcher_size()
             command = filter_text[1:].strip()
             self.populate_command_mode(command)
         else:
+            self.reset_launcher_size()
             self.populate_app_mode(filter_text)
 
     def on_search_changed(self, entry):
@@ -410,6 +421,15 @@ class Launcher(Gtk.ApplicationWindow):
                     # Do not hide, let user correct
                 else:
                     self.calc_launcher.on_result_clicked(None, str(result))
+        elif text == ">wallpaper":
+            # Set the first wallpaper
+            wp_dir = os.path.expanduser("~/Pictures/wp/")
+            wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+            wallpapers = [os.path.basename(w) for w in wallpapers if os.path.isfile(w)]
+            if wallpapers:
+                sorted_wallpapers = sorted(wallpapers)
+                self.wallpaper_launcher.set_wallpaper(sorted_wallpapers[0])
+            self.hide()
         elif text == ">wallpaper random":
             self.wallpaper_launcher.on_wallpaper_random(None)
             self.hide()
@@ -504,6 +524,14 @@ class Launcher(Gtk.ApplicationWindow):
                     button = last_row.get_child()
                     if button:
                         button.grab_focus()
+
+    def set_wallpaper_mode_size(self):
+        """Increase launcher size for wallpaper mode to accommodate larger thumbnails."""
+        self.set_default_size(1000, 600)
+
+    def reset_launcher_size(self):
+        """Reset launcher to default size for non-wallpaper modes."""
+        self.set_default_size(600, 400)
 
     def on_custom_launcher_clicked(self, button, command):
         if handle_custom_launcher(command, self.apps):
