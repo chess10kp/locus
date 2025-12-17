@@ -28,6 +28,13 @@ class CalcLauncher:
             button = self.launcher.create_button_with_metadata(label_text, metadata)
             button.connect("clicked", self.on_result_clicked, result)
         self.launcher.list_box.append(button)
+        self.launcher.list_box.queue_draw()
+        self.launcher.scrolled.queue_draw()
+        # Scroll to top
+        vadj = self.launcher.scrolled.get_vadjustment()
+        if vadj:
+            vadj.set_value(0)
+        self.launcher.queue_draw()
         self.launcher.current_apps = []
 
     def on_result_clicked(self, button, result):

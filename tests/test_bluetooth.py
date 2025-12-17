@@ -1,10 +1,7 @@
-"""Unit tests for Bluetooth functionality"""
-
 import sys
 import os
 from unittest.mock import Mock, patch
 
-# Add the parent directory to the path so we can import modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import bluetooth

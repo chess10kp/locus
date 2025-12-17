@@ -174,6 +174,8 @@ class Launcher(Gtk.ApplicationWindow):
         )
 
         self.apps = load_desktop_apps()
+        self.METADATA = METADATA
+        self.parse_time = parse_time
 
         self.calc_launcher = CalcLauncher(self)
         self.bookmark_launcher = BookmarkLauncher(self)
@@ -198,14 +200,14 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry.set_placeholder_text("Search applications...")
 
         # Scrolled window for apps
-        scrolled = Gtk.ScrolledWindow()
-        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scrolled.set_vexpand(True)
+        self.scrolled = Gtk.ScrolledWindow()
+        self.scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        self.scrolled.set_vexpand(True)
 
         # List box for apps
         self.list_box = Gtk.ListBox()
         self.list_box.set_selection_mode(Gtk.SelectionMode.NONE)
-        scrolled.set_child(self.list_box)
+        self.scrolled.set_child(self.list_box)
 
         # Populate list
         self.populate_apps()
@@ -213,7 +215,7 @@ class Launcher(Gtk.ApplicationWindow):
         # Main box
         vbox = VBox(spacing=6)
         vbox.append(self.search_entry)
-        vbox.append(scrolled)
+        vbox.append(self.scrolled)
         self.set_child(vbox)
 
         # Handle key presses
