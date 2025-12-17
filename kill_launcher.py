@@ -9,11 +9,39 @@
 
 import subprocess
 import os
+from hooks import LauncherHook
+from typing import Any, Optional
+
+
+class KillHook(LauncherHook):
+    def __init__(self, kill_launcher):
+        self.kill_launcher = kill_launcher
+
+    def on_select(self, launcher, item_data: Any) -> bool:
+        """Handle process kill button clicks"""
+        if isinstance(item_data, int):
+            self.kill_launcher.kill_process(item_data)
+            launcher.hide()
+            return True
+        return False
+
+    def on_enter(self, launcher, text: str) -> bool:
+        """Handle kill enter key"""
+        # For now, no specific enter handling for kill
+        return False
+
+    def on_tab(self, launcher, text: str) -> Optional[str]:
+        """Handle kill tab completion"""
+        if text.startswith(">kill") or (text.startswith(">ki") and len(text) <= 4):
+            return ">kill "
+        return None
 
 
 class KillLauncher:
     def __init__(self, launcher):
         self.launcher = launcher
+        self.hook = KillHook(self)
+        launcher.hook_registry.register_hook(self.hook)
 
     def populate(self):
         result = subprocess.run(["ps", "aux"], capture_output=True, text=True)
@@ -45,10 +73,12 @@ class KillLauncher:
 
         for pid, cpu, mem, cmd in processes[:50]:  # limit to 50
             label_text = f"{cmd} (CPU: {cpu:.1f}%, MEM: {mem:.1f}%)"
-            button = self.launcher.create_button_with_metadata(label_text, "")
-            button.connect("clicked", self.on_kill_clicked, pid)
+            button = self.launcher.create_button_with_metadata(label_text, "", pid)
             self.launcher.list_box.append(button)
         self.launcher.current_apps = []
+
+    def kill_process(self, pid):
+        subprocess.run(["kill", str(pid)])
 
     def on_kill_clicked(self, button, pid):
         try:

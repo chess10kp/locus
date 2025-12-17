@@ -9,11 +9,57 @@
 
 import webbrowser
 from bookmarks import get_bookmarks
+from hooks import LauncherHook
+
+
+class BookmarkHook(LauncherHook):
+    def __init__(self, launcher):
+        self.launcher = launcher
+
+    def on_select(self, launcher, item_data):
+        """Handle button clicks for bookmarks and actions."""
+        if not item_data:
+            return False
+
+        bookmarks = get_bookmarks()
+        if item_data in bookmarks:
+            # Open bookmark in browser
+            webbrowser.open(item_data)
+            launcher.hide()
+            return True
+        elif item_data in ["add", "remove", "replace"]:
+            # Handle bookmark actions
+            print(f"Bookmark action: {item_data}")
+            # Could implement dialogs here for add/remove
+            launcher.hide()
+            return True
+
+        return False
+
+    def on_enter(self, launcher, text):
+        """Handle enter key for bookmark operations."""
+        # For now, no specific enter handling for bookmarks
+        return False
+
+    def on_tab(self, launcher, text):
+        """Handle tab completion for bookmarks."""
+        bookmarks = get_bookmarks()
+        matching_bookmarks = [
+            b for b in bookmarks if b.lower().startswith(text.lower())
+        ]
+
+        if matching_bookmarks:
+            # Return first match for tab completion
+            return matching_bookmarks[0]
+
+        return None
 
 
 class BookmarkLauncher:
     def __init__(self, launcher):
         self.launcher = launcher
+        self.hook = BookmarkHook(launcher)
+        launcher.hook_registry.register_hook(self.hook)
 
     def populate(self, query=""):
         bookmarks = get_bookmarks()
@@ -26,20 +72,5 @@ class BookmarkLauncher:
                 self.launcher.METADATA.get("bookmark", "") if item in bookmarks else ""
             )
             button = self.launcher.create_button_with_metadata(item, metadata)
-            if item in bookmarks:
-                button.connect("clicked", self.on_bookmark_clicked, item)
-            else:
-                button.connect("clicked", self.on_bookmark_action, item)
             self.launcher.list_box.append(button)
         self.launcher.current_apps = []
-
-    def on_bookmark_clicked(self, button, bookmark):
-        # Open bookmark in browser
-        webbrowser.open(bookmark)
-        self.launcher.hide()
-
-    def on_bookmark_action(self, button, action):
-        # For now, just print or do nothing
-        print(f"Bookmark action: {action}")
-        # Could implement dialogs here for add/remove
-        self.launcher.hide()

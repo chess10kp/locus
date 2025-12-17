@@ -179,6 +179,11 @@ class Launcher(Gtk.ApplicationWindow):
         self.METADATA = METADATA
         self.parse_time = parse_time
 
+        # Initialize hook registry before creating launchers
+        from hooks import HookRegistry
+
+        self.hook_registry = HookRegistry()
+
         self.calc_launcher = CalcLauncher(self)
         self.bookmark_launcher = BookmarkLauncher(self)
         self.bluetooth_launcher = BluetoothLauncher(self)
@@ -196,7 +201,8 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry = Gtk.Entry()
         self.search_entry.connect("changed", self.on_search_changed)
         self.search_entry.connect("activate", self.on_entry_activate)
-        self.search_entry.set_halign(Gtk.Align.START)
+        self.search_entry.set_halign(Gtk.Align.FILL)
+        self.search_entry.set_hexpand(True)
 
         self.selected_row = None
         self.search_entry.set_placeholder_text("Search applications...")
@@ -244,10 +250,21 @@ class Launcher(Gtk.ApplicationWindow):
                 background: #0e1418;
                 color: #ebdbb2;
                 border: none;
+                border-width: 0;
+                border-style: none;
+                outline: none;
+                box-shadow: none;
                 border-radius: 5px;
                 padding: 5px;
                 font-size: 16px;
                 font-family: Iosevka;
+            }
+            entry:focus {
+                border: none;
+                border-width: 0;
+                border-style: none;
+                outline: none;
+                box-shadow: none;
             }
         """,
         )
@@ -284,7 +301,7 @@ class Launcher(Gtk.ApplicationWindow):
         """,
         )
 
-    def create_button_with_metadata(self, main_text, metadata_text=""):
+    def create_button_with_metadata(self, main_text, metadata_text="", hook_data=None):
         """Create a button with main text and optional metadata below in smaller font."""
         if metadata_text:
             markup = f"{main_text}\n<span size='smaller' color='#d5c4a1'>{metadata_text}</span>"
@@ -302,6 +319,15 @@ class Launcher(Gtk.ApplicationWindow):
             button.get_child().set_halign(Gtk.Align.START)
 
         self.apply_button_style(button)
+
+        # Connect click handler that uses hook system
+        def on_clicked_wrapper(button):
+            # Try hooks first
+            if not self.hook_registry.execute_select_hooks(self, hook_data):
+                # Fall back to default behavior if no hook handles it
+                self.default_button_handler(button, hook_data)
+
+        button.connect("clicked", on_clicked_wrapper)
         return button
 
     def populate_command_mode(self, command):
@@ -410,7 +436,12 @@ class Launcher(Gtk.ApplicationWindow):
                 button.emit("clicked")
                 self.hide()
                 return
+
         text = self.search_entry.get_text()
+
+        # Try hooks first
+        if self.hook_registry.execute_enter_hooks(self, text):
+            return
         if text.startswith(">calc") and len(text) > 5:
             expr = text[5:].strip()
             if expr:
@@ -564,6 +595,15 @@ class Launcher(Gtk.ApplicationWindow):
     def on_key_pressed(self, controller, keyval, keycode, state):
         if keyval == Gdk.KEY_Tab:
             text = self.search_entry.get_text()
+
+            # Try hooks first
+            result = self.hook_registry.execute_tab_hooks(self, text)
+            if result is not None:
+                self.search_entry.set_text(result)
+                self.search_entry.set_position(-1)
+                return True
+
+            # Fall back to hardcoded logic
             if text.startswith(">"):
                 command = text[1:].strip()
                 builtin = [

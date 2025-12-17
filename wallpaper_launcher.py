@@ -15,6 +15,158 @@ import subprocess
 import hashlib
 from pathlib import Path
 from gi.repository import GdkPixbuf, Gtk
+from hooks import LauncherHook
+
+
+class WallpaperHook(LauncherHook):
+    def __init__(self, launcher):
+        self.launcher = launcher
+
+    def on_select(self, launcher, item_data):
+        """Handle button clicks for wallpaper selection and actions."""
+        if not item_data:
+            return False
+
+        if item_data == "Set random wallpaper":
+            self._set_random_wallpaper()
+            launcher.hide()
+            return True
+        elif item_data == "Cycle wallpaper":
+            self._cycle_wallpaper()
+            launcher.hide()
+            return True
+        elif item_data.startswith(("No wallpapers found", "Wallpaper directory")):
+            # Error messages, no action needed
+            launcher.hide()
+            return True
+        else:
+            # Individual wallpaper file
+            self._set_wallpaper(item_data)
+            launcher.hide()
+            return True
+
+        return False
+
+    def on_enter(self, launcher, text):
+        """Handle enter key for wallpaper operations."""
+        # For now, no specific enter handling for wallpaper
+        return False
+
+    def on_tab(self, launcher, text):
+        """Handle tab completion for wallpaper files and commands."""
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        if not os.path.exists(wp_dir):
+            return None
+
+        # Check for special commands
+        commands = ["Set random wallpaper", "Cycle wallpaper"]
+        matching_commands = [
+            cmd for cmd in commands if cmd.lower().startswith(text.lower())
+        ]
+        if matching_commands:
+            return matching_commands[0]
+
+        # Check for wallpaper files
+        wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+        wallpapers = [os.path.basename(w) for w in wallpapers if os.path.isfile(w)]
+        matching_wallpapers = [
+            wp for wp in wallpapers if wp.lower().startswith(text.lower())
+        ]
+
+        if matching_wallpapers:
+            return matching_wallpapers[0]
+
+        return None
+
+    def _set_random_wallpaper(self):
+        """Set a random wallpaper."""
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+        wallpapers = [w for w in wallpapers if os.path.isfile(w)]
+        if wallpapers:
+            wp_path = random.choice(wallpapers)
+            wp = os.path.basename(wp_path)
+            self._set_wallpaper(wp)
+
+    def _cycle_wallpaper(self):
+        """Cycle to the next wallpaper in sequence."""
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        default_link = os.path.join(wp_dir, "defaultwp.jpg")
+        if os.path.islink(default_link):
+            current = os.readlink(default_link)
+            current_base = os.path.basename(current)
+            match = re.match(r"(\D+)(\d+)\.(jpg|png)", current_base)
+            if match:
+                style = match.group(1)
+                num = int(match.group(2))
+                ext = match.group(3)
+                num += 1
+                next_file = f"{style}{num}.{ext}"
+                next_path = os.path.join(wp_dir, next_file)
+                if os.path.exists(next_path):
+                    self._set_wallpaper(next_file)
+                    return
+                # Wrap to 1
+                first_file = f"{style}1.{ext}"
+                first_path = os.path.join(wp_dir, first_file)
+                if os.path.exists(first_path):
+                    self._set_wallpaper(first_file)
+                    return
+                # Try other ext
+                alt_ext = "png" if ext == "jpg" else "jpg"
+                alt_file = f"{style}1.{alt_ext}"
+                alt_path = os.path.join(wp_dir, alt_file)
+                if os.path.exists(alt_path):
+                    self._set_wallpaper(alt_file)
+                    return
+        # Fallback to random
+        self._set_random_wallpaper()
+
+    def _get_walset(self):
+        """Get wallpaper setter command."""
+        try:
+            result = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    "source ~/.config/scripts/configvars.sh && echo $walset",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                walset = result.stdout.strip()
+                return walset if walset else "swaybg -i"
+        except Exception:
+            pass
+        return "swaybg -i"  # default
+
+    def _set_wallpaper(self, wp):
+        """Set a specific wallpaper."""
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        wp_path = os.path.join(wp_dir, wp)
+        default_link = os.path.join(wp_dir, "defaultwp.jpg")
+        if os.path.exists(default_link) or os.path.islink(default_link):
+            os.remove(default_link)
+        os.symlink(wp_path, default_link)
+        walset = self._get_walset()
+        walset_parts = walset.split()
+        if walset_parts[0] == "swaybg":
+            # Kill existing swaybg
+            try:
+                result = subprocess.run(
+                    ["pgrep", "swaybg"], capture_output=True, text=True
+                )
+                if result.returncode == 0:
+                    pids = result.stdout.strip().split("\n")
+                    for pid in pids:
+                        subprocess.run(["kill", pid], check=False)
+            except Exception:
+                pass
+            subprocess.Popen(walset_parts + [wp_path])
+        else:
+            # For other setters like swww, use the symlink
+            subprocess.Popen(walset_parts + [default_link])
 
 
 class WallpaperLauncher:
@@ -22,6 +174,8 @@ class WallpaperLauncher:
         self.launcher = launcher
         self.cache_dir = Path.home() / ".cache" / "locus" / "wallpaper_thumbnails"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.hook = WallpaperHook(launcher)
+        launcher.hook_registry.register_hook(self.hook)
 
     def populate(self, filter_text):
         wp_dir = os.path.expanduser("~/Pictures/wp/")
@@ -35,14 +189,12 @@ class WallpaperLauncher:
             button = self.launcher.create_button_with_metadata(
                 "Set random wallpaper", metadata
             )
-            button.connect("clicked", self.on_wallpaper_random)
             self.launcher.list_box.append(button)
         elif filter_text == ">wallpaper cycle":
             metadata = self.launcher.METADATA.get("wallpaper", "")
             button = self.launcher.create_button_with_metadata(
                 "Cycle wallpaper", metadata
             )
-            button.connect("clicked", self.on_wallpaper_cycle)
             self.launcher.list_box.append(button)
         else:
             if not self.launcher.wallpaper_loaded:

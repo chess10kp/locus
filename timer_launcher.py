@@ -9,12 +9,45 @@
 
 import subprocess
 from gi.repository import GLib
+from hooks import LauncherHook
+from typing import Any, Optional
 from utils import send_status_message
+
+
+class TimerHook(LauncherHook):
+    def __init__(self, timer_launcher):
+        self.timer_launcher = timer_launcher
+
+    def on_select(self, launcher, item_data: Any) -> bool:
+        """Handle timer button clicks"""
+        if isinstance(item_data, str) and item_data.startswith("timer:"):
+            time_str = item_data[6:]  # Remove "timer:" prefix
+            self.timer_launcher.start_timer(time_str)
+            launcher.hide()
+            return True
+        return False
+
+    def on_enter(self, launcher, text: str) -> bool:
+        """Handle timer enter key"""
+        if text.startswith(">timer "):
+            time_str = text[6:].strip()
+            self.timer_launcher.start_timer(time_str)
+            launcher.hide()
+            return True
+        return False
+
+    def on_tab(self, launcher, text: str) -> Optional[str]:
+        """Handle timer tab completion"""
+        if text.startswith(">timer") or (text.startswith(">ti") and len(text) <= 4):
+            return ">timer "
+        return None
 
 
 class TimerLauncher:
     def __init__(self, launcher):
         self.launcher = launcher
+        self.hook = TimerHook(self)
+        launcher.hook_registry.register_hook(self.hook)
 
     def populate(self, time_str):
         if time_str:
@@ -22,8 +55,10 @@ class TimerLauncher:
             if seconds is not None:
                 label_text = f"Set timer for {time_str}"
                 metadata = self.launcher.METADATA.get("timer", "")
-                button = self.launcher.create_button_with_metadata(label_text, metadata)
-                button.connect("clicked", self.on_timer_clicked, time_str)
+                hook_data = f"timer:{time_str}"
+                button = self.launcher.create_button_with_metadata(
+                    label_text, metadata, hook_data
+                )
             else:
                 label_text = "Invalid time format (e.g., 5m)"
                 metadata = self.launcher.METADATA.get("timer", "")

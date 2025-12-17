@@ -184,13 +184,7 @@ class TestBluetoothLauncher:
         self.bt_launcher.populate()
 
         # Check status items
-        expected_items = [
-            "Power: on",
-            "Scan: off",
-            "Pairable: on",
-            "Discoverable: off",
-            "Test Device: Connected (AA:BB:CC:DD:EE:FF)",
-        ]
+        # Expected: ["Power: on", "Scan: off", "Pairable: on", "Discoverable: off", "Test Device: Connected (AA:BB:CC:DD:EE:FF)"]
 
         assert self.mock_launcher.create_button_with_metadata.call_count == 5
         assert self.mock_launcher.list_box.append.call_count == 5
