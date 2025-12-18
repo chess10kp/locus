@@ -78,7 +78,6 @@ from core.config import MUSIC_DIR
 class MusicLauncher(LauncherInterface):
     def __init__(self, main_launcher=None):
         if main_launcher:
-            main_launcher.launcher_registry.register_launcher(self)
             self.hook = MusicHook(self)
             main_launcher.hook_registry.register_hook(self.hook)
 
@@ -89,7 +88,7 @@ class MusicLauncher(LauncherInterface):
 
     @property
     def command_triggers(self) -> list:
-        return [">music", ">mu"]
+        return ["music", "mu"]
 
     @property
     def name(self) -> str:

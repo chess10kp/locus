@@ -363,14 +363,49 @@ class Launcher(Gtk.ApplicationWindow):
             # Import launchers package to trigger auto-registration
             import launchers
 
-            # Import lock launcher separately
-            from launchers.lock_launcher import LockLauncher
+            # Import all launchers (except lock screen which is handled separately)
+            from launchers.music_launcher import MusicLauncher
+            from launchers.refile_launcher import RefileLauncher
+            from launchers.monitor_launcher import MonitorLauncher
+            from launchers.timer_launcher import TimerLauncher
+            from launchers.calc_launcher import CalcLauncher
+            from launchers.bookmark_launcher import BookmarkLauncher
+            from launchers.bluetooth_launcher import BluetoothLauncher
+            from launchers.wallpaper_launcher import WallpaperLauncher
+            from launchers.kill_launcher import KillLauncher
+            from launchers.lock_launcher import LockScreen
 
-            # Register lock launcher
-            lock_launcher = LockLauncher(self)
-            self.launcher_registry.register(lock_launcher)
+            # Register all launchers
+            music_launcher = MusicLauncher(self)
+            self.launcher_registry.register(music_launcher)
 
-            # Register any other launcher instances that need the main launcher reference
+            refile_launcher = RefileLauncher(self)
+            self.launcher_registry.register(refile_launcher)
+
+            monitor_launcher = MonitorLauncher(self)
+            self.launcher_registry.register(monitor_launcher)
+
+            timer_launcher = TimerLauncher(self)
+            self.launcher_registry.register(timer_launcher)
+
+            calc_launcher = CalcLauncher(self)
+            self.launcher_registry.register(calc_launcher)
+
+            bookmark_launcher = BookmarkLauncher(self)
+            self.launcher_registry.register(bookmark_launcher)
+
+            bluetooth_launcher = BluetoothLauncher(self)
+            self.launcher_registry.register(bluetooth_launcher)
+
+            wallpaper_launcher = WallpaperLauncher(self)
+            self.launcher_registry.register(wallpaper_launcher)
+
+            kill_launcher = KillLauncher(self)
+            self.launcher_registry.register(kill_launcher)
+
+            # Lock screen is handled separately (not a launcher)
+            self.lock_screen = None
+
             # Note: Individual launchers should register themselves in their __init__
 
         except ImportError as e:

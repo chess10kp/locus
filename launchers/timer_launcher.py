@@ -50,10 +50,6 @@ class TimerLauncher(LauncherInterface):
         self.launcher = main_launcher
         self.hook = TimerHook(self)
 
-        # Register with launcher registry
-        from core.launcher_registry import launcher_registry
-        launcher_registry.register(self)
-
         # Register the hook with the main launcher if available
         if main_launcher and hasattr(main_launcher, 'hook_registry'):
             main_launcher.hook_registry.register_hook(self.hook)
@@ -85,18 +81,18 @@ class TimerLauncher(LauncherInterface):
             seconds = launcher_core.parse_time(time_str)
             if seconds is not None:
                 label_text = f"Set timer for {time_str}"
-                metadata = launcher_core.METADATA.get("timer", "")
+                metadata = "Click to start timer"
                 hook_data = f"timer:{time_str}"
                 button = launcher_core.create_button_with_metadata(
                     label_text, metadata, hook_data
                 )
             else:
                 label_text = "Invalid time format (e.g., 5m)"
-                metadata = launcher_core.METADATA.get("timer", "")
+                metadata = "Use format like 5m, 1h, 30s"
                 button = launcher_core.create_button_with_metadata(label_text, metadata)
         else:
             label_text = "Usage: >timer 5m"
-            metadata = launcher_core.METADATA.get("timer", "")
+            metadata = "Enter time duration (e.g., 5m, 1h, 30s)"
             button = launcher_core.create_button_with_metadata(label_text, metadata)
         launcher_core.list_box.append(button)
         launcher_core.current_apps = []

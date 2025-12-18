@@ -62,10 +62,6 @@ class BookmarkLauncher(LauncherInterface):
         self.launcher = main_launcher
         self.hook = BookmarkHook(self)
 
-        # Register with launcher registry
-        from core.launcher_registry import launcher_registry
-        launcher_registry.register(self)
-
         # Register the hook with the main launcher if available
         if main_launcher and hasattr(main_launcher, 'hook_registry'):
             main_launcher.hook_registry.register_hook(self.hook)

@@ -17,22 +17,9 @@ from .refile_launcher import RefileLauncher, RefileHook
 
 def auto_register_launchers():
     """Auto-register all launcher instances."""
-    # Instantiate launchers that don't require main launcher reference
-    try:
-        CalcLauncher()
-        BookmarkLauncher()
-        BluetoothLauncher()
-        TimerLauncher()
-        WallpaperLauncher()
-
-        # These may need additional dependencies or configuration
-        # MonitorLauncher()
-        # KillLauncher()
-        # MusicLauncher()
-        # RefileLauncher()
-
-    except Exception as e:
-        print(f"Warning: Could not auto-register some launchers: {e}")
+    # All launchers now require main launcher reference, so none are auto-registered here
+    # They are all instantiated in the main launcher's _register_launchers() method
+    pass
 
 # Auto-register launchers when the package is imported
 auto_register_launchers()

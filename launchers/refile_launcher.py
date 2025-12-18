@@ -52,13 +52,12 @@ class RefileHook(LauncherHook):
 class RefileLauncher(LauncherInterface):
     def __init__(self, main_launcher=None):
         if main_launcher:
-            main_launcher.launcher_registry.register_launcher(self)
             self.hook = RefileHook(self)
             main_launcher.hook_registry.register_hook(self.hook)
 
     @property
     def command_triggers(self) -> list:
-        return [">refile"]
+        return ["refile"]
 
     @property
     def name(self) -> str:

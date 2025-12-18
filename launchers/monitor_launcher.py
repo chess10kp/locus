@@ -55,13 +55,12 @@ class MonitorHook(LauncherHook):
 class MonitorLauncher(LauncherInterface):
     def __init__(self, main_launcher=None):
         if main_launcher:
-            main_launcher.launcher_registry.register_launcher(self)
             self.hook = MonitorHook(main_launcher)
             main_launcher.hook_registry.register_hook(self.hook)
 
     @property
     def command_triggers(self) -> list:
-        return [">monitor"]
+        return ["monitor"]
 
     @property
     def name(self) -> str:
@@ -76,7 +75,7 @@ class MonitorLauncher(LauncherInterface):
         for name, status in monitors:
             monitor_items.append(f"{name}: {status}")
         for item in monitor_items:
-            metadata = launcher_core.METADATA.get("monitor", "")
-            button = launcher_core.create_button_with_metadata(item, metadata)
+            # Use the monitor name as metadata for the hook to process
+            button = launcher_core.create_button_with_metadata(item, item)
             launcher_core.list_box.append(button)
         launcher_core.current_apps = []

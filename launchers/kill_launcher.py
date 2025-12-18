@@ -41,13 +41,12 @@ class KillHook(LauncherHook):
 class KillLauncher(LauncherInterface):
     def __init__(self, main_launcher=None):
         if main_launcher:
-            main_launcher.launcher_registry.register_launcher(self)
             self.hook = KillHook(self)
             main_launcher.hook_registry.register_hook(self.hook)
 
     @property
     def command_triggers(self) -> list:
-        return [">kill", ">ki"]
+        return ["kill", "ki"]
 
     @property
     def name(self) -> str:
