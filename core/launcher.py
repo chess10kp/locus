@@ -46,11 +46,18 @@ def fuzzy_match(query, target):
     """Check if query is a fuzzy match for target (case insensitive)."""
     query = query.lower()
     target = target.lower()
-    query_idx = 0
-    for char in target:
-        if query_idx < len(query) and char == query[query_idx]:
-            query_idx += 1
-    return query_idx == len(query)
+    if not query:
+        return True
+    if not target:
+        return False
+
+    start = 0
+    for char in query:
+        pos = target.find(char, start)
+        if pos == -1:
+            return False
+        start = pos + 1
+    return True
 
 
 def parse_time(time_str):
@@ -255,7 +262,7 @@ class Launcher(Gtk.ApplicationWindow):
             visible=False,
         )
 
-        self.apps = load_desktop_apps()
+        self.apps = sorted(load_desktop_apps(), key=lambda x: x["name"])
         self.METADATA = METADATA
         self.parse_time = parse_time
 
@@ -284,6 +291,8 @@ class Launcher(Gtk.ApplicationWindow):
 
         self.selected_row = None
         self.search_entry.set_placeholder_text("Search applications...")
+        self.search_timer = None  # For debouncing search
+        self.button_pool = []  # Pool of reusable buttons
 
         # Scrolled window for apps
         self.scrolled = Gtk.ScrolledWindow()
@@ -631,8 +640,17 @@ class Launcher(Gtk.ApplicationWindow):
             self.reset_launcher_size()
 
     def on_search_changed(self, entry):
+        if self.search_timer:
+            GLib.source_remove(self.search_timer)
+        self.search_timer = GLib.timeout_add(
+            150, self._debounced_populate, entry.get_text()
+        )
+
+    def _debounced_populate(self, text):
         self.selected_row = None
-        self.populate_apps(entry.get_text())
+        self.populate_apps(text)
+        self.search_timer = None
+        return False
 
     # App methods
     def launch_app(self, app):
