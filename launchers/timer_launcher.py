@@ -12,7 +12,7 @@ import os
 from gi.repository import GLib
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 from utils import send_status_message
 
 
@@ -51,7 +51,7 @@ class TimerLauncher(LauncherInterface):
         self.hook = TimerHook(self)
 
         # Register the hook with the main launcher if available
-        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+        if main_launcher and hasattr(main_launcher, "hook_registry"):
             main_launcher.hook_registry.register_hook(self.hook)
 
     @property
@@ -108,6 +108,7 @@ class TimerLauncher(LauncherInterface):
         if not parse_func:
             # Import parse_time function directly
             from core.launcher import parse_time
+
             parse_func = parse_time
 
         seconds = parse_func(time_str)
@@ -129,7 +130,9 @@ class TimerLauncher(LauncherInterface):
             )
             # Set the final timeout
             GLib.timeout_add_seconds(seconds, self.on_timer_done)
-            subprocess.run(["notify-send", "-a", "Timer", f"set for {time_str}"], env=env)
+            subprocess.run(
+                ["notify-send", "-a", "Timer", f"set for {time_str}"], env=env
+            )
         else:
             subprocess.run(["notify-send", "Invalid time format"], env=env)
 
@@ -156,7 +159,9 @@ class TimerLauncher(LauncherInterface):
         # Clean environment for child processes
         env = dict(os.environ.items())
         env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
-        subprocess.run(["notify-send", "-a", "Timer", "-t", "3000", "timer complete"], env=env)
+        subprocess.run(
+            ["notify-send", "-a", "Timer", "-t", "3000", "timer complete"], env=env
+        )
         sound_path = "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
         subprocess.Popen(["mpv", "--no-video", sound_path], env=env)
         return False

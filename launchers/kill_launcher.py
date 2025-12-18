@@ -52,8 +52,8 @@ class KillLauncher(LauncherInterface):
     def name(self) -> str:
         return "kill"
 
-    def get_size_mode(self) -> 'LauncherSizeMode':
-        return LauncherSizeMode.FULL
+    def get_size_mode(self) -> Tuple[LauncherSizeMode, Optional[Tuple[int, int]]]:
+        return LauncherSizeMode.DEFAULT, None
 
     def populate(self, query: str, launcher_core) -> None:
         result = subprocess.run(["ps", "aux"], capture_output=True, text=True)
@@ -85,9 +85,9 @@ class KillLauncher(LauncherInterface):
 
         for pid, cpu, mem, cmd in processes[:50]:  # limit to 50
             label_text = f"{cmd} (CPU: {cpu:.1f}%, MEM: {mem:.1f}%)"
-            button = self.launcher.create_button_with_metadata(label_text, "", pid)
-            self.launcher.list_box.append(button)
-        self.launcher.current_apps = []
+            button = launcher_core.create_button_with_metadata(label_text, "", pid)
+            launcher_core.list_box.append(button)
+        launcher_core.current_apps = []
 
     def kill_process(self, pid):
         subprocess.run(["kill", str(pid)])

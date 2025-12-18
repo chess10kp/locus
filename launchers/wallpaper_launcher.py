@@ -17,7 +17,7 @@ from pathlib import Path
 from gi.repository import GdkPixbuf, Gtk
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from typing import Any, Optional, Tuple, List
+from typing import Optional
 
 
 class WallpaperHook(LauncherHook):
@@ -179,7 +179,7 @@ class WallpaperLauncher(LauncherInterface):
         self.hook = WallpaperHook(self)
 
         # Register the hook with the main launcher if available
-        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+        if main_launcher and hasattr(main_launcher, "hook_registry"):
             main_launcher.hook_registry.register_hook(self.hook)
 
     @property
@@ -260,7 +260,9 @@ class WallpaperLauncher(LauncherInterface):
             wallpapers = [wp for wp in wallpapers if search_term in wp.lower()]
 
         if not wallpapers:
-            msg = "No wallpapers found" if not query else f"No wallpapers match '{query}'"
+            msg = (
+                "No wallpapers found" if not query else f"No wallpapers match '{query}'"
+            )
             metadata = launcher_core.METADATA.get(msg, "")
             button = launcher_core.create_button_with_metadata(msg, metadata)
             launcher_core.list_box.append(button)
@@ -277,7 +279,9 @@ class WallpaperLauncher(LauncherInterface):
 
                 metadata = launcher_core.METADATA.get(wp, "")
                 if metadata:
-                    markup = f"{wp}\n<span size='smaller' color='#d5c4a1'>{metadata}</span>"
+                    markup = (
+                        f"{wp}\n<span size='smaller' color='#d5c4a1'>{metadata}</span>"
+                    )
                     label = Gtk.Label()
                     label.set_markup(markup)
                     label.set_halign(Gtk.Align.START)

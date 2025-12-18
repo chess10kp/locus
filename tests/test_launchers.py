@@ -8,7 +8,6 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import the modules directly
-import importlib.util
 
 # Import launchers
 from launchers import calc_launcher

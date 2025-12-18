@@ -12,20 +12,15 @@ from typing_extensions import final
 import subprocess
 import re
 import os
-import glob
 import sys
-import contextlib
 import shlex
 import logging
-from pathlib import Path
-from typing import Any, Optional, List, Dict
+from typing import Optional, List, Dict
 
 from utils import apply_styles, load_desktop_apps, VBox
-from .config import CUSTOM_LAUNCHERS, METADATA, WALLPAPER_DIR, LOCK_PASSWORD
-from utils import sanitize_expr, evaluate_calculator
+from .config import CUSTOM_LAUNCHERS, METADATA, LOCK_PASSWORD
 from launchers.lock_launcher import LockScreen
 
-import webbrowser
 
 # Setup Logging
 logger = logging.getLogger("AppLauncher")
@@ -34,13 +29,15 @@ logging.basicConfig(level=logging.INFO)
 # --- GIO Compatibility Patching ---
 try:
     from gi.repository import GioUnix
+
     SystemDesktopAppInfo = GioUnix.DesktopAppInfo
 except (ImportError, AttributeError):
     SystemDesktopAppInfo = Gio.DesktopAppInfo
 
 # Fix for older GLib versions where Unix streams might be moved
-if not hasattr(Gio, "UnixInputStream") and 'GioUnix' in sys.modules:
+if not hasattr(Gio, "UnixInputStream") and "GioUnix" in sys.modules:
     from gi.repository import GioUnix
+
     Gio.UnixInputStream = getattr(GioUnix, "InputStream", None)
     Gio.UnixOutputStream = getattr(GioUnix, "OutputStream", None)
 
@@ -72,6 +69,7 @@ def parse_time(time_str):
 
 # --- Core Launching Logic ---
 
+
 def detach_child() -> None:
     """
     Runs in the child process before execing.
@@ -88,6 +86,7 @@ def detach_child() -> None:
                     os.dup2(null_fd, fp.fileno())
                 except Exception:
                     pass
+
 
 def launch_detached(cmd: List[str], working_dir: Optional[str] = None) -> None:
     """
@@ -118,17 +117,21 @@ def launch_detached(cmd: List[str], working_dir: Optional[str] = None) -> None:
             envp=envp,
             flags=GLib.SpawnFlags.SEARCH_PATH_FROM_ENVP | GLib.SpawnFlags.SEARCH_PATH,
             child_setup=None if use_systemd_run else detach_child,
-            **({"working_directory": working_dir} if working_dir else {})
+            **({"working_directory": working_dir} if working_dir else {}),
         )
         logger.info("Process spawned: %s", " ".join(final_cmd))
     except Exception as e:
         logger.exception('Could not launch "%s": %s', final_cmd, e)
 
+
 # --- App Info Wrapper ---
+
 
 class AppLauncher:
     @staticmethod
-    def launch_by_desktop_file(desktop_file_path: str, project_path: Optional[str] = None) -> bool:
+    def launch_by_desktop_file(
+        desktop_file_path: str, project_path: Optional[str] = None
+    ) -> bool:
         """
         Parses a .desktop file and launches the command within.
         """
@@ -361,19 +364,18 @@ class Launcher(Gtk.ApplicationWindow):
         """Auto-discover and register all launcher modules."""
         try:
             # Import launchers package to trigger auto-registration
-            import launchers
+            import launchers  # noqa: F401
 
             # Import all launchers (except lock screen which is handled separately)
             from launchers.music_launcher import MusicLauncher
             from launchers.refile_launcher import RefileLauncher
-            from launchers.monitor_launcher import MonitorLauncher
             from launchers.timer_launcher import TimerLauncher
             from launchers.calc_launcher import CalcLauncher
             from launchers.bookmark_launcher import BookmarkLauncher
             from launchers.bluetooth_launcher import BluetoothLauncher
             from launchers.wallpaper_launcher import WallpaperLauncher
             from launchers.kill_launcher import KillLauncher
-            from launchers.lock_launcher import LockScreen
+            from launchers.lock_launcher import LockScreen  # noqa: F401
 
             # Register all launchers
             music_launcher = MusicLauncher(self)
@@ -381,9 +383,6 @@ class Launcher(Gtk.ApplicationWindow):
 
             refile_launcher = RefileLauncher(self)
             self.launcher_registry.register(refile_launcher)
-
-            monitor_launcher = MonitorLauncher(self)
-            self.launcher_registry.register(monitor_launcher)
 
             timer_launcher = TimerLauncher(self)
             self.launcher_registry.register(timer_launcher)
@@ -430,22 +429,56 @@ class Launcher(Gtk.ApplicationWindow):
         """,
         )
 
-    def create_button_with_metadata(self, main_text, metadata_text="", hook_data=None):
+    def create_button_with_metadata(
+        self, main_text, metadata_text="", hook_data=None, index=None
+    ):
         """Create a button with main text and optional metadata below in smaller font."""
+        # Create a horizontal box for text and hint
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        hbox.set_hexpand(True)
+
+        # Left side: main text and metadata
+        text_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        text_vbox.set_hexpand(True)
+        text_vbox.set_halign(Gtk.Align.START)
+
         if metadata_text:
             markup = f"{main_text}\n<span size='smaller' color='#d5c4a1'>{metadata_text}</span>"
-            button = Gtk.Button()
             label = Gtk.Label()
             label.set_markup(markup)
             label.set_halign(Gtk.Align.START)
             label.set_valign(Gtk.Align.START)
             label.set_wrap(True)
             label.set_wrap_mode(Gtk.WrapMode.WORD)
-            button.set_child(label)
+            text_vbox.append(label)
         else:
-            # Simple button with just main text
-            button = Gtk.Button(label=main_text)
-            button.get_child().set_halign(Gtk.Align.START)
+            # Simple text
+            label = Gtk.Label(label=main_text)
+            label.set_halign(Gtk.Align.START)
+            label.set_valign(Gtk.Align.START)
+            text_vbox.append(label)
+
+        hbox.append(text_vbox)
+
+        # Right side: hint if index is provided
+        if index is not None and index < 10:
+            hint_label = Gtk.Label(label=str(index))
+            hint_label.set_halign(Gtk.Align.END)
+            hint_label.set_hexpand(True)
+            apply_styles(
+                hint_label,
+                """
+                label {
+                    color: #888888;
+                    font-size: 12px;
+                    font-family: Iosevka;
+                }
+            """,
+            )
+            hbox.append(hint_label)
+
+        button = Gtk.Button()
+        button.set_child(hbox)
 
         self.apply_button_style(button)
 
@@ -454,7 +487,10 @@ class Launcher(Gtk.ApplicationWindow):
             # Try hooks first
             if not self.hook_registry.execute_select_hooks(self, hook_data):
                 # Fall back to default behavior if no hook handles it
-                if hasattr(self, 'default_button_handler') and self.default_button_handler:
+                if (
+                    hasattr(self, "default_button_handler")
+                    and self.default_button_handler
+                ):
                     self.default_button_handler(button, hook_data)
                 else:
                     # If no specific handler is defined, just hide the launcher
@@ -471,11 +507,17 @@ class Launcher(Gtk.ApplicationWindow):
             for launcher_name, triggers in self.launcher_registry.list_launchers():
                 all_commands.extend(triggers)
 
+            index = 1
             for cmd_name in sorted(set(all_commands)):
                 metadata = METADATA.get(cmd_name, "")
-                button = self.create_button_with_metadata(f">{cmd_name}", metadata)
+                button = self.create_button_with_metadata(
+                    f">{cmd_name}", metadata, index=index
+                )
                 button.connect("clicked", self.on_command_selected, cmd_name)
                 self.list_box.append(button)
+                index += 1
+                if index > 9:  # Only show hints for first 9 items
+                    break
             self.current_apps = []
 
         elif command in CUSTOM_LAUNCHERS:
@@ -507,7 +549,9 @@ class Launcher(Gtk.ApplicationWindow):
 
         else:
             # Find matching commands
-            matching_custom = [cmd for cmd in CUSTOM_LAUNCHERS if cmd.startswith(command)]
+            matching_custom = [
+                cmd for cmd in CUSTOM_LAUNCHERS if cmd.startswith(command)
+            ]
             matching_launchers = []
             for launcher_name, triggers in self.launcher_registry.list_launchers():
                 for trigger in triggers:
@@ -516,11 +560,17 @@ class Launcher(Gtk.ApplicationWindow):
 
             all_matching = sorted(set(matching_custom + matching_launchers))
             if all_matching:
+                index = 1
                 for cmd in all_matching:
                     metadata = METADATA.get(cmd, "")
-                    button = self.create_button_with_metadata(f">{cmd}", metadata)
+                    button = self.create_button_with_metadata(
+                        f">{cmd}", metadata, index=index
+                    )
                     button.connect("clicked", self.on_command_selected, cmd)
                     self.list_box.append(button)
+                    index += 1
+                    if index > 9:  # Only show hints for first 9 items
+                        break
                 self.current_apps = []
             else:
                 # No matching commands, offer to run as shell command
@@ -531,13 +581,19 @@ class Launcher(Gtk.ApplicationWindow):
 
     def populate_app_mode(self, filter_text):
         self.current_apps = []
+        index = 1
         for app in self.apps:
             if not filter_text or fuzzy_match(filter_text, app["name"]):
                 self.current_apps.append(app)
                 metadata = METADATA.get(app["name"], "")
-                button = self.create_button_with_metadata(app["name"], metadata)
+                button = self.create_button_with_metadata(
+                    app["name"], metadata, index=index
+                )
                 button.connect("clicked", self.on_app_clicked, app)
                 self.list_box.append(button)
+                index += 1
+                if index > 9:  # Only show hints for first 9 items
+                    break
 
     def populate_apps(self, filter_text=""):
         """Populate the launcher with apps or use registered launchers for commands."""
@@ -545,7 +601,9 @@ class Launcher(Gtk.ApplicationWindow):
             self.list_box.remove(self.list_box.get_first_child())
 
         # Check if any registered launcher can handle this input
-        trigger, launcher, query = self.launcher_registry.find_launcher_for_input(filter_text)
+        trigger, launcher, query = self.launcher_registry.find_launcher_for_input(
+            filter_text
+        )
 
         if launcher:
             # Use the registered launcher
@@ -586,15 +644,15 @@ class Launcher(Gtk.ApplicationWindow):
 
         except Exception as e:
             print(f"Failed to launch {app['name']}: {e}")
-        self.hide()
 
     def on_entry_activate(self, entry):
+        self.hide()
+
         if self.selected_row:
             button = self.selected_row.get_child()
             if button:
                 button.emit("clicked")
-                self.hide()
-                return
+            return
 
         text = self.search_entry.get_text()
 
@@ -613,7 +671,6 @@ class Launcher(Gtk.ApplicationWindow):
         # Special case for lock screen (legacy support)
         if text == ">lock":
             self.show_lock_screen()
-            self.hide()
             return
 
         # Handle custom launchers from config
@@ -668,6 +725,17 @@ class Launcher(Gtk.ApplicationWindow):
                 if button:
                     button.grab_focus()
 
+    def select_by_index(self, index):
+        """Select the item at the given index (0-based) and activate it."""
+        row = self.list_box.get_row_at_index(index)
+        if row:
+            self.selected_row = row
+            self.list_box.select_row(row)
+            button = row.get_child()
+            if button:
+                button.emit("clicked")
+                self.hide()
+
     def select_prev(self):
         if self.selected_row:
             prev_row = self.selected_row.get_prev_sibling()
@@ -718,7 +786,6 @@ class Launcher(Gtk.ApplicationWindow):
             "bluetooth",
             "wallpaper",
             "timer",
-            "monitor",
             "kill",
             "music",
             "refile",
@@ -738,9 +805,15 @@ class Launcher(Gtk.ApplicationWindow):
             subprocess.Popen(command, shell=True, env=env)
         except Exception as e:
             print(f"Failed to run command: {e}")
-        self.hide()
 
     def on_key_pressed(self, controller, keyval, keycode, state):
+        # Handle Alt+1 to Alt+9 for selecting items
+        if state & Gdk.ModifierType.ALT_MASK:  # Alt key
+            if Gdk.KEY_1 <= keyval <= Gdk.KEY_9:
+                index = keyval - Gdk.KEY_1  # 0 for 1, 1 for 2, etc.
+                self.select_by_index(index)
+                return True
+
         if keyval == Gdk.KEY_Tab:
             text = self.search_entry.get_text()
 
@@ -752,7 +825,9 @@ class Launcher(Gtk.ApplicationWindow):
                 return True
 
             # Check if any registered launcher can handle tab completion
-            trigger, launcher, query = self.launcher_registry.find_launcher_for_input(text)
+            trigger, launcher, query = self.launcher_registry.find_launcher_for_input(
+                text
+            )
             if launcher and launcher.handles_tab():
                 completion = launcher.handle_tab(query, self)
                 if completion:
@@ -764,12 +839,16 @@ class Launcher(Gtk.ApplicationWindow):
             # Fall back to command completion from registry
             if text.startswith(">"):
                 command = text[1:].strip()
-                all_commands = self.launcher_registry.get_all_triggers() + list(CUSTOM_LAUNCHERS.keys())
+                all_commands = self.launcher_registry.get_all_triggers() + list(
+                    CUSTOM_LAUNCHERS.keys()
+                )
                 if not command:
                     # No command yet, complete to first available
                     if all_commands:
                         first_cmd = all_commands[0]
-                        is_launcher_trigger = first_cmd in self.launcher_registry.get_all_triggers()
+                        is_launcher_trigger = (
+                            first_cmd in self.launcher_registry.get_all_triggers()
+                        )
                         suffix = " " if is_launcher_trigger else ""
                         self.search_entry.set_text(f">{first_cmd}{suffix}")
                         self.search_entry.set_position(-1)
@@ -779,7 +858,9 @@ class Launcher(Gtk.ApplicationWindow):
                     matching = [cmd for cmd in all_commands if cmd.startswith(command)]
                     if matching:
                         cmd = matching[0]
-                        is_launcher_trigger = cmd in self.launcher_registry.get_all_triggers()
+                        is_launcher_trigger = (
+                            cmd in self.launcher_registry.get_all_triggers()
+                        )
                         suffix = " " if is_launcher_trigger else ""
                         self.search_entry.set_text(f">{cmd}{suffix}")
                         self.search_entry.set_position(-1)

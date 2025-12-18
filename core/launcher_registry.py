@@ -8,12 +8,13 @@
 # ruff: ignore
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Tuple, Callable
+from typing import Dict, List, Optional, Tuple
 from enum import Enum
 
 
 class LauncherSizeMode(Enum):
     """Size modes for launcher windows."""
+
     DEFAULT = "default"
     WALLPAPER = "wallpaper"  # Larger size for wallpaper previews
     CUSTOM = "custom"
@@ -143,7 +144,9 @@ class LauncherRegistry:
             return result if isinstance(result, list) else [result]
         return []
 
-    def find_launcher_for_input(self, input_text: str) -> Tuple[Optional[str], Optional[LauncherInterface], str]:
+    def find_launcher_for_input(
+        self, input_text: str
+    ) -> Tuple[Optional[str], Optional[LauncherInterface], str]:
         """Find launcher and remaining query for given input text.
 
         Returns:
@@ -161,7 +164,7 @@ class LauncherRegistry:
         for trigger in sorted_triggers:
             if text_without_prefix.startswith(trigger):
                 launcher = self.get_launcher_by_trigger(trigger)
-                remaining_query = text_without_prefix[len(trigger):].strip()
+                remaining_query = text_without_prefix[len(trigger) :].strip()
                 return trigger, launcher, remaining_query
 
         return None, None, input_text
@@ -176,7 +179,10 @@ class LauncherRegistry:
 
     def list_launchers(self) -> List[Tuple[str, List[str]]]:
         """Get list of (launcher_name, command_triggers) for all launchers."""
-        return [(launcher.name, launcher.command_triggers) for launcher in self._launchers.values()]
+        return [
+            (launcher.name, launcher.command_triggers)
+            for launcher in self._launchers.values()
+        ]
 
 
 # Global registry instance

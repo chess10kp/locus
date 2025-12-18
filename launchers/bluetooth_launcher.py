@@ -23,7 +23,6 @@ from utils import (
 )
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from typing import Optional, Tuple
 
 
 class BluetoothHook(LauncherHook):
@@ -93,7 +92,7 @@ class BluetoothLauncher(LauncherInterface):
         self.hook = BluetoothHook(self)
 
         # Register the hook with the main launcher if available
-        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+        if main_launcher and hasattr(main_launcher, "hook_registry"):
             main_launcher.hook_registry.register_hook(self.hook)
 
     @property

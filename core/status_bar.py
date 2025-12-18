@@ -7,7 +7,7 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from gi.repository import Gdk, Gtk, Gio, GioUnix, GLib  # pyright: ignore
+from gi.repository import Gdk, Gtk, GLib  # pyright: ignore
 from typing_extensions import final
 import os
 import subprocess
@@ -54,6 +54,7 @@ class StatusBar(Gtk.ApplicationWindow):
         self.battery_label = None
         self.custom_message_label = None
         self.workspace_widgets = {}
+        self.center_x = 0
 
         # Styles
         self.label_style = """
@@ -176,6 +177,7 @@ class StatusBar(Gtk.ApplicationWindow):
 
         elif name == "workspaces":
             self.fixed = Gtk.Fixed()
+            self.fixed.set_hexpand(True)
 
             # Highlight indicator
             self.highlight_indicator = Gtk.Label(label="")
@@ -279,7 +281,7 @@ class StatusBar(Gtk.ApplicationWindow):
             GLib.timeout_add(50, self.update_highlight_position, active_name)
             return False
 
-        target_x = allocation.x
+        target_x = allocation.x + self.center_x
         target_w = allocation.width
 
         start_x = getattr(self, "current_highlight_x", target_x)
@@ -300,6 +302,19 @@ class StatusBar(Gtk.ApplicationWindow):
             self.fixed.move(self.highlight_indicator, int(target_x), 0)
             self.highlight_indicator.set_size_request(int(target_w), 26)
 
+        return False
+
+    def center_workspaces(self):
+        if not self.fixed or not self.workspaces_container:
+            return False
+        fixed_alloc = self.fixed.get_allocation()
+        container_alloc = self.workspaces_container.get_allocation()
+        if container_alloc.width > 0:
+            x = (fixed_alloc.width - container_alloc.width) // 2
+            self.fixed.move(self.workspaces_container, x, 0)
+            self.center_x = x
+        else:
+            self.center_x = 0
         return False
 
     def update_workspaces(self):
@@ -353,6 +368,9 @@ class StatusBar(Gtk.ApplicationWindow):
                 self.update_highlight_position,
                 current_focused.name if current_focused else None,
             )
+
+            # Center workspaces
+            GLib.idle_add(self.center_workspaces)
 
         except Exception as e:
             print(f"Error updating workspaces: {e}")
@@ -472,6 +490,7 @@ class StatusBar(Gtk.ApplicationWindow):
                             GLib.idle_add(self.launcher.show_launcher)
                         elif message.startswith("launcher "):
                             app_name = message[9:].strip()
+
                             # Launch the app using GLib.spawn_async
                             def launch_with_glib(cmd, working_dir=None):
                                 env = dict(os.environ.items())
@@ -479,9 +498,14 @@ class StatusBar(Gtk.ApplicationWindow):
                                 GLib.spawn_async(
                                     argv=cmd,
                                     envp=envp,
-                                    flags=GLib.SpawnFlags.SEARCH_PATH_FROM_ENVP | GLib.SpawnFlags.SEARCH_PATH,
+                                    flags=GLib.SpawnFlags.SEARCH_PATH_FROM_ENVP
+                                    | GLib.SpawnFlags.SEARCH_PATH,
                                     child_setup=None,
-                                    **({"working_directory": working_dir} if working_dir else {}),
+                                    **(
+                                        {"working_directory": working_dir}
+                                        if working_dir
+                                        else {}
+                                    ),
                                 )
 
                             try:
@@ -491,10 +515,14 @@ class StatusBar(Gtk.ApplicationWindow):
                                         try:
                                             exec_cmd = app["exec"].strip("'").split()
                                             launch_with_glib(exec_cmd)
-                                            print(f"Successfully launched {app['name']}")
+                                            print(
+                                                f"Successfully launched {app['name']}"
+                                            )
                                             break
                                         except Exception as e:
-                                            print(f"Failed to launch {app['name'].strip("'")}: {e}")
+                                            print(
+                                                f"Failed to launch {app['name'].strip("'")}: {e}"
+                                            )
                                 else:
                                     print(f"App '{app_name}' not found")
                             except Exception as e:

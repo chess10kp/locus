@@ -13,7 +13,6 @@ import os
 import time
 import setproctitle  # pyright: ignore
 import subprocess
-import argparse
 
 # Add current directory to path for absolute imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -32,7 +31,6 @@ from gi.repository import Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # noqa: E40
 # Initialize GTK immediately after imports, before any other modules
 Gtk.init()
 
-from utils import load_desktop_apps  # noqa: E402
 from core.status_bar import StatusBar  # noqa: E402
 
 setproctitle.setproctitle(APPNAME)
@@ -65,6 +63,7 @@ def kill_previous_process():
 
 
 kill_previous_process()
+
 
 def on_activate(app: Gtk.Application):
     display = Gdk.Display.get_default()

@@ -28,12 +28,12 @@ def get_monitor_geometry_for_window(window):
                 return monitor.get_geometry()
 
         # Fallback to primary monitor or first monitor
-        if hasattr(display, 'get_primary_monitor'):
+        if hasattr(display, "get_primary_monitor"):
             # X11
             monitor = display.get_primary_monitor()
             if monitor:
                 return monitor.get_geometry()
-        elif hasattr(display, 'get_monitors'):
+        elif hasattr(display, "get_monitors"):
             # Wayland - get the first monitor
             monitors = display.get_monitors()
             if monitors and monitors.get_n_items() > 0:
@@ -49,12 +49,12 @@ def get_monitor_geometry():
     display = Gdk.Display.get_default()
     if display:
         # Handle both Wayland and X11
-        if hasattr(display, 'get_primary_monitor'):
+        if hasattr(display, "get_primary_monitor"):
             # X11
             monitor = display.get_primary_monitor()
             if monitor:
                 return monitor.get_geometry()
-        elif hasattr(display, 'get_monitors'):
+        elif hasattr(display, "get_monitors"):
             # Wayland - get the first monitor
             monitors = display.get_monitors()
             if monitors and monitors.get_n_items() > 0:
@@ -102,7 +102,9 @@ class LockScreen(Gtk.ApplicationWindow):
 
         # Title
         self.title_label = Gtk.Label()
-        self.title_label.set_markup('<span size="xx-large" weight="bold">Screen Locked</span>')
+        self.title_label.set_markup(
+            '<span size="xx-large" weight="bold">Screen Locked</span>'
+        )
         self.title_label.set_margin_bottom(20)
         self.title_label.set_halign(Gtk.Align.CENTER)
 
@@ -127,7 +129,9 @@ class LockScreen(Gtk.ApplicationWindow):
 
         # Status label
         self.status_label = Gtk.Label()
-        self.status_label.set_markup('<span color="#cc241d">Please enter your password</span>')
+        self.status_label.set_markup(
+            '<span color="#cc241d">Please enter your password</span>'
+        )
         self.status_label.set_margin_top(10)
         self.status_label.set_halign(Gtk.Align.CENTER)
 
@@ -266,7 +270,9 @@ class LockScreen(Gtk.ApplicationWindow):
 
     def on_password_changed(self, entry):
         """Reset status label when user starts typing."""
-        self.status_label.set_markup('<span color="#98971a">Enter password to unlock</span>')
+        self.status_label.set_markup(
+            '<span color="#98971a">Enter password to unlock</span>'
+        )
 
     def on_password_entered(self, entry):
         """Handle password entry when Enter key is pressed."""
@@ -301,7 +307,9 @@ class LockScreen(Gtk.ApplicationWindow):
                 self.shake_window()
             else:
                 # Max attempts reached
-                self.status_label.set_markup('<span color="#fb4934">Maximum attempts reached! Locking...</span>')
+                self.status_label.set_markup(
+                    '<span color="#fb4934">Maximum attempts reached! Locking...</span>'
+                )
                 GLib.timeout_add(2000, self.max_attempts_lockdown)
 
     def shake_window(self):
@@ -332,13 +340,17 @@ class LockScreen(Gtk.ApplicationWindow):
         # You could implement additional security measures here
         # For now, just reset attempts but show a warning
         self.attempts = 0
-        self.status_label.set_markup('<span color="#fb4934">Session temporarily locked. Please wait...</span>')
+        self.status_label.set_markup(
+            '<span color="#fb4934">Session temporarily locked. Please wait...</span>'
+        )
         GLib.timeout_add(5000, self.reset_after_lockdown)
 
     def reset_after_lockdown(self):
         """Reset after temporary lockdown."""
         self.password_entry.set_text("")
-        self.status_label.set_markup('<span color="#cc241d">Please enter your password</span>')
+        self.status_label.set_markup(
+            '<span color="#cc241d">Please enter your password</span>'
+        )
         self.password_entry.grab_focus()
 
     def on_key_pressed(self, controller, keyval, keycode, state):
@@ -349,9 +361,25 @@ class LockScreen(Gtk.ApplicationWindow):
             return True
 
         # Prevent Alt+Tab, Ctrl+Alt+F1, etc.
-        if (state & Gdk.ModifierType.MOD1_MASK and keyval == Gdk.KEY_Tab) or \
-           (state & Gdk.ModifierType.CONTROL_MASK and state & Gdk.ModifierType.MOD1_MASK and
-            keyval in [Gdk.KEY_F1, Gdk.KEY_F2, Gdk.KEY_F3, Gdk.KEY_F4, Gdk.KEY_F5, Gdk.KEY_F6, Gdk.KEY_F7, Gdk.KEY_F8, Gdk.KEY_F9, Gdk.KEY_F10, Gdk.KEY_F11, Gdk.KEY_F12]):
+        if (state & Gdk.ModifierType.MOD1_MASK and keyval == Gdk.KEY_Tab) or (
+            state & Gdk.ModifierType.CONTROL_MASK
+            and state & Gdk.ModifierType.MOD1_MASK
+            and keyval
+            in [
+                Gdk.KEY_F1,
+                Gdk.KEY_F2,
+                Gdk.KEY_F3,
+                Gdk.KEY_F4,
+                Gdk.KEY_F5,
+                Gdk.KEY_F6,
+                Gdk.KEY_F7,
+                Gdk.KEY_F8,
+                Gdk.KEY_F9,
+                Gdk.KEY_F10,
+                Gdk.KEY_F11,
+                Gdk.KEY_F12,
+            ]
+        ):
             return True
 
         return False
@@ -369,7 +397,9 @@ class LockScreen(Gtk.ApplicationWindow):
         """Show the lock screen."""
         self.password_entry.set_text("")
         self.attempts = 0
-        self.status_label.set_markup('<span color="#cc241d">Please enter your password</span>')
+        self.status_label.set_markup(
+            '<span color="#cc241d">Please enter your password</span>'
+        )
 
         # Ensure the window covers the entire screen
         monitor_geo = get_monitor_geometry_for_window(self)

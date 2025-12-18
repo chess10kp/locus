@@ -11,7 +11,7 @@ import webbrowser
 from utils import get_bookmarks
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from typing import Optional, Tuple
+from typing import Optional
 
 
 class BookmarkHook(LauncherHook):
@@ -63,7 +63,7 @@ class BookmarkLauncher(LauncherInterface):
         self.hook = BookmarkHook(self)
 
         # Register the hook with the main launcher if available
-        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+        if main_launcher and hasattr(main_launcher, "hook_registry"):
             main_launcher.hook_registry.register_hook(self.hook)
 
     @property

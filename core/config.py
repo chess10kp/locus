@@ -57,13 +57,11 @@ METADATA = {}
 
 
 CUSTOM_LAUNCHERS = {
-    "editor": "Emacs",
     "calc": {"type": "builtin", "handler": "calculator"},
     "bookmark": {"type": "builtin", "handler": "bookmark"},
     "bluetooth": {"type": "builtin", "handler": "bluetooth"},
     "wallpaper": {"type": "builtin", "handler": "wallpaper"},
     "timer": {"type": "builtin", "handler": "timer"},
-    "monitor": {"type": "builtin", "handler": "monitor"},
     "todo": {"type": "function", "func": todo_capture},
     "shutdown": {"type": "command", "cmd": "systemctl poweroff"},
     "reboot": {"type": "command", "cmd": "systemctl reboot"},
@@ -78,13 +76,11 @@ CUSTOM_LAUNCHERS = {
 # Add default metadata for built-in launchers
 METADATA.update(
     {
-        "editor": "Text editor",
         "calc": "Calculator",
         "bookmark": "Bookmarks",
         "bluetooth": "Bluetooth",
         "wallpaper": "Wallpaper",
         "timer": "Timer",
-        "monitor": "Monitor control",
         "todo": "Todo capture",
         "shutdown": "Shutdown",
         "reboot": "Reboot",

@@ -12,7 +12,7 @@ import os
 from utils import sanitize_expr, evaluate_calculator
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 
 class CalcHook(LauncherHook):
@@ -53,7 +53,7 @@ class CalcLauncher(LauncherInterface):
         self.launcher = main_launcher
         self.hook = CalcHook(self)
         # Register the hook with the main launcher if available
-        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+        if main_launcher and hasattr(main_launcher, "hook_registry"):
             main_launcher.hook_registry.register_hook(self.hook)
 
     @property

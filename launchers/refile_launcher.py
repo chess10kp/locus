@@ -9,7 +9,8 @@
 
 import subprocess
 import json
-from typing import Any, Optional, List, Dict, Tuple
+import os
+from typing import Any, Optional, List
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 
@@ -63,17 +64,20 @@ class RefileLauncher(LauncherInterface):
     def name(self) -> str:
         return "refile"
 
-    def get_size_mode(self) -> 'LauncherSizeMode':
-        return LauncherSizeMode.COMPACT
+    def get_size_mode(self):
+        return LauncherSizeMode.DEFAULT, None
 
     def get_workspaces(self) -> List[str]:
         """Get list of all workspace names"""
         try:
+            env = os.environ.copy()
+            env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
             result = subprocess.run(
                 ["swaymsg", "-t", "get_workspaces"],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
+                env=env,
             )
             workspaces = json.loads(result.stdout)
             return [ws["name"] for ws in workspaces]
@@ -84,11 +88,14 @@ class RefileLauncher(LauncherInterface):
     def get_current_workspace(self) -> Optional[str]:
         """Get the currently focused workspace"""
         try:
+            env = os.environ.copy()
+            env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
             result = subprocess.run(
                 ["swaymsg", "-t", "get_workspaces"],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
+                env=env,
             )
             workspaces = json.loads(result.stdout)
             for ws in workspaces:
@@ -111,7 +118,11 @@ class RefileLauncher(LauncherInterface):
 
             if target_workspace == current_workspace:
                 subprocess.run(
-                    ["notify-send", "Workspace Swap", "Cannot swap a workspace with itself"]
+                    [
+                        "notify-send",
+                        "Workspace Swap",
+                        "Cannot swap a workspace with itself",
+                    ]
                 )
                 return
 
@@ -119,24 +130,41 @@ class RefileLauncher(LauncherInterface):
             workspaces = self.get_workspaces()
             if target_workspace not in workspaces:
                 subprocess.run(
-                    ["notify-send", "Workspace Swap", f"Workspace '{target_workspace}' does not exist"]
+                    [
+                        "notify-send",
+                        "Workspace Swap",
+                        f"Workspace '{target_workspace}' does not exist",
+                    ]
                 )
                 return
 
             # Execute the swap logic from refile.sh
             subprocess.run(["swaymsg", "workspace", "tmp_swap_workspace"])
-            subprocess.run(["swaymsg", f"[workspace=\"{current_workspace}\"] move container to workspace tmp_swap_workspace"])
+            subprocess.run(
+                [
+                    "swaymsg",
+                    f'[workspace="{current_workspace}"] move container to workspace tmp_swap_workspace',
+                ]
+            )
             subprocess.run(["swaymsg", "workspace", target_workspace])
-            subprocess.run(["swaymsg", f"[workspace=\"{target_workspace}\"] move container to workspace {current_workspace}"])
+            subprocess.run(
+                [
+                    "swaymsg",
+                    f'[workspace="{target_workspace}"] move container to workspace {current_workspace}',
+                ]
+            )
             subprocess.run(["swaymsg", "workspace", "tmp_swap_workspace"])
-            subprocess.run(["swaymsg", f"[workspace=\"tmp_swap_workspace\"] move container to workspace {target_workspace}"])
+            subprocess.run(
+                [
+                    "swaymsg",
+                    f'[workspace="tmp_swap_workspace"] move container to workspace {target_workspace}',
+                ]
+            )
             subprocess.run(["swaymsg", "workspace", current_workspace])
 
         except Exception as e:
             print(f"Error swapping workspaces: {e}")
-            subprocess.run(
-                ["notify-send", "Workspace Swap", f"Error: {e}"]
-            )
+            subprocess.run(["notify-send", "Workspace Swap", f"Error: {e}"])
 
     def populate(self, query: str, launcher_core) -> None:
         """Populate the launcher with workspace options"""
@@ -172,6 +200,6 @@ class RefileLauncher(LauncherInterface):
             button = launcher_core.create_button_with_metadata(
                 f"Swap to: {workspace}",
                 f"Exchange containers with workspace '{workspace}'",
-                item_data
+                item_data,
             )
             launcher_core.list_box.append(button)

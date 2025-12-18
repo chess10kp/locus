@@ -84,7 +84,7 @@ class MusicLauncher(LauncherInterface):
         self.music_dir = MUSIC_DIR
         self.files_cache: List[Dict[str, str]] = []
         self.scanning = False
-        self.start_scan()
+        self.scanned = False
 
     @property
     def command_triggers(self) -> list:
@@ -94,16 +94,8 @@ class MusicLauncher(LauncherInterface):
     def name(self) -> str:
         return "music"
 
-    def get_size_mode(self) -> 'LauncherSizeMode':
-        return LauncherSizeMode.FULL
-
-    def start_scan(self):
-        if self.scanning:
-            return
-        self.scanning = True
-        thread = threading.Thread(target=self._scan_worker)
-        thread.daemon = True
-        thread.start()
+    def get_size_mode(self) -> Tuple[LauncherSizeMode, Optional[Tuple[int, int]]]:
+        return (LauncherSizeMode.DEFAULT, None)
 
     def _scan_worker(self):
         # We'll use os.walk for portability in python
@@ -133,7 +125,32 @@ class MusicLauncher(LauncherInterface):
 
     def get_status(self) -> Dict[str, str]:
         # Get status lines
-        output = self._run_mpc(["status"])
+        try:
+            result = subprocess.run(
+                ["mpc", "status"], capture_output=True, text=True, timeout=1
+            )
+            output = result.stdout.strip()
+            if result.returncode != 0:
+                return {
+                    "state": "stopped",
+                    "song": "MPD not running",
+                    "volume": "",
+                    "repeat": "off",
+                    "random": "off",
+                    "single": "off",
+                    "consume": "off",
+                }
+        except Exception:
+            return {
+                "state": "stopped",
+                "song": "MPC not available",
+                "volume": "",
+                "repeat": "off",
+                "random": "off",
+                "single": "off",
+                "consume": "off",
+            }
+
         status = {
             "state": "stopped",
             "song": "",
@@ -177,6 +194,10 @@ class MusicLauncher(LauncherInterface):
         return status
 
     def populate(self, query: str, launcher_core) -> None:
+        if not self.scanned:
+            self.scanned = True
+            self._scan_worker()
+
         show_queue = False
 
         if query.startswith("queue"):
@@ -204,15 +225,29 @@ class MusicLauncher(LauncherInterface):
         meta = f"Vol: {status.get('volume')} | Rep: {status.get('repeat')} | Rnd: {status.get('random')} | Sgl: {status.get('single')}"
 
         # Toggle Play/Pause button
-        self._add_button(text=header, metadata=meta, action="control", value="toggle", launcher_core=launcher_core)
+        self._add_button(
+            text=header,
+            metadata=meta,
+            action="control",
+            value="toggle",
+            launcher_core=launcher_core,
+        )
 
         if is_queue_mode:
             self._add_button(
-                "View Library", "Switch to file browser", "control", "view_library", launcher_core
+                "View Library",
+                "Switch to file browser",
+                "control",
+                "view_library",
+                launcher_core,
             )
         else:
             self._add_button(
-                "View Queue", "Manage playback queue", "control", "view_queue", launcher_core
+                "View Queue",
+                "Manage playback queue",
+                "control",
+                "view_queue",
+                launcher_core,
             )
 
     def _add_button(self, text, metadata, action, value, launcher_core):
@@ -253,6 +288,14 @@ class MusicLauncher(LauncherInterface):
             )
             return
 
+        if not self.files_cache:
+            launcher_core.list_box.append(
+                launcher_core.create_button_with_metadata(
+                    "No music files found", f"Check {self.music_dir} directory"
+                )
+            )
+            return
+
         count = 0
         MAX_RESULTS = 50  # Limit results for performance
 
@@ -271,6 +314,13 @@ class MusicLauncher(LauncherInterface):
             count += 1
             if count >= MAX_RESULTS:
                 return
+
+        if count == 0 and query:
+            launcher_core.list_box.append(
+                launcher_core.create_button_with_metadata(
+                    f"No matches for '{query}'", ""
+                )
+            )
 
     def play_file(self, rel_path):
         self._run_mpc(["add", rel_path])
