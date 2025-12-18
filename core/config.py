@@ -40,6 +40,36 @@ BAR_LAYOUT = {
     "right": ["time", "battery", "custom_message"],
 }
 
+# Module Configuration Options
+# Each module can have its own configuration options
+MODULE_CONFIG = {
+    "time": {
+        "format": "%H:%M",           # Time format string
+        "interval": 60,              # Update interval in seconds
+    },
+    "battery": {
+        "interval": 60,              # Update interval in seconds
+        "show_percentage": True,     # Show percentage in addition to icon
+    },
+    "workspaces": {
+        "show_numbers": True,        # Show workspace numbers
+        "highlight_focused": True,   # Highlight focused workspace
+    },
+    "binding_mode": {
+        "interval": 1,               # Update interval in seconds
+    },
+    "emacs_clock": {
+        "interval": 10,              # Update interval in seconds
+        "fallback_text": "",         # Text when no clock active
+    },
+    "launcher": {
+        # No configuration needed for static module
+    },
+    "custom_message": {
+        # No configuration needed for on-demand module
+    }
+}
+
 
 # Custom launchers configuration
 # Each launcher can be:

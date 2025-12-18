@@ -82,28 +82,24 @@ class CalcLauncher(LauncherInterface):
                 return True
         return False
 
-    def populate(self, expr, launcher_core):
-        sanitized = sanitize_expr(expr)
+    def populate(self, query: str, launcher_core):
+        sanitized = sanitize_expr(query)
         result, error = evaluate_calculator(sanitized)
-        if error:
-            label_text = f"Error: {error}"
-            metadata = launcher_core.METADATA.get(label_text, "")
-            button = launcher_core.create_button_with_metadata(label_text, metadata)
-        else:
+        if not error:
             label_text = f"Result: {result}"
             metadata = launcher_core.METADATA.get(label_text, "")
             button = launcher_core.create_button_with_metadata(
                 label_text, metadata, result
             )
-        launcher_core.list_box.append(button)
-        launcher_core.list_box.queue_draw()
-        launcher_core.scrolled.queue_draw()
-        # Scroll to top
-        vadj = launcher_core.scrolled.get_vadjustment()
-        if vadj:
-            vadj.set_value(0)
-        launcher_core.queue_draw()
-        launcher_core.current_apps = []
+            launcher_core.list_box.append(button)
+            launcher_core.list_box.queue_draw()
+            launcher_core.scrolled.queue_draw()
+            # Scroll to top
+            vadj = launcher_core.scrolled.get_vadjustment()
+            if vadj:
+                vadj.set_value(0)
+            launcher_core.queue_draw()
+            launcher_core.current_apps = []
 
     def on_result_clicked(self, button, result):
         # Copy result to clipboard

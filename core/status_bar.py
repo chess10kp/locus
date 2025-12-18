@@ -14,13 +14,10 @@ import subprocess
 import json
 import threading
 import socket
+from typing import Optional
 
-from datetime import datetime as dt
-
-from utils.utils import apply_styles, HBox, get_battery_status, load_desktop_apps
-from utils.wm import detect_wm
-from .launcher import Launcher
-from .config import BAR_LAYOUT
+from .config import BAR_LAYOUT, MODULE_CONFIG
+from .statusbar_manager import StatusbarModuleManager
 
 
 @final
@@ -40,21 +37,23 @@ class StatusBar(Gtk.ApplicationWindow):
             visible=True,
         )
 
+        # Import statusbar modules to trigger registration
+        import modules.statusbar  # noqa: F401
+
+        # Import other dependencies after module registration
+        from utils.utils import (
+            HBox,
+            get_battery_status,
+            load_desktop_apps,
+        )
+        from utils.wm import detect_wm
+        from .launcher import Launcher
+
         self.wm_client = detect_wm()
         self.launcher = Launcher(application=kwargs.get("application"))
 
-        # Initialize module references to None
-        self.launcher_button = None
-        self.fixed = None
-        self.workspaces_container = None
-        self.highlight_indicator = None
-        self.binding_state_label = None
-        self.emacs_clock_label = None
-        self.time_label = None
-        self.battery_label = None
-        self.custom_message_label = None
-        self.workspace_widgets = {}
-        self.center_x = 0
+        # Initialize module manager
+        self.module_manager = StatusbarModuleManager(self)
 
         # Styles
         self.label_style = """
@@ -107,40 +106,13 @@ class StatusBar(Gtk.ApplicationWindow):
 
         self.apply_status_bar_styles()
 
-        # Start event listener
-        if self.fixed:  # Only if workspaces module exists
-            self.wm_client.start_event_listener(self.update_workspaces)
-
-        # Start update loops
-        all_modules = (
-            BAR_LAYOUT.get("left", [])
-            + BAR_LAYOUT.get("middle", [])
-            + BAR_LAYOUT.get("right", [])
-        )
-        if "time" in all_modules:
-            self.update_time()
-            GLib.timeout_add_seconds(60, self.update_time_callback)
-
-        if "battery" in all_modules:
-            self.update_battery()
-            GLib.timeout_add_seconds(60, self.update_battery_callback)
-
-        if "binding_mode" in all_modules:
-            self.update_binding_state()
-            GLib.timeout_add_seconds(1, self.update_binding_state_callback)
-
-        if "emacs_clock" in all_modules:
-            self.update_emacs_clock()
-            GLib.timeout_add_seconds(10, self.update_emacs_clock_callback)
-
-        if "workspaces" in all_modules:
-            self.update_workspaces()
-
-        # Start IPC socket server always, as it might be used for launcher or custom messages
+        # Start IPC socket server
         self.start_ipc_server()
 
     def construct_modules(self, modules, box):
-        """Construct modules and add them to the box."""
+        """Construct modules using the plugin system and add them to the box."""
+        from utils.utils import apply_styles
+
         for i, module_name in enumerate(modules):
             if i > 0:
                 sep = Gtk.Label.new(" | ")
@@ -151,435 +123,124 @@ class StatusBar(Gtk.ApplicationWindow):
             if widget:
                 box.append(widget)
 
-    def create_module_widget(self, name):
-        """Create a widget for the given module name."""
-        if name == "launcher":
-            self.launcher_button = Gtk.Button(label="󰀻")
-            self.launcher_button.connect("clicked", self.on_launcher_clicked)
-            apply_styles(
-                self.launcher_button,
-                """
-                button {
-                    background: transparent;
-                    color: #ebdbb2;
-                    border: none;
-                    font-size: 18px;
-                    font-family: Iosevka;
-                    margin: 0;
-                    padding: 0;
-                }
-                button:hover {
-                    background: #1a1a1a;
-                }
-            """,
-            )
-            return self.launcher_button
-
-        elif name == "workspaces":
-            self.fixed = Gtk.Fixed()
-            self.fixed.set_hexpand(True)
-
-            # Highlight indicator
-            self.highlight_indicator = Gtk.Label(label="")
-            self.highlight_indicator.get_style_context().add_class(
-                "workspace-highlight"
-            )
-            apply_styles(
-                self.highlight_indicator,
-                """
-                label {
-                    background-color: #ebdbb2;
-                    margin: 0;
-                    padding: 0;
-                    border-radius: 2px;
-                }
-                """,
-            )
-            self.fixed.put(self.highlight_indicator, 0, 0)
-
-            # Workspace text container
-            self.workspaces_container = HBox(spacing=0)
-            self.fixed.put(self.workspaces_container, 0, 0)
-
-            return self.fixed
-
-        elif name == "binding_mode":
-            self.binding_state_label = Gtk.Label()
-            apply_styles(self.binding_state_label, self.label_style)
-            return self.binding_state_label
-
-        elif name == "emacs_clock":
-            self.emacs_clock_label = Gtk.Label()
-            apply_styles(self.emacs_clock_label, self.label_style)
-            return self.emacs_clock_label
-
-        elif name == "time":
-            self.time_label = Gtk.Label()
-            apply_styles(self.time_label, self.label_style)
-            return self.time_label
-
-        elif name == "battery":
-            self.battery_label = Gtk.Label()
-            apply_styles(self.battery_label, self.label_style)
-            return self.battery_label
-
-        elif name == "custom_message":
-            self.custom_message_label = Gtk.Label()
-            apply_styles(self.custom_message_label, self.label_style)
-            return self.custom_message_label
-
-        return None
-
-    def update_time(self):
-        """Update time display"""
-        if self.time_label:
-            current_time = dt.now().strftime("%H:%M")
-            self.time_label.set_text(current_time)
-
-    def update_battery(self):
-        """Update battery display"""
-        if self.battery_label:
-            battery_status = get_battery_status()
-            self.battery_label.set_text(battery_status)
-
-    def animate_highlight(self, start_x, end_x, start_w, end_w, step=0, total_steps=10):
-        """Animate sliding the workspace highlight"""
-        if step < total_steps:
-            progress = (step + 1) / total_steps
-            x = start_x + (end_x - start_x) * progress
-            w = start_w + (end_w - start_w) * progress
-
-            self.fixed.move(self.highlight_indicator, int(x), 0)
-            self.highlight_indicator.set_size_request(int(w), 26)
-
-            GLib.timeout_add(
-                10,
-                self.animate_highlight,
-                start_x,
-                end_x,
-                start_w,
-                end_w,
-                step + 1,
-                total_steps,
-            )
-        else:
-            self.fixed.move(self.highlight_indicator, int(end_x), 0)
-            self.highlight_indicator.set_size_request(int(end_w), 26)
-        return False
-
-    def update_highlight_position(self, active_name):
-        """Update position of the highlight widget based on active workspace"""
-        if active_name is None or active_name not in self.workspace_widgets:
-            self.highlight_indicator.set_visible(False)
-            return
-
-        target_widget = self.workspace_widgets[active_name]
-        allocation = target_widget.get_allocation()
-
-        # If allocation is not ready yet (e.g. initial load), retry shortly
-        if allocation.width <= 1:
-            GLib.timeout_add(50, self.update_highlight_position, active_name)
-            return False
-
-        target_x = allocation.x + self.center_x
-        target_w = allocation.width
-
-        start_x = getattr(self, "current_highlight_x", target_x)
-        start_w = getattr(self, "current_highlight_w", target_w)
-
-        # Determine if we should animate
-        should_animate = (
-            start_x != target_x or start_w != target_w
-        ) and self.highlight_indicator.get_visible()
-
-        self.highlight_indicator.set_visible(True)
-        self.current_highlight_x = target_x
-        self.current_highlight_w = target_w
-
-        if should_animate:
-            self.animate_highlight(start_x, target_x, start_w, target_w)
-        else:
-            self.fixed.move(self.highlight_indicator, int(target_x), 0)
-            self.highlight_indicator.set_size_request(int(target_w), 26)
-
-        return False
-
-    def center_workspaces(self):
-        if not self.fixed or not self.workspaces_container:
-            return False
-        fixed_alloc = self.fixed.get_allocation()
-        container_alloc = self.workspaces_container.get_allocation()
-        if container_alloc.width > 0:
-            x = (fixed_alloc.width - container_alloc.width) // 2
-            self.fixed.move(self.workspaces_container, x, 0)
-            self.center_x = x
-        else:
-            self.center_x = 0
-        return False
-
-    def update_workspaces(self):
-        """Update workspaces display"""
-        if not self.workspaces_container:
-            return
-
+    def create_module_widget(self, name: str) -> Optional[Gtk.Widget]:
+        """Create a widget for the given module name using the plugin system."""
         try:
-            workspaces = self.wm_client.get_workspaces()
-            ws_sorted = sorted(workspaces, key=lambda ws: (ws.num, ws.name))
+            # Get module configuration
+            module_config = MODULE_CONFIG.get(name, {})
 
-            current_focused = next((ws for ws in ws_sorted if ws.focused), None)
+            # Create module using the plugin manager
+            widget = self.module_manager.create_module(name, module_config)
 
-            # Recreate workspace widgets only if necessary
-            # For simplicity, we'll recreate if the list of workspaces changed
-            # In a more complex app, we'd diff.
-            current_names = [ws.name for ws in ws_sorted]
-            existing_names_list = list(self.workspace_widgets.keys())
+            if widget:
+                # Special handling for modules that need WM client
+                if name == "binding_mode":
+                    binding_mode_instance = self.module_manager.get_module_instance(
+                        name
+                    )
+                    if binding_mode_instance:
+                        binding_mode_instance.wm_client = self.wm_client
 
-            if current_names != existing_names_list:
-                # Clear existing
-                child = self.workspaces_container.get_first_child()
-                while child:
-                    next_child = child.get_next_sibling()
-                    self.workspaces_container.remove(child)
-                    child = next_child
-                self.workspace_widgets.clear()
+                elif name == "workspaces":
+                    workspaces_instance = self.module_manager.get_module_instance(name)
+                    if workspaces_instance:
+                        workspaces_instance.wm_client = self.wm_client
 
-                # Create new
-                for ws in ws_sorted:
-                    label = Gtk.Label(label=f" {ws.name} ")
-                    apply_styles(label, self.label_style)
-                    self.workspaces_container.append(label)
-                    self.workspace_widgets[ws.name] = label
-
-            # Update styles for focus
-            for ws in ws_sorted:
-                widget = self.workspace_widgets.get(ws.name)
-                if widget:
-                    if ws.focused:  # simplified check since we iterate ws_sorted
-                        widget.set_markup(
-                            f'<span foreground="#0e1419"> {ws.name} </span>'
-                        )
-                    else:
-                        widget.set_markup(
-                            f'<span foreground="#ebdbb2"> {ws.name} </span>'
-                        )
-
-            # Trigger highlight update
-            GLib.idle_add(
-                self.update_highlight_position,
-                current_focused.name if current_focused else None,
-            )
-
-            # Center workspaces
-            GLib.idle_add(self.center_workspaces)
+                return widget
+            else:
+                print(f"Warning: Could not create widget for module '{name}'")
+                return None
 
         except Exception as e:
-            print(f"Error updating workspaces: {e}")
-
-    def update_binding_state(self):
-        """Update binding state display"""
-        if not self.binding_state_label:
-            return
-
-        try:
-            result = subprocess.run(
-                ["swaymsg", "-t", "get_binding_state"],
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-            if result.returncode == 0:
-                data = json.loads(result.stdout)
-                mode = data.get("name", "default")
-                if mode != "default":
-                    self.binding_state_label.set_text(f"[{mode}]")
-                else:
-                    self.binding_state_label.set_text("")
-            else:
-                self.binding_state_label.set_text("")
-        except Exception:
-            self.binding_state_label.set_text("")
-
-    def update_emacs_clock(self):
-        """Update Emacs clocked task display"""
-        if not self.emacs_clock_label:
-            return
-
-        try:
-            result = subprocess.run(
-                [
-                    "emacsclient",
-                    "-e",
-                    '(progn (require \'org-clock) (if (org-clocking-p) org-clock-heading ""))',
-                ],
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-            if result.returncode == 0:
-                task = result.stdout.strip().strip('"')  # Remove quotes if any
-                self.emacs_clock_label.set_text(task)
-            else:
-                self.emacs_clock_label.set_text("")
-        except Exception:
-            self.emacs_clock_label.set_text("")
-
-    def update_time_callback(self) -> bool:
-        """Callback for time updates"""
-        self.update_time()
-        return True
-
-    def update_battery_callback(self) -> bool:
-        """Callback for battery updates"""
-        self.update_battery()
-        return True
-
-    def update_binding_state_callback(self) -> bool:
-        """Callback for binding state updates"""
-        self.update_binding_state()
-        return True
-
-    def update_emacs_clock_callback(self) -> bool:
-        """Callback for Emacs clock updates"""
-        self.update_emacs_clock()
-        return True
-
-    def update_custom_message(self, message: str):
-        """Update custom message display"""
-        if self.custom_message_label:
-            self.custom_message_label.set_text(message)
-
-    def on_launcher_clicked(self, button):
-        # Check if launcher is in middle
-        if "launcher" in BAR_LAYOUT.get("middle", []):
-            # Get screen center since middle is centered
-            display = Gdk.Display.get_default()
-            monitor = display.get_primary_monitor()
-            if monitor is None and display.get_n_monitors() > 0:
-                monitor = display.get_monitor(0)
-            if monitor:
-                geometry = monitor.get_geometry()
-                screen_center_x = geometry.x + geometry.width // 2
-                self.launcher.show_launcher(center_x=screen_center_x)
-            else:
-                self.launcher.show_launcher()
-        else:
-            self.launcher.show_launcher()
-
-    def start_ipc_server(self):
-        """Start Unix socket server for IPC"""
-        from .config import SOCKET_PATH
-
-        def server_loop():
-            # Remove socket if exists
-            try:
-                os.unlink(SOCKET_PATH)
-            except OSError:
-                pass
-
-            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            server.bind(SOCKET_PATH)
-            server.listen(1)
-
-            while True:
-                try:
-                    conn, _ = server.accept()
-                    data = conn.recv(1024)
-                    if data:
-                        message = data.decode("utf-8").strip()
-                        if message == "launcher":
-                            GLib.idle_add(self.launcher.show_launcher)
-                        elif message.startswith("launcher "):
-                            app_name = message[9:].strip()
-
-                            # Launch the app using GLib.spawn_async
-                            def launch_with_glib(cmd, working_dir=None):
-                                env = dict(os.environ.items())
-                                envp = [f"{k}={v}" for k, v in env.items()]
-                                GLib.spawn_async(
-                                    argv=cmd,
-                                    envp=envp,
-                                    flags=GLib.SpawnFlags.SEARCH_PATH_FROM_ENVP
-                                    | GLib.SpawnFlags.SEARCH_PATH,
-                                    child_setup=None,
-                                    **(
-                                        {"working_directory": working_dir}
-                                        if working_dir
-                                        else {}
-                                    ),
-                                )
-
-                            try:
-                                apps = load_desktop_apps()
-                                for app in apps:
-                                    if app_name.lower() in app["name"].lower():
-                                        try:
-                                            exec_cmd = app["exec"].strip("'").split()
-                                            launch_with_glib(exec_cmd)
-                                            print(
-                                                f"Successfully launched {app['name']}"
-                                            )
-                                            break
-                                        except Exception as e:
-                                            print(
-                                                f"Failed to launch {app['name'].strip("'")}: {e}"
-                                            )
-                                else:
-                                    print(f"App '{app_name}' not found")
-                            except Exception as e:
-                                print(f"Error launching app: {e}")
-                        else:
-                            GLib.idle_add(self.update_custom_message, message)
-                    conn.close()
-                except Exception as e:
-                    print(f"IPC error: {e}")
-                    break
-
-            server.close()
-
-        thread = threading.Thread(target=server_loop)
-        thread.daemon = True
-        thread.start()
+            print(f"Error creating module widget '{name}': {e}")
+            # Fallback: create a simple label with error message
+            error_label = Gtk.Label(label=f"[{name}]")
+            error_label.set_name(f"error-{name}")
+            return error_label
 
     def apply_status_bar_styles(self):
-        """Apply CSS styling to the status bar like Emacs modeline"""
-        apply_styles(
-            self,
+        """Apply the main status bar styles."""
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(
             """
             window {
-                background: #0e1418;
+                background-color: #1e1e1e;
+                border-bottom: 1px solid #444444;
+            }
+
+            .workspace-highlight {
+                background-color: #50fa7b;
                 margin: 0;
                 padding: 0;
+                border-radius: 2px;
             }
-        """,
+            """.encode()
+        )
+        style_context = self.get_style_context()
+        style_context.add_provider(
+            css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
 
-        apply_styles(
-            self.main_box,
-            """
-            box {
-                background: transparent;
-                padding: 0;
-                margin: 0;
-            }
-        """,
-        )
+    def start_ipc_server(self):
+        """Start the IPC socket server for external communication."""
+        self.socket_path = "/tmp/locus_socket"
+        try:
+            # Remove existing socket if it exists
+            if os.path.exists(self.socket_path):
+                os.unlink(self.socket_path)
 
-        apply_styles(
-            self.left_box,
-            """
-            box {
-                padding: 0;
-                margin: 0;
-            }
-        """,
-        )
+            self.server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.server_socket.bind(self.socket_path)
+            self.server_socket.listen(1)
+            self.server_socket.settimeout(1)  # Non-blocking with timeout
 
-        apply_styles(
-            self.right_box,
-            """
-            box {
-                padding: 0;
-                margin: 0;
-            }
-        """,
-        )
+            # Start listening in a separate thread
+            self.ipc_thread = threading.Thread(target=self.ipc_server_loop, daemon=True)
+            self.ipc_thread.start()
+        except Exception as e:
+            print(f"Error starting IPC server: {e}")
+
+    def ipc_server_loop(self):
+        """IPC server loop to handle incoming connections."""
+        while True:
+            try:
+                client_socket, _ = self.server_socket.accept()
+                with client_socket:
+                    data = client_socket.recv(1024).decode().strip()
+                    if data:
+                        # Special handling for launcher command
+                        if data == "launcher":
+                            if self.launcher:
+                                self.launcher.present()
+                            handled = True
+                        else:
+                            # Handle the message through the module manager
+                            handled = self.module_manager.handle_ipc_message(data)
+                        if not handled:
+                            print(f"Unhandled IPC message: {data}")
+            except socket.timeout:
+                continue
+            except OSError:
+                # Socket was closed
+                break
+            except Exception as e:
+                print(f"IPC server error: {e}")
+
+    def send_status_message(self, message: str):
+        """Send a status message to the custom message module."""
+        self.module_manager.handle_ipc_message(f"status:{message}")
+
+    def on_launcher_clicked(self, button):
+        """Handle launcher button click."""
+        self.launcher.present()
+
+    def cleanup(self):
+        """Clean up resources when the statusbar is destroyed."""
+        if hasattr(self, "module_manager"):
+            self.module_manager.cleanup()
+
+        if hasattr(self, "server_socket"):
+            self.server_socket.close()
+
+        if hasattr(self, "socket_path") and os.path.exists(self.socket_path):
+            os.unlink(self.socket_path)
