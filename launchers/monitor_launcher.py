@@ -9,11 +9,13 @@
 
 from utils import get_monitors, toggle_monitor
 from core.hooks import LauncherHook
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from typing import Optional, Tuple
 
 
 class MonitorHook(LauncherHook):
-    def __init__(self, launcher):
-        self.launcher = launcher
+    def __init__(self, main_launcher=None):
+        self.launcher = main_launcher
 
     def on_select(self, launcher, item_data):
         """Handle button clicks for monitor toggling."""
@@ -50,19 +52,31 @@ class MonitorHook(LauncherHook):
         return None
 
 
-class MonitorLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
-        self.hook = MonitorHook(launcher)
-        launcher.hook_registry.register_hook(self.hook)
+class MonitorLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        if main_launcher:
+            main_launcher.launcher_registry.register_launcher(self)
+            self.hook = MonitorHook(main_launcher)
+            main_launcher.hook_registry.register_hook(self.hook)
 
-    def populate(self):
+    @property
+    def command_triggers(self) -> list:
+        return [">monitor"]
+
+    @property
+    def name(self) -> str:
+        return "monitor"
+
+    def get_size_mode(self) -> 'LauncherSizeMode':
+        return LauncherSizeMode.COMPACT
+
+    def populate(self, query: str, launcher_core) -> None:
         monitors = get_monitors()
         monitor_items = []
         for name, status in monitors:
             monitor_items.append(f"{name}: {status}")
         for item in monitor_items:
-            metadata = self.launcher.METADATA.get("monitor", "")
-            button = self.launcher.create_button_with_metadata(item, metadata)
-            self.launcher.list_box.append(button)
-        self.launcher.current_apps = []
+            metadata = launcher_core.METADATA.get("monitor", "")
+            button = launcher_core.create_button_with_metadata(item, metadata)
+            launcher_core.list_box.append(button)
+        launcher_core.current_apps = []

@@ -10,6 +10,8 @@
 import webbrowser
 from utils import get_bookmarks
 from core.hooks import LauncherHook
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from typing import Optional, Tuple
 
 
 class BookmarkHook(LauncherHook):
@@ -55,13 +57,44 @@ class BookmarkHook(LauncherHook):
         return None
 
 
-class BookmarkLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
-        self.hook = BookmarkHook(launcher)
-        launcher.hook_registry.register_hook(self.hook)
+class BookmarkLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        self.launcher = main_launcher
+        self.hook = BookmarkHook(self)
 
-    def populate(self, query=""):
+        # Register with launcher registry
+        from core.launcher_registry import launcher_registry
+        launcher_registry.register(self)
+
+        # Register the hook with the main launcher if available
+        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+            main_launcher.hook_registry.register_hook(self.hook)
+
+    @property
+    def command_triggers(self):
+        return ["bookmark"]
+
+    @property
+    def name(self):
+        return "bookmark"
+
+    def get_size_mode(self):
+        return LauncherSizeMode.DEFAULT, None
+
+    def handles_tab(self):
+        return True
+
+    def handle_tab(self, query: str, launcher_core) -> Optional[str]:
+        """Handle tab completion for bookmarks."""
+        bookmarks = get_bookmarks()
+        matching_bookmarks = [
+            b for b in bookmarks if b.lower().startswith(query.lower())
+        ]
+        if matching_bookmarks:
+            return matching_bookmarks[0]
+        return None
+
+    def populate(self, query, launcher_core):
         bookmarks = get_bookmarks()
         if query:
             bookmarks = [b for b in bookmarks if query.lower() in b.lower()]
@@ -69,8 +102,8 @@ class BookmarkLauncher:
         all_items = bookmarks + actions
         for item in all_items:
             metadata = (
-                self.launcher.METADATA.get("bookmark", "") if item in bookmarks else ""
+                launcher_core.METADATA.get("bookmark", "") if item in bookmarks else ""
             )
-            button = self.launcher.create_button_with_metadata(item, metadata)
-            self.launcher.list_box.append(button)
-        self.launcher.current_apps = []
+            button = launcher_core.create_button_with_metadata(item, metadata)
+            launcher_core.list_box.append(button)
+        launcher_core.current_apps = []

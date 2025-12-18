@@ -9,8 +9,9 @@
 
 import subprocess
 import json
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional, List, Dict, Tuple
 from core.hooks import LauncherHook
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
 
 
 class RefileHook(LauncherHook):
@@ -48,11 +49,23 @@ class RefileHook(LauncherHook):
         return None
 
 
-class RefileLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
-        self.hook = RefileHook(self)
-        self.launcher.hook_registry.register_hook(self.hook)
+class RefileLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        if main_launcher:
+            main_launcher.launcher_registry.register_launcher(self)
+            self.hook = RefileHook(self)
+            main_launcher.hook_registry.register_hook(self.hook)
+
+    @property
+    def command_triggers(self) -> list:
+        return [">refile"]
+
+    @property
+    def name(self) -> str:
+        return "refile"
+
+    def get_size_mode(self) -> 'LauncherSizeMode':
+        return LauncherSizeMode.COMPACT
 
     def get_workspaces(self) -> List[str]:
         """Get list of all workspace names"""
@@ -126,25 +139,25 @@ class RefileLauncher:
                 ["notify-send", "Workspace Swap", f"Error: {e}"]
             )
 
-    def populate(self, filter_text: str = ""):
+    def populate(self, query: str, launcher_core) -> None:
         """Populate the launcher with workspace options"""
         current_workspace = self.get_current_workspace()
         workspaces = self.get_workspaces()
 
         if not workspaces:
-            button = self.launcher.create_button_with_metadata(
+            button = launcher_core.create_button_with_metadata(
                 "No workspaces found", "Unable to get workspace list"
             )
-            self.launcher.list_box.append(button)
+            launcher_core.list_box.append(button)
             return
 
         # Add header with current workspace info
         if current_workspace:
             header = f"Current workspace: {current_workspace}"
             metadata = "Select a workspace to swap with"
-            button = self.launcher.create_button_with_metadata(header, metadata)
+            button = launcher_core.create_button_with_metadata(header, metadata)
             button.set_sensitive(False)  # Make it non-clickable
-            self.launcher.list_box.append(button)
+            launcher_core.list_box.append(button)
 
         # Filter and add workspaces
         for workspace in sorted(workspaces):
@@ -153,13 +166,13 @@ class RefileLauncher:
                 continue
 
             # Apply filter if provided
-            if filter_text and filter_text.lower() not in workspace.lower():
+            if query and query.lower() not in workspace.lower():
                 continue
 
             item_data = {"type": "refile_workspace", "workspace": workspace}
-            button = self.launcher.create_button_with_metadata(
+            button = launcher_core.create_button_with_metadata(
                 f"Swap to: {workspace}",
                 f"Exchange containers with workspace '{workspace}'",
                 item_data
             )
-            self.launcher.list_box.append(button)
+            launcher_core.list_box.append(button)

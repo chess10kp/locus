@@ -10,8 +10,9 @@
 import subprocess
 import os
 import threading
-from typing import Any, Optional, List, Dict
+from typing import Any, Optional, List, Dict, Tuple
 from core.hooks import LauncherHook
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
 
 
 class MusicHook(LauncherHook):
@@ -74,16 +75,28 @@ class MusicHook(LauncherHook):
 from core.config import MUSIC_DIR
 
 
-class MusicLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
-        self.hook = MusicHook(self)
-        self.launcher.hook_registry.register_hook(self.hook)
-        self.music_dir = MUSIC_DIR
+class MusicLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        if main_launcher:
+            main_launcher.launcher_registry.register_launcher(self)
+            self.hook = MusicHook(self)
+            main_launcher.hook_registry.register_hook(self.hook)
 
+        self.music_dir = MUSIC_DIR
         self.files_cache: List[Dict[str, str]] = []
         self.scanning = False
         self.start_scan()
+
+    @property
+    def command_triggers(self) -> list:
+        return [">music", ">mu"]
+
+    @property
+    def name(self) -> str:
+        return "music"
+
+    def get_size_mode(self) -> 'LauncherSizeMode':
+        return LauncherSizeMode.FULL
 
     def start_scan(self):
         if self.scanning:
@@ -164,8 +177,7 @@ class MusicLauncher:
 
         return status
 
-    def populate(self, filter_text: str):
-        query = filter_text
+    def populate(self, query: str, launcher_core) -> None:
         show_queue = False
 
         if query.startswith("queue"):
@@ -174,14 +186,14 @@ class MusicLauncher:
 
         # Add Controls
         status = self.get_status()
-        self._add_controls(status, show_queue)
+        self._add_controls(status, show_queue, launcher_core)
 
         if show_queue:
-            self._populate_queue(query)
+            self._populate_queue(query, launcher_core)
         else:
-            self._populate_library(query)
+            self._populate_library(query, launcher_core)
 
-    def _add_controls(self, status: Dict[str, str], is_queue_mode: bool):
+    def _add_controls(self, status: Dict[str, str], is_queue_mode: bool, launcher_core):
         state_icon = (
             "⏵"
             if status["state"] == "playing"
@@ -193,30 +205,30 @@ class MusicLauncher:
         meta = f"Vol: {status.get('volume')} | Rep: {status.get('repeat')} | Rnd: {status.get('random')} | Sgl: {status.get('single')}"
 
         # Toggle Play/Pause button
-        self._add_button(text=header, metadata=meta, action="control", value="toggle")
+        self._add_button(text=header, metadata=meta, action="control", value="toggle", launcher_core=launcher_core)
 
         if is_queue_mode:
             self._add_button(
-                "View Library", "Switch to file browser", "control", "view_library"
+                "View Library", "Switch to file browser", "control", "view_library", launcher_core
             )
         else:
             self._add_button(
-                "View Queue", "Manage playback queue", "control", "view_queue"
+                "View Queue", "Manage playback queue", "control", "view_queue", launcher_core
             )
 
-    def _add_button(self, text, metadata, action, value):
+    def _add_button(self, text, metadata, action, value, launcher_core):
         item_data = {"type": "music_item", "action": action, "value": value}
-        button = self.launcher.create_button_with_metadata(text, metadata, item_data)
-        self.launcher.list_box.append(button)
+        button = launcher_core.create_button_with_metadata(text, metadata, item_data)
+        launcher_core.list_box.append(button)
 
-    def _populate_queue(self, query):
+    def _populate_queue(self, query, launcher_core):
         # mpc playlist -f '%position%\t%artist% - %title%'
         output = self._run_mpc(["playlist", "-f", "%position%\t%artist% - %title%"])
         lines = output.splitlines()
 
         if not lines:
-            self.launcher.list_box.append(
-                self.launcher.create_button_with_metadata("Queue is empty", "")
+            launcher_core.list_box.append(
+                launcher_core.create_button_with_metadata("Queue is empty", "")
             )
             return
 
@@ -230,12 +242,13 @@ class MusicLauncher:
                         metadata="Click to play",
                         action="play_position",
                         value=pos,
+                        launcher_core=launcher_core,
                     )
 
-    def _populate_library(self, query):
+    def _populate_library(self, query, launcher_core):
         if self.scanning and not self.files_cache:
-            self.launcher.list_box.append(
-                self.launcher.create_button_with_metadata(
+            launcher_core.list_box.append(
+                launcher_core.create_button_with_metadata(
                     "Scanning library...", "Please wait"
                 )
             )
@@ -253,6 +266,7 @@ class MusicLauncher:
                 metadata=item["path"],
                 action="play_file",
                 value=item["path"],
+                launcher_core=launcher_core,
             )
 
             count += 1
@@ -293,6 +307,5 @@ class MusicLauncher:
             # Handled in hook return
             pass
         elif command == "view_library":
-            # Switch back to >music
-            self.launcher.search_entry.set_text(">music ")
-            self.launcher.on_entry_activate(self.launcher.search_entry)
+            # This would be handled by the main launcher
+            pass

@@ -258,34 +258,15 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Initialize hook registry before creating launchers
         from .hooks import HookRegistry
+        from .launcher_registry import launcher_registry
 
         self.hook_registry = HookRegistry()
+        self.launcher_registry = launcher_registry
 
-        from launchers import (
-            CalcLauncher,
-            BookmarkLauncher,
-            BluetoothLauncher,
-            MonitorLauncher,
-            WallpaperLauncher,
-            TimerLauncher,
-            KillLauncher,
-            MusicLauncher,
-            RefileLauncher,
-        )
+        # Auto-discover and register all launchers
+        self._register_launchers()
 
-        # Import lock launcher separately since it's not part of the main package
-
-        self.calc_launcher = CalcLauncher(self)
-        self.bookmark_launcher = BookmarkLauncher(self)
-        self.bluetooth_launcher = BluetoothLauncher(self)
-        self.monitor_launcher = MonitorLauncher(self)
-        self.wallpaper_launcher = WallpaperLauncher(self)
-        self.timer_launcher = TimerLauncher(self)
-        self.kill_launcher = KillLauncher(self)
-        self.music_launcher = MusicLauncher(self)
-        self.refile_launcher = RefileLauncher(self)
-
-        # Lock screen instance (created when needed)
+        # Legacy lock screen support (created when needed)
         self.lock_screen = None
         self.wallpaper_loaded = False
         self.timer_remaining = 0
@@ -376,6 +357,25 @@ class Launcher(Gtk.ApplicationWindow):
         """,
         )
 
+    def _register_launchers(self):
+        """Auto-discover and register all launcher modules."""
+        try:
+            # Import launchers package to trigger auto-registration
+            import launchers
+
+            # Import lock launcher separately
+            from launchers.lock_launcher import LockLauncher
+
+            # Register lock launcher
+            lock_launcher = LockLauncher(self)
+            self.launcher_registry.register(lock_launcher)
+
+            # Register any other launcher instances that need the main launcher reference
+            # Note: Individual launchers should register themselves in their __init__
+
+        except ImportError as e:
+            logger.warning(f"Could not import some launchers: {e}")
+
     def apply_button_style(self, button):
         apply_styles(
             button,
@@ -429,14 +429,22 @@ class Launcher(Gtk.ApplicationWindow):
         return button
 
     def populate_command_mode(self, command):
+        """Show available launchers and custom commands in command mode."""
         if not command:
-            for cmd_name in CUSTOM_LAUNCHERS:
+            # Show all available commands
+            all_commands = list(CUSTOM_LAUNCHERS.keys())
+            for launcher_name, triggers in self.launcher_registry.list_launchers():
+                all_commands.extend(triggers)
+
+            for cmd_name in sorted(set(all_commands)):
                 metadata = METADATA.get(cmd_name, "")
                 button = self.create_button_with_metadata(f">{cmd_name}", metadata)
                 button.connect("clicked", self.on_command_selected, cmd_name)
                 self.list_box.append(button)
             self.current_apps = []
+
         elif command in CUSTOM_LAUNCHERS:
+            # Handle custom launcher from config
             launcher = CUSTOM_LAUNCHERS[command]
             if isinstance(launcher, str):
                 for app in self.apps:
@@ -461,16 +469,26 @@ class Launcher(Gtk.ApplicationWindow):
                 self.current_apps = []
             self.apply_button_style(button)
             self.list_box.append(button)
+
         else:
-            matching = [cmd for cmd in CUSTOM_LAUNCHERS if cmd.startswith(command)]
-            if matching:
-                for cmd in matching:
+            # Find matching commands
+            matching_custom = [cmd for cmd in CUSTOM_LAUNCHERS if cmd.startswith(command)]
+            matching_launchers = []
+            for launcher_name, triggers in self.launcher_registry.list_launchers():
+                for trigger in triggers:
+                    if trigger.startswith(command):
+                        matching_launchers.append(trigger)
+
+            all_matching = sorted(set(matching_custom + matching_launchers))
+            if all_matching:
+                for cmd in all_matching:
                     metadata = METADATA.get(cmd, "")
                     button = self.create_button_with_metadata(f">{cmd}", metadata)
                     button.connect("clicked", self.on_command_selected, cmd)
                     self.list_box.append(button)
                 self.current_apps = []
             else:
+                # No matching commands, offer to run as shell command
                 button = self.create_button_with_metadata(f"Run: {command}", "")
                 button.connect("clicked", self.on_command_clicked, command)
                 self.list_box.append(button)
@@ -487,51 +505,37 @@ class Launcher(Gtk.ApplicationWindow):
                 self.list_box.append(button)
 
     def populate_apps(self, filter_text=""):
+        """Populate the launcher with apps or use registered launchers for commands."""
         while self.list_box.get_first_child():
             self.list_box.remove(self.list_box.get_first_child())
 
-        if filter_text.startswith(">calc") and len(filter_text) > 5:
-            self.reset_launcher_size()
-            expr = filter_text[5:].strip()
-            if expr:
-                self.calc_launcher.populate(expr)
-        elif filter_text.startswith(">bookmark"):
-            self.reset_launcher_size()
-            query = filter_text[9:].strip()
-            self.bookmark_launcher.populate(query)
-        elif filter_text.startswith(">bluetooth"):
-            self.reset_launcher_size()
-            self.bluetooth_launcher.populate()
-        elif filter_text.startswith(">monitor"):
-            self.reset_launcher_size()
-            self.monitor_launcher.populate()
-        elif filter_text.startswith(">wallpaper"):
-            self.set_wallpaper_mode_size()
-            self.wallpaper_launcher.populate(filter_text)
-        elif filter_text.startswith(">timer"):
-            self.reset_launcher_size()
-            time_str = filter_text[6:].strip()
-            self.timer_launcher.populate(time_str)
-        elif filter_text.startswith(">kill"):
-            self.reset_launcher_size()
-            self.kill_launcher.populate()
-        elif filter_text.startswith(">music"):
-            self.reset_launcher_size()
-            self.music_launcher.populate(filter_text[6:].strip())
-        elif filter_text.startswith(">refile"):
-            self.reset_launcher_size()
-            query = filter_text[7:].strip()
-            self.refile_launcher.populate(query)
-        elif filter_text.startswith(">lock"):
-            self.reset_launcher_size()
-            self.show_lock_screen()
+        # Check if any registered launcher can handle this input
+        trigger, launcher, query = self.launcher_registry.find_launcher_for_input(filter_text)
+
+        if launcher:
+            # Use the registered launcher
+            size_mode, custom_size = launcher.get_size_mode()
+            self._apply_size_mode(size_mode, custom_size)
+            launcher.populate(query, self)
         elif filter_text.startswith(">"):
+            # Command mode but no launcher found - show available commands
             self.reset_launcher_size()
             command = filter_text[1:].strip()
             self.populate_command_mode(command)
         else:
+            # Default app search mode
             self.reset_launcher_size()
             self.populate_app_mode(filter_text)
+
+    def _apply_size_mode(self, size_mode, custom_size):
+        """Apply the appropriate size mode for the launcher."""
+        if size_mode.name == "wallpaper":
+            self.set_wallpaper_mode_size()
+        elif size_mode.name == "custom" and custom_size:
+            width, height = custom_size
+            self.set_default_size(width, height)
+        else:
+            self.reset_launcher_size()
 
     def on_search_changed(self, entry):
         self.selected_row = None
@@ -562,55 +566,26 @@ class Launcher(Gtk.ApplicationWindow):
         # Try hooks first
         if self.hook_registry.execute_enter_hooks(self, text):
             return
-        if text.startswith(">calc") and len(text) > 5:
-            expr = text[5:].strip()
-            if expr:
-                sanitized = sanitize_expr(expr)
-                result, error = evaluate_calculator(sanitized)
-                if error:
-                    print(f"Calculator error: {error}")
-                    # Do not hide, let user correct
-                else:
-                    self.calc_launcher.on_result_clicked(None, str(result))
-        elif text == ">wallpaper":
-            # Set the first wallpaper
-            wp_dir = WALLPAPER_DIR
-            wallpapers = glob.glob(os.path.join(wp_dir, "*"))
-            wallpapers = [os.path.basename(w) for w in wallpapers if os.path.isfile(w)]
-            if wallpapers:
-                sorted_wallpapers = sorted(wallpapers)
-                self.wallpaper_launcher.set_wallpaper(sorted_wallpapers[0])
-            self.hide()
-        elif text == ">wallpaper random":
-            self.wallpaper_launcher.on_wallpaper_random(None)
-            self.hide()
-        elif text == ">wallpaper cycle":
-            self.wallpaper_launcher.on_wallpaper_cycle(None)
-            self.hide()
-        elif text.startswith(">timer "):
-            time_str = text[6:].strip()
-            self.timer_launcher.start_timer(time_str)
-            self.hide()
-        elif text == ">lock":
+
+        # Check if any registered launcher can handle this input
+        trigger, launcher, query = self.launcher_registry.find_launcher_for_input(text)
+
+        if launcher and launcher.handles_enter():
+            # Let the launcher handle the enter key
+            if launcher.handle_enter(query, self):
+                return
+
+        # Special case for lock screen (legacy support)
+        if text == ">lock":
             self.show_lock_screen()
             self.hide()
-        elif text.startswith(">"):
+            return
+
+        # Handle custom launchers from config
+        if text.startswith(">"):
             command = text[1:].strip()
-            # For built-in commands, don't fall through to shell
-            builtin_commands = [
-                "calc",
-                "bookmark",
-                "bluetooth",
-                "wallpaper",
-                "timer",
-                "monitor",
-                "kill",
-                "music",
-                "refile",
-                "lock",
-            ]
-            if command in builtin_commands:
-                # This is a built-in command, don't execute as shell
+            if command in [name for name, _ in self.launcher_registry.list_launchers()]:
+                # This is a registered launcher command, don't execute as shell
                 return
             elif not handle_custom_launcher(command, self.apps):
                 if command:
@@ -741,27 +716,26 @@ class Launcher(Gtk.ApplicationWindow):
                 self.search_entry.set_position(-1)
                 return True
 
-            # Fall back to hardcoded logic
+            # Check if any registered launcher can handle tab completion
+            trigger, launcher, query = self.launcher_registry.find_launcher_for_input(text)
+            if launcher and launcher.handles_tab():
+                completion = launcher.handle_tab(query, self)
+                if completion:
+                    # Return the full command with completion
+                    self.search_entry.set_text(f">{trigger}{completion}")
+                    self.search_entry.set_position(-1)
+                    return True
+
+            # Fall back to command completion from registry
             if text.startswith(">"):
                 command = text[1:].strip()
-                builtin = [
-                    "calc",
-                    "bookmark",
-                    "bluetooth",
-                    "wallpaper",
-                    "timer",
-                    "monitor",
-                    "kill",
-                    "music",
-                    "refile",
-                    "lock",
-                ]
-                all_commands = builtin + list(CUSTOM_LAUNCHERS.keys())
+                all_commands = self.launcher_registry.get_all_triggers() + list(CUSTOM_LAUNCHERS.keys())
                 if not command:
                     # No command yet, complete to first available
                     if all_commands:
                         first_cmd = all_commands[0]
-                        suffix = " " if first_cmd in builtin else ""
+                        is_launcher_trigger = first_cmd in self.launcher_registry.get_all_triggers()
+                        suffix = " " if is_launcher_trigger else ""
                         self.search_entry.set_text(f">{first_cmd}{suffix}")
                         self.search_entry.set_position(-1)
                         return True
@@ -770,7 +744,8 @@ class Launcher(Gtk.ApplicationWindow):
                     matching = [cmd for cmd in all_commands if cmd.startswith(command)]
                     if matching:
                         cmd = matching[0]
-                        suffix = " " if cmd in builtin else ""
+                        is_launcher_trigger = cmd in self.launcher_registry.get_all_triggers()
+                        suffix = " " if is_launcher_trigger else ""
                         self.search_entry.set_text(f">{cmd}{suffix}")
                         self.search_entry.set_position(-1)
                         return True

@@ -22,6 +22,8 @@ from utils import (
     bluetooth_toggle_connection,
 )
 from core.hooks import LauncherHook
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from typing import Optional, Tuple
 
 
 class BluetoothHook(LauncherHook):
@@ -85,13 +87,31 @@ class BluetoothHook(LauncherHook):
         return None
 
 
-class BluetoothLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
-        self.hook = BluetoothHook(launcher)
-        launcher.hook_registry.register_hook(self.hook)
+class BluetoothLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        self.launcher = main_launcher
+        self.hook = BluetoothHook(self)
 
-    def populate(self):
+        # Register with launcher registry
+        from core.launcher_registry import launcher_registry
+        launcher_registry.register(self)
+
+        # Register the hook with the main launcher if available
+        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+            main_launcher.hook_registry.register_hook(self.hook)
+
+    @property
+    def command_triggers(self):
+        return ["bluetooth"]
+
+    @property
+    def name(self):
+        return "bluetooth"
+
+    def get_size_mode(self):
+        return LauncherSizeMode.DEFAULT, None
+
+    def populate(self, query, launcher_core):
         power_status = "Power: on" if bluetooth_power_on() else "Power: off"
         scan_status = "Scan: on" if bluetooth_scan_on() else "Scan: off"
         pairable_status = "Pairable: on" if bluetooth_pairable_on() else "Pairable: off"
@@ -110,7 +130,7 @@ class BluetoothLauncher:
             discoverable_status,
         ] + device_items
         for item in all_items:
-            metadata = self.launcher.METADATA.get("bluetooth", "")
-            button = self.launcher.create_button_with_metadata(item, metadata)
-            self.launcher.list_box.append(button)
-        self.launcher.current_apps = []
+            metadata = launcher_core.METADATA.get("bluetooth", "")
+            button = launcher_core.create_button_with_metadata(item, metadata)
+            launcher_core.list_box.append(button)
+        launcher_core.current_apps = []

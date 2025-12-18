@@ -10,7 +10,8 @@
 import subprocess
 import os
 from core.hooks import LauncherHook
-from typing import Any, Optional
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from typing import Any, Optional, Tuple
 
 
 class KillHook(LauncherHook):
@@ -37,19 +38,31 @@ class KillHook(LauncherHook):
         return None
 
 
-class KillLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
-        self.hook = KillHook(self)
-        launcher.hook_registry.register_hook(self.hook)
+class KillLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        if main_launcher:
+            main_launcher.launcher_registry.register_launcher(self)
+            self.hook = KillHook(self)
+            main_launcher.hook_registry.register_hook(self.hook)
 
-    def populate(self):
+    @property
+    def command_triggers(self) -> list:
+        return [">kill", ">ki"]
+
+    @property
+    def name(self) -> str:
+        return "kill"
+
+    def get_size_mode(self) -> 'LauncherSizeMode':
+        return LauncherSizeMode.FULL
+
+    def populate(self, query: str, launcher_core) -> None:
         result = subprocess.run(["ps", "aux"], capture_output=True, text=True)
         if result.returncode != 0:
             label_text = "Failed to get processes"
-            button = self.launcher.create_button_with_metadata(label_text, "")
-            self.launcher.list_box.append(button)
-            self.launcher.current_apps = []
+            button = launcher_core.create_button_with_metadata(label_text, "")
+            launcher_core.list_box.append(button)
+            launcher_core.current_apps = []
             return
 
         lines = result.stdout.splitlines()
@@ -83,8 +96,6 @@ class KillLauncher:
     def on_kill_clicked(self, button, pid):
         try:
             subprocess.run(["kill", str(pid)], check=True)
-            # refresh
-            self.launcher.selected_row = None
-            self.launcher.populate_apps(">kill")
+            # refresh would be handled by the main launcher
         except subprocess.CalledProcessError:
             print(f"Failed to kill {pid}")

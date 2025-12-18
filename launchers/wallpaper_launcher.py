@@ -16,6 +16,8 @@ import hashlib
 from pathlib import Path
 from gi.repository import GdkPixbuf, Gtk
 from core.hooks import LauncherHook
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from typing import Any, Optional, Tuple, List
 
 
 class WallpaperHook(LauncherHook):
@@ -169,96 +171,141 @@ class WallpaperHook(LauncherHook):
             subprocess.Popen(walset_parts + [default_link])
 
 
-class WallpaperLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
+class WallpaperLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        self.launcher = main_launcher
         self.cache_dir = Path.home() / ".cache" / "locus" / "wallpaper_thumbnails"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.hook = WallpaperHook(launcher)
-        launcher.hook_registry.register_hook(self.hook)
+        self.hook = WallpaperHook(self)
 
-    def populate(self, filter_text):
+        # Register with launcher registry
+        from core.launcher_registry import launcher_registry
+        launcher_registry.register(self)
+
+        # Register the hook with the main launcher if available
+        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+            main_launcher.hook_registry.register_hook(self.hook)
+
+    @property
+    def command_triggers(self):
+        return ["wallpaper"]
+
+    @property
+    def name(self):
+        return "wallpaper"
+
+    def get_size_mode(self):
+        return LauncherSizeMode.WALLPAPER, (1000, 600)
+
+    def handles_tab(self):
+        return True
+
+    def handle_tab(self, query: str, launcher_core) -> Optional[str]:
+        """Handle tab completion for wallpaper files and commands."""
+        wp_dir = os.path.expanduser("~/Pictures/wp/")
+        if not os.path.exists(wp_dir):
+            return None
+
+        # Check for special commands
+        commands = ["random", "cycle"]
+        matching_commands = [
+            cmd for cmd in commands if cmd.lower().startswith(query.lower())
+        ]
+        if matching_commands:
+            return matching_commands[0]
+
+        # Check for wallpaper files
+        wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+        wallpapers = [os.path.basename(w) for w in wallpapers if os.path.isfile(w)]
+        matching_wallpapers = [
+            wp for wp in wallpapers if wp.lower().startswith(query.lower())
+        ]
+
+        if matching_wallpapers:
+            return matching_wallpapers[0]
+
+        return None
+
+    def populate(self, query, launcher_core):
         wp_dir = os.path.expanduser("~/Pictures/wp/")
         if not os.path.exists(wp_dir):
             label_text = "Wallpaper directory ~/Pictures/wp/ not found"
-            metadata = self.launcher.METADATA.get(label_text, "")
-            button = self.launcher.create_button_with_metadata(label_text, metadata)
-            self.launcher.list_box.append(button)
-        elif filter_text == ">wallpaper random":
-            metadata = self.launcher.METADATA.get("wallpaper", "")
-            button = self.launcher.create_button_with_metadata(
-                "Set random wallpaper", metadata
+            metadata = launcher_core.METADATA.get(label_text, "")
+            button = launcher_core.create_button_with_metadata(label_text, metadata)
+            launcher_core.list_box.append(button)
+            launcher_core.current_apps = []
+            return
+
+        # Handle special commands
+        if query == "random":
+            metadata = launcher_core.METADATA.get("wallpaper", "")
+            button = launcher_core.create_button_with_metadata(
+                "Set random wallpaper", metadata, "Set random wallpaper"
             )
-            self.launcher.list_box.append(button)
-        elif filter_text == ">wallpaper cycle":
-            metadata = self.launcher.METADATA.get("wallpaper", "")
-            button = self.launcher.create_button_with_metadata(
-                "Cycle wallpaper", metadata
+            launcher_core.list_box.append(button)
+            launcher_core.current_apps = []
+            return
+        elif query == "cycle":
+            metadata = launcher_core.METADATA.get("wallpaper", "")
+            button = launcher_core.create_button_with_metadata(
+                "Cycle wallpaper", metadata, "Cycle wallpaper"
             )
-            self.launcher.list_box.append(button)
+            launcher_core.list_box.append(button)
+            launcher_core.current_apps = []
+            return
+
+        # Load and filter wallpapers
+        wallpapers = glob.glob(os.path.join(wp_dir, "*"))
+        wallpapers = [os.path.basename(w) for w in wallpapers if os.path.isfile(w)]
+
+        # Filter by search term if provided
+        if query:
+            search_term = query.lower().strip()
+            wallpapers = [wp for wp in wallpapers if search_term in wp.lower()]
+
+        if not wallpapers:
+            msg = "No wallpapers found" if not query else f"No wallpapers match '{query}'"
+            metadata = launcher_core.METADATA.get(msg, "")
+            button = launcher_core.create_button_with_metadata(msg, metadata)
+            launcher_core.list_box.append(button)
         else:
-            if not self.launcher.wallpaper_loaded:
-                wallpapers = glob.glob(os.path.join(wp_dir, "*"))
-                wallpapers = [
-                    os.path.basename(w) for w in wallpapers if os.path.isfile(w)
-                ]
-                self.launcher.wallpaper_buttons = []
-                for wp in sorted(wallpapers):
-                    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
-                    try:
-                        image = self.get_cached_thumbnail(wp_dir, wp)
-                        image.set_hexpand(False)
-                        image.set_vexpand(False)
-                    except Exception:
-                        image = Gtk.Image()
-                    metadata = self.launcher.METADATA.get(wp, "")
-                    if metadata:
-                        markup = f"{wp}\n<span size='smaller' color='#d5c4a1'>{metadata}</span>"
-                        label = Gtk.Label()
-                        label.set_markup(markup)
-                        label.set_halign(Gtk.Align.START)
-                        label.set_valign(Gtk.Align.START)
-                        label.set_wrap(True)
-                        label.set_wrap_mode(Gtk.WrapMode.WORD)
-                        label.set_hexpand(True)
-                        box.append(image)
-                        box.append(label)
-                    else:
-                        label = Gtk.Label(label=wp)
-                        label.set_halign(Gtk.Align.START)
-                        label.set_hexpand(True)
-                        box.append(image)
-                        box.append(label)
-                    button = Gtk.Button()
-                    button.set_child(box)
-                    button.get_child().set_halign(Gtk.Align.START)
-                    button.connect("clicked", self.on_wallpaper_clicked, wp)
-                    self.apply_wallpaper_button_style(button)
-                    self.launcher.wallpaper_buttons.append((button, wp))
-                self.launcher.wallpaper_loaded = True
-            search_term = (
-                filter_text[11:].strip().lower()
-                if filter_text.startswith(">wallpaper ")
-                else ""
-            )
-            matching = [
-                (btn, wp)
-                for btn, wp in self.launcher.wallpaper_buttons
-                if not search_term or search_term in wp.lower()
-            ]
-            if not matching:
-                msg = (
-                    "No wallpapers found"
-                    if not search_term
-                    else f"No wallpapers match '{search_term}'"
-                )
-                metadata = self.launcher.METADATA.get(msg, "")
-                button = self.launcher.create_button_with_metadata(msg, metadata)
-                self.launcher.list_box.append(button)
-            else:
-                for btn, _ in matching:
-                    self.launcher.list_box.append(btn)
-        self.launcher.current_apps = []
+            # Display wallpapers with thumbnails
+            for wp in sorted(wallpapers):
+                box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
+                try:
+                    image = self.get_cached_thumbnail(wp_dir, wp)
+                    image.set_hexpand(False)
+                    image.set_vexpand(False)
+                except Exception:
+                    image = Gtk.Image()
+
+                metadata = launcher_core.METADATA.get(wp, "")
+                if metadata:
+                    markup = f"{wp}\n<span size='smaller' color='#d5c4a1'>{metadata}</span>"
+                    label = Gtk.Label()
+                    label.set_markup(markup)
+                    label.set_halign(Gtk.Align.START)
+                    label.set_valign(Gtk.Align.START)
+                    label.set_wrap(True)
+                    label.set_wrap_mode(Gtk.WrapMode.WORD)
+                    label.set_hexpand(True)
+                    box.append(image)
+                    box.append(label)
+                else:
+                    label = Gtk.Label(label=wp)
+                    label.set_halign(Gtk.Align.START)
+                    label.set_hexpand(True)
+                    box.append(image)
+                    box.append(label)
+
+                button = Gtk.Button()
+                button.set_child(box)
+                button.get_child().set_halign(Gtk.Align.START)
+                button.connect("clicked", self.on_wallpaper_clicked, wp)
+                self.apply_wallpaper_button_style(button)
+                launcher_core.list_box.append(button)
+
+        launcher_core.current_apps = []
 
     def get_cache_path(self, wp_path):
         """Generate cache file path based on image file path and modification time."""

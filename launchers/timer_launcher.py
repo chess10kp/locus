@@ -11,7 +11,8 @@ import subprocess
 import os
 from gi.repository import GLib
 from core.hooks import LauncherHook
-from typing import Any, Optional
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from typing import Any, Optional, Tuple
 from utils import send_status_message
 
 
@@ -44,39 +45,76 @@ class TimerHook(LauncherHook):
         return None
 
 
-class TimerLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
+class TimerLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        self.launcher = main_launcher
         self.hook = TimerHook(self)
-        launcher.hook_registry.register_hook(self.hook)
 
-    def populate(self, time_str):
+        # Register with launcher registry
+        from core.launcher_registry import launcher_registry
+        launcher_registry.register(self)
+
+        # Register the hook with the main launcher if available
+        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+            main_launcher.hook_registry.register_hook(self.hook)
+
+    @property
+    def command_triggers(self):
+        return ["timer"]
+
+    @property
+    def name(self):
+        return "timer"
+
+    def get_size_mode(self):
+        return LauncherSizeMode.DEFAULT, None
+
+    def handles_enter(self):
+        return True
+
+    def handle_enter(self, query: str, launcher_core) -> bool:
+        if query:
+            self.start_timer(query)
+            launcher_core.hide()
+            return True
+        return False
+
+    def populate(self, query, launcher_core):
+        time_str = query
         if time_str:
-            seconds = self.launcher.parse_time(time_str)
+            seconds = launcher_core.parse_time(time_str)
             if seconds is not None:
                 label_text = f"Set timer for {time_str}"
-                metadata = self.launcher.METADATA.get("timer", "")
+                metadata = launcher_core.METADATA.get("timer", "")
                 hook_data = f"timer:{time_str}"
-                button = self.launcher.create_button_with_metadata(
+                button = launcher_core.create_button_with_metadata(
                     label_text, metadata, hook_data
                 )
             else:
                 label_text = "Invalid time format (e.g., 5m)"
-                metadata = self.launcher.METADATA.get("timer", "")
-                button = self.launcher.create_button_with_metadata(label_text, metadata)
+                metadata = launcher_core.METADATA.get("timer", "")
+                button = launcher_core.create_button_with_metadata(label_text, metadata)
         else:
             label_text = "Usage: >timer 5m"
-            metadata = self.launcher.METADATA.get("timer", "")
-            button = self.launcher.create_button_with_metadata(label_text, metadata)
-        self.launcher.list_box.append(button)
-        self.launcher.current_apps = []
+            metadata = launcher_core.METADATA.get("timer", "")
+            button = launcher_core.create_button_with_metadata(label_text, metadata)
+        launcher_core.list_box.append(button)
+        launcher_core.current_apps = []
 
     def on_timer_clicked(self, button, time_str):
         self.start_timer(time_str)
-        self.launcher.hide()
+        if self.launcher:
+            self.launcher.hide()
 
     def start_timer(self, time_str):
-        seconds = self.launcher.parse_time(time_str)
+        # Use launcher_core reference if available, otherwise fallback
+        parse_func = self.launcher.parse_time if self.launcher else None
+        if not parse_func:
+            # Import parse_time function directly
+            from core.launcher import parse_time
+            parse_func = parse_time
+
+        seconds = parse_func(time_str)
         # Clean environment for child processes
         env = dict(os.environ.items())
         env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes

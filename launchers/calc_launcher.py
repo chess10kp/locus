@@ -11,7 +11,8 @@ import subprocess
 import os
 from utils import sanitize_expr, evaluate_calculator
 from core.hooks import LauncherHook
-from typing import Any, Optional
+from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from typing import Any, Optional, Tuple
 
 
 class CalcHook(LauncherHook):
@@ -47,35 +48,65 @@ class CalcHook(LauncherHook):
         return None
 
 
-class CalcLauncher:
-    def __init__(self, launcher):
-        self.launcher = launcher
+class CalcLauncher(LauncherInterface):
+    def __init__(self, main_launcher=None):
+        self.launcher = main_launcher
         self.hook = CalcHook(self)
-        # Register the hook with the main launcher
-        launcher.hook_registry.register_hook(self.hook)
+        # Register with launcher registry
+        from core.launcher_registry import launcher_registry
+        launcher_registry.register(self)
+        # Register the hook with the main launcher if available
+        if main_launcher and hasattr(main_launcher, 'hook_registry'):
+            main_launcher.hook_registry.register_hook(self.hook)
 
-    def populate(self, expr):
+    @property
+    def command_triggers(self):
+        return ["calc"]
+
+    @property
+    def name(self):
+        return "calculator"
+
+    def get_size_mode(self):
+        return LauncherSizeMode.DEFAULT, None
+
+    def handles_enter(self):
+        return True
+
+    def handle_enter(self, query: str, launcher_core) -> bool:
+        if query:
+            sanitized = sanitize_expr(query)
+            result, error = evaluate_calculator(sanitized)
+            if error:
+                print(f"Calculator error: {error}")
+                # Don't hide, let user correct
+            else:
+                self.on_result_clicked(None, str(result))
+                return True
+        return False
+
+    def populate(self, expr, launcher_core):
         sanitized = sanitize_expr(expr)
         result, error = evaluate_calculator(sanitized)
         if error:
             label_text = f"Error: {error}"
-            metadata = self.launcher.METADATA.get(label_text, "")
-            button = self.launcher.create_button_with_metadata(label_text, metadata)
+            metadata = launcher_core.METADATA.get(label_text, "")
+            button = launcher_core.create_button_with_metadata(label_text, metadata)
         else:
             label_text = f"Result: {result}"
-            metadata = self.launcher.METADATA.get(label_text, "")
-            button = self.launcher.create_button_with_metadata(
+            metadata = launcher_core.METADATA.get(label_text, "")
+            button = launcher_core.create_button_with_metadata(
                 label_text, metadata, result
             )
-        self.launcher.list_box.append(button)
-        self.launcher.list_box.queue_draw()
-        self.launcher.scrolled.queue_draw()
+        launcher_core.list_box.append(button)
+        launcher_core.list_box.queue_draw()
+        launcher_core.scrolled.queue_draw()
         # Scroll to top
-        vadj = self.launcher.scrolled.get_vadjustment()
+        vadj = launcher_core.scrolled.get_vadjustment()
         if vadj:
             vadj.set_value(0)
-        self.launcher.queue_draw()
-        self.launcher.current_apps = []
+        launcher_core.queue_draw()
+        launcher_core.current_apps = []
 
     def on_result_clicked(self, button, result):
         # Copy result to clipboard
