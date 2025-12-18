@@ -11,7 +11,7 @@ WALLPAPER_DIR = os.path.expanduser("~/Pictures/wp/")
 SOCKET_PATH = "/tmp/locus_socket"
 
 # Lock screen configuration
-LOCK_PASSWORD = "password123"  # Default password - change this for security
+LOCK_PASSWORD = "admin"  # Default password - change this for security
 
 
 def todo_capture():
@@ -72,6 +72,7 @@ CUSTOM_LAUNCHERS = {
     "logout": {"type": "command", "cmd": "kill -9 -1"},
     "lock": {"type": "builtin", "handler": "lock"},
     "music": {"type": "builtin", "handler": "music"},
+    "refile": {"type": "builtin", "handler": "refile"},
 }
 
 # Add default metadata for built-in launchers
@@ -92,6 +93,7 @@ METADATA.update(
         "logout": "Logout",
         "lock": "Lock screen",
         "music": "Music player",
+        "refile": "Workspace swapper",
     }
 )
 

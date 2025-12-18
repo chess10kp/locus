@@ -7,7 +7,7 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from gi.repository import GLib, Gdk, Gtk  # pyright: ignore
+from gi.repository import Gdk, Gtk, Gio, GioUnix, GLib  # pyright: ignore
 from typing_extensions import final
 import os
 import subprocess
@@ -472,19 +472,33 @@ class StatusBar(Gtk.ApplicationWindow):
                             GLib.idle_add(self.launcher.show_launcher)
                         elif message.startswith("launcher "):
                             app_name = message[9:].strip()
-                            # Launch the app
-                            apps = load_desktop_apps()
-                            for app in apps:
-                                if app_name.lower() in app["name"].lower():
-                                    try:
-                                        subprocess.Popen([app["exec"]], shell=False)
-                                    except Exception as e:
-                                        print(
-                                            f"Failed to launch {app['name'].strip("'")}: {e}"
-                                        )
-                                    break
-                            else:
-                                print(f"App '{app_name}' not found")
+                            # Launch the app using GLib.spawn_async
+                            def launch_with_glib(cmd, working_dir=None):
+                                env = dict(os.environ.items())
+                                envp = [f"{k}={v}" for k, v in env.items()]
+                                GLib.spawn_async(
+                                    argv=cmd,
+                                    envp=envp,
+                                    flags=GLib.SpawnFlags.SEARCH_PATH_FROM_ENVP | GLib.SpawnFlags.SEARCH_PATH,
+                                    child_setup=None,
+                                    **({"working_directory": working_dir} if working_dir else {}),
+                                )
+
+                            try:
+                                apps = load_desktop_apps()
+                                for app in apps:
+                                    if app_name.lower() in app["name"].lower():
+                                        try:
+                                            exec_cmd = app["exec"].strip("'").split()
+                                            launch_with_glib(exec_cmd)
+                                            print(f"Successfully launched {app['name']}")
+                                            break
+                                        except Exception as e:
+                                            print(f"Failed to launch {app['name'].strip("'")}: {e}")
+                                else:
+                                    print(f"App '{app_name}' not found")
+                            except Exception as e:
+                                print(f"Error launching app: {e}")
                         else:
                             GLib.idle_add(self.update_custom_message, message)
                     conn.close()

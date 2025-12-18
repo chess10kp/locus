@@ -8,6 +8,7 @@
 # ruff: ignore
 
 import subprocess
+import os
 from gi.repository import GLib
 from core.hooks import LauncherHook
 from typing import Any, Optional
@@ -76,6 +77,10 @@ class TimerLauncher:
 
     def start_timer(self, time_str):
         seconds = self.launcher.parse_time(time_str)
+        # Clean environment for child processes
+        env = dict(os.environ.items())
+        env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
+
         if seconds is not None:
             # Cancel any existing timer
             if self.launcher.timer_update_id > 0:
@@ -90,9 +95,9 @@ class TimerLauncher:
             )
             # Set the final timeout
             GLib.timeout_add_seconds(seconds, self.on_timer_done)
-            subprocess.run(["notify-send", "-a", "Timer", f"set for {time_str}"])
+            subprocess.run(["notify-send", "-a", "Timer", f"set for {time_str}"], env=env)
         else:
-            subprocess.run(["notify-send", "Invalid time format"])
+            subprocess.run(["notify-send", "Invalid time format"], env=env)
 
     def update_timer_display(self):
         """Update the timer display without decrementing the counter."""
@@ -114,7 +119,10 @@ class TimerLauncher:
     def on_timer_done(self):
         # Clear the status message
         send_status_message("")
-        subprocess.run(["notify-send", "-a", "Timer", "-t", "3000", "timer complete"])
+        # Clean environment for child processes
+        env = dict(os.environ.items())
+        env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
+        subprocess.run(["notify-send", "-a", "Timer", "-t", "3000", "timer complete"], env=env)
         sound_path = "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
-        subprocess.Popen(["mpv", "--no-video", sound_path])
+        subprocess.Popen(["mpv", "--no-video", sound_path], env=env)
         return False

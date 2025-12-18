@@ -8,6 +8,7 @@
 # ruff: ignore
 
 import subprocess
+import os
 from utils import sanitize_expr, evaluate_calculator
 from core.hooks import LauncherHook
 from typing import Any, Optional
@@ -79,13 +80,20 @@ class CalcLauncher:
     def on_result_clicked(self, button, result):
         # Copy result to clipboard
         try:
-            subprocess.run(["wl-copy", result], check=True)
+            # Clean environment for child processes
+            env = dict(os.environ.items())
+            env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
+            subprocess.run(["wl-copy", result], check=True, env=env)
         except subprocess.CalledProcessError:
             try:
+                # Clean environment for child processes
+                env = dict(os.environ.items())
+                env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
                 subprocess.run(
                     ["xclip", "-selection", "clipboard"],
                     input=result.encode(),
                     check=True,
+                    env=env,
                 )
             except subprocess.CalledProcessError:
                 print(f"Failed to copy to clipboard: {result}")

@@ -165,12 +165,6 @@ class MusicLauncher:
         return status
 
     def populate(self, filter_text: str):
-        # filter_text comes in as the part AFTER ">music" usually, or full text?
-        # In core/launcher.py, we pass parsed text.
-        # Wait, core/launcher passes the whole text starting with >music...?
-        # Let's check logic in core/launcher.py
-        # if filter_text.startswith(">music"): ... self.music_launcher.populate(filter_text[7:].strip())
-
         query = filter_text
         show_queue = False
 
@@ -188,13 +182,6 @@ class MusicLauncher:
             self._populate_library(query)
 
     def _add_controls(self, status: Dict[str, str], is_queue_mode: bool):
-        # Main container for controls?
-        # Since we append to list_box, strictly vertical list.
-        # We can create a HBox inside a custom widget?
-        # The launcher uses Gtk.ListBox which takes rows (buttons usually).
-        # We can stick to simple buttons for now.
-
-        # Status Header
         state_icon = (
             "⏵"
             if status["state"] == "playing"
@@ -208,12 +195,6 @@ class MusicLauncher:
         # Toggle Play/Pause button
         self._add_button(text=header, metadata=meta, action="control", value="toggle")
 
-        # Navigation
-        # Since listbox is vertical, maybe add individual rows for important actions
-        # or grouped. Locus doesn't have complex row builder exported easily,
-        # but create_button_with_metadata returns a Button.
-
-        # We can add a "View Queue" / "View Library" switch
         if is_queue_mode:
             self._add_button(
                 "View Library", "Switch to file browser", "control", "view_library"
@@ -222,12 +203,6 @@ class MusicLauncher:
             self._add_button(
                 "View Queue", "Manage playback queue", "control", "view_queue"
             )
-
-        # Control shortcuts
-        # Next / Prev
-        # We can just rely on user typing >music next etc if they want specific command,
-        # but buttons are nice.
-        # Let's keep it clean.
 
     def _add_button(self, text, metadata, action, value):
         item_data = {"type": "music_item", "action": action, "value": value}

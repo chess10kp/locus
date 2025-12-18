@@ -8,6 +8,7 @@ from .wallpaper_launcher import WallpaperLauncher, WallpaperHook
 from .timer_launcher import TimerLauncher, TimerHook
 from .kill_launcher import KillLauncher, KillHook
 from .music_launcher import MusicLauncher, MusicHook
+from .refile_launcher import RefileLauncher, RefileHook
 
 __all__ = [
     "CalcLauncher",
@@ -26,4 +27,6 @@ __all__ = [
     "KillHook",
     "MusicLauncher",
     "MusicHook",
+    "RefileLauncher",
+    "RefileHook",
 ]

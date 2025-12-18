@@ -7,17 +7,42 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # pyright: ignore
+from gi.repository import Gdk, Gtk, Gio, GioUnix, GLib, Gtk4LayerShell as GtkLayerShell  # pyright: ignore
 from typing_extensions import final
 import subprocess
 import re
 import os
 import glob
+import sys
+import contextlib
+import shlex
+import logging
+from pathlib import Path
+from typing import Any, Optional, List, Dict
+
 from utils import apply_styles, load_desktop_apps, VBox
 from .config import CUSTOM_LAUNCHERS, METADATA, WALLPAPER_DIR, LOCK_PASSWORD
 from utils import sanitize_expr, evaluate_calculator
+from launchers.lock_launcher import LockScreen
 
 import webbrowser
+
+# Setup Logging
+logger = logging.getLogger("AppLauncher")
+logging.basicConfig(level=logging.INFO)
+
+# --- GIO Compatibility Patching ---
+try:
+    from gi.repository import GioUnix
+    SystemDesktopAppInfo = GioUnix.DesktopAppInfo
+except (ImportError, AttributeError):
+    SystemDesktopAppInfo = Gio.DesktopAppInfo
+
+# Fix for older GLib versions where Unix streams might be moved
+if not hasattr(Gio, "UnixInputStream") and 'GioUnix' in sys.modules:
+    from gi.repository import GioUnix
+    Gio.UnixInputStream = getattr(GioUnix, "InputStream", None)
+    Gio.UnixOutputStream = getattr(GioUnix, "OutputStream", None)
 
 
 def fuzzy_match(query, target):
@@ -45,57 +70,110 @@ def parse_time(time_str):
     return None
 
 
-def handle_custom_launcher(command, apps):
+# --- Core Launching Logic ---
+
+def detach_child() -> None:
+    """
+    Runs in the child process before execing.
+    os.setsid() makes the child a session leader, detaching it from Python.
+    """
+    os.setsid()
+
+    # Redirect I/O to /dev/null to prevent the child from hanging on parent pipes
+    if not sys.stdout.isatty():
+        with open(os.devnull, "w+b") as null_fp:
+            null_fd = null_fp.fileno()
+            for fp in [sys.stdin, sys.stdout, sys.stderr]:
+                try:
+                    os.dup2(null_fd, fp.fileno())
+                except Exception:
+                    pass
+
+def launch_detached(cmd: List[str], working_dir: Optional[str] = None) -> None:
+    """
+    Spawns the process using GLib's async mechanism.
+    """
+    # Check for systemd-run (the cleanest way to launch on modern Linux)
+    use_systemd_run = os.path.exists("/usr/bin/systemd-run")
+
+    final_cmd = cmd
+    if use_systemd_run:
+        # systemd-run --user puts the app in its own independent cgroup
+        final_cmd = ["systemd-run", "--user", "--scope", "--quiet"] + cmd
+
+    # Sanitize Environment
+    env = dict(os.environ.items())
+    # Critical fix for Rider: Don't force GDK_BACKEND if we aren't sure
+    if env.get("GDK_BACKEND") != "wayland":
+        env.pop("GDK_BACKEND", None)
+
+    # IMPORTANT: Remove LD_PRELOAD to prevent it from affecting child processes
+    # The LD_PRELOAD is only needed for the status bar's layer-shell anchoring
+    env.pop("LD_PRELOAD", None)
+
+    try:
+        envp = [f"{k}={v}" for k, v in env.items()]
+        GLib.spawn_async(
+            argv=final_cmd,
+            envp=envp,
+            flags=GLib.SpawnFlags.SEARCH_PATH_FROM_ENVP | GLib.SpawnFlags.SEARCH_PATH,
+            child_setup=None if use_systemd_run else detach_child,
+            **({"working_directory": working_dir} if working_dir else {})
+        )
+        logger.info("Process spawned: %s", " ".join(final_cmd))
+    except Exception as e:
+        logger.exception('Could not launch "%s": %s', final_cmd, e)
+
+# --- App Info Wrapper ---
+
+class AppLauncher:
+    @staticmethod
+    def launch_by_desktop_file(desktop_file_path: str, project_path: Optional[str] = None) -> bool:
+        """
+        Parses a .desktop file and launches the command within.
+        """
+        app_info = SystemDesktopAppInfo.new_from_filename(desktop_file_path)
+        if not app_info:
+            logger.error("Could not load desktop file: %s", desktop_file_path)
+            return False
+
+        app_exec = app_info.get_commandline()
+        if not app_exec:
+            return False
+
+        # Clean up field codes (%u, %f, etc)
+        app_exec = re.sub(r"\%[uUfFdDnNickvm]", "", app_exec).strip()
+
+        cmd = shlex.split(app_exec)
+        if project_path:
+            cmd.append(project_path)
+
+        working_dir = app_info.get_string("Path")
+        launch_detached(cmd, working_dir)
+        return True
+
+
+def handle_custom_launcher(command: str, apps: List[Dict]) -> bool:
+    """
+    The main handler to bridge your configuration with the launcher.
+    """
     if command not in CUSTOM_LAUNCHERS:
         return False
 
     launcher = CUSTOM_LAUNCHERS[command]
+    target_name = ""
+
     if isinstance(launcher, str):
-        # Legacy: app name
+        target_name = launcher
+    elif isinstance(launcher, dict) and launcher.get("type") == "app":
+        target_name = launcher.get("name", "")
+
+    if target_name:
         for app in apps:
-            if launcher.lower() in app["name"].lower():
-                subprocess.Popen([app["exec"]], shell=False)
-                return True
-        # default to running as command
-        subprocess.Popen(launcher, shell=True)
-        return True
-    elif isinstance(launcher, dict):
-        launcher_type = launcher.get("type")
-        if launcher_type == "app":
-            app_name = launcher.get("name")
-            if app_name:
-                for app in apps:
-                    if app_name.lower() in app["name"].lower():
-                        subprocess.Popen([app["exec"]], shell=False)
-                        return True
-            return False
-        elif launcher_type == "command":
-            cmd = launcher.get("cmd")
-            if cmd:
-                subprocess.Popen(cmd, shell=True)
-                return True
-        elif launcher_type == "url":
-            url = launcher.get("url")
-            if url:
-                webbrowser.open(url)
-                return True
-        elif launcher_type == "function":
-            func = launcher.get("func")
-            if func and callable(func):
-                func()
-                return True
-        elif launcher_type == "builtin":
-            if launcher.get("handler") in [
-                "calculator",
-                "bookmark",
-                "bluetooth",
-                "wallpaper",
-                "timer",
-                "monitor",
-                "music",
-                "lock",
-            ]:
-                return False
+            if target_name.lower() in app["name"].lower():
+                # 'app["file"]' should be the path to the .desktop file
+                return AppLauncher.launch_by_desktop_file(app["file"])
+
     return False
 
 
@@ -145,7 +223,10 @@ class Popup(Gtk.ApplicationWindow):
         command = entry.get_text().strip()
         if command:
             try:
-                subprocess.Popen(command, shell=True)
+                # Clean environment for child processes
+                env = dict(os.environ.items())
+                env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
+                subprocess.Popen(command, shell=True, env=env)
             except Exception as e:
                 print(f"Failed to run command: {e}")
         self.hide()
@@ -189,10 +270,10 @@ class Launcher(Gtk.ApplicationWindow):
             TimerLauncher,
             KillLauncher,
             MusicLauncher,
+            RefileLauncher,
         )
 
         # Import lock launcher separately since it's not part of the main package
-        from launchers.lock_launcher import LockScreen
 
         self.calc_launcher = CalcLauncher(self)
         self.bookmark_launcher = BookmarkLauncher(self)
@@ -202,6 +283,7 @@ class Launcher(Gtk.ApplicationWindow):
         self.timer_launcher = TimerLauncher(self)
         self.kill_launcher = KillLauncher(self)
         self.music_launcher = MusicLauncher(self)
+        self.refile_launcher = RefileLauncher(self)
 
         # Lock screen instance (created when needed)
         self.lock_screen = None
@@ -337,9 +419,11 @@ class Launcher(Gtk.ApplicationWindow):
             # Try hooks first
             if not self.hook_registry.execute_select_hooks(self, hook_data):
                 # Fall back to default behavior if no hook handles it
-                if not self.default_button_handler:
-                    raise Exception("No handler defined for ", hook_data)
-                self.default_button_handler(button, hook_data)
+                if hasattr(self, 'default_button_handler') and self.default_button_handler:
+                    self.default_button_handler(button, hook_data)
+                else:
+                    # If no specific handler is defined, just hide the launcher
+                    self.hide()
 
         button.connect("clicked", on_clicked_wrapper)
         return button
@@ -434,6 +518,10 @@ class Launcher(Gtk.ApplicationWindow):
         elif filter_text.startswith(">music"):
             self.reset_launcher_size()
             self.music_launcher.populate(filter_text[6:].strip())
+        elif filter_text.startswith(">refile"):
+            self.reset_launcher_size()
+            query = filter_text[7:].strip()
+            self.refile_launcher.populate(query)
         elif filter_text.startswith(">lock"):
             self.reset_launcher_size()
             self.show_lock_screen()
@@ -448,6 +536,18 @@ class Launcher(Gtk.ApplicationWindow):
     def on_search_changed(self, entry):
         self.selected_row = None
         self.populate_apps(entry.get_text())
+
+    # App methods
+    def launch_app(self, app):
+        try:
+            desktop_file_path = app["file"]
+            # Use the new improved launcher logic
+            AppLauncher.launch_by_desktop_file(desktop_file_path)
+            print(f"Successfully launched {app['name']}")
+
+        except Exception as e:
+            print(f"Failed to launch {app['name']}: {e}")
+        self.hide()
 
     def on_entry_activate(self, entry):
         if self.selected_row:
@@ -496,7 +596,23 @@ class Launcher(Gtk.ApplicationWindow):
             self.hide()
         elif text.startswith(">"):
             command = text[1:].strip()
-            if not handle_custom_launcher(command, self.apps):
+            # For built-in commands, don't fall through to shell
+            builtin_commands = [
+                "calc",
+                "bookmark",
+                "bluetooth",
+                "wallpaper",
+                "timer",
+                "monitor",
+                "kill",
+                "music",
+                "refile",
+                "lock",
+            ]
+            if command in builtin_commands:
+                # This is a built-in command, don't execute as shell
+                return
+            elif not handle_custom_launcher(command, self.apps):
                 if command:
                     self.run_command(command)
         elif self.current_apps:
@@ -504,23 +620,6 @@ class Launcher(Gtk.ApplicationWindow):
         else:
             if text:
                 self.run_command(text)
-
-    # App methods
-    def launch_app(self, app):
-        try:
-            app["exec"] = (
-                app["exec"]
-                .replace("%U", "")
-                .replace("%u", "")
-                .replace("%F", "")
-                .replace("%f", "")
-                .strip("'")
-                .strip("'")
-            )
-            subprocess.Popen([app["exec"]], shell=False)
-        except Exception as e:
-            print(f"Failed to launch {app['name']}: {e}")
-        self.hide()
 
     def on_app_clicked(self, button, app):
         self.launch_app(app)
@@ -612,6 +711,7 @@ class Launcher(Gtk.ApplicationWindow):
             "monitor",
             "kill",
             "music",
+            "refile",
         ]:
             self.search_entry.set_text(f">{command} ")
         elif command == "lock":
@@ -622,7 +722,10 @@ class Launcher(Gtk.ApplicationWindow):
 
     def run_command(self, command):
         try:
-            subprocess.Popen(command, shell=True)
+            # Clean environment for child processes
+            env = dict(os.environ.items())
+            env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
+            subprocess.Popen(command, shell=True, env=env)
         except Exception as e:
             print(f"Failed to run command: {e}")
         self.hide()
@@ -650,6 +753,7 @@ class Launcher(Gtk.ApplicationWindow):
                     "monitor",
                     "kill",
                     "music",
+                    "refile",
                     "lock",
                 ]
                 all_commands = builtin + list(CUSTOM_LAUNCHERS.keys())
@@ -727,5 +831,7 @@ class Launcher(Gtk.ApplicationWindow):
     def show_lock_screen(self):
         """Show the lock screen."""
         if self.lock_screen is None:
-            self.lock_screen = LockScreen(password=LOCK_PASSWORD, application=self.get_application())
+            self.lock_screen = LockScreen(
+                password=LOCK_PASSWORD, application=self.get_application()
+            )
         self.lock_screen.lock()

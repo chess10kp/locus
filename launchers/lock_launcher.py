@@ -10,21 +10,76 @@
 from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # pyright: ignore
 from typing_extensions import final
 import hashlib
-import getpass
-import subprocess
-import os
-from utils import apply_styles, VBox, HBox
+from utils import apply_styles, VBox
+
+
+def get_monitor_geometry_for_window(window):
+    """Get the geometry of the monitor that the window is on."""
+    if not window:
+        return get_monitor_geometry()
+
+    display = Gdk.Display.get_default()
+    if display:
+        # Get the surface for the window
+        surface = window.get_surface()
+        if surface:
+            monitor = display.get_monitor_at_surface(surface)
+            if monitor:
+                return monitor.get_geometry()
+
+        # Fallback to primary monitor or first monitor
+        if hasattr(display, 'get_primary_monitor'):
+            # X11
+            monitor = display.get_primary_monitor()
+            if monitor:
+                return monitor.get_geometry()
+        elif hasattr(display, 'get_monitors'):
+            # Wayland - get the first monitor
+            monitors = display.get_monitors()
+            if monitors and monitors.get_n_items() > 0:
+                monitor = monitors.get_item(0)
+                if monitor:
+                    return monitor.get_geometry()
+
+    return None
+
+
+def get_monitor_geometry():
+    """Get the geometry of the primary monitor (fallback function)."""
+    display = Gdk.Display.get_default()
+    if display:
+        # Handle both Wayland and X11
+        if hasattr(display, 'get_primary_monitor'):
+            # X11
+            monitor = display.get_primary_monitor()
+            if monitor:
+                return monitor.get_geometry()
+        elif hasattr(display, 'get_monitors'):
+            # Wayland - get the first monitor
+            monitors = display.get_monitors()
+            if monitors and monitors.get_n_items() > 0:
+                monitor = monitors.get_item(0)
+                if monitor:
+                    return monitor.get_geometry()
+
+    # Final fallback to common resolution
+    return None
 
 
 @final
 class LockScreen(Gtk.ApplicationWindow):
-    def __init__(self, password="password123", **kwargs):
+    def __init__(self, password="admin", **kwargs):
+        # Use a common resolution initially, will be adjusted in lock()
+        width = 1920
+        height = 1080
+
         super().__init__(
             **kwargs,
             title="lock-screen",
             show_menubar=False,
             child=None,
-            fullscreened=True,
+            default_width=width,
+            default_height=height,
             destroy_with_parent=True,
             hide_on_close=False,
             resizable=False,
@@ -37,19 +92,28 @@ class LockScreen(Gtk.ApplicationWindow):
 
         # Create main container
         self.main_box = VBox(spacing=20)
-        self.main_box.set_valign(Gtk.Align.CENTER)
-        self.main_box.set_halign(Gtk.Align.CENTER)
+        self.main_box.set_valign(Gtk.Align.FILL)
+        self.main_box.set_halign(Gtk.Align.FILL)
+
+        # Create center container for lock UI
+        self.center_box = VBox(spacing=20)
+        self.center_box.set_valign(Gtk.Align.CENTER)
+        self.center_box.set_halign(Gtk.Align.CENTER)
 
         # Title
         self.title_label = Gtk.Label()
         self.title_label.set_markup('<span size="xx-large" weight="bold">Screen Locked</span>')
         self.title_label.set_margin_bottom(20)
+        self.title_label.set_halign(Gtk.Align.CENTER)
 
         # Password entry
         self.password_entry = Gtk.Entry()
         self.password_entry.set_visibility(False)  # Hide password
         self.password_entry.set_placeholder_text("Enter password to unlock")
         self.password_entry.set_width_chars(30)
+        self.password_entry.set_halign(Gtk.Align.CENTER)
+        self.password_entry.set_margin_start(20)
+        self.password_entry.set_margin_end(20)
         self.password_entry.connect("activate", self.on_password_entered)
         self.password_entry.connect("changed", self.on_password_changed)
 
@@ -57,17 +121,22 @@ class LockScreen(Gtk.ApplicationWindow):
         self.unlock_button = Gtk.Button(label="Unlock")
         self.unlock_button.connect("clicked", self.on_unlock_clicked)
         self.unlock_button.set_margin_top(10)
+        self.unlock_button.set_halign(Gtk.Align.CENTER)
+        self.unlock_button.set_margin_start(20)
+        self.unlock_button.set_margin_end(20)
 
         # Status label
         self.status_label = Gtk.Label()
         self.status_label.set_markup('<span color="#cc241d">Please enter your password</span>')
         self.status_label.set_margin_top(10)
+        self.status_label.set_halign(Gtk.Align.CENTER)
 
         # Assemble the UI
-        self.main_box.append(self.title_label)
-        self.main_box.append(self.password_entry)
-        self.main_box.append(self.unlock_button)
-        self.main_box.append(self.status_label)
+        self.center_box.append(self.title_label)
+        self.center_box.append(self.password_entry)
+        self.center_box.append(self.unlock_button)
+        self.center_box.append(self.status_label)
+        self.main_box.append(self.center_box)
 
         self.set_child(self.main_box)
 
@@ -94,7 +163,7 @@ class LockScreen(Gtk.ApplicationWindow):
 
     def apply_styles(self):
         """Apply dark theme styling to the lock screen."""
-        # Window styling
+        # Window styling - make it cover entire screen
         apply_styles(
             self,
             """
@@ -105,9 +174,20 @@ class LockScreen(Gtk.ApplicationWindow):
             """,
         )
 
-        # Main container
+        # Main container - full screen background
         apply_styles(
             self.main_box,
+            """
+            box {
+                background: #1d2021;
+                padding: 0px;
+            }
+            """,
+        )
+
+        # Center container - lock UI panel
+        apply_styles(
+            self.center_box,
             """
             box {
                 background: #282828;
@@ -225,21 +305,25 @@ class LockScreen(Gtk.ApplicationWindow):
                 GLib.timeout_add(2000, self.max_attempts_lockdown)
 
     def shake_window(self):
-        """Shake the window for incorrect password feedback."""
-        original_position = self.get_position()
-        shake_distance = 10
-        shake_duration = 50  # milliseconds
+        """Shake the lock UI for incorrect password feedback."""
+        shake_distance = 15
+        shake_duration = 80  # milliseconds
+
+        # Store original margin
+        original_margin = self.center_box.get_margin_top()
 
         def shake_step(step):
             if step < 6:  # 6 shakes (left, right, left, right, left, center)
                 if step % 2 == 0:
-                    offset = shake_distance
+                    self.center_box.set_margin_top(original_margin + shake_distance)
                 else:
-                    offset = -shake_distance
-                self.move(original_position[0] + offset, original_position[1])
-                GLib.timeout_add(shake_duration, lambda: shake_step(step + 1))
-            else:
-                self.move(original_position[0], original_position[1])
+                    self.center_box.set_margin_top(original_margin - shake_distance)
+
+                if step < 5:
+                    GLib.timeout_add(shake_duration, lambda: shake_step(step + 1))
+                else:
+                    # Reset margin
+                    self.center_box.set_margin_top(original_margin)
 
         shake_step(0)
 
@@ -286,10 +370,22 @@ class LockScreen(Gtk.ApplicationWindow):
         self.password_entry.set_text("")
         self.attempts = 0
         self.status_label.set_markup('<span color="#cc241d">Please enter your password</span>')
+
+        # Ensure the window covers the entire screen
+        monitor_geo = get_monitor_geometry_for_window(self)
+        if monitor_geo:
+            # Set window to cover entire monitor
+            self.set_default_size(monitor_geo.width, monitor_geo.height)
+            # Maximize the window
+            self.maximize()
+        else:
+            # Fallback - just maximize
+            self.maximize()
+
         self.present()
         self.password_entry.grab_focus()
 
 
-def create_lock_screen(password="password123", application=None):
+def create_lock_screen(password="admin", application=None):
     """Create and return a lock screen instance."""
     return LockScreen(password=password, application=application)

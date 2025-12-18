@@ -29,6 +29,9 @@ gi.require_version("Gtk4LayerShell", "1.0")
 
 from gi.repository import Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # noqa: E402  # pyright: ignore
 
+# Initialize GTK immediately after imports, before any other modules
+Gtk.init()
+
 from utils import load_desktop_apps  # noqa: E402
 from core.status_bar import StatusBar  # noqa: E402
 
@@ -62,30 +65,6 @@ def kill_previous_process():
 
 
 kill_previous_process()
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--launcher",
-    action="store_true",
-    help="Run launcher in CLI mode, reading from stdin",
-)
-args = parser.parse_args()
-
-if args.launcher:
-    apps = load_desktop_apps()
-    input_text = sys.stdin.read().strip()
-    for app in apps:
-        if input_text.lower() in app["name"].lower():
-            try:
-                print(app)
-                subprocess.Popen([app["exec"].strip('"').strip("'")], shell=False)
-                sys.exit(0)
-            except Exception as e:
-                print(f"Failed to launch {app['name']}: {e}")
-                sys.exit(1)
-    print("App not found")
-    sys.exit(1)
-
 
 def on_activate(app: Gtk.Application):
     display = Gdk.Display.get_default()
