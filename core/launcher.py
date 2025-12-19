@@ -458,28 +458,36 @@ class Launcher(Gtk.ApplicationWindow):
 
             # Register all launchers
             music_launcher = MusicLauncher(self)
-            self.launcher_registry.register(music_launcher)
+            if music_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(music_launcher)
 
             refile_launcher = RefileLauncher(self)
-            self.launcher_registry.register(refile_launcher)
+            if refile_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(refile_launcher)
 
             timer_launcher = TimerLauncher(self)
-            self.launcher_registry.register(timer_launcher)
+            if timer_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(timer_launcher)
 
             calc_launcher = CalcLauncher(self)
-            self.launcher_registry.register(calc_launcher)
+            if calc_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(calc_launcher)
 
             bookmark_launcher = BookmarkLauncher(self)
-            self.launcher_registry.register(bookmark_launcher)
+            if bookmark_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(bookmark_launcher)
 
             bluetooth_launcher = BluetoothLauncher(self)
-            self.launcher_registry.register(bluetooth_launcher)
+            if bluetooth_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(bluetooth_launcher)
 
             wallpaper_launcher = WallpaperLauncher(self)
-            self.launcher_registry.register(wallpaper_launcher)
+            if wallpaper_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(wallpaper_launcher)
 
             kill_launcher = KillLauncher(self)
-            self.launcher_registry.register(kill_launcher)
+            if kill_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(kill_launcher)
 
             # Lock screen is handled separately (not a launcher)
             self.lock_screen = None

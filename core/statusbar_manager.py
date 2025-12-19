@@ -249,10 +249,26 @@ class StatusbarModuleManager:
                         if styles:
                             self._apply_styles(new_widget, styles)
 
-                        # Replace widget in container
-                        position = parent.get_children().index(old_widget)
+                        # Replace widget in container (GTK4 compatible)
+                        # Find position
+                        position = 0
+                        child = parent.get_first_child()
+                        while child:
+                            if child == old_widget:
+                                break
+                            child = child.get_next_sibling()
+                            position += 1
+
                         parent.remove(old_widget)
-                        parent.insert(new_widget, position)
+
+                        if position == 0:
+                            parent.prepend(new_widget)
+                        else:
+                            # Find the sibling before the position
+                            sibling = parent.get_first_child()
+                            for i in range(position - 1):
+                                sibling = sibling.get_next_sibling()
+                            parent.insert_child_after(new_widget, sibling)
 
                         # Update references
                         self.module_widgets[module_name] = new_widget

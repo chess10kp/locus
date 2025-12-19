@@ -11,7 +11,7 @@ from typing import Tuple, Optional, List, Callable
 
 from gi.repository import Gtk
 from utils.wm import detect_wm
-from utils.utils import HBox
+from utils.utils import HBox, apply_styles
 from core.statusbar_interface import (
     StatusbarModuleInterface,
     StatusbarUpdateMode,
@@ -27,7 +27,7 @@ class WorkspacesModule(StatusbarModuleInterface):
         self.highlight_focused = highlight_focused
         self.wm_client = detect_wm()
         self.workspace_widgets = {}
-        self.box_container = None
+        self.fixed = None
 
     @property
     def name(self) -> str:
@@ -38,13 +38,19 @@ class WorkspacesModule(StatusbarModuleInterface):
         return StatusbarUpdateMode.EVENT_DRIVEN
 
     def create_widget(self) -> Gtk.Widget:
-        # Create a horizontal box container for workspace buttons
-        self.box_container = HBox(spacing=30)
-        self.box_container.set_name("workspaces-container")
+        from utils.utils import apply_styles
+
+        self.fixed = Gtk.Fixed()
+        self.fixed.set_hexpand(True)
+
+        # Workspace text container
+        self.workspaces_container = HBox(spacing=0)
+        self.workspaces_container.set_name("workspaces-container")
+        self.fixed.put(self.workspaces_container, 0, 0)
 
         # Initial update
-        self.update(self.box_container)
-        return self.box_container
+        self.update(self.fixed)
+        return self.fixed
 
     def update(self, widget: Gtk.Widget) -> None:
         """Update workspace display."""
@@ -57,51 +63,42 @@ class WorkspacesModule(StatusbarModuleInterface):
             any_focused = any(ws.focused for ws in workspaces)
 
             # Clear all existing children from the container
-            child = widget.get_first_child()
+            child = self.workspaces_container.get_first_child()
             while child:
                 next_child = child.get_next_sibling()
-                widget.remove(child)
+                self.workspaces_container.remove(child)
                 child = next_child
             self.workspace_widgets.clear()
 
             # Create workspace widgets
-            for i, workspace in enumerate(workspaces):
+            for workspace in workspaces:
                 # Create workspace button
                 if self.show_labels:
                     label_text = workspace.name
                 else:
                     label_text = ""
 
-                ws_button = Gtk.Button(label=label_text)
-                # Enable frame to allow background styling
-                ws_button.set_has_frame(True)
-                ws_button.set_name(f"workspace-{workspace.num}")
+                ws_widget = Gtk.Label(label=label_text)
+                ws_widget.set_name(f"workspace-{workspace.num}")
+                ws_widget.set_size_request(16, -1)
 
-                # Apply highlighting using CSS name for direct styling
-                if (workspace.focused or (workspace.num == 1 and not any_focused)) and self.highlight_focused:
-                    ws_button.set_name("workspace-focused")
-                    # Force style update
-                    css = """
-                    button#workspace-focused {
-                        background: #50fa7b !important;
-                        color: #f8f8f2 !important;
-                        border: none !important;
-                        box-shadow: none !important;
-                        -gtk-icon-effect: none !important;
-                        background-image: none !important;
-                        background-clip: padding-box !important;
-                    }
-                    """
-                    provider = Gtk.CssProvider()
-                    provider.load_from_data(css.encode())
-                    style_context = ws_button.get_style_context()
-                    style_context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-                else:
-                    ws_button.set_name(f"workspace-{workspace.num}")
+                if (
+                    workspace.focused or (workspace.num == 1 and not any_focused)
+                ) and self.highlight_focused:
+                    apply_styles(
+                        ws_widget,
+                        """
+                        label {
+                            background-color: #ebdbb2;
+                            color: #0e1419;
+                            border-radius: 2px;
+                        }
+                        """,
+                    )
 
                 # Add widget to container
-                widget.append(ws_button)
-                self.workspace_widgets[workspace.num] = ws_button
+                self.workspaces_container.append(ws_widget)
+                self.workspace_widgets[workspace.num] = ws_widget
 
             # Container is shown by default in GTK4
 
@@ -115,11 +112,11 @@ class WorkspacesModule(StatusbarModuleInterface):
         if self.wm_client:
             # Create a callback that updates this module
             def workspace_callback():
-                if self.box_container:
+                if self.fixed:
                     # Schedule update in main thread
                     from gi.repository import GLib
 
-                    GLib.idle_add(self.update, self.box_container)
+                    GLib.idle_add(self.update, self.fixed)
 
             try:
                 self.wm_client.start_event_listener(workspace_callback)
@@ -129,7 +126,6 @@ class WorkspacesModule(StatusbarModuleInterface):
 
         return listeners
 
-    
     def get_size_mode(self) -> Tuple[StatusbarSizeMode, Optional[Tuple[int, int]]]:
         return StatusbarSizeMode.DEFAULT, None
 
@@ -139,41 +135,24 @@ class WorkspacesModule(StatusbarModuleInterface):
             padding: 0 8px;
         }
 
-        #workspaces-container button {
-            padding: 4px 6px;
+        #workspaces-container label {
+            padding: 0;
             font-size: 12px;
             font-weight: 500;
-            margin: 0 2px;
+            margin: 0 0;
             border-radius: 3px;
             transition: all 0.2s ease;
             color: #6272a4;
             background-color: transparent;
-            border: none;
-            box-shadow: none;
         }
 
-        #workspaces-container button:hover {
-            background-color: rgba(80, 250, 123, 0.3);
-        }
-
-        #workspaces-container button.workspace-highlight {
-            color: #f8f8f2 !important;
-            background-color: #50fa7b !important;
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-        #workspaces-container button.urgent {
+        #workspaces-container label.urgent {
             color: #ff5555;
             background-color: rgba(255, 85, 85, 0.2);
-            border: none;
-            box-shadow: none;
         }
 
-        #workspaces-container button.visible {
+        #workspaces-container label.visible {
             color: #f8f8f2;
             background-color: rgba(248, 248, 242, 0.1);
-            border: none;
-            box-shadow: none;
         }
         """
