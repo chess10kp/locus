@@ -73,12 +73,31 @@ class WorkspacesModule(StatusbarModuleInterface):
                     label_text = ""
 
                 ws_button = Gtk.Button(label=label_text)
-                ws_button.set_has_frame(False)
+                # Enable frame to allow background styling
+                ws_button.set_has_frame(True)
                 ws_button.set_name(f"workspace-{workspace.num}")
 
-                # Apply styles
-                styles = self._get_workspace_styles(workspace, any_focused)
-                self._apply_styles(ws_button, styles)
+                # Apply highlighting using CSS name for direct styling
+                if (workspace.focused or (workspace.num == 1 and not any_focused)) and self.highlight_focused:
+                    ws_button.set_name("workspace-focused")
+                    # Force style update
+                    css = """
+                    button#workspace-focused {
+                        background: #50fa7b !important;
+                        color: #f8f8f2 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        -gtk-icon-effect: none !important;
+                        background-image: none !important;
+                        background-clip: padding-box !important;
+                    }
+                    """
+                    provider = Gtk.CssProvider()
+                    provider.load_from_data(css.encode())
+                    style_context = ws_button.get_style_context()
+                    style_context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+                else:
+                    ws_button.set_name(f"workspace-{workspace.num}")
 
                 # Add widget to container
                 widget.append(ws_button)
@@ -110,62 +129,7 @@ class WorkspacesModule(StatusbarModuleInterface):
 
         return listeners
 
-    def _get_workspace_styles(self, workspace, any_focused: bool = False) -> str:
-        """Get CSS styles for a workspace widget."""
-        base_styles = """
-            padding: 4px 6px;
-            font-size: 12px;
-            font-weight: 500;
-            margin: 0 2px;
-            border-radius: 3px;
-            transition: all 0.2s ease;
-        """
-
-        # Highlight workspace 1 as default if no workspace is focused
-        is_default_highlight = workspace.num == 1 and not any_focused
-
-        if (workspace.focused or is_default_highlight) and self.highlight_focused:
-            return (
-                base_styles
-                + """
-                color: #f8f8f2;
-                background: #50fa7b;
-            """
-            )
-        elif workspace.urgent:
-            return (
-                base_styles
-                + """
-                color: #ff5555;
-                background: rgba(255, 85, 85, 0.2);
-            """
-            )
-        elif workspace.visible:
-            return (
-                base_styles
-                + """
-                color: #f8f8f2;
-                background: rgba(248, 248, 242, 0.1);
-            """
-            )
-        else:
-            return (
-                base_styles
-                + """
-                color: #6272a4;
-                background: transparent;
-            """
-            )
-
-    def _apply_styles(self, widget: Gtk.Widget, css: str):
-        """Apply CSS styles to a widget."""
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(css.encode())
-        style_context = widget.get_style_context()
-        style_context.add_provider(
-            css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        )
-
+    
     def get_size_mode(self) -> Tuple[StatusbarSizeMode, Optional[Tuple[int, int]]]:
         return StatusbarSizeMode.DEFAULT, None
 
@@ -173,5 +137,43 @@ class WorkspacesModule(StatusbarModuleInterface):
         return """
         #workspaces-container {
             padding: 0 8px;
+        }
+
+        #workspaces-container button {
+            padding: 4px 6px;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 0 2px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            color: #6272a4;
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+        }
+
+        #workspaces-container button:hover {
+            background-color: rgba(80, 250, 123, 0.3);
+        }
+
+        #workspaces-container button.workspace-highlight {
+            color: #f8f8f2 !important;
+            background-color: #50fa7b !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        #workspaces-container button.urgent {
+            color: #ff5555;
+            background-color: rgba(255, 85, 85, 0.2);
+            border: none;
+            box-shadow: none;
+        }
+
+        #workspaces-container button.visible {
+            color: #f8f8f2;
+            background-color: rgba(248, 248, 242, 0.1);
+            border: none;
+            box-shadow: none;
         }
         """
