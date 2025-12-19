@@ -196,6 +196,7 @@ def get_apps_cache_path():
     # Import here to avoid circular imports
     import sys
     import os
+
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from core.config import LAUNCHER_CONFIG
 
@@ -210,6 +211,7 @@ def is_cache_valid(cache_path):
     # Import here to avoid circular imports
     import sys
     import os
+
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from core.config import LAUNCHER_CONFIG
 
@@ -220,10 +222,56 @@ def is_cache_valid(cache_path):
         return False
 
     try:
-        with open(cache_path, 'r', encoding='utf-8') as f:
+        with open(cache_path, "r", encoding="utf-8") as f:
             cache_data = json.load(f)
 
-        cache_time = datetime.fromisoformat(cache_data.get('timestamp', ''))
+        # Check basic structure
+        if (
+            not isinstance(cache_data, dict)
+            or "timestamp" not in cache_data
+            or "apps" not in cache_data
+        ):
+            return False
+
+        cache_time = datetime.fromisoformat(cache_data.get("timestamp", ""))
+
+        max_age_hours = LAUNCHER_CONFIG["performance"]["cache_max_age_hours"]
+        age = datetime.now() - cache_time
+
+        # Check if cache is too old
+        if age >= timedelta(hours=max_age_hours):
+            return False
+
+        # Basic validation of apps data
+        apps = cache_data.get("apps", [])
+        if not isinstance(apps, list):
+            return False
+
+        # Check if we have at least some apps (cache should not be empty unless no apps exist)
+        if len(apps) == 0:
+            # Empty cache might be valid if no apps were found
+            return True
+
+        # Validate a few sample apps to ensure cache integrity
+        sample_size = min(5, len(apps))
+        for i in range(sample_size):
+            app = apps[i]
+            if not isinstance(app, dict) or "name" not in app or "file" not in app:
+                return False
+
+        return True
+
+    except (json.JSONDecodeError, KeyError, ValueError, OSError, TypeError):
+        return False
+
+    if not cache_path.exists():
+        return False
+
+    try:
+        with open(cache_path, "r", encoding="utf-8") as f:
+            cache_data = json.load(f)
+
+        cache_time = datetime.fromisoformat(cache_data.get("timestamp", ""))
         max_age_hours = LAUNCHER_CONFIG["performance"]["cache_max_age_hours"]
         age = datetime.now() - cache_time
         return age < timedelta(hours=max_age_hours)
@@ -239,9 +287,9 @@ def load_apps_cache():
         return None
 
     try:
-        with open(cache_path, 'r', encoding='utf-8') as f:
+        with open(cache_path, "r", encoding="utf-8") as f:
             cache_data = json.load(f)
-        return cache_data.get('apps', [])
+        return cache_data.get("apps", [])
     except (json.JSONDecodeError, KeyError, OSError):
         return None
 
@@ -250,16 +298,46 @@ def save_apps_cache(apps):
     """Save apps to cache with timestamp."""
     cache_path = get_apps_cache_path()
 
-    cache_data = {
-        'timestamp': datetime.now().isoformat(),
-        'apps': apps
-    }
+    cache_data = {"timestamp": datetime.now().isoformat(), "apps": apps}
 
     try:
-        with open(cache_path, 'w', encoding='utf-8') as f:
+        with open(cache_path, "w", encoding="utf-8") as f:
             json.dump(cache_data, f, indent=2)
     except OSError:
         pass  # Fail silently if we can't write cache
+
+
+def _scan_directory(dir_path, debug_print=False, timeout=None):
+    """Scan a single directory for desktop files. Returns list of apps."""
+    import time
+
+    start_time = time.time()
+
+    apps = []
+    if dir_path.exists():
+        if debug_print:
+            print(f"Checking dir: {dir_path}")
+        count = 0
+        try:
+            for desktop_file in dir_path.glob("*.desktop"):
+                # Check timeout if specified
+                if timeout and (time.time() - start_time) > timeout:
+                    if debug_print:
+                        print(
+                            f"Timeout reached for {dir_path}, scanned {count} apps so far"
+                        )
+                    break
+
+                app = parse_desktop_file(desktop_file)
+                if app:
+                    apps.append(app)
+                    count += 1
+        except (OSError, PermissionError) as e:
+            if debug_print:
+                print(f"Error scanning {dir_path}: {e}")
+        if debug_print:
+            print(f"Loaded {count} apps from {dir_path}")
+    return apps
 
 
 def load_desktop_apps(force_refresh=False):
@@ -267,6 +345,7 @@ def load_desktop_apps(force_refresh=False):
     # Import here to avoid circular imports
     import sys
     import os
+
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from core.config import LAUNCHER_CONFIG
 
@@ -313,18 +392,39 @@ def load_desktop_apps(force_refresh=False):
     for custom_dir in desktop_config["custom_dirs"]:
         dirs.append(Path(custom_dir).expanduser())
 
-    for dir_path in dirs:
-        if dir_path.exists():
-            if LAUNCHER_CONFIG["advanced"]["debug_print"]:
-                print(f"Checking dir: {dir_path}")
-            count = 0
-            for desktop_file in dir_path.glob("*.desktop"):
-                app = parse_desktop_file(desktop_file)
-                if app:
-                    apps.append(app)
-                    count += 1
-            if LAUNCHER_CONFIG["advanced"]["debug_print"]:
-                print(f"Loaded {count} apps from {dir_path}")
+    # Use parallel scanning for better performance
+    import concurrent.futures
+
+    debug_print = LAUNCHER_CONFIG["advanced"]["debug_print"]
+    max_scan_time = desktop_config.get("max_scan_time", 5.0)
+
+    # Calculate timeout per directory (distribute total time among directories)
+    dir_timeout = max_scan_time / len(dirs) if dirs else max_scan_time
+
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(len(dirs), 8)
+    ) as executor:
+        # Submit all directory scans with timeout
+        future_to_dir = {
+            executor.submit(
+                _scan_directory, dir_path, debug_print, dir_timeout
+            ): dir_path
+            for dir_path in dirs
+        }
+
+        # Collect results as they complete, with overall timeout
+        try:
+            for future in concurrent.futures.as_completed(
+                future_to_dir, timeout=max_scan_time
+            ):
+                dir_apps = future.result()
+                apps.extend(dir_apps)
+        except concurrent.futures.TimeoutError:
+            if debug_print:
+                print(f"Overall scanning timeout reached after {max_scan_time}s")
+            # Cancel remaining tasks
+            for future in future_to_dir:
+                future.cancel()
 
     # Process apps
     if LAUNCHER_CONFIG["advanced"]["deduplicate_apps"]:
@@ -354,6 +454,7 @@ def load_desktop_apps(force_refresh=False):
 
 def load_desktop_apps_background(callback=None):
     """Load desktop apps in background thread."""
+
     def load_in_thread():
         apps = load_desktop_apps(force_refresh=True)
         if callback:
@@ -368,12 +469,20 @@ def parse_desktop_file(file_path):
     # Import here to avoid circular imports
     import sys
     import os
+
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from core.config import LAUNCHER_CONFIG
 
-    config = configparser.ConfigParser(interpolation=None)
     try:
+        # Fast pre-check: read first few lines to check for [Desktop Entry]
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            header = f.read(1024)  # Read first 1KB
+            if "[Desktop Entry]" not in header:
+                return None
+
+        config = configparser.ConfigParser(interpolation=None)
         config.read(file_path, encoding="utf-8")
+
         if not config.has_section("Desktop Entry"):
             return None
         entry = config["Desktop Entry"]

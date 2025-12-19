@@ -33,7 +33,6 @@ LAUNCHER_CONFIG = {
         "destroy_with_parent": True,
         "hide_on_close": True,
     },
-
     # Animation Settings
     "animation": {
         "enable_slide_in": True,
@@ -41,7 +40,6 @@ LAUNCHER_CONFIG = {
         "slide_step": 100,  # pixels per frame
         "target_margin": 25,  # Target margin from bottom edge
     },
-
     # Search and Filtering
     "search": {
         "max_results": 14,  # Maximum number of search results to show
@@ -52,7 +50,6 @@ LAUNCHER_CONFIG = {
         "search_in_exec": False,  # Search in executable names, not just display names
         "show_hidden_apps": False,  # Show NoDisplay=true apps
     },
-
     # Performance and Caching
     "performance": {
         "enable_cache": True,
@@ -62,7 +59,6 @@ LAUNCHER_CONFIG = {
         "button_pool_enabled": True,  # Reuse buttons instead of creating new ones
         "lazy_load_apps": True,  # Only load apps when launcher is first opened
     },
-
     # UI Appearance
     "ui": {
         "placeholder_text": "Search applications...",
@@ -72,7 +68,6 @@ LAUNCHER_CONFIG = {
         "clear_input_on_hide": True,  # Clear search input when hiding
         "auto_grab_focus": True,  # Auto-focus search entry when shown
     },
-
     # Behavior
     "behavior": {
         "activate_on_hover": False,  # Activate items on hover (not implemented)
@@ -81,7 +76,6 @@ LAUNCHER_CONFIG = {
         "show_recent_apps": False,  # Show recently used apps (not implemented)
         "max_recent_apps": 5,  # Number of recent apps to show
     },
-
     # Keyboard Shortcuts
     "keys": {
         "up": ["Up", "Ctrl+P"],  # Navigate up
@@ -89,26 +83,34 @@ LAUNCHER_CONFIG = {
         "activate": ["Return", "KP_Enter"],  # Activate selected item
         "close": ["Escape"],  # Close launcher
         "tab_complete": ["Tab"],  # Tab completion
-        "quick_select": ["Alt+1", "Alt+2", "Alt+3", "Alt+4", "Alt+5", "Alt+6", "Alt+7", "Alt+8", "Alt+9"],
+        "quick_select": [
+            "Alt+1",
+            "Alt+2",
+            "Alt+3",
+            "Alt+4",
+            "Alt+5",
+            "Alt+6",
+            "Alt+7",
+            "Alt+8",
+            "Alt+9",
+        ],
     },
-
     # Desktop Application Loading
     "desktop_apps": {
         "scan_user_dir": True,  # Scan ~/.local/share/applications
         "scan_system_dirs": True,  # Scan /usr/share/applications
-        "scan_flatpak": True,  # Scan Flatpak exports
-        "scan_snap": True,  # Scan snap applications
-        "scan_opt_dirs": True,  # Scan /opt applications
+        "scan_flatpak": False,  # Scan Flatpak exports (disabled by default for speed)
+        "scan_snap": False,  # Scan snap applications (disabled by default for speed)
+        "scan_opt_dirs": False,  # Scan /opt applications (disabled by default for speed)
         "custom_dirs": [],  # Additional directories to scan
+        "max_scan_time": 5.0,  # Maximum time in seconds to spend scanning
     },
-
     # Cache File Locations
     "cache": {
         "cache_dir": "~/.cache/locus",
         "apps_cache_file": "desktop_apps.json",
         "search_cache_file": "search_cache.json",  # Not implemented yet
     },
-
     # Advanced Options
     "advanced": {
         "debug_print": False,  # Print debug information to console

@@ -15,6 +15,7 @@ import os
 import sys
 import shlex
 import logging
+import time
 from typing import Optional, List, Dict
 
 from utils import apply_styles
@@ -298,7 +299,10 @@ class Launcher(Gtk.ApplicationWindow):
 
         self.selected_row = None
         from .config import LAUNCHER_CONFIG
-        self.search_entry.set_placeholder_text(LAUNCHER_CONFIG["ui"]["placeholder_text"])
+
+        self.search_entry.set_placeholder_text(
+            LAUNCHER_CONFIG["ui"]["placeholder_text"]
+        )
         self.search_timer = None  # For debouncing search
         self.button_pool = []  # Pool of reusable buttons
         self.last_search_text = ""  # Cache last search to avoid unnecessary updates
@@ -308,6 +312,7 @@ class Launcher(Gtk.ApplicationWindow):
         # Background loading state
         self.background_loading = False
         self.loading_label = None
+        self.loading_start_time = None
 
         # Scrolled window for apps
         self.scrolled = Gtk.ScrolledWindow()
@@ -397,9 +402,12 @@ class Launcher(Gtk.ApplicationWindow):
             self._apps_loaded = True
 
             # Start background loading to refresh cache if needed
-            if (not self.background_loading and
-                LAUNCHER_CONFIG["performance"]["enable_background_loading"]):
+            if (
+                not self.background_loading
+                and LAUNCHER_CONFIG["performance"]["enable_background_loading"]
+            ):
                 self.background_loading = True
+                self.loading_start_time = time.time()
                 load_desktop_apps_background(self._on_apps_loaded_background)
 
         return self._apps or []
@@ -424,6 +432,7 @@ class Launcher(Gtk.ApplicationWindow):
     def _get_filtered_apps(self, filter_text):
         """Get filtered apps with caching for performance."""
         from .config import LAUNCHER_CONFIG
+
         max_results = LAUNCHER_CONFIG["search"]["max_results"]
 
         if not filter_text:
@@ -724,8 +733,14 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Show loading indicator if background loading and no results yet
         if not filtered_apps and self.background_loading:
+            import time
             from .config import LAUNCHER_CONFIG
-            loading_text = LAUNCHER_CONFIG["ui"]["loading_text"]
+
+            elapsed = ""
+            if self.loading_start_time:
+                elapsed = f" ({time.time() - self.loading_start_time:.1f}s)"
+
+            loading_text = f"{LAUNCHER_CONFIG['ui']['loading_text']}{elapsed}"
             loading_label = Gtk.Label(label=loading_text)
             loading_label.add_css_class("dim-label")
             loading_row = Gtk.ListBoxRow()
@@ -1059,6 +1074,7 @@ class Launcher(Gtk.ApplicationWindow):
 
     def on_hide(self, widget):
         from .config import LAUNCHER_CONFIG
+
         if LAUNCHER_CONFIG["ui"]["clear_input_on_hide"]:
             self.search_entry.set_text("")
 
