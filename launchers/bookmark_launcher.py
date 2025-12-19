@@ -12,6 +12,7 @@ from utils import get_bookmarks
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from typing import Optional
+from utils.launcher_utils import LauncherEnhancer
 
 
 class BookmarkHook(LauncherHook):
@@ -96,10 +97,16 @@ class BookmarkLauncher(LauncherInterface):
             bookmarks = [b for b in bookmarks if query.lower() in b.lower()]
         actions = ["add", "remove", "replace"]
         all_items = bookmarks + actions
+        index = 1
         for item in all_items:
             metadata = (
                 launcher_core.METADATA.get("bookmark", "") if item in bookmarks else ""
             )
-            button = launcher_core.create_button_with_metadata(item, metadata)
+            button = launcher_core.create_button_with_metadata(
+                item, metadata, index=index if index <= 9 else None
+            )
             launcher_core.list_box.append(button)
+            index += 1
+            if index > 9:  # Stop showing hints after 9
+                break
         launcher_core.current_apps = []

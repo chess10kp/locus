@@ -23,6 +23,7 @@ from utils import (
 )
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from utils.launcher_utils import LauncherEnhancer
 
 
 class BluetoothHook(LauncherHook):
@@ -124,8 +125,14 @@ class BluetoothLauncher(LauncherInterface):
             pairable_status,
             discoverable_status,
         ] + device_items
+        index = 1
         for item in all_items:
             metadata = launcher_core.METADATA.get("bluetooth", "")
-            button = launcher_core.create_button_with_metadata(item, metadata)
+            button = launcher_core.create_button_with_metadata(
+                item, metadata, index=index if index <= 9 else None
+            )
             launcher_core.list_box.append(button)
+            index += 1
+            if index > 9:  # Stop showing hints after 9
+                break
         launcher_core.current_apps = []

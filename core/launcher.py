@@ -434,6 +434,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.bluetooth_launcher import BluetoothLauncher
             from launchers.wallpaper_launcher import WallpaperLauncher
             from launchers.kill_launcher import KillLauncher
+            from launchers.shell_launcher import ShellLauncher
             from launchers.lock_launcher import LockScreen  # noqa: F401
 
             # Register all launchers
@@ -468,6 +469,10 @@ class Launcher(Gtk.ApplicationWindow):
             kill_launcher = KillLauncher(self)
             if kill_launcher.name not in self.launcher_registry._launchers:
                 self.launcher_registry.register(kill_launcher)
+
+            shell_launcher = ShellLauncher(self)
+            if shell_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(shell_launcher)
 
             # Lock screen is handled separately (not a launcher)
             self.lock_screen = None
@@ -552,8 +557,10 @@ class Launcher(Gtk.ApplicationWindow):
 
         button.set_child(hbox)
 
-        # Don't connect click handler here - let the caller do it
-        # This avoids conflicts when buttons are reused
+        # Store hook data on the button for Alt+number selection
+        if hook_data is not None:
+            button._hook_data = hook_data
+
         return button
 
     def populate_command_mode(self, command):
@@ -882,8 +889,40 @@ class Launcher(Gtk.ApplicationWindow):
             self.list_box.select_row(row)
             button = row.get_child()
             if button:
-                button.emit("clicked")
-                self.hide()
+                # Get hook data before emitting clicked to prevent memory issues
+                hook_data = None
+                if hasattr(button, "_hook_data"):
+                    hook_data = button._hook_data
+
+                # Handle hooks directly for memory safety instead of emitting clicked
+                if hook_data and self.hook_registry:
+                    try:
+                        # Hide launcher before handling action to prevent memory issues
+                        self.hide()
+
+                        # Execute hook directly instead of emitting signal
+                        handled = self.hook_registry.execute_select_hooks(
+                            self, hook_data
+                        )
+
+                        # If not handled by hooks, try regular click
+                        if not handled:
+                            # For non-hook buttons, we need to emit clicked signal
+                            button.emit("clicked")
+                    except Exception as e:
+                        logger.error(f"Error handling Alt+number selection: {e}")
+                        # Fallback to regular click if hook handling fails
+                        try:
+                            button.emit("clicked")
+                        except Exception as e2:
+                            logger.error(f"Fallback click also failed: {e2}")
+                else:
+                    # No hook data - hide and emit clicked
+                    self.hide()
+                    try:
+                        button.emit("clicked")
+                    except Exception as e:
+                        logger.error(f"Error handling regular Alt+number click: {e}")
 
     def select_prev(self):
         if self.selected_row:

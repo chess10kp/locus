@@ -14,6 +14,7 @@ from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from typing import Any, Optional
 from utils import send_status_message
+from utils.launcher_utils import LauncherEnhancer
 
 
 class TimerHook(LauncherHook):
@@ -84,16 +85,16 @@ class TimerLauncher(LauncherInterface):
                 metadata = "Click to start timer"
                 hook_data = f"timer:{time_str}"
                 button = launcher_core.create_button_with_metadata(
-                    label_text, metadata, hook_data
+                    label_text, metadata, hook_data, index=1
                 )
             else:
                 label_text = "Invalid time format (e.g., 5m)"
                 metadata = "Use format like 5m, 1h, 30s"
-                button = launcher_core.create_button_with_metadata(label_text, metadata)
+                button = launcher_core.create_button_with_metadata(label_text, metadata, index=1)
         else:
             label_text = "Usage: >timer 5m"
             metadata = "Enter time duration (e.g., 5m, 1h, 30s)"
-            button = launcher_core.create_button_with_metadata(label_text, metadata)
+            button = launcher_core.create_button_with_metadata(label_text, metadata, index=1)
         launcher_core.list_box.append(button)
         launcher_core.current_apps = []
 

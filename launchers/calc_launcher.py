@@ -13,6 +13,7 @@ from utils import sanitize_expr, evaluate_calculator
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from typing import Any, Optional
+from utils.launcher_utils import LauncherEnhancer
 
 
 class CalcHook(LauncherHook):
@@ -89,7 +90,7 @@ class CalcLauncher(LauncherInterface):
             label_text = f"Result: {result}"
             metadata = launcher_core.METADATA.get(label_text, "")
             button = launcher_core.create_button_with_metadata(
-                label_text, metadata, result
+                label_text, metadata, result, index=1
             )
             launcher_core.list_box.append(button)
             launcher_core.list_box.queue_draw()

@@ -13,6 +13,7 @@ import threading
 from typing import Any, Optional, List, Dict, Tuple
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
+from utils.launcher_utils import LauncherEnhancer
 
 
 class MusicHook(LauncherHook):
@@ -37,11 +38,18 @@ class MusicHook(LauncherHook):
                 # Set search text to >music queue to trigger populate
                 launcher.search_entry.set_text(">music queue")
                 launcher.on_entry_activate(launcher.search_entry)
+            elif action == "view_library":
+                # Set search text to >music to trigger library view
+                launcher.search_entry.set_text(">music")
+                launcher.on_entry_activate(launcher.search_entry)
 
             # Refresh if we are still open (control actions mostly)
             # If playing a file, we usually close
             if action in ["play_file", "play_position"]:
                 launcher.hide()
+            elif action in ["view_queue", "view_library"]:
+                # Already handled by setting search text
+                pass
             else:
                 # Refresh the view
                 current_text = launcher.search_entry.get_text()
@@ -224,22 +232,32 @@ class MusicLauncher(LauncherInterface):
         header = f"{state_icon} {status['song'] or 'Stopped'}"
         meta = f"Vol: {status.get('volume')} | Rep: {status.get('repeat')} | Rnd: {status.get('random')} | Sgl: {status.get('single')}"
 
-        # Toggle Play/Pause button
+        # Toggle Play/Pause button with hint
         self._add_button(
             text=header,
             metadata=meta,
             action="control",
             value="toggle",
             launcher_core=launcher_core,
+            index=1,
         )
 
         if is_queue_mode:
+            self._add_button(
+                "Clear Queue",
+                "Remove all songs from queue",
+                "control",
+                "clear",
+                launcher_core,
+                index=2,
+            )
             self._add_button(
                 "View Library",
                 "Switch to file browser",
                 "control",
                 "view_library",
                 launcher_core,
+                index=3,
             )
         else:
             self._add_button(
@@ -248,36 +266,68 @@ class MusicLauncher(LauncherInterface):
                 "control",
                 "view_queue",
                 launcher_core,
+                index=2,
             )
 
-    def _add_button(self, text, metadata, action, value, launcher_core):
+    def _add_button(self, text, metadata, action, value, launcher_core, index=None):
         item_data = {"type": "music_item", "action": action, "value": value}
-        button = launcher_core.create_button_with_metadata(text, metadata, item_data)
+        button = launcher_core.create_button_with_metadata(text, metadata, item_data, index)
         launcher_core.list_box.append(button)
 
     def _populate_queue(self, query, launcher_core):
-        # mpc playlist -f '%position%\t%artist% - %title%'
-        output = self._run_mpc(["playlist", "-f", "%position%\t%artist% - %title%"])
-        lines = output.splitlines()
+        # Get playlist with position and filename
+        output = self._run_mpc(["playlist", "-f", "%position%\t%file%"])
+        lines = output.splitlines() if output else []
 
-        if not lines:
+        if not lines or not any(line.strip() for line in lines):
             launcher_core.list_box.append(
                 launcher_core.create_button_with_metadata("Queue is empty", "")
             )
             return
 
+        index = 4  # Start after control buttons (1=toggle, 2=clear, 3=view library)
         for line in lines:
-            parts = line.split("\t", 1)
-            if len(parts) == 2:
-                pos, name = parts
-                if not query or query.lower() in name.lower():
-                    self._add_button(
-                        text=f"{pos}. {name}",
-                        metadata="Click to play",
-                        action="play_position",
-                        value=pos,
-                        launcher_core=launcher_core,
-                    )
+            if not line.strip():
+                continue
+
+            # Parse position and filename
+            if "\t" in line:
+                parts = line.split("\t", 1)
+                if len(parts) == 2:
+                    pos, filename = parts
+                else:
+                    continue
+            else:
+                # Plain format, try to extract position from start
+                if " " in line:
+                    pos, filename = line.split(" ", 1)
+                else:
+                    pos = str(index - 3)  # Use position based on loop
+                    filename = line
+
+            # Clean up the filename for display
+            display_name = filename
+            if display_name:
+                # Extract just filename from path
+                if "/" in display_name:
+                    display_name = display_name.split("/")[-1]
+                # Remove file extension
+                if "." in display_name:
+                    display_name = ".".join(display_name.split(".")[:-1])
+
+            # Filter by search query if provided
+            if not query or query.lower() in display_name.lower():
+                self._add_button(
+                    text=f"{pos}. {display_name or filename}",
+                    metadata="Click to play | Alt+Enter to remove",
+                    action="play_position",
+                    value=pos,
+                    launcher_core=launcher_core,
+                    index=index if index <= 9 else None  # Only show hints for 3-9
+                )
+                index += 1
+                if index > 9:  # Stop showing hints after 9
+                    break
 
     def _populate_library(self, query, launcher_core):
         if self.scanning and not self.files_cache:
@@ -298,6 +348,7 @@ class MusicLauncher(LauncherInterface):
 
         count = 0
         MAX_RESULTS = 50  # Limit results for performance
+        index = 3  # Start after control buttons (1=toggle, 2=view mode)
 
         for item in self.files_cache:
             if query and query.lower() not in item["name"].lower():
@@ -309,7 +360,11 @@ class MusicLauncher(LauncherInterface):
                 action="play_file",
                 value=item["path"],
                 launcher_core=launcher_core,
+                index=index if index <= 9 else None  # Only show hints for 3-9
             )
+            index += 1
+            if index > 9:  # Stop showing hints after 9
+                break
 
             count += 1
             if count >= MAX_RESULTS:
@@ -335,6 +390,13 @@ class MusicLauncher(LauncherInterface):
 
     def remove_from_queue(self, pos):
         self._run_mpc(["del", pos])
+
+    def start_scan(self):
+        """Start a background scan of the music directory."""
+        if not self.scanning:
+            self.scanning = True
+            thread = threading.Thread(target=self._scan_worker, daemon=True)
+            thread.start()
 
     def control(self, command):
         if command == "toggle":
