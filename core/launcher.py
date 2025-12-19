@@ -15,13 +15,11 @@ import os
 import sys
 import shlex
 import logging
-import time
 from typing import Optional, List, Dict
 
 from utils import apply_styles
-from utils.app_loader import get_app_loader, track_app_launch
+from utils.app_loader import get_app_loader
 from utils.app_tracker import get_app_tracker
-from utils.fuzzy_search import filter_apps_with_fuzzy
 from .config import CUSTOM_LAUNCHERS, METADATA, LOCK_PASSWORD
 from launchers.lock_launcher import LockScreen
 
@@ -46,7 +44,7 @@ if not hasattr(Gio, "UnixInputStream") and "GioUnix" in sys.modules:
     Gio.UnixOutputStream = getattr(GioUnix, "OutputStream", None)
 
 
-# Note: Using utils.fuzzy_search instead of simple fuzzy_match for better performance
+# Note: Using  ulauncher's fuzzy match :D
 
 
 def parse_time(time_str):
@@ -63,9 +61,6 @@ def parse_time(time_str):
     return None
 
 
-# --- Core Launching Logic ---
-
-
 def detach_child() -> None:
     """
     Runs in the child process before execing.
@@ -73,7 +68,6 @@ def detach_child() -> None:
     """
     os.setsid()
 
-    # Redirect I/O to /dev/null to prevent the child from hanging on parent pipes
     if not sys.stdout.isatty():
         with open(os.devnull, "w+b") as null_fp:
             null_fd = null_fp.fileno()
@@ -125,34 +119,121 @@ def launch_detached(cmd: List[str], working_dir: Optional[str] = None) -> None:
 
 class AppLauncher:
     @staticmethod
+    def _find_desktop_file_by_name(app_name: str) -> Optional[str]:
+        """
+        Search for a desktop file by application name in standard directories.
+        """
+        from pathlib import Path
+
+        # Convert app name to lowercase for case-insensitive matching
+        app_name_lower = app_name.lower()
+
+        desktop_dirs = [
+            Path.home() / ".local" / "share" / "applications",
+            Path("/usr/local/share/applications"),
+            Path("/usr/share/applications"),
+            Path("/var/lib/flatpak/exports/share/applications"),
+            Path("/var/lib/snapd/desktop/applications"),
+        ]
+
+        for desktop_dir in desktop_dirs:
+            if not desktop_dir.exists():
+                continue
+
+            exact_file = desktop_dir / f"{app_name_lower}.desktop"
+            if exact_file.exists():
+                return str(exact_file)
+
+            try:
+                for desktop_file in desktop_dir.glob("*.desktop"):
+                    try:
+                        # Try to load and check the desktop file name
+                        app_info = SystemDesktopAppInfo.new_from_filename(
+                            str(desktop_file)
+                        )
+                        if app_info:
+                            file_name = app_info.get_name()
+                            if file_name and file_name.lower() == app_name_lower:
+                                return str(desktop_file)
+                    except Exception:
+                        # idk what we do here
+                        continue
+            except Exception:
+                # Skip problematic directories
+                continue
+
+        return None
+
+    @staticmethod
     def launch_by_desktop_file(
-        desktop_file_path: str, project_path: Optional[str] = None
+        desktop_file_path: str,
+        project_path: Optional[str] = None,
+        fallback_exec: Optional[str] = None,
+        fallback_name: Optional[str] = None,
     ) -> bool:
         """
         Parses a .desktop file and launches the command within.
+        Falls back to direct execution if desktop file is not available.
         """
-        app_info = SystemDesktopAppInfo.new_from_filename(desktop_file_path)
-        if not app_info:
-            logger.error("Could not load desktop file: %s", desktop_file_path)
-            return False
+        if desktop_file_path and os.path.exists(desktop_file_path):
+            app_info = SystemDesktopAppInfo.new_from_filename(desktop_file_path)
+            if app_info:
+                app_exec = app_info.get_commandline()
+                if app_exec:
+                    app_exec = re.sub(r"\%[uUfFdDnNickvm]", "", app_exec).strip()
+                    cmd = shlex.split(app_exec)
+                    if project_path:
+                        cmd.append(project_path)
+                    working_dir = app_info.get_string("Path")
+                    launch_detached(cmd, working_dir)
+                    return True
+                else:
+                    logger.warning(
+                        "Desktop file has no executable: %s", desktop_file_path
+                    )
+            else:
+                logger.warning("Could not load desktop file: %s", desktop_file_path)
+        else:
+            logger.debug(
+                "Desktop file path is empty or does not exist: %s", desktop_file_path
+            )
 
-        app_exec = app_info.get_commandline()
-        if not app_exec:
-            return False
+        # Fallback: try to find desktop file by searching standard directories
+        if fallback_name:
+            found_desktop_file = AppLauncher._find_desktop_file_by_name(fallback_name)
+            if found_desktop_file:
+                logger.info(
+                    "Found desktop file for %s: %s", fallback_name, found_desktop_file
+                )
+                return AppLauncher.launch_by_desktop_file(
+                    found_desktop_file, project_path
+                )
 
-        # Clean up field codes (%u, %f, etc)
-        app_exec = re.sub(r"\%[uUfFdDnNickvm]", "", app_exec).strip()
+        if fallback_exec:
+            logger.info("Launching %s directly as fallback", fallback_exec)
+            cmd = [fallback_exec]
+            if project_path:
+                cmd.append(project_path)
+            launch_detached(cmd)
+            return True
 
-        cmd = shlex.split(app_exec)
-        if project_path:
-            cmd.append(project_path)
-
-        working_dir = app_info.get_string("Path")
-        launch_detached(cmd, working_dir)
-        return True
+        logger.error(
+            "Could not launch application - no valid desktop file or executable found"
+        )
+        return False
 
 
-def handle_custom_launcher(command: str, apps: List[Dict]) -> bool:
+BUILTIN_HANDLERS = {}
+
+
+def register_builtin_handler(name: str, handler_func):
+    """Register a builtin launcher handler function."""
+    BUILTIN_HANDLERS[name] = handler_func
+
+
+def handle_custom_launcher(
+    command: str, apps: List[Dict], launcher_instance=None
+) -> bool:
     """
     The main handler to bridge your configuration with the launcher.
     """
@@ -164,8 +245,24 @@ def handle_custom_launcher(command: str, apps: List[Dict]) -> bool:
 
     if isinstance(launcher, str):
         target_name = launcher
-    elif isinstance(launcher, dict) and launcher.get("type") == "app":
-        target_name = launcher.get("name", "")
+    elif isinstance(launcher, dict):
+        launcher_type = launcher.get("type")
+        if launcher_type == "app":
+            target_name = launcher.get("name", "")
+        elif launcher_type == "builtin":
+            handler_name = launcher.get("handler")
+            if handler_name and handler_name in BUILTIN_HANDLERS:
+                # Call the builtin handler with the launcher instance
+                if handler_name and handler_name in BUILTIN_HANDLERS:
+                    # Call the builtin handler with the launcher instance
+                    BUILTIN_HANDLERS[handler_name](launcher_instance)
+                    return True
+                return False
+                return True
+            else:
+                with open("/tmp/locus_debug.log", "a") as f:
+                    f.write(f"[DEBUG] No handler found for builtin '{handler_name}'\n")
+                return False
 
     if target_name:
         for app in apps:
@@ -295,6 +392,7 @@ class Launcher(Gtk.ApplicationWindow):
             LAUNCHER_CONFIG["ui"]["placeholder_text"]
         )
         self.search_timer = None  # For debouncing search
+        self._in_search_changed = False  # Guard against recursion
         # Button pooling removed to prevent memory leaks and signal handler conflicts
 
         # Background loading state
@@ -473,6 +571,11 @@ class Launcher(Gtk.ApplicationWindow):
             shell_launcher = ShellLauncher(self)
             if shell_launcher.name not in self.launcher_registry._launchers:
                 self.launcher_registry.register(shell_launcher)
+
+            # Register builtin handlers
+            register_builtin_handler(
+                "lock", lambda launcher_instance: show_lock_screen(launcher_instance)
+            )
 
             # Lock screen is handled separately (not a launcher)
             self.lock_screen = None
@@ -759,25 +862,33 @@ class Launcher(Gtk.ApplicationWindow):
             self.reset_launcher_size()
 
     def on_search_changed(self, entry):
-        from .config import LAUNCHER_CONFIG
+        # Prevent recursive calls that can cause RecursionError
+        if self._in_search_changed:
+            return
 
-        if self.search_timer:
-            GLib.source_remove(self.search_timer)
+        self._in_search_changed = True
+        try:
+            from .config import LAUNCHER_CONFIG
 
-        # Adaptive debouncing: shorter for small queries, longer for complex ones
-        text = entry.get_text()
-        base_delay = LAUNCHER_CONFIG["search"]["debounce_delay"]
+            if self.search_timer:
+                GLib.source_remove(self.search_timer)
 
-        if len(text) <= 1:
-            debounce_delay = min(base_delay, 50)  # Very fast for single character
-        elif len(text) <= 3:
-            debounce_delay = min(base_delay, 100)  # Fast for short queries
-        else:
-            debounce_delay = base_delay  # Standard delay for longer queries
+            # Adaptive debouncing: shorter for small queries, longer for complex ones
+            text = entry.get_text()
+            base_delay = LAUNCHER_CONFIG["search"]["debounce_delay"]
 
-        self.search_timer = GLib.timeout_add(
-            debounce_delay, self._debounced_populate, text
-        )
+            if len(text) <= 1:
+                debounce_delay = min(base_delay, 50)  # Very fast for single character
+            elif len(text) <= 3:
+                debounce_delay = min(base_delay, 100)  # Fast for short queries
+            else:
+                debounce_delay = base_delay  # Standard delay for longer queries
+
+            self.search_timer = GLib.timeout_add(
+                debounce_delay, self._debounced_populate, text
+            )
+        finally:
+            self._in_search_changed = False
 
     def _debounced_populate(self, text):
         self.selected_row = None
@@ -791,12 +902,21 @@ class Launcher(Gtk.ApplicationWindow):
             desktop_file_path = app["file"]
             # Track app launch for frequency ranking
             app_name = app.get("name", "")
+            app_exec = app.get("exec", "")
             if app_name:
                 self._app_tracker.increment_app_start(app_name)
 
-            # Use the new improved launcher logic
-            AppLauncher.launch_by_desktop_file(desktop_file_path)
-            logger.info(f"Successfully launched {app_name}")
+            # Use the new improved launcher logic with fallback support
+            success = AppLauncher.launch_by_desktop_file(
+                desktop_file_path=desktop_file_path,
+                fallback_exec=app_exec,
+                fallback_name=app_name,
+            )
+
+            if success:
+                logger.info(f"Successfully launched {app_name}")
+            else:
+                logger.error(f"Failed to launch {app_name}")
 
         except Exception as e:
             logger.error(f"Failed to launch {app.get('name', 'unknown')}: {e}")
@@ -824,18 +944,13 @@ class Launcher(Gtk.ApplicationWindow):
             if launcher.handle_enter(query, self):
                 return
 
-        # Special case for lock screen (legacy support)
-        if text == ">lock":
-            self.show_lock_screen()
-            return
-
         # Handle custom launchers from config
         if text.startswith(">"):
             command = text[1:].strip()
             if command in [name for name, _ in self.launcher_registry.list_launchers()]:
                 # This is a registered launcher command, don't execute as shell
                 return
-            elif not handle_custom_launcher(command, self.apps):
+            elif not handle_custom_launcher(command, self.apps, self):
                 if command:
                     self.run_command(command)
         elif self.current_apps:
@@ -962,7 +1077,7 @@ class Launcher(Gtk.ApplicationWindow):
         self.set_default_size(600, 400)
 
     def on_custom_launcher_clicked(self, button, command):
-        if handle_custom_launcher(command, self.apps):
+        if handle_custom_launcher(command, self.apps, self):
             self.hide()
 
     # Command methods
@@ -1163,10 +1278,11 @@ class Launcher(Gtk.ApplicationWindow):
         self.populate_apps("")
         self.animate_slide_in()
 
-    def show_lock_screen(self):
-        """Show the lock screen."""
-        if self.lock_screen is None:
-            self.lock_screen = LockScreen(
-                password=LOCK_PASSWORD, application=self.get_application()
-            )
-        self.lock_screen.lock()
+
+def show_lock_screen(launcher_instance):
+    """Show the lock screen."""
+    if launcher_instance.lock_screen is None:
+        launcher_instance.lock_screen = LockScreen(
+            password=LOCK_PASSWORD, application=launcher_instance.get_application()
+        )
+    launcher_instance.lock_screen.lock()

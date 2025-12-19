@@ -221,6 +221,25 @@ class StatusBar(Gtk.ApplicationWindow):
                             if self.launcher:
                                 self.launcher.present()
                             handled = True
+                        elif data.startswith(">") or data.startswith("launcher "):
+                            # Send launcher commands to the launcher
+                            if self.launcher:
+                                # Extract the command if it starts with "launcher "
+                                if data.startswith("launcher "):
+                                    command = data[8:]  # Remove "launcher " prefix
+                                    self.launcher.search_entry.set_text(command)
+                                    self.launcher.present()
+                                    self.launcher.on_entry_activate(
+                                        self.launcher.search_entry
+                                    )
+                                else:
+                                    # Direct command starting with >
+                                    self.launcher.search_entry.set_text(data)
+                                    self.launcher.present()
+                                    self.launcher.on_entry_activate(
+                                        self.launcher.search_entry
+                                    )
+                            handled = True
                         else:
                             # Handle the message through the module manager
                             handled = self.module_manager.handle_ipc_message(data)

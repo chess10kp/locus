@@ -149,11 +149,16 @@ class LockScreen(Gtk.ApplicationWindow):
 
         # Setup layer shell for fullscreen overlay
         GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
+        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
+        # Set margins to 0 to ensure fullscreen coverage
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.RIGHT, 0)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 0)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 0)
         GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.EXCLUSIVE)
         GtkLayerShell.auto_exclusive_zone_enable(self)
 
@@ -361,9 +366,9 @@ class LockScreen(Gtk.ApplicationWindow):
             return True
 
         # Prevent Alt+Tab, Ctrl+Alt+F1, etc.
-        if (state & Gdk.ModifierType.MOD1_MASK and keyval == Gdk.KEY_Tab) or (
+        if (state & Gdk.ModifierType.ALT_MASK and keyval == Gdk.KEY_Tab) or (
             state & Gdk.ModifierType.CONTROL_MASK
-            and state & Gdk.ModifierType.MOD1_MASK
+            and state & Gdk.ModifierType.ALT_MASK
             and keyval
             in [
                 Gdk.KEY_F1,
@@ -411,6 +416,20 @@ class LockScreen(Gtk.ApplicationWindow):
         else:
             # Fallback - just maximize
             self.maximize()
+
+        # Try to set the monitor for GTK layer shell
+        try:
+            display = Gdk.Display.get_default()
+            if display:
+                monitor = (
+                    display.get_monitor_at_surface(self.get_surface())
+                    if self.get_surface()
+                    else None
+                )
+                if monitor:
+                    GtkLayerShell.set_monitor(self, monitor)
+        except Exception as e:
+            pass  # Silently ignore monitor setting errors
 
         self.present()
         self.password_entry.grab_focus()
