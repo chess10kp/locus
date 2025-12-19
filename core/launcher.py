@@ -17,7 +17,7 @@ import shlex
 import logging
 from typing import Optional, List, Dict
 
-from utils import apply_styles, load_desktop_apps, VBox
+from utils import apply_styles
 from .config import CUSTOM_LAUNCHERS, METADATA, LOCK_PASSWORD
 from launchers.lock_launcher import LockScreen
 
@@ -262,7 +262,9 @@ class Launcher(Gtk.ApplicationWindow):
             visible=False,
         )
 
-        self.apps = sorted(load_desktop_apps(), key=lambda x: x["name"])
+        # Lazy load apps - only load when first needed
+        self._apps = None
+        self._apps_loaded = False
         self.METADATA = METADATA
         self.parse_time = parse_time
 
@@ -293,6 +295,9 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry.set_placeholder_text("Search applications...")
         self.search_timer = None  # For debouncing search
         self.button_pool = []  # Pool of reusable buttons
+        self.last_search_text = ""  # Cache last search to avoid unnecessary updates
+        self.search_cache = {}  # Cache search results
+        self.cache_max_size = 100  # Maximum cache size
 
         # Scrolled window for apps
         self.scrolled = Gtk.ScrolledWindow()
@@ -304,11 +309,8 @@ class Launcher(Gtk.ApplicationWindow):
         self.list_box.set_selection_mode(Gtk.SelectionMode.NONE)
         self.scrolled.set_child(self.list_box)
 
-        # Populate list
-        self.populate_apps()
-
         # Main box
-        vbox = VBox(spacing=6)
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         vbox.append(self.search_entry)
         vbox.append(self.scrolled)
         self.set_child(vbox)
@@ -327,7 +329,8 @@ class Launcher(Gtk.ApplicationWindow):
         GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.EXCLUSIVE)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
-        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 100)
+        # Position above the statusbar (statusbar is 20px high, so use 25px margin)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 25)
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
 
         apply_styles(
@@ -368,6 +371,73 @@ class Launcher(Gtk.ApplicationWindow):
             }
         """,
         )
+
+    @property
+    def apps(self):
+        """Lazy load desktop apps only when first accessed."""
+        if not self._apps_loaded:
+            from utils import load_desktop_apps
+
+            self._apps = sorted(load_desktop_apps(), key=lambda x: x["name"].lower())
+            self._apps_loaded = True
+        return self._apps or []
+
+    def _get_filtered_apps(self, filter_text):
+        """Get filtered apps with caching for performance."""
+        if not filter_text:
+            return self.apps[:50]  # Return first 50 apps when no filter
+
+        # Check cache first
+        if filter_text in self.search_cache:
+            return self.search_cache[filter_text]
+
+        # Compute filtered results
+        filtered = []
+        filter_lower = filter_text.lower()
+        for app in self.apps:
+            if len(filtered) >= 50:  # Limit results
+                break
+            if filter_lower in app["name"].lower():
+                filtered.append(app)
+
+        # Cache the result
+        if len(self.search_cache) >= self.cache_max_size:
+            # Remove oldest entry (simple LRU approximation)
+            oldest_key = next(iter(self.search_cache))
+            del self.search_cache[oldest_key]
+        self.search_cache[filter_text] = filtered
+
+        return filtered
+
+    def _get_button_from_pool(self):
+        """Get a button from the pool or create a new one if pool is empty."""
+        if self.button_pool:
+            button = self.button_pool.pop()
+            # Reset button state
+            button.set_visible(True)
+            # Disconnect all existing click handlers to avoid conflicts
+            # Note: GTK doesn't provide a direct way to disconnect all handlers,
+            # but we can work around this by not reusing handlers
+            return button
+        else:
+            # Create new button
+            button = Gtk.Button()
+            self.apply_button_style(button)
+            return button
+
+    def _return_buttons_to_pool(self):
+        """Return all buttons from list_box to the pool."""
+        child = self.list_box.get_first_child()
+        while child:
+            next_child = child.get_next_sibling()
+            if hasattr(child, "get_child") and child.get_child():
+                button = child.get_child()
+                if button:
+                    # Reset button state
+                    button.set_visible(False)
+                    self.button_pool.append(button)
+            self.list_box.remove(child)
+            child = next_child
 
     def _register_launchers(self):
         """Auto-discover and register all launcher modules."""
@@ -442,6 +512,12 @@ class Launcher(Gtk.ApplicationWindow):
         self, main_text, metadata_text="", hook_data=None, index=None
     ):
         """Create a button with main text and optional metadata below in smaller font."""
+        # Get button from pool
+        button = self._get_button_from_pool()
+
+        # Clear existing child if any
+        button.set_child(None)
+
         # Create a horizontal box for text and hint
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
         hbox.set_hexpand(True)
@@ -486,26 +562,10 @@ class Launcher(Gtk.ApplicationWindow):
             )
             hbox.append(hint_label)
 
-        button = Gtk.Button()
         button.set_child(hbox)
 
-        self.apply_button_style(button)
-
-        # Connect click handler that uses hook system
-        def on_clicked_wrapper(button):
-            # Try hooks first
-            if not self.hook_registry.execute_select_hooks(self, hook_data):
-                # Fall back to default behavior if no hook handles it
-                if (
-                    hasattr(self, "default_button_handler")
-                    and self.default_button_handler
-                ):
-                    self.default_button_handler(button, hook_data)
-                else:
-                    # If no specific handler is defined, just hide the launcher
-                    self.hide()
-
-        button.connect("clicked", on_clicked_wrapper)
+        # Don't connect click handler here - let the caller do it
+        # This avoids conflicts when buttons are reused
         return button
 
     def populate_command_mode(self, command):
@@ -516,17 +576,19 @@ class Launcher(Gtk.ApplicationWindow):
             for launcher_name, triggers in self.launcher_registry.list_launchers():
                 all_commands.extend(triggers)
 
-            index = 1
-            for cmd_name in sorted(set(all_commands)):
-                metadata = METADATA.get(cmd_name, "")
-                button = self.create_button_with_metadata(
-                    f">{cmd_name}", metadata, index=index
-                )
-                button.connect("clicked", self.on_command_selected, cmd_name)
-                self.list_box.append(button)
-                index += 1
-                if index > 9:  # Only show hints for first 9 items
-                    break
+                index = 1
+                for cmd_name in sorted(set(all_commands)):
+                    metadata = METADATA.get(cmd_name, "")
+                    button = self.create_button_with_metadata(
+                        f">{cmd_name}", metadata, index=index if index <= 9 else None
+                    )
+                    button.connect("clicked", self.on_command_selected, cmd_name)
+                    row = Gtk.ListBoxRow()
+                    row.set_child(button)
+                    self.list_box.append(row)
+                    index += 1
+                    if index > 10:  # Show more command results
+                        break
             self.current_apps = []
 
         elif command in CUSTOM_LAUNCHERS:
@@ -541,11 +603,17 @@ class Launcher(Gtk.ApplicationWindow):
                         )
                         button.connect("clicked", self.on_app_clicked, app)
                         self.current_apps = [app]
+                        row = Gtk.ListBoxRow()
+                        row.set_child(button)
+                        self.list_box.append(row)
                         break
                 else:
                     button = self.create_button_with_metadata(f"Run: {launcher}", "")
                     button.connect("clicked", self.on_command_clicked, launcher)
                     self.current_apps = []
+                    row = Gtk.ListBoxRow()
+                    row.set_child(button)
+                    self.list_box.append(row)
             else:
                 metadata = METADATA.get(command, "")
                 button = self.create_button_with_metadata(
@@ -553,8 +621,9 @@ class Launcher(Gtk.ApplicationWindow):
                 )
                 button.connect("clicked", self.on_custom_launcher_clicked, command)
                 self.current_apps = []
-            self.apply_button_style(button)
-            self.list_box.append(button)
+            row = Gtk.ListBoxRow()
+            row.set_child(button)
+            self.list_box.append(row)
 
         else:
             # Find matching commands
@@ -573,41 +642,53 @@ class Launcher(Gtk.ApplicationWindow):
                 for cmd in all_matching:
                     metadata = METADATA.get(cmd, "")
                     button = self.create_button_with_metadata(
-                        f">{cmd}", metadata, index=index
+                        f">{cmd}", metadata, index=index if index <= 9 else None
                     )
                     button.connect("clicked", self.on_command_selected, cmd)
-                    self.list_box.append(button)
+                    row = Gtk.ListBoxRow()
+                    row.set_child(button)
+                    self.list_box.append(row)
                     index += 1
-                    if index > 9:  # Only show hints for first 9 items
+                    if index > 10:  # Show more command results
                         break
                 self.current_apps = []
             else:
                 # No matching commands, offer to run as shell command
                 button = self.create_button_with_metadata(f"Run: {command}", "")
                 button.connect("clicked", self.on_command_clicked, command)
-                self.list_box.append(button)
+                row = Gtk.ListBoxRow()
+                row.set_child(button)
+                self.list_box.append(row)
                 self.current_apps = []
 
     def populate_app_mode(self, filter_text):
         self.current_apps = []
         index = 1
-        for app in self.apps:
-            if not filter_text or fuzzy_match(filter_text, app["name"]):
-                self.current_apps.append(app)
-                metadata = METADATA.get(app["name"], "")
-                button = self.create_button_with_metadata(
-                    app["name"], metadata, index=index
-                )
-                button.connect("clicked", self.on_app_clicked, app)
-                self.list_box.append(button)
-                index += 1
-                if index > 9:  # Only show hints for first 9 items
-                    break
+
+        # Use cached filtering for better performance
+        filtered_apps = self._get_filtered_apps(filter_text)
+
+        for app in filtered_apps:
+            self.current_apps.append(app)
+            metadata = METADATA.get(app["name"], "")
+            button = self.create_button_with_metadata(
+                app["name"], metadata, index=index if index <= 9 else None
+            )
+            button.connect("clicked", self.on_app_clicked, app)
+            row = Gtk.ListBoxRow()
+            row.set_child(button)
+            self.list_box.append(row)
+            index += 1
 
     def populate_apps(self, filter_text=""):
         """Populate the launcher with apps or use registered launchers for commands."""
-        while self.list_box.get_first_child():
-            self.list_box.remove(self.list_box.get_first_child())
+        # Skip if search text hasn't changed significantly
+        if filter_text == self.last_search_text:
+            return
+        self.last_search_text = filter_text
+
+        # Return buttons to pool instead of destroying them
+        self._return_buttons_to_pool()
 
         # Check if any registered launcher can handle this input
         trigger, launcher, query = self.launcher_registry.find_launcher_for_input(
@@ -909,7 +990,7 @@ class Launcher(Gtk.ApplicationWindow):
 
     def animate_slide_in(self):
         current_margin = GtkLayerShell.get_margin(self, GtkLayerShell.Edge.BOTTOM)
-        target = 0
+        target = 25  # Target margin above statusbar
         if current_margin < target:
             new_margin = min(target, current_margin + 100)
             GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, new_margin)
@@ -920,6 +1001,7 @@ class Launcher(Gtk.ApplicationWindow):
 
     def show_launcher(self, center_x=None):
         self.search_entry.set_text("")
+        self.last_search_text = ""  # Reset search cache
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, -400)
 
         if center_x is not None:
@@ -935,6 +1017,8 @@ class Launcher(Gtk.ApplicationWindow):
             GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
 
         self.present()
+        # Populate with initial apps
+        self.populate_apps("")
         self.animate_slide_in()
 
     def show_lock_screen(self):

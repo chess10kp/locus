@@ -11,6 +11,7 @@ from typing import Tuple, Optional, List, Callable
 
 from gi.repository import Gtk
 from utils.wm import detect_wm
+from utils.utils import HBox
 from core.statusbar_interface import (
     StatusbarModuleInterface,
     StatusbarUpdateMode,
@@ -21,13 +22,12 @@ from core.statusbar_interface import (
 class WorkspacesModule(StatusbarModuleInterface):
     """Statusbar module for displaying workspace indicators."""
 
-    def __init__(self, show_numbers: bool = True, highlight_focused: bool = True):
-        self.show_numbers = show_numbers
+    def __init__(self, show_labels: bool = True, highlight_focused: bool = True):
+        self.show_labels = show_labels
         self.highlight_focused = highlight_focused
         self.wm_client = detect_wm()
         self.workspace_widgets = {}
-        self.highlight = None
-        self.fixed_container = None
+        self.box_container = None
 
     @property
     def name(self) -> str:
@@ -38,13 +38,13 @@ class WorkspacesModule(StatusbarModuleInterface):
         return StatusbarUpdateMode.EVENT_DRIVEN
 
     def create_widget(self) -> Gtk.Widget:
-        # Create a fixed container for precise positioning
-        self.fixed_container = Gtk.Fixed()
-        self.fixed_container.set_name("workspaces-container")
+        # Create a horizontal box container for workspace buttons
+        self.box_container = HBox(spacing=30)
+        self.box_container.set_name("workspaces-container")
 
         # Initial update
-        self.update(self.fixed_container)
-        return self.fixed_container
+        self.update(self.box_container)
+        return self.box_container
 
     def update(self, widget: Gtk.Widget) -> None:
         """Update workspace display."""
@@ -53,50 +53,38 @@ class WorkspacesModule(StatusbarModuleInterface):
             if not workspaces:
                 return
 
-            # Clear existing widgets
-            for ws_widget in self.workspace_widgets.values():
-                if ws_widget.get_parent():
-                    widget.remove(ws_widget)
+            # Check if any workspace is focused
+            any_focused = any(ws.focused for ws in workspaces)
+
+            # Clear all existing children from the container
+            child = widget.get_first_child()
+            while child:
+                next_child = child.get_next_sibling()
+                widget.remove(child)
+                child = next_child
             self.workspace_widgets.clear()
 
-            # Clear existing highlight
-            if self.highlight:
-                if self.highlight.get_parent():
-                    widget.remove(self.highlight)
-                self.highlight = None
-
             # Create workspace widgets
-            x_offset = 0
             for i, workspace in enumerate(workspaces):
-                # Create workspace label
-                if self.show_numbers:
-                    label_text = str(i + 1)
+                # Create workspace button
+                if self.show_labels:
+                    label_text = workspace.name
                 else:
                     label_text = ""
 
-                ws_label = Gtk.Label(label=label_text)
-                ws_label.set_name(f"workspace-{workspace.num}")
+                ws_button = Gtk.Button(label=label_text)
+                ws_button.set_has_frame(False)
+                ws_button.set_name(f"workspace-{workspace.num}")
 
                 # Apply styles
-                styles = self._get_workspace_styles(workspace)
-                self._apply_styles(ws_label, styles)
+                styles = self._get_workspace_styles(workspace, any_focused)
+                self._apply_styles(ws_button, styles)
 
-                # Position the widget
-                widget.put(ws_label, x_offset, 0)
-                self.workspace_widgets[workspace.num] = ws_label
+                # Add widget to container
+                widget.append(ws_button)
+                self.workspace_widgets[workspace.num] = ws_button
 
-                # Update x_offset for next workspace
-                x_offset += 30  # 30px spacing between workspaces
-
-                # Add highlight if this workspace is focused
-                if self.highlight_focused and workspace.focused:
-                    self.highlight = Gtk.Label()
-                    self.highlight.set_name("workspace-highlight")
-                    self._apply_styles(self.highlight, self._get_highlight_styles())
-                    widget.put(self.highlight, x_offset - 25, 0)
-
-            # Show the container
-            widget.show_all()
+            # Container is shown by default in GTK4
 
         except Exception as e:
             print(f"Error updating workspaces: {e}")
@@ -108,11 +96,11 @@ class WorkspacesModule(StatusbarModuleInterface):
         if self.wm_client:
             # Create a callback that updates this module
             def workspace_callback():
-                if self.fixed_container:
+                if self.box_container:
                     # Schedule update in main thread
                     from gi.repository import GLib
 
-                    GLib.idle_add(self.update, self.fixed_container)
+                    GLib.idle_add(self.update, self.box_container)
 
             try:
                 self.wm_client.start_event_listener(workspace_callback)
@@ -122,7 +110,7 @@ class WorkspacesModule(StatusbarModuleInterface):
 
         return listeners
 
-    def _get_workspace_styles(self, workspace) -> str:
+    def _get_workspace_styles(self, workspace, any_focused: bool = False) -> str:
         """Get CSS styles for a workspace widget."""
         base_styles = """
             padding: 4px 6px;
@@ -133,11 +121,14 @@ class WorkspacesModule(StatusbarModuleInterface):
             transition: all 0.2s ease;
         """
 
-        if workspace.focused:
+        # Highlight workspace 1 as default if no workspace is focused
+        is_default_highlight = workspace.num == 1 and not any_focused
+
+        if (workspace.focused or is_default_highlight) and self.highlight_focused:
             return (
                 base_styles
                 + """
-                color: #282a36;
+                color: #f8f8f2;
                 background: #50fa7b;
             """
             )
@@ -165,16 +156,6 @@ class WorkspacesModule(StatusbarModuleInterface):
                 background: transparent;
             """
             )
-
-    def _get_highlight_styles(self) -> str:
-        """Get CSS styles for the workspace highlight indicator."""
-        return """
-            background: #50fa7b;
-            width: 3px;
-            height: 16px;
-            border-radius: 1.5px;
-            margin: 2px 0;
-        """
 
     def _apply_styles(self, widget: Gtk.Widget, css: str):
         """Apply CSS styles to a widget."""

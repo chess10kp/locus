@@ -21,10 +21,13 @@ import i3ipc  # pyright: ignore
 
 @final
 class Workspace:
-    def __init__(self, name: str, focused: bool, urgent: bool = False):
+    def __init__(
+        self, name: str, focused: bool, urgent: bool = False, visible: bool = True
+    ):
         self.name = name
         self.focused = focused
         self.urgent = urgent
+        self.visible = visible
         self.num = int(name) if name.isdigit() else 999
 
 
@@ -43,7 +46,10 @@ class SwayClient(WMClient):
     def get_workspaces(self) -> list[Workspace]:
         try:
             workspaces = self.i3.get_workspaces()
-            return [Workspace(ws.name, ws.focused, ws.urgent) for ws in workspaces]  # pyright: ignore
+            return [
+                Workspace(ws.name, ws.focused, ws.urgent, ws.visible)
+                for ws in workspaces
+            ]  # pyright: ignore
         except Exception:
             return []
 
@@ -94,7 +100,7 @@ class HyprlandClient(WMClient):
                 # If name is different, we might prefer that.
                 name = str(ws.get("id", "?"))
                 is_focused = ws.get("id") == active_id
-                workspaces.append(Workspace(name, is_focused, False))
+                workspaces.append(Workspace(name, is_focused, False, True))
 
             return workspaces
         except Exception as e:
