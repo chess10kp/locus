@@ -12,9 +12,12 @@ import subprocess
 import configparser
 import glob
 import socket
+import json
+import threading
 from pathlib import Path
+from datetime import datetime, timedelta
 
-from gi.repository import Gtk  # pyright: ignore
+from gi.repository import Gtk, GLib  # pyright: ignore
 
 
 def apply_styles(widget, css: str):
@@ -188,7 +191,70 @@ def get_battery_status() -> str:
             return "No Battery"
 
 
-def load_desktop_apps():
+def get_apps_cache_path():
+    """Get the path to the desktop apps cache file."""
+    cache_dir = Path.home() / ".cache" / "locus"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    return cache_dir / "desktop_apps.json"
+
+
+def is_cache_valid(cache_path, max_age_hours=24):
+    """Check if the cache is valid (exists and not too old)."""
+    if not cache_path.exists():
+        return False
+
+    try:
+        with open(cache_path, 'r', encoding='utf-8') as f:
+            cache_data = json.load(f)
+
+        cache_time = datetime.fromisoformat(cache_data.get('timestamp', ''))
+        age = datetime.now() - cache_time
+        return age < timedelta(hours=max_age_hours)
+    except (json.JSONDecodeError, KeyError, ValueError, OSError):
+        return False
+
+
+def load_apps_cache():
+    """Load apps from cache if valid."""
+    cache_path = get_apps_cache_path()
+
+    if not is_cache_valid(cache_path):
+        return None
+
+    try:
+        with open(cache_path, 'r', encoding='utf-8') as f:
+            cache_data = json.load(f)
+        return cache_data.get('apps', [])
+    except (json.JSONDecodeError, KeyError, OSError):
+        return None
+
+
+def save_apps_cache(apps):
+    """Save apps to cache with timestamp."""
+    cache_path = get_apps_cache_path()
+
+    cache_data = {
+        'timestamp': datetime.now().isoformat(),
+        'apps': apps
+    }
+
+    try:
+        with open(cache_path, 'w', encoding='utf-8') as f:
+            json.dump(cache_data, f, indent=2)
+    except OSError:
+        pass  # Fail silently if we can't write cache
+
+
+def load_desktop_apps(force_refresh=False):
+    """Load desktop applications, using cache if available."""
+    # First, try to load from cache
+    if not force_refresh:
+        cached_apps = load_apps_cache()
+        if cached_apps:
+            print(f"Loaded {len(cached_apps)} apps from cache")
+            return cached_apps
+
+    # If no valid cache, load from disk
     apps = []
     dirs = []
 
@@ -221,8 +287,24 @@ def load_desktop_apps():
                     apps.append(app)
                     count += 1
             print(f"Loaded {count} apps from {dir_path}")
+
+    # Sort and save to cache
+    apps = sorted(apps, key=lambda x: x["name"].lower())
     print(f"Total loaded {len(apps)} apps")
-    return sorted(apps, key=lambda x: x["name"].lower())
+    save_apps_cache(apps)
+    return apps
+
+
+def load_desktop_apps_background(callback=None):
+    """Load desktop apps in background thread."""
+    def load_in_thread():
+        apps = load_desktop_apps(force_refresh=True)
+        if callback:
+            # Use GLib.idle_add to run callback in main thread
+            GLib.idle_add(callback, apps)
+
+    thread = threading.Thread(target=load_in_thread, daemon=True)
+    thread.start()
 
 
 def parse_desktop_file(file_path):

@@ -15,7 +15,7 @@ from .statusbar_registry import statusbar_registry
 
 
 class StatusbarModuleManager:
-    """Manager for statusbar module lifecycle with hot-reload support."""
+    """Manager for statusbar module lifecycle."""
 
     def __init__(self, status_bar):
         self.status_bar = status_bar
@@ -23,9 +23,6 @@ class StatusbarModuleManager:
         self.module_instances: Dict[str, StatusbarModuleInterface] = {}
         self.update_sources: Dict[str, int] = {}  # GLib source IDs
         self.event_listeners: Dict[str, List[Any]] = {}
-
-        # Register reload callback with registry
-        statusbar_registry.add_reload_callback(self._on_module_reloaded)
 
     def create_module(
         self, module_name: str, config: Optional[Dict] = None
@@ -225,76 +222,6 @@ class StatusbarModuleManager:
 
         return False  # Event not handled
 
-    def _on_module_reloaded(
-        self, module_name: str, new_instance: StatusbarModuleInterface
-    ):
-        """Handle module hot-reload."""
-        print(f"Handling reload for module '{module_name}'")
-
-        # Check if this module is currently active
-        if module_name in self.module_instances:
-            old_widget = self.module_widgets.get(module_name)
-            if old_widget:
-                # Get the parent container to replace the widget
-                parent = old_widget.get_parent()
-                if parent:
-                    # Stop old module updates
-                    self._stop_module_updates(module_name)
-
-                    # Create new widget
-                    new_widget = new_instance.create_widget()
-                    if new_widget:
-                        # Apply styles
-                        styles = new_instance.get_styles()
-                        if styles:
-                            self._apply_styles(new_widget, styles)
-
-                        # Replace widget in container (GTK4 compatible)
-                        # Find position
-                        position = 0
-                        child = parent.get_first_child()
-                        while child:
-                            if child == old_widget:
-                                break
-                            child = child.get_next_sibling()
-                            position += 1
-
-                        parent.remove(old_widget)
-
-                        if position == 0:
-                            parent.prepend(new_widget)
-                        else:
-                            # Find the sibling before the position
-                            sibling = parent.get_first_child()
-                            for i in range(position - 1):
-                                sibling = sibling.get_next_sibling()
-                            parent.insert_child_after(new_widget, sibling)
-
-                        # Update references
-                        self.module_widgets[module_name] = new_widget
-                        self.module_instances[module_name] = new_instance
-
-                        # Restart updates
-                        self._start_module_updates(module_name, new_instance)
-
-                        # Set up click handlers
-                        if new_instance.handles_clicks():
-                            new_widget.connect(
-                                "button-press-event", self._on_module_click, module_name
-                            )
-
-                        print(
-                            f"Successfully reloaded and replaced widget for module '{module_name}'"
-                        )
-                    else:
-                        print(
-                            f"Failed to create widget for reloaded module '{module_name}'"
-                        )
-                else:
-                    print(f"Could not find parent for module '{module_name}' widget")
-            else:
-                print(f"No widget found for active module '{module_name}'")
-
     def _apply_styles(self, widget: Gtk.Widget, css: str):
         """Apply CSS styles to a widget."""
         css_provider = Gtk.CssProvider()
@@ -306,9 +233,6 @@ class StatusbarModuleManager:
 
     def cleanup(self):
         """Clean up all modules and stop updates."""
-        # Remove reload callback
-        statusbar_registry.remove_reload_callback(self._on_module_reloaded)
-
         # Destroy all modules
         for module_name in list(self.module_instances.keys()):
             self.destroy_module(module_name)

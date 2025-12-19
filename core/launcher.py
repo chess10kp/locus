@@ -299,6 +299,10 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_cache = {}  # Cache search results
         self.cache_max_size = 100  # Maximum cache size
 
+        # Background loading state
+        self.background_loading = False
+        self.loading_label = None
+
         # Scrolled window for apps
         self.scrolled = Gtk.ScrolledWindow()
         self.scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -322,6 +326,9 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Grab focus on map
         self.connect("map", self.on_map)
+
+        # Clear input field when window is hidden
+        self.connect("hide", self.on_hide)
 
         # Layer shell setup
         GtkLayerShell.init_for_window(self)
@@ -376,16 +383,40 @@ class Launcher(Gtk.ApplicationWindow):
     def apps(self):
         """Lazy load desktop apps only when first accessed."""
         if not self._apps_loaded:
-            from utils import load_desktop_apps
+            from utils.utils import load_desktop_apps, load_desktop_apps_background
 
+            # Load cached apps immediately for fast startup
             self._apps = sorted(load_desktop_apps(), key=lambda x: x["name"].lower())
             self._apps_loaded = True
+
+            # Start background loading to refresh cache if needed
+            if not self.background_loading:
+                self.background_loading = True
+                load_desktop_apps_background(self._on_apps_loaded_background)
+
         return self._apps or []
+
+    def _on_apps_loaded_background(self, apps):
+        """Callback called when background loading completes."""
+        self.background_loading = False
+        # Update apps list with fresh data
+        self._apps = sorted(apps, key=lambda x: x["name"].lower())
+
+        # Clear search cache since apps may have changed
+        self.search_cache.clear()
+
+        # Refresh current search if launcher is visible
+        if self.get_visible():
+            current_text = self.search_entry.get_text()
+            if current_text:
+                self._populate_launcher(current_text)
+            else:
+                self._populate_launcher("")
 
     def _get_filtered_apps(self, filter_text):
         """Get filtered apps with caching for performance."""
         if not filter_text:
-            return self.apps[:50]  # Return first 50 apps when no filter
+            return self.apps[:14]  # Return first 14 apps when no filter
 
         # Check cache first
         if filter_text in self.search_cache:
@@ -395,7 +426,7 @@ class Launcher(Gtk.ApplicationWindow):
         filtered = []
         filter_lower = filter_text.lower()
         for app in self.apps:
-            if len(filtered) >= 50:  # Limit results
+            if len(filtered) >= 14:  # Limit results
                 break
             if filter_lower in app["name"].lower():
                 filtered.append(app)
@@ -675,6 +706,16 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Use cached filtering for better performance
         filtered_apps = self._get_filtered_apps(filter_text)
+
+        # Show loading indicator if background loading and no results yet
+        if not filtered_apps and self.background_loading:
+            loading_label = Gtk.Label(label="Loading applications...")
+            loading_label.add_css_class("dim-label")
+            loading_row = Gtk.ListBoxRow()
+            loading_row.set_child(loading_label)
+            loading_row.set_selectable(False)
+            self.list_box.append(loading_row)
+            return
 
         for app in filtered_apps:
             self.current_apps.append(app)
@@ -995,6 +1036,9 @@ class Launcher(Gtk.ApplicationWindow):
     # Window methods
     def on_map(self, widget):
         self.search_entry.grab_focus()
+
+    def on_hide(self, widget):
+        self.search_entry.set_text("")
 
     def animate_slide_in(self):
         current_margin = GtkLayerShell.get_margin(self, GtkLayerShell.Edge.BOTTOM)
