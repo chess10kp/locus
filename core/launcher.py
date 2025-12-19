@@ -249,17 +249,22 @@ class Popup(Gtk.ApplicationWindow):
 @final
 class Launcher(Gtk.ApplicationWindow):
     def __init__(self, **kwargs):
+        from .config import LAUNCHER_CONFIG
+
+        window_config = LAUNCHER_CONFIG["window"]
         super().__init__(
             **kwargs,
             title="launcher",
-            show_menubar=False,
+            show_menubar=window_config["show_menubar"],
             child=None,
-            default_width=600,
-            default_height=400,
-            destroy_with_parent=True,
-            hide_on_close=True,
-            resizable=True,
+            default_width=window_config["default_width"],
+            default_height=window_config["default_height"],
+            destroy_with_parent=window_config["destroy_with_parent"],
+            hide_on_close=window_config["hide_on_close"],
+            resizable=window_config["resizable"],
             visible=False,
+            modal=window_config["modal"],
+            decorated=window_config["decorated"],
         )
 
         # Lazy load apps - only load when first needed
@@ -292,12 +297,13 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry.set_hexpand(True)
 
         self.selected_row = None
-        self.search_entry.set_placeholder_text("Search applications...")
+        from .config import LAUNCHER_CONFIG
+        self.search_entry.set_placeholder_text(LAUNCHER_CONFIG["ui"]["placeholder_text"])
         self.search_timer = None  # For debouncing search
         self.button_pool = []  # Pool of reusable buttons
         self.last_search_text = ""  # Cache last search to avoid unnecessary updates
         self.search_cache = {}  # Cache search results
-        self.cache_max_size = 100  # Maximum cache size
+        self.cache_max_size = LAUNCHER_CONFIG["performance"]["search_cache_size"]
 
         # Background loading state
         self.background_loading = False
@@ -383,6 +389,7 @@ class Launcher(Gtk.ApplicationWindow):
     def apps(self):
         """Lazy load desktop apps only when first accessed."""
         if not self._apps_loaded:
+            from .config import LAUNCHER_CONFIG
             from utils.utils import load_desktop_apps, load_desktop_apps_background
 
             # Load cached apps immediately for fast startup
@@ -390,7 +397,8 @@ class Launcher(Gtk.ApplicationWindow):
             self._apps_loaded = True
 
             # Start background loading to refresh cache if needed
-            if not self.background_loading:
+            if (not self.background_loading and
+                LAUNCHER_CONFIG["performance"]["enable_background_loading"]):
                 self.background_loading = True
                 load_desktop_apps_background(self._on_apps_loaded_background)
 
@@ -415,8 +423,11 @@ class Launcher(Gtk.ApplicationWindow):
 
     def _get_filtered_apps(self, filter_text):
         """Get filtered apps with caching for performance."""
+        from .config import LAUNCHER_CONFIG
+        max_results = LAUNCHER_CONFIG["search"]["max_results"]
+
         if not filter_text:
-            return self.apps[:14]  # Return first 14 apps when no filter
+            return self.apps[:max_results]  # Return first N apps when no filter
 
         # Check cache first
         if filter_text in self.search_cache:
@@ -424,11 +435,15 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Compute filtered results
         filtered = []
-        filter_lower = filter_text.lower()
+        case_sensitive = LAUNCHER_CONFIG["search"]["case_sensitive"]
+        filter_text_search = filter_text if case_sensitive else filter_text.lower()
+
         for app in self.apps:
-            if len(filtered) >= 14:  # Limit results
+            if len(filtered) >= max_results:  # Limit results
                 break
-            if filter_lower in app["name"].lower():
+
+            app_name = app["name"] if case_sensitive else app["name"].lower()
+            if filter_text_search in app_name:
                 filtered.append(app)
 
         # Cache the result
@@ -709,7 +724,9 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Show loading indicator if background loading and no results yet
         if not filtered_apps and self.background_loading:
-            loading_label = Gtk.Label(label="Loading applications...")
+            from .config import LAUNCHER_CONFIG
+            loading_text = LAUNCHER_CONFIG["ui"]["loading_text"]
+            loading_label = Gtk.Label(label=loading_text)
             loading_label.add_css_class("dim-label")
             loading_row = Gtk.ListBoxRow()
             loading_row.set_child(loading_label)
@@ -770,10 +787,13 @@ class Launcher(Gtk.ApplicationWindow):
             self.reset_launcher_size()
 
     def on_search_changed(self, entry):
+        from .config import LAUNCHER_CONFIG
+
         if self.search_timer:
             GLib.source_remove(self.search_timer)
+        debounce_delay = LAUNCHER_CONFIG["search"]["debounce_delay"]
         self.search_timer = GLib.timeout_add(
-            150, self._debounced_populate, entry.get_text()
+            debounce_delay, self._debounced_populate, entry.get_text()
         )
 
     def _debounced_populate(self, text):
@@ -1038,17 +1058,28 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry.grab_focus()
 
     def on_hide(self, widget):
-        self.search_entry.set_text("")
+        from .config import LAUNCHER_CONFIG
+        if LAUNCHER_CONFIG["ui"]["clear_input_on_hide"]:
+            self.search_entry.set_text("")
 
     def animate_slide_in(self):
-        current_margin = GtkLayerShell.get_margin(self, GtkLayerShell.Edge.BOTTOM)
-        target = 25  # Target margin above statusbar
-        if current_margin < target:
-            new_margin = min(target, current_margin + 100)
-            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, new_margin)
-            GLib.timeout_add(20, self.animate_slide_in)
-        else:
+        from .config import LAUNCHER_CONFIG
+
+        animation_config = LAUNCHER_CONFIG["animation"]
+        if not animation_config["enable_slide_in"]:
             self.search_entry.grab_focus()
+            return False
+
+        current_margin = GtkLayerShell.get_margin(self, GtkLayerShell.Edge.BOTTOM)
+        target = animation_config["target_margin"]  # Target margin above statusbar
+
+        if current_margin < target:
+            new_margin = min(target, current_margin + animation_config["slide_step"])
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, new_margin)
+            GLib.timeout_add(animation_config["slide_duration"], self.animate_slide_in)
+        else:
+            if LAUNCHER_CONFIG["ui"]["auto_grab_focus"]:
+                self.search_entry.grab_focus()
         return False
 
     def show_launcher(self, center_x=None):

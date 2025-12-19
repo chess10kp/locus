@@ -193,13 +193,29 @@ def get_battery_status() -> str:
 
 def get_apps_cache_path():
     """Get the path to the desktop apps cache file."""
-    cache_dir = Path.home() / ".cache" / "locus"
+    # Import here to avoid circular imports
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from core.config import LAUNCHER_CONFIG
+
+    cache_config = LAUNCHER_CONFIG["cache"]
+    cache_dir = Path(cache_config["cache_dir"]).expanduser()
     cache_dir.mkdir(parents=True, exist_ok=True)
-    return cache_dir / "desktop_apps.json"
+    return cache_dir / cache_config["apps_cache_file"]
 
 
-def is_cache_valid(cache_path, max_age_hours=24):
+def is_cache_valid(cache_path):
     """Check if the cache is valid (exists and not too old)."""
+    # Import here to avoid circular imports
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from core.config import LAUNCHER_CONFIG
+
+    if not LAUNCHER_CONFIG["performance"]["enable_cache"]:
+        return False
+
     if not cache_path.exists():
         return False
 
@@ -208,6 +224,7 @@ def is_cache_valid(cache_path, max_age_hours=24):
             cache_data = json.load(f)
 
         cache_time = datetime.fromisoformat(cache_data.get('timestamp', ''))
+        max_age_hours = LAUNCHER_CONFIG["performance"]["cache_max_age_hours"]
         age = datetime.now() - cache_time
         return age < timedelta(hours=max_age_hours)
     except (json.JSONDecodeError, KeyError, ValueError, OSError):
@@ -247,51 +264,91 @@ def save_apps_cache(apps):
 
 def load_desktop_apps(force_refresh=False):
     """Load desktop applications, using cache if available."""
+    # Import here to avoid circular imports
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from core.config import LAUNCHER_CONFIG
+
     # First, try to load from cache
-    if not force_refresh:
+    if not force_refresh and LAUNCHER_CONFIG["performance"]["enable_cache"]:
         cached_apps = load_apps_cache()
         if cached_apps:
-            print(f"Loaded {len(cached_apps)} apps from cache")
+            if LAUNCHER_CONFIG["advanced"]["debug_print"]:
+                print(f"Loaded {len(cached_apps)} apps from cache")
             return cached_apps
 
     # If no valid cache, load from disk
     apps = []
     dirs = []
+    desktop_config = LAUNCHER_CONFIG["desktop_apps"]
 
     # XDG_DATA_HOME/applications
-    xdg_data_home = os.environ.get("XDG_DATA_HOME", "~/.local/share")
-    dirs.append(Path(xdg_data_home).expanduser() / "applications")
+    if desktop_config["scan_user_dir"]:
+        xdg_data_home = os.environ.get("XDG_DATA_HOME", "~/.local/share")
+        dirs.append(Path(xdg_data_home).expanduser() / "applications")
 
     # XDG_DATA_DIRS/applications
-    xdg_data_dirs = os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share")
-    for data_dir in xdg_data_dirs.split(":"):
-        dirs.append(Path(data_dir) / "applications")
+    if desktop_config["scan_system_dirs"]:
+        xdg_data_dirs = os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share")
+        for data_dir in xdg_data_dirs.split(":"):
+            dirs.append(Path(data_dir) / "applications")
 
     # Additional common locations
-    dirs.append(Path("/var/lib/flatpak/exports/share/applications"))
+    if desktop_config["scan_flatpak"]:
+        dirs.append(Path("/var/lib/flatpak/exports/share/applications"))
+
     # Add /opt/*/share/applications
-    for opt_path in glob.glob("/opt/*/share/applications"):
-        dirs.append(Path(opt_path))
+    if desktop_config["scan_opt_dirs"]:
+        for opt_path in glob.glob("/opt/*/share/applications"):
+            dirs.append(Path(opt_path))
+
     # Add snap desktop applications
-    snap_dir = Path("/var/lib/snapd/desktop/applications")
-    if snap_dir.exists():
-        dirs.append(snap_dir)
+    if desktop_config["scan_snap"]:
+        snap_dir = Path("/var/lib/snapd/desktop/applications")
+        if snap_dir.exists():
+            dirs.append(snap_dir)
+
+    # Add custom directories
+    for custom_dir in desktop_config["custom_dirs"]:
+        dirs.append(Path(custom_dir).expanduser())
 
     for dir_path in dirs:
         if dir_path.exists():
-            print(f"Checking dir: {dir_path}")
+            if LAUNCHER_CONFIG["advanced"]["debug_print"]:
+                print(f"Checking dir: {dir_path}")
             count = 0
             for desktop_file in dir_path.glob("*.desktop"):
                 app = parse_desktop_file(desktop_file)
                 if app:
                     apps.append(app)
                     count += 1
-            print(f"Loaded {count} apps from {dir_path}")
+            if LAUNCHER_CONFIG["advanced"]["debug_print"]:
+                print(f"Loaded {count} apps from {dir_path}")
 
-    # Sort and save to cache
-    apps = sorted(apps, key=lambda x: x["name"].lower())
-    print(f"Total loaded {len(apps)} apps")
-    save_apps_cache(apps)
+    # Process apps
+    if LAUNCHER_CONFIG["advanced"]["deduplicate_apps"]:
+        # Remove duplicate apps based on executable name
+        seen_execs = set()
+        unique_apps = []
+        for app in apps:
+            exec_name = app.get("exec", "")
+            if exec_name and exec_name not in seen_execs:
+                seen_execs.add(exec_name)
+                unique_apps.append(app)
+        apps = unique_apps
+
+    # Sort apps
+    if LAUNCHER_CONFIG["advanced"]["sort_apps_alphabetically"]:
+        apps = sorted(apps, key=lambda x: x["name"].lower())
+
+    if LAUNCHER_CONFIG["advanced"]["debug_print"]:
+        print(f"Total loaded {len(apps)} apps")
+
+    # Save to cache if enabled
+    if LAUNCHER_CONFIG["performance"]["enable_cache"]:
+        save_apps_cache(apps)
+
     return apps
 
 
@@ -308,20 +365,37 @@ def load_desktop_apps_background(callback=None):
 
 
 def parse_desktop_file(file_path):
+    # Import here to avoid circular imports
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from core.config import LAUNCHER_CONFIG
+
     config = configparser.ConfigParser(interpolation=None)
     try:
         config.read(file_path, encoding="utf-8")
         if not config.has_section("Desktop Entry"):
             return None
         entry = config["Desktop Entry"]
-        if entry.get("NoDisplay", "false").lower() == "true":
-            return None
-        if entry.get("Hidden", "false").lower() == "true":
-            return None
+
+        # Skip hidden apps unless explicitly requested
+        if not LAUNCHER_CONFIG["search"]["show_hidden_apps"]:
+            if entry.get("NoDisplay", "false").lower() == "true":
+                return None
+            if entry.get("Hidden", "false").lower() == "true":
+                return None
+
         name = entry.get("Name")
         exec_cmd = entry.get("Exec")
         if not name or not exec_cmd:
             return None
+
+        # Validate desktop file format if enabled
+        if LAUNCHER_CONFIG["advanced"]["validate_desktop_files"]:
+            # Basic validation
+            if not isinstance(name, str) or not isinstance(exec_cmd, str):
+                return None
+
         return {
             "name": name,
             "exec": exec_cmd.split()[0],  # Take first part
@@ -329,5 +403,6 @@ def parse_desktop_file(file_path):
             "file": str(file_path),
         }
     except Exception as e:
-        print(f"Error parsing {file_path}: {e}")
+        if LAUNCHER_CONFIG["advanced"]["debug_print"]:
+            print(f"Error parsing {file_path}: {e}")
         return None

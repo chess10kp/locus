@@ -14,6 +14,117 @@ SOCKET_PATH = "/tmp/locus_socket"
 LOCK_PASSWORD = "admin"  # Default password - change this for security
 
 
+# =================================
+# LAUNCHER CONFIGURATION
+# =================================
+
+LAUNCHER_CONFIG = {
+    # Display and Window Settings
+    "window": {
+        "width": 600,
+        "height": 400,
+        "default_width": 600,
+        "default_height": 400,
+        "resizable": True,
+        "modal": False,
+        "always_on_top": False,
+        "decorated": False,
+        "show_menubar": False,
+        "destroy_with_parent": True,
+        "hide_on_close": True,
+    },
+
+    # Animation Settings
+    "animation": {
+        "enable_slide_in": True,
+        "slide_duration": 20,  # milliseconds per frame
+        "slide_step": 100,  # pixels per frame
+        "target_margin": 25,  # Target margin from bottom edge
+    },
+
+    # Search and Filtering
+    "search": {
+        "max_results": 14,  # Maximum number of search results to show
+        "max_command_results": 10,  # Max results for command mode
+        "debounce_delay": 150,  # milliseconds to wait before searching
+        "fuzzy_search": False,  # Enable fuzzy matching (not implemented yet)
+        "case_sensitive": False,
+        "search_in_exec": False,  # Search in executable names, not just display names
+        "show_hidden_apps": False,  # Show NoDisplay=true apps
+    },
+
+    # Performance and Caching
+    "performance": {
+        "enable_cache": True,
+        "cache_max_age_hours": 24,  # How long to consider cache valid
+        "search_cache_size": 100,  # Max number of search results to cache
+        "enable_background_loading": True,
+        "button_pool_enabled": True,  # Reuse buttons instead of creating new ones
+        "lazy_load_apps": True,  # Only load apps when launcher is first opened
+    },
+
+    # UI Appearance
+    "ui": {
+        "placeholder_text": "Search applications...",
+        "show_loading_indicator": True,
+        "loading_text": "Loading applications...",
+        "show_keyboard_hints": True,  # Show Alt+1-9 hints
+        "clear_input_on_hide": True,  # Clear search input when hiding
+        "auto_grab_focus": True,  # Auto-focus search entry when shown
+    },
+
+    # Behavior
+    "behavior": {
+        "activate_on_hover": False,  # Activate items on hover (not implemented)
+        "clear_search_on_activate": True,  # Clear search after launching
+        "close_on_activate": True,  # Close launcher after launching
+        "show_recent_apps": False,  # Show recently used apps (not implemented)
+        "max_recent_apps": 5,  # Number of recent apps to show
+    },
+
+    # Keyboard Shortcuts
+    "keys": {
+        "up": ["Up", "Ctrl+P"],  # Navigate up
+        "down": ["Down", "Ctrl+N"],  # Navigate down
+        "activate": ["Return", "KP_Enter"],  # Activate selected item
+        "close": ["Escape"],  # Close launcher
+        "tab_complete": ["Tab"],  # Tab completion
+        "quick_select": ["Alt+1", "Alt+2", "Alt+3", "Alt+4", "Alt+5", "Alt+6", "Alt+7", "Alt+8", "Alt+9"],
+    },
+
+    # Desktop Application Loading
+    "desktop_apps": {
+        "scan_user_dir": True,  # Scan ~/.local/share/applications
+        "scan_system_dirs": True,  # Scan /usr/share/applications
+        "scan_flatpak": True,  # Scan Flatpak exports
+        "scan_snap": True,  # Scan snap applications
+        "scan_opt_dirs": True,  # Scan /opt applications
+        "custom_dirs": [],  # Additional directories to scan
+    },
+
+    # Cache File Locations
+    "cache": {
+        "cache_dir": "~/.cache/locus",
+        "apps_cache_file": "desktop_apps.json",
+        "search_cache_file": "search_cache.json",  # Not implemented yet
+    },
+
+    # Advanced Options
+    "advanced": {
+        "debug_print": False,  # Print debug information to console
+        "profile_loading": False,  # Profile app loading time
+        "validate_desktop_files": True,  # Validate .desktop file format
+        "sort_apps_alphabetically": True,  # Sort apps by name
+        "deduplicate_apps": True,  # Remove duplicate app entries
+    },
+}
+
+
+# =================================
+# MODULE CONFIGURATION OPTIONS
+# =================================
+
+
 def todo_capture():
     """Open Emacs org-capture for todo."""
     # Check if emacs daemon is running
