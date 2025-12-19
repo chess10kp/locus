@@ -7,11 +7,17 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from gi.repository import Gdk, Gtk, GLib  # pyright: ignore
+from core.config import APPNAME
+import gi
+
+# No CDLL preload needed - handled by LD_PRELOAD in run.sh
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+
+from gi.repository import Gtk  # pyright: ignore
 from typing_extensions import final
 import os
-import subprocess
-import json
 import threading
 import socket
 from typing import Optional
@@ -164,7 +170,7 @@ class StatusBar(Gtk.ApplicationWindow):
         css_provider.load_from_data(
             """
             window {
-                background-color: #1e1e1e;
+                background-color: #0e1419;
                 border-bottom: 1px solid #444444;
             }
 
@@ -184,6 +190,7 @@ class StatusBar(Gtk.ApplicationWindow):
     def start_ipc_server(self):
         """Start the IPC socket server for external communication."""
         self.socket_path = "/tmp/locus_socket"
+        self.ipc_running = False
         try:
             # Remove existing socket if it exists
             if os.path.exists(self.socket_path):
@@ -195,6 +202,7 @@ class StatusBar(Gtk.ApplicationWindow):
             self.server_socket.settimeout(1)  # Non-blocking with timeout
 
             # Start listening in a separate thread
+            self.ipc_running = True
             self.ipc_thread = threading.Thread(target=self.ipc_server_loop, daemon=True)
             self.ipc_thread.start()
         except Exception as e:
@@ -202,7 +210,7 @@ class StatusBar(Gtk.ApplicationWindow):
 
     def ipc_server_loop(self):
         """IPC server loop to handle incoming connections."""
-        while True:
+        while self.ipc_running:
             try:
                 client_socket, _ = self.server_socket.accept()
                 with client_socket:
@@ -236,11 +244,19 @@ class StatusBar(Gtk.ApplicationWindow):
 
     def cleanup(self):
         """Clean up resources when the statusbar is destroyed."""
+        # Stop IPC thread first
+        if hasattr(self, "ipc_running"):
+            self.ipc_running = False
+
         if hasattr(self, "module_manager"):
             self.module_manager.cleanup()
 
         if hasattr(self, "server_socket"):
             self.server_socket.close()
+
+        # Wait for IPC thread to finish (with timeout)
+        if hasattr(self, "ipc_thread") and self.ipc_thread.is_alive():
+            self.ipc_thread.join(timeout=2.0)
 
         if hasattr(self, "socket_path") and os.path.exists(self.socket_path):
             os.unlink(self.socket_path)

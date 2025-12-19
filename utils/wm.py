@@ -42,6 +42,8 @@ class WMClient:
 class SwayClient(WMClient):
     def __init__(self):
         self.i3 = i3ipc.Connection()
+        self.thread = None
+        self.running = False
 
     def get_workspaces(self) -> list[Workspace]:
         try:
@@ -55,17 +57,28 @@ class SwayClient(WMClient):
 
     def start_event_listener(self, callback) -> None:
         def on_workspace(i3, e):
-            GLib.idle_add(callback)
+            if self.running:
+                GLib.idle_add(callback)
 
         self.i3.on("workspace", on_workspace)
-        thread = threading.Thread(target=self.i3.main)
-        thread.daemon = True
-        thread.start()
+        self.running = True
+        self.thread = threading.Thread(target=self.i3.main)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def cleanup(self):
+        """Stop the event listener thread."""
+        self.running = False
+        # i3ipc doesn't provide a clean way to stop, but setting running=False
+        # should prevent new callbacks from being processed
 
 
 class HyprlandClient(WMClient):
     def __init__(self):
         self.signature = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")
+        self.socket = None
+        self.thread = None
+        self.running = False
 
     def get_workspaces(self) -> list[Workspace]:
         try:
@@ -117,14 +130,15 @@ class HyprlandClient(WMClient):
         def listen():
             import socket
 
-            while True:
+            while self.running:
                 s = None
                 try:
                     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                     s.connect(socket_path)
+                    self.socket = s
 
                     buffer = ""
-                    while True:
+                    while self.running:
                         data = s.recv(1024)
                         if not data:
                             break
@@ -135,16 +149,29 @@ class HyprlandClient(WMClient):
                             if "workspace" in line:
                                 GLib.idle_add(callback)
                 except Exception as e:
-                    print(f"Hyprland socket error: {e}")
+                    if (
+                        self.running
+                    ):  # Only print errors if we're still supposed to be running
+                        print(f"Hyprland socket error: {e}")
                     time.sleep(1)
                 finally:
                     if s:
                         s.close()
                     time.sleep(1)
 
-        thread = threading.Thread(target=listen)
-        thread.daemon = True
-        thread.start()
+        self.running = True
+        self.thread = threading.Thread(target=listen)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def cleanup(self):
+        """Stop the event listener thread."""
+        self.running = False
+        if self.socket:
+            try:
+                self.socket.close()
+            except Exception:
+                pass
 
 
 def detect_wm() -> WMClient:

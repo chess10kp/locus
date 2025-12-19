@@ -19,9 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core.config import APPNAME
 import gi
 
-from ctypes import CDLL
-
-CDLL("libgtk4-layer-shell.so")
+# Removed CDLL preload - LD_PRELOAD in run.sh should be sufficient
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
@@ -65,7 +63,11 @@ def kill_previous_process():
 kill_previous_process()
 
 
+status_bars = []  # Global list to store StatusBar instances for cleanup
+
+
 def on_activate(app: Gtk.Application):
+    global status_bars
     display = Gdk.Display.get_default()
     if not display:
         return
@@ -99,10 +101,24 @@ def on_activate(app: Gtk.Application):
         GtkLayerShell.auto_exclusive_zone_enable(status_win)
 
         status_win.present()
+        status_bars.append(status_win)
+
+
+def on_shutdown(app: Gtk.Application):
+    """Clean up all StatusBar instances and their threads."""
+    global status_bars
+    for status_bar in status_bars:
+        try:
+            status_bar.cleanup()
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+    status_bars.clear()
+    sys.exit(0)
 
 
 app = Gtk.Application(application_id="com.example")
 app.connect("activate", on_activate)
+app.connect("shutdown", on_shutdown)
 
 display = Gdk.Display.get_default()
 if not display:
@@ -111,8 +127,6 @@ if not display:
 monitors = display.get_monitors()
 
 app.run(None)
-
-app.connect("shutdown", lambda *_: sys.exit(0))
 
 
 def main():

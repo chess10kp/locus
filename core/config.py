@@ -56,8 +56,11 @@ LAUNCHER_CONFIG = {
         "cache_max_age_hours": 24,  # How long to consider cache valid
         "search_cache_size": 100,  # Max number of search results to cache
         "enable_background_loading": True,
+        "enable_parallel_scanning": False,  # Disable parallel scanning to avoid GTK memory corruption
         "button_pool_enabled": True,  # Reuse buttons instead of creating new ones
         "lazy_load_apps": True,  # Only load apps when launcher is first opened
+        "max_visible_results": 12,  # Maximum number of results to show (for performance)
+        "batch_ui_updates": True,  # Batch UI updates to reduce GTK calls
     },
     # UI Appearance
     "ui": {

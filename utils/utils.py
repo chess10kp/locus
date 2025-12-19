@@ -392,39 +392,56 @@ def load_desktop_apps(force_refresh=False):
     for custom_dir in desktop_config["custom_dirs"]:
         dirs.append(Path(custom_dir).expanduser())
 
-    # Use parallel scanning for better performance
-    import concurrent.futures
-
     debug_print = LAUNCHER_CONFIG["advanced"]["debug_print"]
     max_scan_time = desktop_config.get("max_scan_time", 5.0)
 
-    # Calculate timeout per directory (distribute total time among directories)
-    dir_timeout = max_scan_time / len(dirs) if dirs else max_scan_time
+    # Check if parallel scanning is enabled
+    if LAUNCHER_CONFIG["performance"]["enable_parallel_scanning"]:
+        # Use parallel scanning for better performance
+        import concurrent.futures
 
-    with concurrent.futures.ThreadPoolExecutor(
-        max_workers=min(len(dirs), 8)
-    ) as executor:
-        # Submit all directory scans with timeout
-        future_to_dir = {
-            executor.submit(
-                _scan_directory, dir_path, debug_print, dir_timeout
-            ): dir_path
-            for dir_path in dirs
-        }
+        # Calculate timeout per directory (distribute total time among directories)
+        dir_timeout = max_scan_time / len(dirs) if dirs else max_scan_time
 
-        # Collect results as they complete, with overall timeout
-        try:
-            for future in concurrent.futures.as_completed(
-                future_to_dir, timeout=max_scan_time
-            ):
-                dir_apps = future.result()
-                apps.extend(dir_apps)
-        except concurrent.futures.TimeoutError:
-            if debug_print:
-                print(f"Overall scanning timeout reached after {max_scan_time}s")
-            # Cancel remaining tasks
-            for future in future_to_dir:
-                future.cancel()
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=min(len(dirs), 8)
+        ) as executor:
+            # Submit all directory scans with timeout
+            future_to_dir = {
+                executor.submit(
+                    _scan_directory, dir_path, debug_print, dir_timeout
+                ): dir_path
+                for dir_path in dirs
+            }
+
+            # Collect results as they complete, with overall timeout
+            try:
+                for future in concurrent.futures.as_completed(
+                    future_to_dir, timeout=max_scan_time
+                ):
+                    dir_apps = future.result()
+                    apps.extend(dir_apps)
+            except concurrent.futures.TimeoutError:
+                if debug_print:
+                    print(f"Overall scanning timeout reached after {max_scan_time}s")
+                # Cancel remaining tasks
+                for future in future_to_dir:
+                    future.cancel()
+    else:
+        # Use sequential scanning for GTK compatibility
+        import time
+
+        start_time = time.time()
+
+        for dir_path in dirs:
+            # Check if we've exceeded the timeout
+            if time.time() - start_time > max_scan_time:
+                if debug_print:
+                    print(f"Scanning timeout reached after {max_scan_time}s")
+                break
+
+            dir_apps = _scan_directory(dir_path, debug_print, max_scan_time)
+            apps.extend(dir_apps)
 
     # Process apps
     if LAUNCHER_CONFIG["advanced"]["deduplicate_apps"]:

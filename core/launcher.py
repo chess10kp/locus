@@ -19,6 +19,9 @@ import time
 from typing import Optional, List, Dict
 
 from utils import apply_styles
+from utils.app_loader import get_app_loader, track_app_launch
+from utils.app_tracker import get_app_tracker
+from utils.fuzzy_search import filter_apps_with_fuzzy
 from .config import CUSTOM_LAUNCHERS, METADATA, LOCK_PASSWORD
 from launchers.lock_launcher import LockScreen
 
@@ -43,22 +46,7 @@ if not hasattr(Gio, "UnixInputStream") and "GioUnix" in sys.modules:
     Gio.UnixOutputStream = getattr(GioUnix, "OutputStream", None)
 
 
-def fuzzy_match(query, target):
-    """Check if query is a fuzzy match for target (case insensitive)."""
-    query = query.lower()
-    target = target.lower()
-    if not query:
-        return True
-    if not target:
-        return False
-
-    start = 0
-    for char in query:
-        pos = target.find(char, start)
-        if pos == -1:
-            return False
-        start = pos + 1
-    return True
+# Note: Using utils.fuzzy_search instead of simple fuzzy_match for better performance
 
 
 def parse_time(time_str):
@@ -268,11 +256,14 @@ class Launcher(Gtk.ApplicationWindow):
             decorated=window_config["decorated"],
         )
 
-        # Lazy load apps - only load when first needed
-        self._apps = None
-        self._apps_loaded = False
+        # Use the new optimized app loading system
+        self._app_loader = get_app_loader()
+        self._app_tracker = get_app_tracker()
         self.METADATA = METADATA
         self.parse_time = parse_time
+
+        # Remove button pooling to prevent memory leaks - using direct widget creation
+        self.last_search_text = ""  # Cache last search to avoid unnecessary updates
 
         # Initialize hook registry before creating launchers
         from .hooks import HookRegistry
@@ -304,15 +295,17 @@ class Launcher(Gtk.ApplicationWindow):
             LAUNCHER_CONFIG["ui"]["placeholder_text"]
         )
         self.search_timer = None  # For debouncing search
-        self.button_pool = []  # Pool of reusable buttons
-        self.last_search_text = ""  # Cache last search to avoid unnecessary updates
-        self.search_cache = {}  # Cache search results
-        self.cache_max_size = LAUNCHER_CONFIG["performance"]["search_cache_size"]
+        # Button pooling removed to prevent memory leaks and signal handler conflicts
 
         # Background loading state
         self.background_loading = False
         self.loading_label = None
         self.loading_start_time = None
+        self.destroying = False
+
+        # Timer IDs for cleanup
+        self.animation_timer_id = 0
+        self.idle_callback_id = 0
 
         # Scrolled window for apps
         self.scrolled = Gtk.ScrolledWindow()
@@ -338,6 +331,9 @@ class Launcher(Gtk.ApplicationWindow):
         # Grab focus on map
         self.connect("map", self.on_map)
 
+        # Connect to destroy signal for cleanup
+        self.connect("destroy", self.on_destroy)
+
         # Clear input field when window is hidden
         self.connect("hide", self.on_hide)
 
@@ -355,7 +351,7 @@ class Launcher(Gtk.ApplicationWindow):
             self.search_entry,
             """
             entry {
-                background: #0e1418;
+                background: #0e1419;
                 color: #ebdbb2;
                 border: none;
                 border-width: 0;
@@ -381,116 +377,45 @@ class Launcher(Gtk.ApplicationWindow):
             self,
             """
             window {
-                background: #0e1418;
+                background: #0e1419;
                 border: none;
                 border-radius: 5px;
                 padding: 0;
                 margin: 0;
+            }
+            .hint-label {
+                color: #888888;
+                font-size: 12px;
+                font-family: Iosevka;
             }
         """,
         )
 
     @property
     def apps(self):
-        """Lazy load desktop apps only when first accessed."""
-        if not self._apps_loaded:
-            from .config import LAUNCHER_CONFIG
-            from utils.utils import load_desktop_apps, load_desktop_apps_background
-
-            # Load cached apps immediately for fast startup
-            self._apps = sorted(load_desktop_apps(), key=lambda x: x["name"].lower())
-            self._apps_loaded = True
-
-            # Start background loading to refresh cache if needed
-            if (
-                not self.background_loading
-                and LAUNCHER_CONFIG["performance"]["enable_background_loading"]
-            ):
-                self.background_loading = True
-                self.loading_start_time = time.time()
-                load_desktop_apps_background(self._on_apps_loaded_background)
-
-        return self._apps or []
-
-    def _on_apps_loaded_background(self, apps):
-        """Callback called when background loading completes."""
-        self.background_loading = False
-        # Update apps list with fresh data
-        self._apps = sorted(apps, key=lambda x: x["name"].lower())
-
-        # Clear search cache since apps may have changed
-        self.search_cache.clear()
-
-        # Refresh current search if launcher is visible
-        if self.get_visible():
-            current_text = self.search_entry.get_text()
-            if current_text:
-                self._populate_launcher(current_text)
-            else:
-                self._populate_launcher("")
+        """Get apps using the optimized fast loader."""
+        return self._app_loader.get_apps()
 
     def _get_filtered_apps(self, filter_text):
-        """Get filtered apps with caching for performance."""
+        """Get filtered apps using the new optimized fuzzy search."""
         from .config import LAUNCHER_CONFIG
 
         max_results = LAUNCHER_CONFIG["search"]["max_results"]
 
-        if not filter_text:
-            return self.apps[:max_results]  # Return first N apps when no filter
-
-        # Check cache first
-        if filter_text in self.search_cache:
-            return self.search_cache[filter_text]
-
-        # Compute filtered results
-        filtered = []
-        case_sensitive = LAUNCHER_CONFIG["search"]["case_sensitive"]
-        filter_text_search = filter_text if case_sensitive else filter_text.lower()
-
-        for app in self.apps:
-            if len(filtered) >= max_results:  # Limit results
-                break
-
-            app_name = app["name"] if case_sensitive else app["name"].lower()
-            if filter_text_search in app_name:
-                filtered.append(app)
-
-        # Cache the result
-        if len(self.search_cache) >= self.cache_max_size:
-            # Remove oldest entry (simple LRU approximation)
-            oldest_key = next(iter(self.search_cache))
-            del self.search_cache[oldest_key]
-        self.search_cache[filter_text] = filtered
-
-        return filtered
+        # Use the new optimized app loader with fuzzy search
+        return self._app_loader.search_apps(filter_text, max_results)
 
     def _get_button_from_pool(self):
-        """Get a button from the pool or create a new one if pool is empty."""
-        if self.button_pool:
-            button = self.button_pool.pop()
-            # Reset button state
-            button.set_visible(True)
-            # Disconnect all existing click handlers to avoid conflicts
-            # Note: GTK doesn't provide a direct way to disconnect all handlers,
-            # but we can work around this by not reusing handlers
-            return button
-        else:
-            # Create new button
-            button = Gtk.Button()
-            self.apply_button_style(button)
-            return button
+        """Create a new button - button pooling removed to prevent memory leaks."""
+        button = Gtk.Button()
+        self.apply_button_style(button)
+        return button
 
-    def _return_buttons_to_pool(self):
-        """Return all buttons from list_box to the pool."""
+    def _clear_listbox(self):
+        """Clear all items from listbox - button pooling removed for memory safety."""
         child = self.list_box.get_first_child()
         while child:
             next_child = child.get_next_sibling()
-            if hasattr(child, "get_child") and child.get_child():
-                button = child.get_child()
-                if button:
-                    # Reset button state
-                    button.set_visible(False)
-                    self.button_pool.append(button)
             self.list_box.remove(child)
             child = next_child
 
@@ -575,11 +500,19 @@ class Launcher(Gtk.ApplicationWindow):
         self, main_text, metadata_text="", hook_data=None, index=None
     ):
         """Create a button with main text and optional metadata below in smaller font."""
-        # Get button from pool
+        # Get button from pool - ensure it's actually a Button widget
         button = self._get_button_from_pool()
 
+        # Safety check: if we got something that's not a Button, create a new one
+        if not isinstance(button, Gtk.Button):
+            button = Gtk.Button()
+            self.apply_button_style(button)
+
         # Clear existing child if any
-        button.set_child(None)
+        child = button.get_child()
+        if child:
+            button.set_child(None)
+            # Don't destroy child, just detach it for reuse
 
         # Create a horizontal box for text and hint
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
@@ -600,7 +533,7 @@ class Launcher(Gtk.ApplicationWindow):
             label.set_wrap_mode(Gtk.WrapMode.WORD)
             text_vbox.append(label)
         else:
-            # Simple text
+            # Simple text - reuse label if possible
             label = Gtk.Label(label=main_text)
             label.set_halign(Gtk.Align.START)
             label.set_valign(Gtk.Align.START)
@@ -613,16 +546,8 @@ class Launcher(Gtk.ApplicationWindow):
             hint_label = Gtk.Label(label=str(index))
             hint_label.set_halign(Gtk.Align.END)
             hint_label.set_hexpand(True)
-            apply_styles(
-                hint_label,
-                """
-                label {
-                    color: #888888;
-                    font-size: 12px;
-                    font-family: Iosevka;
-                }
-            """,
-            )
+            # Use cached style instead of applying every time
+            hint_label.add_css_class("hint-label")
             hbox.append(hint_label)
 
         button.set_child(hbox)
@@ -725,8 +650,11 @@ class Launcher(Gtk.ApplicationWindow):
                 self.current_apps = []
 
     def populate_app_mode(self, filter_text):
+        from .config import LAUNCHER_CONFIG
+
         self.current_apps = []
         index = 1
+        max_visible = LAUNCHER_CONFIG["performance"]["max_visible_results"]
 
         # Use cached filtering for better performance
         filtered_apps = self._get_filtered_apps(filter_text)
@@ -734,7 +662,6 @@ class Launcher(Gtk.ApplicationWindow):
         # Show loading indicator if background loading and no results yet
         if not filtered_apps and self.background_loading:
             import time
-            from .config import LAUNCHER_CONFIG
 
             elapsed = ""
             if self.loading_start_time:
@@ -749,7 +676,10 @@ class Launcher(Gtk.ApplicationWindow):
             self.list_box.append(loading_row)
             return
 
-        for app in filtered_apps:
+        # Limit results for performance
+        visible_apps = filtered_apps[:max_visible]
+
+        for app in visible_apps:
             self.current_apps.append(app)
             metadata = METADATA.get(app["name"], "")
             button = self.create_button_with_metadata(
@@ -763,13 +693,19 @@ class Launcher(Gtk.ApplicationWindow):
 
     def populate_apps(self, filter_text=""):
         """Populate the launcher with apps or use registered launchers for commands."""
+        from .config import LAUNCHER_CONFIG
+
+        # Don't do anything if launcher is being destroyed
+        if self.destroying:
+            return
+
         # Skip if search text hasn't changed significantly
         if filter_text == self.last_search_text:
             return
         self.last_search_text = filter_text
 
         # Return buttons to pool instead of destroying them
-        self._return_buttons_to_pool()
+        self._clear_listbox()
 
         # Check if any registered launcher can handle this input
         trigger, launcher, query = self.launcher_registry.find_launcher_for_input(
@@ -789,7 +725,21 @@ class Launcher(Gtk.ApplicationWindow):
         else:
             # Default app search mode
             self.reset_launcher_size()
-            self.populate_app_mode(filter_text)
+            if LAUNCHER_CONFIG["performance"]["batch_ui_updates"]:
+                # Use idle callback for better responsiveness
+                if self.idle_callback_id > 0:
+                    GLib.source_remove(self.idle_callback_id)
+                self.idle_callback_id = GLib.idle_add(
+                    self._populate_app_mode_idle, filter_text
+                )
+            else:
+                self.populate_app_mode(filter_text)
+
+    def _populate_app_mode_idle(self, filter_text):
+        """Populate app mode using idle callback for better performance."""
+        self.populate_app_mode(filter_text)
+        self.idle_callback_id = 0
+        return False  # Don't repeat
 
     def _apply_size_mode(self, size_mode, custom_size):
         """Apply the appropriate size mode for the launcher."""
@@ -806,9 +756,20 @@ class Launcher(Gtk.ApplicationWindow):
 
         if self.search_timer:
             GLib.source_remove(self.search_timer)
-        debounce_delay = LAUNCHER_CONFIG["search"]["debounce_delay"]
+
+        # Adaptive debouncing: shorter for small queries, longer for complex ones
+        text = entry.get_text()
+        base_delay = LAUNCHER_CONFIG["search"]["debounce_delay"]
+
+        if len(text) <= 1:
+            debounce_delay = min(base_delay, 50)  # Very fast for single character
+        elif len(text) <= 3:
+            debounce_delay = min(base_delay, 100)  # Fast for short queries
+        else:
+            debounce_delay = base_delay  # Standard delay for longer queries
+
         self.search_timer = GLib.timeout_add(
-            debounce_delay, self._debounced_populate, entry.get_text()
+            debounce_delay, self._debounced_populate, text
         )
 
     def _debounced_populate(self, text):
@@ -821,12 +782,17 @@ class Launcher(Gtk.ApplicationWindow):
     def launch_app(self, app):
         try:
             desktop_file_path = app["file"]
+            # Track app launch for frequency ranking
+            app_name = app.get("name", "")
+            if app_name:
+                self._app_tracker.increment_app_start(app_name)
+
             # Use the new improved launcher logic
             AppLauncher.launch_by_desktop_file(desktop_file_path)
-            print(f"Successfully launched {app['name']}")
+            logger.info(f"Successfully launched {app_name}")
 
         except Exception as e:
-            print(f"Failed to launch {app['name']}: {e}")
+            logger.error(f"Failed to launch {app.get('name', 'unknown')}: {e}")
 
     def on_entry_activate(self, entry):
         self.hide()
@@ -1075,8 +1041,43 @@ class Launcher(Gtk.ApplicationWindow):
     def on_hide(self, widget):
         from .config import LAUNCHER_CONFIG
 
+        # Cancel any pending timers to prevent lag when hiding
+        if self.search_timer:
+            GLib.source_remove(self.search_timer)
+            self.search_timer = None
+
+        if self.animation_timer_id > 0:
+            GLib.source_remove(self.animation_timer_id)
+            self.animation_timer_id = 0
+
+        if self.idle_callback_id > 0:
+            GLib.source_remove(self.idle_callback_id)
+            self.idle_callback_id = 0
+
         if LAUNCHER_CONFIG["ui"]["clear_input_on_hide"]:
             self.search_entry.set_text("")
+
+    def on_destroy(self, widget):
+        """Clean up all resources when the launcher is destroyed."""
+        self.destroying = True
+
+        # Cancel any pending operations
+        if self.search_timer:
+            GLib.source_remove(self.search_timer)
+            self.search_timer = None
+
+        if self.animation_timer_id > 0:
+            GLib.source_remove(self.animation_timer_id)
+            self.animation_timer_id = 0
+
+        if self.idle_callback_id > 0:
+            GLib.source_remove(self.idle_callback_id)
+            self.idle_callback_id = 0
+
+        # Button pool is no longer used (buttons are destroyed immediately)
+
+        # Clear search cache
+        self.search_cache.clear()
 
     def animate_slide_in(self):
         from .config import LAUNCHER_CONFIG
@@ -1092,8 +1093,11 @@ class Launcher(Gtk.ApplicationWindow):
         if current_margin < target:
             new_margin = min(target, current_margin + animation_config["slide_step"])
             GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, new_margin)
-            GLib.timeout_add(animation_config["slide_duration"], self.animate_slide_in)
+            self.animation_timer_id = GLib.timeout_add(
+                animation_config["slide_duration"], self.animate_slide_in
+            )
         else:
+            self.animation_timer_id = 0  # Animation complete
             if LAUNCHER_CONFIG["ui"]["auto_grab_focus"]:
                 self.search_entry.grab_focus()
         return False
