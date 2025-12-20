@@ -7,10 +7,33 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+
 from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # pyright: ignore
 from typing_extensions import final
 import hashlib
-from utils import apply_styles, VBox
+
+
+def apply_styles(widget, css: str):
+    """Apply CSS styles to a GTK widget."""
+    provider = Gtk.CssProvider()
+    provider.load_from_data(css.encode())
+    context = widget.get_style_context()
+    context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+
+def VBox(spacing: int = 6, hexpand: bool = False, vexpand: bool = False):
+    """Create a vertical GTK Box."""
+    return Gtk.Box(
+        orientation=Gtk.Orientation.VERTICAL,
+        spacing=spacing,
+        hexpand=hexpand,
+        vexpand=vexpand,
+    )
 
 
 def get_monitor_geometry_for_window(window):

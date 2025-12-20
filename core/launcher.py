@@ -7,7 +7,15 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from gi.repository import Gdk, Gtk, Gio, GioUnix, GLib, Gtk4LayerShell as GtkLayerShell  # pyright: ignore
+from gi.repository import (
+    Gdk,
+    Gtk,
+    Gio,
+    GioUnix,
+    GLib,
+    GObject,
+    Gtk4LayerShell as GtkLayerShell,
+)  # pyright: ignore
 from typing_extensions import final
 import subprocess
 import re
@@ -21,7 +29,55 @@ from utils import apply_styles
 from utils.app_loader import get_app_loader
 from utils.app_tracker import get_app_tracker
 from .config import CUSTOM_LAUNCHERS, METADATA, LOCK_PASSWORD
+from .search_models import (
+    SearchResult,
+    AppSearchResult,
+    CommandSearchResult,
+    LauncherSearchResult,
+    CustomSearchResult,
+    LoadingSearchResult,
+)
 from launchers.lock_launcher import LockScreen
+
+
+class WrappedSearchResult(GObject.Object):
+    """Wrapper to make search results compatible with GObject-based ListStore."""
+
+    def __init__(self, search_result):
+        super().__init__()
+        self.search_result = search_result
+
+    @property
+    def title(self):
+        return self.search_result.title
+
+    @property
+    def subtitle(self):
+        return self.search_result.subtitle
+
+    @property
+    def result_type(self):
+        return self.search_result.result_type
+
+    @property
+    def index(self):
+        return self.search_result.index
+
+    @property
+    def app(self):
+        return getattr(self.search_result, "app", None)
+
+    @property
+    def command(self):
+        return getattr(self.search_result, "command", None)
+
+    @property
+    def hook_data(self):
+        return self.search_result.hook_data
+
+    @property
+    def action_data(self):
+        return self.search_result.action_data
 
 
 # Setup Logging
@@ -385,7 +441,7 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry.set_halign(Gtk.Align.FILL)
         self.search_entry.set_hexpand(True)
 
-        self.selected_row = None
+        # selected_row is no longer used with ListView
         from .config import LAUNCHER_CONFIG
 
         self.search_entry.set_placeholder_text(
@@ -410,10 +466,23 @@ class Launcher(Gtk.ApplicationWindow):
         self.scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.scrolled.set_vexpand(True)
 
-        # List box for apps
-        self.list_box = Gtk.ListBox()
-        self.list_box.set_selection_mode(Gtk.SelectionMode.NONE)
-        self.scrolled.set_child(self.list_box)
+        # Optimized ListView with list recycling
+        # Create a simple store that can hold Python objects
+        self.list_store = Gio.ListStore()
+        self.selection_model = Gtk.SingleSelection.new(self.list_store)
+        self.selection_model.set_autoselect(False)
+        self.selection_model.set_can_unselect(True)
+
+        self.list_view = Gtk.ListView.new(self.selection_model, None)
+        self.list_view.set_vexpand(True)
+
+        # Create factory for rendering items
+        self._setup_list_view_factory()
+
+        self.scrolled.set_child(self.list_view)
+
+        # Keep reference to old list_box for compatibility during transition
+        self.list_box = None
 
         # Main box
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -489,6 +558,197 @@ class Launcher(Gtk.ApplicationWindow):
         """,
         )
 
+    def _setup_list_view_factory(self):
+        """Set up the ListItemFactory for the optimized ListView."""
+
+        def setup_callback(factory, list_item):
+            """Called when a new list item widget is created."""
+            button = Gtk.Button()
+            button.set_hexpand(True)
+            button.set_halign(Gtk.Align.FILL)
+
+            # Apply button styling
+            apply_styles(
+                button,
+                """
+                button {
+                    background: #3c3836;
+                    color: #ebdbb2;
+                    border: none;
+                    border-radius: 3px;
+                    padding: 10px;
+                    font-size: 14px;
+                    font-family: Iosevka;
+                }
+                button:hover {
+                    background: #504945;
+                }
+            """,
+            )
+
+            # Create a horizontal box for content
+            hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+            hbox.set_hexpand(True)
+
+            # Text container
+            text_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            text_vbox.set_hexpand(True)
+            text_vbox.set_halign(Gtk.Align.START)
+
+            # Title label
+            title_label = Gtk.Label()
+            title_label.set_halign(Gtk.Align.START)
+            title_label.set_valign(Gtk.Align.START)
+            title_label.set_wrap(True)
+            title_label.set_wrap_mode(Gtk.WrapMode.WORD)
+            text_vbox.append(title_label)
+
+            # Subtitle label (optional)
+            subtitle_label = Gtk.Label()
+            subtitle_label.set_halign(Gtk.Align.START)
+            subtitle_label.set_valign(Gtk.Align.START)
+            subtitle_label.set_wrap(True)
+            subtitle_label.set_wrap_mode(Gtk.WrapMode.WORD)
+            subtitle_label.add_css_class("dim-label")
+            text_vbox.append(subtitle_label)
+
+            # Hint label for Alt+number
+            hint_label = Gtk.Label()
+            hint_label.set_halign(Gtk.Align.END)
+            hint_label.set_hexpand(True)
+            hint_label.add_css_class("hint-label")
+
+            hbox.append(text_vbox)
+            hbox.append(hint_label)
+            button.set_child(hbox)
+
+            # Set child for the list item
+            list_item.set_child(button)
+
+            # Store references on the list item for later access
+            list_item.button = button
+            list_item.title_label = title_label
+            list_item.subtitle_label = subtitle_label
+            list_item.hint_label = hint_label
+
+        def bind_callback(factory, list_item):
+            """Called when a list item needs to display data."""
+            search_result = list_item.get_item()
+            if not search_result:
+                return
+
+            # Get stored references
+            button = getattr(list_item, "button", None)
+            title_label = getattr(list_item, "title_label", None)
+            subtitle_label = getattr(list_item, "subtitle_label", None)
+            hint_label = getattr(list_item, "hint_label", None)
+
+            if not all([button, title_label, subtitle_label, hint_label]):
+                return
+
+            # Get stored references
+            button = getattr(list_item, "button", None)
+            title_label = getattr(list_item, "title_label", None)
+            subtitle_label = getattr(list_item, "subtitle_label", None)
+            hint_label = getattr(list_item, "hint_label", None)
+
+            if not all([button, title_label, subtitle_label, hint_label]):
+                return
+
+            # Update title
+            if title_label:
+                if search_result.subtitle:
+                    markup = f"{search_result.title}\n<span size='smaller' color='#d5c4a1'>{search_result.subtitle}</span>"
+                    title_label.set_markup(markup)
+                else:
+                    title_label.set_text(search_result.title)
+
+            # Update subtitle visibility
+            if subtitle_label:
+                if search_result.subtitle:
+                    subtitle_label.set_text(search_result.subtitle)
+                    subtitle_label.set_visible(True)
+                else:
+                    subtitle_label.set_visible(False)
+
+            # Update hint for Alt+number
+            if hint_label:
+                if (
+                    search_result.index is not None
+                    and search_result.index > 0
+                    and search_result.index <= 9
+                ):
+                    hint_label.set_text(str(search_result.index))
+                    hint_label.set_visible(True)
+                else:
+                    hint_label.set_visible(False)
+
+            # Update button click handler
+            # Remove old handlers to prevent memory leaks
+            if button:
+                try:
+                    if hasattr(button, "clicked_handler_id"):
+                        button.disconnect(button.clicked_handler_id)
+                except:
+                    pass
+
+                # Connect new handler
+                button.clicked_handler_id = button.connect(
+                    "clicked", self._on_list_item_clicked, search_result
+                )
+
+        def unbind_callback(factory, list_item):
+            """Called when a list item is no longer displaying data."""
+            # Get stored button and clean up signal handlers
+            button = getattr(list_item, "button", None)
+            if button:
+                try:
+                    if hasattr(button, "clicked_handler_id"):
+                        button.disconnect(button.clicked_handler_id)
+                except:
+                    pass
+
+        # Create the signal factory
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", setup_callback)
+        factory.connect("bind", bind_callback)
+        factory.connect("unbind", unbind_callback)
+
+        self.list_view.set_factory(factory)
+
+    def _on_list_item_clicked(self, button, search_result):
+        """Handle clicks on list items in the optimized ListView."""
+        self.hide()
+
+        if search_result.result_type.name == "APP":
+            self.launch_app(search_result.app)
+        elif search_result.result_type.name == "COMMAND":
+            self.run_command(search_result.command)
+        elif search_result.result_type.name == "LAUNCHER":
+            self.on_command_selected(button, search_result.command)
+        elif search_result.result_type.name == "CUSTOM":
+            if search_result.hook_data and self.hook_registry:
+                self.hook_registry.execute_select_hooks(self, search_result.hook_data)
+        elif search_result.result_type.name == "LOADING":
+            # Do nothing for loading items
+            pass
+
+    def _focus_selected_item(self):
+        """Focus the button of the currently selected item."""
+        selected_pos = self.selection_model.get_selected()
+        if selected_pos != Gtk.INVALID_LIST_POSITION:
+            # Try to get the list item widget and focus its button
+            child = self.list_view.get_first_child()
+            current_pos = 0
+            while child and current_pos < selected_pos:
+                child = child.get_next_sibling()
+                current_pos += 1
+
+            if child:
+                button = child.get_child()
+                if button:
+                    button.grab_focus()
+
     @property
     def apps(self):
         """Get apps using the optimized fast loader."""
@@ -503,19 +763,9 @@ class Launcher(Gtk.ApplicationWindow):
         # Use the new optimized app loader with fuzzy search
         return self._app_loader.search_apps(filter_text, max_results)
 
-    def _get_button_from_pool(self):
-        """Create a new button - button pooling removed to prevent memory leaks."""
-        button = Gtk.Button()
-        self.apply_button_style(button)
-        return button
-
     def _clear_listbox(self):
-        """Clear all items from listbox - button pooling removed for memory safety."""
-        child = self.list_box.get_first_child()
-        while child:
-            next_child = child.get_next_sibling()
-            self.list_box.remove(child)
-            child = next_child
+        """Clear all items from the optimized list store."""
+        self.list_store.remove_all()
 
     def _register_launchers(self):
         """Auto-discover and register all launcher modules."""
@@ -585,143 +835,48 @@ class Launcher(Gtk.ApplicationWindow):
         except ImportError as e:
             logger.warning(f"Could not import some launchers: {e}")
 
-    def apply_button_style(self, button):
-        apply_styles(
-            button,
-            """
-            button {
-                background: #3c3836;
-                color: #ebdbb2;
-                border: none;
-                border-radius: 3px;
-                padding: 10px;
-                font-size: 14px;
-                font-family: Iosevka;
-            }
-            button:hover {
-                background: #504945;
-            }
-        """,
-        )
-
-    def create_button_with_metadata(
-        self, main_text, metadata_text="", hook_data=None, index=None
-    ):
-        """Create a button with main text and optional metadata below in smaller font."""
-        # Get button from pool - ensure it's actually a Button widget
-        button = self._get_button_from_pool()
-
-        # Safety check: if we got something that's not a Button, create a new one
-        if not isinstance(button, Gtk.Button):
-            button = Gtk.Button()
-            self.apply_button_style(button)
-
-        # Clear existing child if any
-        child = button.get_child()
-        if child:
-            button.set_child(None)
-            # Don't destroy child, just detach it for reuse
-
-        # Create a horizontal box for text and hint
-        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        hbox.set_hexpand(True)
-
-        # Left side: main text and metadata
-        text_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        text_vbox.set_hexpand(True)
-        text_vbox.set_halign(Gtk.Align.START)
-
-        if metadata_text:
-            markup = f"{main_text}\n<span size='smaller' color='#d5c4a1'>{metadata_text}</span>"
-            label = Gtk.Label()
-            label.set_markup(markup)
-            label.set_halign(Gtk.Align.START)
-            label.set_valign(Gtk.Align.START)
-            label.set_wrap(True)
-            label.set_wrap_mode(Gtk.WrapMode.WORD)
-            text_vbox.append(label)
-        else:
-            # Simple text - reuse label if possible
-            label = Gtk.Label(label=main_text)
-            label.set_halign(Gtk.Align.START)
-            label.set_valign(Gtk.Align.START)
-            text_vbox.append(label)
-
-        hbox.append(text_vbox)
-
-        # Right side: hint if index is provided
-        if index is not None and index < 10:
-            hint_label = Gtk.Label(label=str(index))
-            hint_label.set_halign(Gtk.Align.END)
-            hint_label.set_hexpand(True)
-            # Use cached style instead of applying every time
-            hint_label.add_css_class("hint-label")
-            hbox.append(hint_label)
-
-        button.set_child(hbox)
-
-        # Store hook data on the button for Alt+number selection
-        if hook_data is not None:
-            button._hook_data = hook_data
-
-        return button
-
     def populate_command_mode(self, command):
-        """Show available launchers and custom commands in command mode."""
+        """Show available launchers and custom commands in command mode using optimized ListView."""
+        self.current_apps = []
+
         if not command:
             # Show all available commands
             all_commands = list(CUSTOM_LAUNCHERS.keys())
             for launcher_name, triggers in self.launcher_registry.list_launchers():
                 all_commands.extend(triggers)
 
-                index = 1
-                for cmd_name in sorted(set(all_commands)):
-                    metadata = METADATA.get(cmd_name, "")
-                    button = self.create_button_with_metadata(
-                        f">{cmd_name}", metadata, index=index if index <= 9 else None
-                    )
-                    button.connect("clicked", self.on_command_selected, cmd_name)
-                    row = Gtk.ListBoxRow()
-                    row.set_child(button)
-                    self.list_box.append(row)
-                    index += 1
-                    if index > 10:  # Show more command results
-                        break
-            self.current_apps = []
+            index = 1
+            for cmd_name in sorted(set(all_commands)):
+                if index > 10:  # Show more command results
+                    break
+
+                metadata = METADATA.get(cmd_name, "")
+                result = LauncherSearchResult(
+                    cmd_name, metadata, index if index <= 9 else None
+                )
+                self.list_store.append(WrappedSearchResult(result))
+                index += 1
 
         elif command in CUSTOM_LAUNCHERS:
             # Handle custom launcher from config
             launcher = CUSTOM_LAUNCHERS[command]
             if isinstance(launcher, str):
+                # Try to find matching app
                 for app in self.apps:
                     if launcher.lower() in app["name"].lower():
                         metadata = METADATA.get(app["name"], "")
-                        button = self.create_button_with_metadata(
-                            f"Launch: {app['name']}", metadata
-                        )
-                        button.connect("clicked", self.on_app_clicked, app)
+                        result = AppSearchResult(app, 1)
+                        self.list_store.append(WrappedSearchResult(result))
                         self.current_apps = [app]
-                        row = Gtk.ListBoxRow()
-                        row.set_child(button)
-                        self.list_box.append(row)
                         break
                 else:
-                    button = self.create_button_with_metadata(f"Run: {launcher}", "")
-                    button.connect("clicked", self.on_command_clicked, launcher)
-                    self.current_apps = []
-                    row = Gtk.ListBoxRow()
-                    row.set_child(button)
-                    self.list_box.append(row)
+                    # No app found, run as command
+                    result = CommandSearchResult(launcher, 1)
+                    self.list_store.append(WrappedSearchResult(result))
             else:
                 metadata = METADATA.get(command, "")
-                button = self.create_button_with_metadata(
-                    f"Launch: {command}", metadata
-                )
-                button.connect("clicked", self.on_custom_launcher_clicked, command)
-                self.current_apps = []
-            row = Gtk.ListBoxRow()
-            row.set_child(button)
-            self.list_box.append(row)
+                result = LauncherSearchResult(command, metadata, 1)
+                self.list_store.append(WrappedSearchResult(result))
 
         else:
             # Find matching commands
@@ -738,26 +893,19 @@ class Launcher(Gtk.ApplicationWindow):
             if all_matching:
                 index = 1
                 for cmd in all_matching:
-                    metadata = METADATA.get(cmd, "")
-                    button = self.create_button_with_metadata(
-                        f">{cmd}", metadata, index=index if index <= 9 else None
-                    )
-                    button.connect("clicked", self.on_command_selected, cmd)
-                    row = Gtk.ListBoxRow()
-                    row.set_child(button)
-                    self.list_box.append(row)
-                    index += 1
                     if index > 10:  # Show more command results
                         break
-                self.current_apps = []
+
+                    metadata = METADATA.get(cmd, "")
+                    result = LauncherSearchResult(
+                        cmd, metadata, index if index <= 9 else None
+                    )
+                    self.list_store.append(WrappedSearchResult(result))
+                    index += 1
             else:
                 # No matching commands, offer to run as shell command
-                button = self.create_button_with_metadata(f"Run: {command}", "")
-                button.connect("clicked", self.on_command_clicked, command)
-                row = Gtk.ListBoxRow()
-                row.set_child(button)
-                self.list_box.append(row)
-                self.current_apps = []
+                result = CommandSearchResult(command, 1)
+                self.list_store.append(WrappedSearchResult(result))
 
     def populate_app_mode(self, filter_text):
         from .config import LAUNCHER_CONFIG
@@ -778,12 +926,8 @@ class Launcher(Gtk.ApplicationWindow):
                 elapsed = f" ({time.time() - self.loading_start_time:.1f}s)"
 
             loading_text = f"{LAUNCHER_CONFIG['ui']['loading_text']}{elapsed}"
-            loading_label = Gtk.Label(label=loading_text)
-            loading_label.add_css_class("dim-label")
-            loading_row = Gtk.ListBoxRow()
-            loading_row.set_child(loading_label)
-            loading_row.set_selectable(False)
-            self.list_box.append(loading_row)
+            result = LoadingSearchResult(loading_text)
+            self.list_store.append(WrappedSearchResult(result))
             return
 
         # Limit results for performance
@@ -792,13 +936,8 @@ class Launcher(Gtk.ApplicationWindow):
         for app in visible_apps:
             self.current_apps.append(app)
             metadata = METADATA.get(app["name"], "")
-            button = self.create_button_with_metadata(
-                app["name"], metadata, index=index if index <= 9 else None
-            )
-            button.connect("clicked", self.on_app_clicked, app)
-            row = Gtk.ListBoxRow()
-            row.set_child(button)
-            self.list_box.append(row)
+            result = AppSearchResult(app, index if index <= 9 else None)
+            self.list_store.append(WrappedSearchResult(result))
             index += 1
 
     def populate_apps(self, filter_text=""):
@@ -891,7 +1030,7 @@ class Launcher(Gtk.ApplicationWindow):
             self._in_search_changed = False
 
     def _debounced_populate(self, text):
-        self.selected_row = None
+        # selected_row is no longer used with ListView
         self.populate_apps(text)
         self.search_timer = None
         return False
@@ -924,10 +1063,12 @@ class Launcher(Gtk.ApplicationWindow):
     def on_entry_activate(self, entry):
         self.hide()
 
-        if self.selected_row:
-            button = self.selected_row.get_child()
-            if button:
-                button.emit("clicked")
+        # Check if there's a selected item in the ListView
+        selected_pos = self.selection_model.get_selected()
+        if selected_pos != Gtk.INVALID_LIST_POSITION:
+            search_result = self.list_store.get_item(selected_pos)
+            if search_result:
+                self._on_list_item_clicked(None, search_result)
             return
 
         text = self.search_entry.get_text()
@@ -979,94 +1120,51 @@ class Launcher(Gtk.ApplicationWindow):
 
     # Navigation methods
     def select_next(self):
-        if self.selected_row:
-            next_row = self.selected_row.get_next_sibling()
-            if next_row:
-                self.selected_row = next_row
-                self.list_box.select_row(next_row)
-                button = next_row.get_child()
-                if button:
-                    button.grab_focus()
-        else:
-            first_row = self.list_box.get_row_at_index(0)
-            if first_row:
-                self.selected_row = first_row
-                self.list_box.select_row(first_row)
-                button = first_row.get_child()
-                if button:
-                    button.grab_focus()
+        """Select the next item in the optimized ListView."""
+        n_items = self.list_store.get_n_items()
+        if n_items == 0:
+            return
+
+        current_selected = self.selection_model.get_selected()
+        if current_selected == Gtk.INVALID_LIST_POSITION:
+            # No selection, select the first item
+            self.selection_model.set_selected(0)
+        elif current_selected < n_items - 1:
+            # Select the next item
+            self.selection_model.set_selected(current_selected + 1)
+
+        # Focus the selected item's button
+        self._focus_selected_item()
 
     def select_by_index(self, index):
         """Select the item at the given index (0-based) and activate it."""
-        row = self.list_box.get_row_at_index(index)
-        if row:
-            self.selected_row = row
-            self.list_box.select_row(row)
-            button = row.get_child()
-            if button:
-                # Get hook data before emitting clicked to prevent memory issues
-                hook_data = None
-                if hasattr(button, "_hook_data"):
-                    hook_data = button._hook_data
+        n_items = self.list_store.get_n_items()
+        if index < 0 or index >= n_items:
+            return
 
-                # Handle hooks directly for memory safety instead of emitting clicked
-                if hook_data and self.hook_registry:
-                    try:
-                        # Hide launcher before handling action to prevent memory issues
-                        self.hide()
-
-                        # Execute hook directly instead of emitting signal
-                        handled = self.hook_registry.execute_select_hooks(
-                            self, hook_data
-                        )
-
-                        # If not handled by hooks, try regular click
-                        if not handled:
-                            # For non-hook buttons, we need to emit clicked signal
-                            button.emit("clicked")
-                    except Exception as e:
-                        logger.error(f"Error handling Alt+number selection: {e}")
-                        # Fallback to regular click if hook handling fails
-                        try:
-                            button.emit("clicked")
-                        except Exception as e2:
-                            logger.error(f"Fallback click also failed: {e2}")
-                else:
-                    # No hook data - hide and emit clicked
-                    self.hide()
-                    try:
-                        button.emit("clicked")
-                    except Exception as e:
-                        logger.error(f"Error handling regular Alt+number click: {e}")
+        search_result = self.list_store.get_item(index)
+        if search_result:
+            # Handle the action directly
+            self._on_list_item_clicked(None, search_result)
 
     def select_prev(self):
-        if self.selected_row:
-            prev_row = self.selected_row.get_prev_sibling()
-            if prev_row:
-                self.selected_row = prev_row
-                self.list_box.select_row(prev_row)
-                button = prev_row.get_child()
-                if button:
-                    button.grab_focus()
-            else:
-                # No previous, jump back to input
-                self.selected_row = None
-                self.list_box.unselect_all()
-                self.search_entry.grab_focus()
+        """Select the previous item in the optimized ListView."""
+        n_items = self.list_store.get_n_items()
+        if n_items == 0:
+            return
+
+        current_selected = self.selection_model.get_selected()
+        if current_selected == Gtk.INVALID_LIST_POSITION:
+            # No selection, focus search entry
+            self.search_entry.grab_focus()
+        elif current_selected > 0:
+            # Select previous item
+            self.selection_model.set_selected(current_selected - 1)
+            self._focus_selected_item()
         else:
-            n_items = 0
-            row = self.list_box.get_first_child()
-            while row:
-                n_items += 1
-                row = row.get_next_sibling()
-            if n_items > 0:
-                last_row = self.list_box.get_row_at_index(n_items - 1)
-                if last_row:
-                    self.selected_row = last_row
-                    self.list_box.select_row(last_row)
-                    button = last_row.get_child()
-                    if button:
-                        button.grab_focus()
+            # At first item, jump back to search entry
+            self.selection_model.unselect_all()
+            self.search_entry.grab_focus()
 
     def set_wallpaper_mode_size(self):
         """Increase launcher size for wallpaper mode to accommodate larger thumbnails."""
@@ -1230,8 +1328,7 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Button pool is no longer used (buttons are destroyed immediately)
 
-        # Clear search cache
-        self.search_cache.clear()
+        # Search cache is no longer needed with optimized ListView
 
     def animate_slide_in(self):
         from .config import LAUNCHER_CONFIG

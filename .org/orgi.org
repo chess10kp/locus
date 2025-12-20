@@ -1,0 +1,18 @@
+
+* TODO file search w(adds file indexer dependency)
+  :PROPERTIES:
+  :ID: task-20251220164748
+  :TITLE: file search w(adds file indexer dependency)
+  :CREATED: <2025-12-20 Sat 16:47>
+  :END:
+
+  
+
+* TODO fix custom launcher integration
+  :PROPERTIES:
+  :ID: task-20251220175020
+  :TITLE: fix custom launcher integration
+  :CREATED: <2025-12-20 Sat 17:50>
+  :END:
+
+  
