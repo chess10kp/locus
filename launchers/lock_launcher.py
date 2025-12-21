@@ -123,14 +123,6 @@ class LockScreen(Gtk.ApplicationWindow):
         self.center_box.set_valign(Gtk.Align.CENTER)
         self.center_box.set_halign(Gtk.Align.CENTER)
 
-        # Title
-        self.title_label = Gtk.Label()
-        self.title_label.set_markup(
-            '<span size="xx-large" weight="bold">Screen Locked</span>'
-        )
-        self.title_label.set_margin_bottom(20)
-        self.title_label.set_halign(Gtk.Align.CENTER)
-
         # Password entry
         self.password_entry = Gtk.Entry()
         self.password_entry.set_visibility(False)  # Hide password
@@ -142,14 +134,6 @@ class LockScreen(Gtk.ApplicationWindow):
         self.password_entry.connect("activate", self.on_password_entered)
         self.password_entry.connect("changed", self.on_password_changed)
 
-        # Unlock button
-        self.unlock_button = Gtk.Button(label="Unlock")
-        self.unlock_button.connect("clicked", self.on_unlock_clicked)
-        self.unlock_button.set_margin_top(10)
-        self.unlock_button.set_halign(Gtk.Align.CENTER)
-        self.unlock_button.set_margin_start(20)
-        self.unlock_button.set_margin_end(20)
-
         # Status label
         self.status_label = Gtk.Label()
         self.status_label.set_markup(
@@ -159,11 +143,10 @@ class LockScreen(Gtk.ApplicationWindow):
         self.status_label.set_halign(Gtk.Align.CENTER)
 
         # Assemble the UI
-        self.center_box.append(self.title_label)
         self.center_box.append(self.password_entry)
-        self.center_box.append(self.unlock_button)
         self.center_box.append(self.status_label)
         self.main_box.append(self.center_box)
+        self.main_box.set_valign(Gtk.Align.CENTER)
 
         self.set_child(self.main_box)
 
@@ -200,7 +183,7 @@ class LockScreen(Gtk.ApplicationWindow):
             self,
             """
             window {
-                background: #1d2021;
+                background: #0e1419;
                 color: #ebdbb2;
             }
             """,
@@ -211,7 +194,7 @@ class LockScreen(Gtk.ApplicationWindow):
             self.main_box,
             """
             box {
-                background: #1d2021;
+                background: #0e1419;
                 padding: 0px;
             }
             """,
@@ -222,22 +205,7 @@ class LockScreen(Gtk.ApplicationWindow):
             self.center_box,
             """
             box {
-                background: #282828;
-                border-radius: 15px;
                 padding: 40px;
-                border: 2px solid #3c3836;
-            }
-            """,
-        )
-
-        # Title label
-        apply_styles(
-            self.title_label,
-            """
-            label {
-                color: #ebdbb2;
-                font-family: Iosevka, sans-serif;
-                font-weight: bold;
             }
             """,
         )
@@ -247,40 +215,15 @@ class LockScreen(Gtk.ApplicationWindow):
             self.password_entry,
             """
             entry {
-                background: #1d2021;
+                background: #0e1419;
                 color: #ebdbb2;
-                border: 2px solid #3c3836;
-                border-radius: 8px;
+                border: 0px solid #3c3836;
                 padding: 12px;
                 font-size: 16px;
                 font-family: Iosevka, monospace;
             }
             entry:focus {
-                border-color: #83a598;
-                box-shadow: 0 0 5px #83a598;
-            }
-            """,
-        )
-
-        # Unlock button
-        apply_styles(
-            self.unlock_button,
-            """
-            button {
-                background: #458588;
-                color: #ebdbb2;
-                border: none;
-                border-radius: 8px;
-                padding: 12px 24px;
-                font-size: 16px;
-                font-family: Iosevka, sans-serif;
-                font-weight: bold;
-            }
-            button:hover {
-                background: #50868a;
-            }
-            button:active {
-                background: #3a7477;
+                border: 0px ;
             }
             """,
         )
@@ -299,7 +242,7 @@ class LockScreen(Gtk.ApplicationWindow):
     def on_password_changed(self, entry):
         """Reset status label when user starts typing."""
         self.status_label.set_markup(
-            '<span color="#98971a">Enter password to unlock</span>'
+            '<span color="#98971a"></span>'
         )
 
     def on_password_entered(self, entry):
