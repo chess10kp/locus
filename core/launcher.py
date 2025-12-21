@@ -294,7 +294,13 @@ def handle_custom_launcher(
     """
     The main handler to bridge your configuration with the launcher.
     """
+    # Debug logging
+    with open("/tmp/locus_debug.log", "a") as f:
+        f.write(f"[DEBUG] handle_custom_launcher called with command='{command}'\n")
+
     if command not in CUSTOM_LAUNCHERS:
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] Command '{command}' not in CUSTOM_LAUNCHERS\n")
         return False
 
     launcher = CUSTOM_LAUNCHERS[command]
@@ -308,11 +314,17 @@ def handle_custom_launcher(
             target_name = launcher.get("name", "")
         elif launcher_type == "builtin":
             handler_name = launcher.get("handler")
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Builtin handler '{handler_name}' requested\n")
             if handler_name and handler_name in BUILTIN_HANDLERS:
                 # Call the builtin handler with the launcher instance
                 if handler_name and handler_name in BUILTIN_HANDLERS:
+                    with open("/tmp/locus_debug.log", "a") as f:
+                        f.write(f"[DEBUG] Calling builtin handler '{handler_name}'\n")
                     # Call the builtin handler with the launcher instance
                     BUILTIN_HANDLERS[handler_name](launcher_instance)
+                    with open("/tmp/locus_debug.log", "a") as f:
+                        f.write(f"[DEBUG] Builtin handler '{handler_name}' completed\n")
                     return True
                 return False
             else:
@@ -408,6 +420,9 @@ class Launcher(Gtk.ApplicationWindow):
             modal=window_config["modal"],
             decorated=window_config["decorated"],
         )
+
+        # Store the application instance for lock screen
+        self.application = kwargs.get("application")
 
         # Use the new optimized app loading system
         self._app_loader = get_app_loader()
@@ -810,9 +825,13 @@ class Launcher(Gtk.ApplicationWindow):
                 self.launcher_registry.register(shell_launcher)
 
             # Register builtin handlers
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Registering 'lock' builtin handler\n")
             register_builtin_handler(
                 "lock", lambda launcher_instance: show_lock_screen(launcher_instance)
             )
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Builtin handlers: {list(BUILTIN_HANDLERS.keys())}\n")
 
             # Lock screen is handled separately (not a launcher)
             self.lock_screen = None
@@ -1064,39 +1083,86 @@ class Launcher(Gtk.ApplicationWindow):
             logger.error(f"Failed to launch {app.get('name', 'unknown')}: {e}")
 
     def on_entry_activate(self, entry):
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] on_entry_activate called\n")
+
+        text = self.search_entry.get_text()
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] Text entered: '{text}'\n")
+
         self.hide()
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] Launcher hidden\n")
 
         # Check if there's a selected item in the ListView
         selected_pos = self.selection_model.get_selected()
         if selected_pos != Gtk.INVALID_LIST_POSITION:
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Selected item at position {selected_pos}\n")
             search_result = self.list_store.get_item(selected_pos)
             if search_result:
                 self._on_list_item_clicked(None, search_result)
+                with open("/tmp/locus_debug.log", "a") as f:
+                    f.write(f"[DEBUG] List item clicked, returning\n")
             return
 
-        text = self.search_entry.get_text()
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] No selected item, processing text: '{text}'\n")
 
         # Try hooks first
-        if self.hook_registry.execute_enter_hooks(self, text):
+        hook_result = self.hook_registry.execute_enter_hooks(self, text)
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] Hook execution result: {hook_result}\n")
+        if hook_result:
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Hook handled the command, returning\n")
             return
 
         # Check if any registered launcher can handle this input
         trigger, launcher, query = self.launcher_registry.find_launcher_for_input(text)
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] Launcher registry: trigger='{trigger}', launcher={launcher}, query='{query}'\n")
 
         if launcher and launcher.handles_enter():
             # Let the launcher handle the enter key
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Launcher {launcher} handling enter\n")
             if launcher.handle_enter(query, self):
+                with open("/tmp/locus_debug.log", "a") as f:
+                    f.write(f"[DEBUG] Launcher handled the command, returning\n")
                 return
 
         # Handle custom launchers from config
         if text.startswith(">"):
             command = text[1:].strip()
-            if command in [name for name, _ in self.launcher_registry.list_launchers()]:
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Command detected: '{command}'\n")
+
+            launcher_names = [name for name, _ in self.launcher_registry.list_launchers()]
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Registered launchers: {launcher_names}\n")
+
+            if command in launcher_names:
                 # This is a registered launcher command, don't execute as shell
+                with open("/tmp/locus_debug.log", "a") as f:
+                    f.write(f"[DEBUG] Command '{command}' is in registered launchers, returning without calling handle_custom_launcher\n")
                 return
-            elif not handle_custom_launcher(command, self.apps, self):
-                if command:
-                    self.run_command(command)
+            else:
+                with open("/tmp/locus_debug.log", "a") as f:
+                    f.write(f"[DEBUG] Command '{command}' not in registered launchers, calling handle_custom_launcher\n")
+                if not handle_custom_launcher(command, self.apps, self):
+                    with open("/tmp/locus_debug.log", "a") as f:
+                        f.write(f"[DEBUG] handle_custom_launcher returned False")
+                    if command:
+                        with open("/tmp/locus_debug.log", "a") as f:
+                            f.write(f", running command\n")
+                        self.run_command(command)
+                    else:
+                        with open("/tmp/locus_debug.log", "a") as f:
+                            f.write(f"\n")
+                else:
+                    with open("/tmp/locus_debug.log", "a") as f:
+                        f.write(f"[DEBUG] handle_custom_launcher returned True\n")
         elif self.current_apps:
             self.launch_app(self.current_apps[0])
         else:
@@ -1299,6 +1365,10 @@ class Launcher(Gtk.ApplicationWindow):
             return True
         return False
 
+    def get_application(self):
+        """Return the stored application instance."""
+        return self.application
+
     # Window methods
     def on_map(self, widget):
         self.search_entry.grab_focus()
@@ -1391,8 +1461,32 @@ class Launcher(Gtk.ApplicationWindow):
 
 def show_lock_screen(launcher_instance):
     """Show the lock screen."""
+    with open("/tmp/locus_debug.log", "a") as f:
+        f.write(f"[DEBUG] show_lock_screen called\n")
+        f.write(f"[DEBUG] launcher_instance.lock_screen is {launcher_instance.lock_screen}\n")
+        f.write(f"[DEBUG] launcher_instance.get_application() = {launcher_instance.get_application()}\n")
+
     if launcher_instance.lock_screen is None:
-        launcher_instance.lock_screen = LockScreen(
-            password=LOCK_PASSWORD, application=launcher_instance.get_application()
-        )
-    launcher_instance.lock_screen.lock()
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] Creating new LockScreen with password='{LOCK_PASSWORD}'\n")
+        try:
+            launcher_instance.lock_screen = LockScreen(
+                password=LOCK_PASSWORD, application=launcher_instance.get_application()
+            )
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] LockScreen created successfully\n")
+        except Exception as e:
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[ERROR] Failed to create LockScreen: {e}\n")
+            raise
+
+    with open("/tmp/locus_debug.log", "a") as f:
+        f.write(f"[DEBUG] Calling lock_screen.lock()\n")
+    try:
+        launcher_instance.lock_screen.lock()
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] lock_screen.lock() completed\n")
+    except Exception as e:
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[ERROR] lock_screen.lock() failed: {e}\n")
+        raise

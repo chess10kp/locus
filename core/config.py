@@ -124,12 +124,6 @@ LAUNCHER_CONFIG = {
     },
 }
 
-
-# =================================
-# MODULE CONFIGURATION OPTIONS
-# =================================
-
-
 def todo_capture():
     """Open Emacs org-capture for todo."""
     # Check if emacs daemon is running

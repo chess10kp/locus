@@ -67,7 +67,10 @@ class LauncherModule(StatusbarModuleInterface):
         # Import here to avoid circular imports
         from core.launcher import Launcher
 
-        # Create and show the launcher
-        launcher = Launcher()
+        # Get the application from the widget's ancestor
+        app = widget.get_root().get_application()
+
+        # Create and show the launcher with application context
+        launcher = Launcher(application=app)
         launcher.present()
         return True
