@@ -271,8 +271,9 @@ class MusicLauncher(LauncherInterface):
 
     def _add_button(self, text, metadata, action, value, launcher_core, index=None):
         item_data = {"type": "music_item", "action": action, "value": value}
-        button = launcher_core.create_button_with_metadata(text, metadata, item_data, index)
-        launcher_core.list_box.append(button)
+        launcher_core.add_launcher_result(
+            text, metadata, index=index, action_data=item_data
+        )
 
     def _populate_queue(self, query, launcher_core):
         # Get playlist with position and filename
@@ -280,9 +281,7 @@ class MusicLauncher(LauncherInterface):
         lines = output.splitlines() if output else []
 
         if not lines or not any(line.strip() for line in lines):
-            launcher_core.list_box.append(
-                launcher_core.create_button_with_metadata("Queue is empty", "")
-            )
+            launcher_core.add_launcher_result("Queue is empty", "")
             return
 
         index = 4  # Start after control buttons (1=toggle, 2=clear, 3=view library)
@@ -323,7 +322,7 @@ class MusicLauncher(LauncherInterface):
                     action="play_position",
                     value=pos,
                     launcher_core=launcher_core,
-                    index=index if index <= 9 else None  # Only show hints for 3-9
+                    index=index if index <= 9 else None,  # Only show hints for 3-9
                 )
                 index += 1
                 if index > 9:  # Stop showing hints after 9
@@ -331,18 +330,12 @@ class MusicLauncher(LauncherInterface):
 
     def _populate_library(self, query, launcher_core):
         if self.scanning and not self.files_cache:
-            launcher_core.list_box.append(
-                launcher_core.create_button_with_metadata(
-                    "Scanning library...", "Please wait"
-                )
-            )
+            launcher_core.add_launcher_result("Scanning library...", "Please wait")
             return
 
         if not self.files_cache:
-            launcher_core.list_box.append(
-                launcher_core.create_button_with_metadata(
-                    "No music files found", f"Check {self.music_dir} directory"
-                )
+            launcher_core.add_launcher_result(
+                "No music files found", f"Check {self.music_dir} directory"
             )
             return
 
@@ -360,7 +353,7 @@ class MusicLauncher(LauncherInterface):
                 action="play_file",
                 value=item["path"],
                 launcher_core=launcher_core,
-                index=index if index <= 9 else None  # Only show hints for 3-9
+                index=index if index <= 9 else None,  # Only show hints for 3-9
             )
             index += 1
             if index > 9:  # Stop showing hints after 9

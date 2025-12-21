@@ -31,6 +31,7 @@ from utils.app_tracker import get_app_tracker
 from .config import CUSTOM_LAUNCHERS, METADATA, LOCK_PASSWORD
 from .search_models import (
     SearchResult,
+    ResultType,
     AppSearchResult,
     CommandSearchResult,
     LauncherSearchResult,
@@ -314,7 +315,6 @@ def handle_custom_launcher(
                     BUILTIN_HANDLERS[handler_name](launcher_instance)
                     return True
                 return False
-                return True
             else:
                 with open("/tmp/locus_debug.log", "a") as f:
                     f.write(f"[DEBUG] No handler found for builtin '{handler_name}'\n")
@@ -473,7 +473,7 @@ class Launcher(Gtk.ApplicationWindow):
         self.selection_model.set_autoselect(False)
         self.selection_model.set_can_unselect(True)
 
-        self.list_view = Gtk.ListView.new(self.selection_model, None)
+        self.list_view: Gtk.ListView = Gtk.ListView.new(self.selection_model, None)
         self.list_view.set_vexpand(True)
 
         # Create factory for rendering items
@@ -725,29 +725,17 @@ class Launcher(Gtk.ApplicationWindow):
         elif search_result.result_type.name == "COMMAND":
             self.run_command(search_result.command)
         elif search_result.result_type.name == "LAUNCHER":
-            self.on_command_selected(button, search_result.command)
+            # Handle action_data for launchers (e.g., wallpaper file paths)
+            if search_result.action_data:
+                self.hook_registry.execute_select_hooks(self, search_result.action_data)
+            else:
+                self.on_command_selected(button, search_result.command)
         elif search_result.result_type.name == "CUSTOM":
             if search_result.hook_data and self.hook_registry:
                 self.hook_registry.execute_select_hooks(self, search_result.hook_data)
         elif search_result.result_type.name == "LOADING":
             # Do nothing for loading items
             pass
-
-    def _focus_selected_item(self):
-        """Focus the button of the currently selected item."""
-        selected_pos = self.selection_model.get_selected()
-        if selected_pos != Gtk.INVALID_LIST_POSITION:
-            # Try to get the list item widget and focus its button
-            child = self.list_view.get_first_child()
-            current_pos = 0
-            while child and current_pos < selected_pos:
-                child = child.get_next_sibling()
-                current_pos += 1
-
-            if child:
-                button = child.get_child()
-                if button:
-                    button.grab_focus()
 
     @property
     def apps(self):
@@ -783,7 +771,6 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.wallpaper_launcher import WallpaperLauncher
             from launchers.kill_launcher import KillLauncher
             from launchers.shell_launcher import ShellLauncher
-            from launchers.lock_launcher import LockScreen  # noqa: F401
 
             # Register all launchers
             music_launcher = MusicLauncher(self)
@@ -990,6 +977,22 @@ class Launcher(Gtk.ApplicationWindow):
         self.idle_callback_id = 0
         return False  # Don't repeat
 
+    def add_launcher_result(
+        self,
+        title: str,
+        subtitle: str = "",
+        index: int | None = None,
+        result_type: ResultType | None = None,
+        action_data=None,
+    ):
+        """Add a search result from a sublauncher. This replaces create_button_with_metadata."""
+        if result_type is None:
+            result_type = ResultType.LAUNCHER
+
+        result = LauncherSearchResult(title, subtitle, index)
+        result.action_data = action_data
+        self.list_store.append(WrappedSearchResult(result))
+
     def _apply_size_mode(self, size_mode, custom_size):
         """Apply the appropriate size mode for the launcher."""
         if size_mode.name == "wallpaper":
@@ -1133,8 +1136,8 @@ class Launcher(Gtk.ApplicationWindow):
             # Select the next item
             self.selection_model.set_selected(current_selected + 1)
 
-        # Focus the selected item's button
-        self._focus_selected_item()
+        # Focus the search entry for better UX
+        self.search_entry.grab_focus()
 
     def select_by_index(self, index):
         """Select the item at the given index (0-based) and activate it."""
@@ -1144,8 +1147,17 @@ class Launcher(Gtk.ApplicationWindow):
 
         search_result = self.list_store.get_item(index)
         if search_result:
-            # Handle the action directly
-            self._on_list_item_clicked(None, search_result)
+            # Handle the action directly for Alt+number shortcuts
+            if search_result.result_type.name == "LAUNCHER":
+                self.hide()
+                if search_result.action_data:
+                    self.hook_registry.execute_select_hooks(
+                        self, search_result.action_data
+                    )
+                else:
+                    self.on_command_selected(None, search_result.command)
+            else:
+                self._on_list_item_clicked(None, search_result)
 
     def select_prev(self):
         """Select the previous item in the optimized ListView."""
@@ -1160,7 +1172,8 @@ class Launcher(Gtk.ApplicationWindow):
         elif current_selected > 0:
             # Select previous item
             self.selection_model.set_selected(current_selected - 1)
-            self._focus_selected_item()
+            # Focus the search entry for better UX
+            self.search_entry.grab_focus()
         else:
             # At first item, jump back to search entry
             self.selection_model.unselect_all()

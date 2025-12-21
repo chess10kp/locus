@@ -227,26 +227,23 @@ class WallpaperLauncher(LauncherInterface):
         if not os.path.exists(wp_dir):
             label_text = "Wallpaper directory ~/Pictures/wp/ not found"
             metadata = launcher_core.METADATA.get(label_text, "")
-            button = launcher_core.create_button_with_metadata(label_text, metadata)
-            launcher_core.list_box.append(button)
+            launcher_core.add_launcher_result(label_text, metadata)
             launcher_core.current_apps = []
             return
 
         # Handle special commands
         if query == "random":
             metadata = launcher_core.METADATA.get("wallpaper", "")
-            button = launcher_core.create_button_with_metadata(
-                "Set random wallpaper", metadata, "Set random wallpaper"
+            launcher_core.add_launcher_result(
+                "Set random wallpaper", metadata, action_data="Set random wallpaper"
             )
-            launcher_core.list_box.append(button)
             launcher_core.current_apps = []
             return
         elif query == "cycle":
             metadata = launcher_core.METADATA.get("wallpaper", "")
-            button = launcher_core.create_button_with_metadata(
-                "Cycle wallpaper", metadata, "Cycle wallpaper"
+            launcher_core.add_launcher_result(
+                "Cycle wallpaper", metadata, action_data="Cycle wallpaper"
             )
-            launcher_core.list_box.append(button)
             launcher_core.current_apps = []
             return
 
@@ -267,43 +264,19 @@ class WallpaperLauncher(LauncherInterface):
             button = launcher_core.create_button_with_metadata(msg, metadata)
             launcher_core.list_box.append(button)
         else:
-            # Display wallpapers with thumbnails
+            # Display wallpapers as text results (simplified for ListView compatibility)
+            index = 1
             for wp in sorted(wallpapers):
-                box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=15)
-                try:
-                    image = self.get_cached_thumbnail(wp_dir, wp)
-                    image.set_hexpand(False)
-                    image.set_vexpand(False)
-                except Exception:
-                    image = Gtk.Image()
-
                 metadata = launcher_core.METADATA.get(wp, "")
                 if metadata:
-                    markup = (
-                        f"{wp}\n<span size='smaller' color='#d5c4a1'>{metadata}</span>"
-                    )
-                    label = Gtk.Label()
-                    label.set_markup(markup)
-                    label.set_halign(Gtk.Align.START)
-                    label.set_valign(Gtk.Align.START)
-                    label.set_wrap(True)
-                    label.set_wrap_mode(Gtk.WrapMode.WORD)
-                    label.set_hexpand(True)
-                    box.append(image)
-                    box.append(label)
+                    subtitle = metadata
                 else:
-                    label = Gtk.Label(label=wp)
-                    label.set_halign(Gtk.Align.START)
-                    label.set_hexpand(True)
-                    box.append(image)
-                    box.append(label)
+                    subtitle = "Click to set as wallpaper"
 
-                button = Gtk.Button()
-                button.set_child(box)
-                button.get_child().set_halign(Gtk.Align.START)
-                button.connect("clicked", self.on_wallpaper_clicked, wp)
-                self.apply_wallpaper_button_style(button)
-                launcher_core.list_box.append(button)
+                launcher_core.add_launcher_result(
+                    wp, subtitle, index=index if index <= 9 else None, action_data=wp
+                )
+                index += 1
 
         launcher_core.current_apps = []
 

@@ -102,10 +102,9 @@ class BookmarkLauncher(LauncherInterface):
             metadata = (
                 launcher_core.METADATA.get("bookmark", "") if item in bookmarks else ""
             )
-            button = launcher_core.create_button_with_metadata(
+            launcher_core.add_launcher_result(
                 item, metadata, index=index if index <= 9 else None
             )
-            launcher_core.list_box.append(button)
             index += 1
             if index > 9:  # Stop showing hints after 9
                 break

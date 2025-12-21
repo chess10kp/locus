@@ -128,10 +128,9 @@ class BluetoothLauncher(LauncherInterface):
         index = 1
         for item in all_items:
             metadata = launcher_core.METADATA.get("bluetooth", "")
-            button = launcher_core.create_button_with_metadata(
+            launcher_core.add_launcher_result(
                 item, metadata, index=index if index <= 9 else None
             )
-            launcher_core.list_box.append(button)
             index += 1
             if index > 9:  # Stop showing hints after 9
                 break

@@ -89,10 +89,9 @@ class CalcLauncher(LauncherInterface):
         if not error:
             label_text = f"Result: {result}"
             metadata = launcher_core.METADATA.get(label_text, "")
-            button = launcher_core.create_button_with_metadata(
-                label_text, metadata, result, index=1
+            launcher_core.add_launcher_result(
+                label_text, metadata, index=1, action_data=result
             )
-            launcher_core.list_box.append(button)
             launcher_core.list_box.queue_draw()
             launcher_core.scrolled.queue_draw()
             # Scroll to top

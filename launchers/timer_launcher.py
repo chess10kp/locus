@@ -84,18 +84,17 @@ class TimerLauncher(LauncherInterface):
                 label_text = f"Set timer for {time_str}"
                 metadata = "Click to start timer"
                 hook_data = f"timer:{time_str}"
-                button = launcher_core.create_button_with_metadata(
-                    label_text, metadata, hook_data, index=1
+                launcher_core.add_launcher_result(
+                    label_text, metadata, index=1, action_data=hook_data
                 )
             else:
                 label_text = "Invalid time format (e.g., 5m)"
                 metadata = "Use format like 5m, 1h, 30s"
-                button = launcher_core.create_button_with_metadata(label_text, metadata, index=1)
+                launcher_core.add_launcher_result(label_text, metadata, index=1)
         else:
             label_text = "Usage: >timer 5m"
             metadata = "Enter time duration (e.g., 5m, 1h, 30s)"
-            button = launcher_core.create_button_with_metadata(label_text, metadata, index=1)
-        launcher_core.list_box.append(button)
+            launcher_core.add_launcher_result(label_text, metadata, index=1)
         launcher_core.current_apps = []
 
     def on_timer_clicked(self, button, time_str):

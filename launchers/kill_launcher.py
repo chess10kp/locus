@@ -59,8 +59,7 @@ class KillLauncher(LauncherInterface):
         result = subprocess.run(["ps", "aux"], capture_output=True, text=True)
         if result.returncode != 0:
             label_text = "Failed to get processes"
-            button = launcher_core.create_button_with_metadata(label_text, "")
-            launcher_core.list_box.append(button)
+            launcher_core.add_launcher_result(label_text, "")
             launcher_core.current_apps = []
             return
 
@@ -85,8 +84,9 @@ class KillLauncher(LauncherInterface):
 
         for pid, cpu, mem, cmd in processes[:50]:  # limit to 50
             label_text = f"{cmd} (CPU: {cpu:.1f}%, MEM: {mem:.1f}%)"
-            button = launcher_core.create_button_with_metadata(label_text, "", pid)
-            launcher_core.list_box.append(button)
+            launcher_core.add_launcher_result(
+                label_text, "", index=None, action_data=pid
+            )
         launcher_core.current_apps = []
 
     def kill_process(self, pid):

@@ -81,18 +81,14 @@ class ShellLauncher(LauncherInterface):
             # Show help text when no query
             label_text = "Enter shell command to execute"
             metadata = "Type a command like 'ls -la' or 'echo hello'"
-            button = launcher_core.create_button_with_metadata(
-                label_text, metadata, index=1
-            )
-            launcher_core.list_box.append(button)
+            launcher_core.add_launcher_result(label_text, metadata, index=1)
         else:
             # Show the command that will be executed
             label_text = f"Execute: {query}"
             metadata = "Press Enter or click to run this command"
-            button = launcher_core.create_button_with_metadata(
-                label_text, metadata, f"exec:{query}", index=1
+            launcher_core.add_launcher_result(
+                label_text, metadata, index=1, action_data=f"exec:{query}"
             )
-            launcher_core.list_box.append(button)
 
         launcher_core.list_box.queue_draw()
         launcher_core.scrolled.queue_draw()

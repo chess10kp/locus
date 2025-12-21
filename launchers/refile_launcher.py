@@ -172,19 +172,16 @@ class RefileLauncher(LauncherInterface):
         workspaces = self.get_workspaces()
 
         if not workspaces:
-            button = launcher_core.create_button_with_metadata(
+            launcher_core.add_launcher_result(
                 "No workspaces found", "Unable to get workspace list"
             )
-            launcher_core.list_box.append(button)
             return
 
         # Add header with current workspace info
         if current_workspace:
             header = f"Current workspace: {current_workspace}"
             metadata = "Select a workspace to swap with"
-            button = launcher_core.create_button_with_metadata(header, metadata)
-            button.set_sensitive(False)  # Make it non-clickable
-            launcher_core.list_box.append(button)
+            launcher_core.add_launcher_result(header, metadata)
 
         # Filter and add workspaces
         for workspace in sorted(workspaces):
@@ -197,9 +194,8 @@ class RefileLauncher(LauncherInterface):
                 continue
 
             item_data = {"type": "refile_workspace", "workspace": workspace}
-            button = launcher_core.create_button_with_metadata(
+            launcher_core.add_launcher_result(
                 f"Swap to: {workspace}",
                 f"Exchange containers with workspace '{workspace}'",
-                item_data,
+                action_data=item_data,
             )
-            launcher_core.list_box.append(button)
