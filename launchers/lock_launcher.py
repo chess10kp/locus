@@ -136,9 +136,6 @@ class LockScreen(Gtk.ApplicationWindow):
 
         # Status label
         self.status_label = Gtk.Label()
-        self.status_label.set_markup(
-            '<span color="#cc241d">Please enter your password</span>'
-        )
         self.status_label.set_margin_top(10)
         self.status_label.set_halign(Gtk.Align.CENTER)
 
@@ -217,13 +214,22 @@ class LockScreen(Gtk.ApplicationWindow):
             entry {
                 background: #0e1419;
                 color: #ebdbb2;
-                border: 0px solid #3c3836;
+                border: none;
+                outline: none;
+                box-shadow: none;
                 padding: 12px;
                 font-size: 16px;
                 font-family: Iosevka, monospace;
             }
             entry:focus {
-                border: 0px ;
+                border: none;
+                outline: none;
+                box-shadow: none;
+            }
+            entry:focus-visible {
+                border: none;
+                outline: none;
+                box-shadow: none;
             }
             """,
         )
@@ -274,55 +280,12 @@ class LockScreen(Gtk.ApplicationWindow):
                 self.password_entry.set_text("")
                 self.password_entry.grab_focus()
 
-                # Shake the window for visual feedback
-                self.shake_window()
             else:
                 # Max attempts reached
                 self.status_label.set_markup(
                     '<span color="#fb4934">Maximum attempts reached! Locking...</span>'
                 )
                 GLib.timeout_add(2000, self.max_attempts_lockdown)
-
-    def shake_window(self):
-        """Shake the lock UI for incorrect password feedback."""
-        shake_distance = 15
-        shake_duration = 80  # milliseconds
-
-        # Store original margin
-        original_margin = self.center_box.get_margin_top()
-
-        def shake_step(step):
-            if step < 6:  # 6 shakes (left, right, left, right, left, center)
-                if step % 2 == 0:
-                    self.center_box.set_margin_top(original_margin + shake_distance)
-                else:
-                    self.center_box.set_margin_top(original_margin - shake_distance)
-
-                if step < 5:
-                    GLib.timeout_add(shake_duration, lambda: shake_step(step + 1))
-                else:
-                    # Reset margin
-                    self.center_box.set_margin_top(original_margin)
-
-        shake_step(0)
-
-    def max_attempts_lockdown(self):
-        """Handle max attempts lockdown."""
-        # You could implement additional security measures here
-        # For now, just reset attempts but show a warning
-        self.attempts = 0
-        self.status_label.set_markup(
-            '<span color="#fb4934">Session temporarily locked. Please wait...</span>'
-        )
-        GLib.timeout_add(5000, self.reset_after_lockdown)
-
-    def reset_after_lockdown(self):
-        """Reset after temporary lockdown."""
-        self.password_entry.set_text("")
-        self.status_label.set_markup(
-            '<span color="#cc241d">Please enter your password</span>'
-        )
-        self.password_entry.grab_focus()
 
     def on_key_pressed(self, controller, keyval, keycode, state):
         """Handle key press events."""
@@ -371,13 +334,7 @@ class LockScreen(Gtk.ApplicationWindow):
 
         self.password_entry.set_text("")
         self.attempts = 0
-        self.status_label.set_markup(
-            '<span color="#cc241d">Please enter your password</span>'
-        )
 
-        # Ensure the window covers the entire screen
-        with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] Getting monitor geometry...\n")
         monitor_geo = get_monitor_geometry_for_window(self)
         if monitor_geo:
             with open("/tmp/locus_debug.log", "a") as f:
@@ -387,9 +344,6 @@ class LockScreen(Gtk.ApplicationWindow):
             # Maximize the window
             self.maximize()
         else:
-            with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[DEBUG] No monitor geometry, just maximizing\n")
-            # Fallback - just maximize
             self.maximize()
 
         # Initialize GTK layer shell
