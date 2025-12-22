@@ -196,7 +196,7 @@ MODULE_CONFIG = {
     },
     "emacs_clock": {
         "interval": 10,  # Update interval in seconds
-        "fallback_text": "",  # Text when no clock active
+        "fallback_text": "⏱ --",  # Text when no clock active
     },
     "launcher": {
         # No configuration needed for static module
@@ -256,6 +256,8 @@ METADATA.update(
         "lock": "Lock screen",
         "music": "Music player",
         "refile": "Workspace swapper",
+        "file": "File search",
+        "f": "File search",
     }
 )
 

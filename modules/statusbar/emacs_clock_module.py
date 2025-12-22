@@ -69,17 +69,26 @@ class EmacsClockModule(StatusbarModuleInterface):
         """Get current Emacs clock information using org-clock.el."""
         try:
             # Try to get clock info using emacsclient
+            # The clock string has format: "[HH:MM] (Task Name)"
             emacs_script = """
-            (let ((clocked-task (org-clock-get-clock-string)))
-              (if clocked-task
-                  (progn
-                    (let* ((clock-time (org-clock-get-current-time))
-                           (task-name (org-clock-heading-or-short-task))
-                           (time-string (org-duration-from-minutes
-                                        (floor (/ (float-time (time-subtract (current-time) clock-time)) 60)))))
-                      (json-encode `((task . ,task-name)
-                                    (time . ,time-string))))
-                (json-encode nil)))
+            (if (org-clock-is-active)
+                (let* ((clock-string-raw (org-clock-get-clock-string))
+                       ;; Get plain text (remove text properties)
+                       (plain (substring-no-properties clock-string-raw))
+                       ;; Find positions using string-search (not regex)
+                       (bracket1 (string-search "[" plain))
+                       (bracket2 (string-search "]" plain))
+                       (paren1 (string-search "(" plain))
+                       (paren2 (string-search ")" plain))
+                       (time-str (if (and bracket1 bracket2)
+                                   (substring plain (+ bracket1 1) bracket2)
+                                 ""))
+                       (task-name (if (and paren1 paren2)
+                                    (substring plain (+ paren1 1) paren2)
+                                   "")))
+                  (princ (json-encode `((task . ,task-name)
+                                        (time . ,time-str)))))
+              (princ "null"))
             """
 
             result = subprocess.run(
@@ -91,6 +100,13 @@ class EmacsClockModule(StatusbarModuleInterface):
 
             if result.returncode == 0:
                 output = result.stdout.strip()
+                # emacsclient wraps the output in quotes with escaped JSON
+                # e.g., "{\"task\":\"...\",\"time\":\"...\"}"
+                # Decode the string literal (unescape escaped quotes)
+                if output.startswith('"') and output.endswith('"'):
+                    # Use codecs to decode the escaped string
+                    import codecs
+                    output = codecs.decode(output[1:-1], "unicode_escape")
                 if output and output != "null":
                     return json.loads(output)
 

@@ -857,6 +857,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.wallpaper_launcher import WallpaperLauncher
             from launchers.kill_launcher import KillLauncher
             from launchers.shell_launcher import ShellLauncher
+            from launchers.file_launcher import FileLauncher
             # Notification launcher disabled for now
             # from launchers.notification_launcher import NotificationLauncher
 
@@ -900,6 +901,10 @@ class Launcher(Gtk.ApplicationWindow):
             shell_launcher = ShellLauncher(self)
             if shell_launcher.name not in self.launcher_registry._launchers:
                 self.launcher_registry.register(shell_launcher)
+
+            file_launcher = FileLauncher(self)
+            if file_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(file_launcher)
 
             # Notification launcher disabled for now
             # notification_launcher = NotificationLauncher(self)

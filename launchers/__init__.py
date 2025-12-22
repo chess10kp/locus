@@ -11,6 +11,7 @@ from .kill_launcher import KillLauncher, KillHook
 from .music_launcher import MusicLauncher, MusicHook
 from .refile_launcher import RefileLauncher, RefileHook
 from .shell_launcher import ShellLauncher, ShellHook
+from .file_launcher import FileLauncher, FileHook
 # Notification launcher disabled for now
 # from .notification_launcher import NotificationLauncher, NotificationHook
 
@@ -50,6 +51,8 @@ __all__ = [
     "RefileHook",
     "ShellLauncher",
     "ShellHook",
+    "FileLauncher",
+    "FileHook",
     # Notification launcher disabled for now
     # "NotificationLauncher",
     # "NotificationHook",
