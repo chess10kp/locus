@@ -82,6 +82,14 @@ class WrappedSearchResult(GObject.Object):
     def action_data(self):
         return self.search_result.action_data
 
+    @property
+    def image_path(self):
+        return getattr(self.search_result, "image_path", None)
+
+    @property
+    def pixbuf(self):
+        return getattr(self.search_result, "pixbuf", None)
+
 
 # Setup Logging
 logger = logging.getLogger("AppLauncher")
@@ -786,6 +794,119 @@ class Launcher(Gtk.ApplicationWindow):
 
         self.list_view.set_factory(factory)
 
+    def _setup_wallpaper_factory(self):
+        """Set up a custom ListItemFactory for wallpaper grid view with images only."""
+
+        def wallpaper_setup_callback(factory, list_item):
+            """Called when a new list item widget is created for wallpapers."""
+            button = Gtk.Button()
+            button.set_hexpand(True)
+            button.set_vexpand(True)
+
+            # Apply button styling for wallpaper thumbnails
+            apply_styles(
+                button,
+                """
+                button {
+                    background: transparent;
+                    border: none;
+                    border-radius: 3px;
+                    padding: 5px;
+                }
+                button:hover {
+                    background: #504945;
+                    border-radius: 3px;
+                }
+            """,
+            )
+
+            # Image widget for the thumbnail
+            image = Gtk.Image()
+            image.set_hexpand(True)
+            image.set_vexpand(True)
+            image.set_size_request(200, 150)  # Fixed size for wallpaper thumbnails
+            image.set_pixel_size(200)
+
+            button.set_child(image)
+
+            # Set child for the list item
+            list_item.set_child(button)
+
+            # Store references on the list item for later access
+            list_item.button = button
+            list_item.image = image
+
+        def wallpaper_bind_callback(factory, list_item):
+            """Called when a list item needs to display wallpaper data."""
+            search_result = list_item.get_item()
+            if not search_result or search_result.result_type.name != "WALLPAPER":
+                return
+
+            button = getattr(list_item, "button", None)
+            image = getattr(list_item, "image", None)
+
+            if not button or not image:
+                return
+
+            # Set the image from the pixbuf (if available) or load from path
+            if search_result.pixbuf:
+                # Use cached pixbuf
+                texture = Gdk.Texture.new_for_pixbuf(search_result.pixbuf)
+                image.set_paintable(texture)
+            elif search_result.image_path:
+                try:
+                    # Load image from path
+                    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                        search_result.image_path, 200, 150, True
+                    )
+                    texture = Gdk.Texture.new_for_pixbuf(pixbuf)
+                    image.set_paintable(texture)
+                except Exception as e:
+                    logger.warning(f"Failed to load wallpaper image: {e}")
+                    # Set a placeholder
+                    image.set_from_icon_name("image-missing")
+                    image.set_pixel_size(100)
+
+            # Remove old handler to prevent memory leaks
+            if hasattr(button, "clicked_handler_id"):
+                try:
+                    button.disconnect(button.clicked_handler_id)
+                except:
+                    pass
+
+            # Connect new handler
+            button.clicked_handler_id = button.connect(
+                "clicked", self._on_list_item_clicked, search_result
+            )
+
+        def wallpaper_unbind_callback(factory, list_item):
+            """Called when a list item is no longer displaying data."""
+            button = getattr(list_item, "button", None)
+            if button:
+                try:
+                    if hasattr(button, "clicked_handler_id"):
+                        button.disconnect(button.clicked_handler_id)
+                except:
+                    pass
+
+        # Create the signal factory
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", wallpaper_setup_callback)
+        factory.connect("bind", wallpaper_bind_callback)
+        factory.connect("unbind", wallpaper_unbind_callback)
+
+        return factory
+
+    def set_wallpaper_factory(self):
+        """Switch to wallpaper-specific factory for image grid view."""
+        factory = self._setup_wallpaper_factory()
+        self.list_view.set_factory(factory)
+
+    def set_default_factory(self):
+        """Switch back to default factory for text-based results."""
+        # Recreate the default factory
+        self._setup_list_view_factory()
+
     def _on_list_item_clicked(self, button, search_result):
         """Handle clicks on list items in the optimized ListView."""
         self.hide()
@@ -800,6 +921,10 @@ class Launcher(Gtk.ApplicationWindow):
                 self.hook_registry.execute_select_hooks(self, search_result.action_data)
             else:
                 self.on_command_selected(button, search_result.command)
+        elif search_result.result_type.name == "WALLPAPER":
+            # Handle wallpaper selection
+            if search_result.action_data:
+                self.hook_registry.execute_select_hooks(self, search_result.action_data)
         elif search_result.result_type.name == "CUSTOM":
             if search_result.hook_data and self.hook_registry:
                 self.hook_registry.execute_select_hooks(self, search_result.hook_data)
@@ -1100,19 +1225,37 @@ class Launcher(Gtk.ApplicationWindow):
         if result_type is None:
             result_type = ResultType.LAUNCHER
 
-        result = LauncherSearchResult(title, subtitle, index)
-        result.action_data = action_data
+        result = LauncherSearchResult(title, subtitle, index, action_data=action_data)
+        self.list_store.append(WrappedSearchResult(result))
+
+    def add_wallpaper_result(
+        self,
+        title: str,
+        image_path: str,
+        pixbuf=None,
+        index: int | None = None,
+        action_data=None,
+    ):
+        """Add a wallpaper search result with image data."""
+        from .search_models import WallpaperSearchResult
+
+        result = WallpaperSearchResult(
+            title, image_path, pixbuf=pixbuf, index=index if index else 0, action_data=action_data
+        )
         self.list_store.append(WrappedSearchResult(result))
 
     def _apply_size_mode(self, size_mode, custom_size):
         """Apply the appropriate size mode for the launcher."""
         if size_mode.name == "wallpaper":
             self.set_wallpaper_mode_size()
+            self.set_wallpaper_factory()
         elif size_mode.name == "custom" and custom_size:
             width, height = custom_size
             self.set_default_size(width, height)
+            self.set_default_factory()
         else:
             self.reset_launcher_size()
+            self.set_default_factory()
 
     def on_search_changed(self, entry):
         # Prevent recursive calls that can cause RecursionError

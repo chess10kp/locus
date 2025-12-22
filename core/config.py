@@ -19,11 +19,11 @@ LOCK_PASSWORD = "admin"  # Default password
 FOCUS_MODE_HOOKS = {
     "on_start": [
         ["scrollmsg", "mode", "focus"],
-        ["emacsclient", "-e", "-u", "(ignore (org-clock-in-last) )"],
+        ["emacsclient", "-e", "-u", "(let ((inhibit-message t)) (org-clock-in-last))"],
     ],
     "on_stop": [
         ["scrollmsg", "mode", "default"],
-        ["emacsclient", "-e", "-u", "(ignore (org-clock-out) )"],
+        ["emacsclient", "-e", "-u", "(let ((inhibit-message t)) (org-clock-out) )"],
     ],
 }
 

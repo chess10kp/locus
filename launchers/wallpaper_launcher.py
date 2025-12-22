@@ -251,7 +251,7 @@ class WallpaperLauncher(LauncherInterface):
         wallpapers = glob.glob(os.path.join(wp_dir, "*"))
         wallpapers = [os.path.basename(w) for w in wallpapers if os.path.isfile(w)]
 
-        # Filter by search term if provided
+        # Filter by search term if provided (but still filter)
         if query:
             search_term = query.lower().strip()
             wallpapers = [wp for wp in wallpapers if search_term in wp.lower()]
@@ -263,21 +263,53 @@ class WallpaperLauncher(LauncherInterface):
             metadata = launcher_core.METADATA.get(msg, "")
             launcher_core.add_launcher_result(msg, metadata)
         else:
-            # Display wallpapers as text results (simplified for ListView compatibility)
+            # Display wallpapers as image-only results
             index = 1
             for wp in sorted(wallpapers):
-                metadata = launcher_core.METADATA.get(wp, "")
-                if metadata:
-                    subtitle = metadata
-                else:
-                    subtitle = "Click to set as wallpaper"
-
-                launcher_core.add_launcher_result(
-                    wp, subtitle, index=index if index <= 9 else None, action_data=wp
-                )
+                wp_path = os.path.join(wp_dir, wp)
+                try:
+                    # Get or create cached thumbnail
+                    pixbuf = self._get_cached_thumbnail_pixbuf(wp_path)
+                    launcher_core.add_wallpaper_result(
+                        wp, wp_path, pixbuf=pixbuf, index=index if index <= 9 else None, action_data=wp
+                    )
+                except Exception as e:
+                    # Fallback to text result if image fails to load
+                    launcher_core.add_launcher_result(
+                        wp, "Click to set as wallpaper", index=index if index <= 9 else None, action_data=wp
+                    )
                 index += 1
 
         launcher_core.current_apps = []
+
+    def _get_cached_thumbnail_pixbuf(self, wp_path):
+        """Get thumbnail pixbuf from cache or create and cache it."""
+        cache_path = self.get_cache_path(wp_path)
+
+        # Return cached pixbuf if it exists
+        if cache_path.exists():
+            try:
+                return GdkPixbuf.Pixbuf.new_from_file(str(cache_path))
+            except Exception:
+                # Cache corrupted, regenerate
+                pass
+
+        # Generate new thumbnail
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(wp_path)
+        aspect_ratio = pixbuf.get_width() / pixbuf.get_height()
+        scaled_width = 200
+        scaled_height = int(scaled_width / aspect_ratio)
+        scaled_buf = pixbuf.scale_simple(
+            scaled_width, scaled_height, GdkPixbuf.InterpType.BILINEAR
+        )
+
+        # Save to cache
+        try:
+            scaled_buf.savev(str(cache_path), "png", [], [])
+        except Exception:
+            pass  # Cache save failed, but we still have the pixbuf
+
+        return scaled_buf
 
     def get_cache_path(self, wp_path):
         """Generate cache file path based on image file path and modification time."""

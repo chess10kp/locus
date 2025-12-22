@@ -10,6 +10,7 @@ class ResultType(Enum):
     LAUNCHER = "launcher"
     LOADING = "loading"
     CUSTOM = "custom"
+    WALLPAPER = "wallpaper"  # Wallpaper with image data
 
 
 class SearchResult:
@@ -51,11 +52,15 @@ class CommandSearchResult(SearchResult):
 class LauncherSearchResult(SearchResult):
     """Search result for registered launchers."""
 
-    def __init__(self, command: str, metadata: str = "", index: int = 0):
+    def __init__(self, command: str, metadata: str = "", index: int = 0, action_data=None):
         super().__init__(f">{command}", metadata, ResultType.LAUNCHER)
         self.command = command
         self.index = index
-        self.action_data = command
+        # Only set action_data to command if not explicitly provided
+        if action_data is not None:
+            self.action_data = action_data
+        else:
+            self.action_data = command
 
 
 class CustomSearchResult(SearchResult):
@@ -74,3 +79,14 @@ class LoadingSearchResult(SearchResult):
     def __init__(self, text: str = "Loading..."):
         super().__init__(text, "", ResultType.LOADING)
         self.index = None  # Loading indicators shouldn't have Alt+number hints
+
+
+class WallpaperSearchResult(SearchResult):
+    """Search result for wallpaper images with thumbnails."""
+
+    def __init__(self, title: str, image_path: str, pixbuf=None, index: int = 0, action_data=None):
+        super().__init__(title, "", ResultType.WALLPAPER)
+        self.image_path = image_path
+        self.pixbuf = pixbuf  # GdkPixbuf for the thumbnail
+        self.index = index
+        self.action_data = action_data if action_data is not None else image_path

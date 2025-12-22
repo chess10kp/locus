@@ -69,3 +69,12 @@
   :END:
 
   
+
+* TODO [#B] iadd decorations around launcher
+  :PROPERTIES:
+  :ID: task-20251222180811
+  :TITLE: iadd decorations around launcher
+  :CREATED: <2025-12-22 Mon 18:08>
+  :END:
+
+  

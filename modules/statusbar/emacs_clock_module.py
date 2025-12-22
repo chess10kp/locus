@@ -71,24 +71,25 @@ class EmacsClockModule(StatusbarModuleInterface):
             # Try to get clock info using emacsclient
             # The clock string has format: "[HH:MM] (Task Name)"
             emacs_script = """
-            (if (org-clock-is-active)
-                (let* ((clock-string-raw (org-clock-get-clock-string))
-                       ;; Get plain text (remove text properties)
-                       (plain (substring-no-properties clock-string-raw))
-                       ;; Find positions using string-search (not regex)
-                       (bracket1 (string-search "[" plain))
-                       (bracket2 (string-search "]" plain))
-                       (paren1 (string-search "(" plain))
-                       (paren2 (string-search ")" plain))
-                       (time-str (if (and bracket1 bracket2)
-                                   (substring plain (+ bracket1 1) bracket2)
-                                 ""))
-                       (task-name (if (and paren1 paren2)
-                                    (substring plain (+ paren1 1) paren2)
-                                   "")))
-                  (princ (json-encode `((task . ,task-name)
-                                        (time . ,time-str)))))
-              (princ "null"))
+            (let ((inhibit-message t)
+                (message-log-max nil))
+            (with-temp-message ""
+                (if (org-clock-is-active)
+                    (let* ((clock-string-raw (org-clock-get-clock-string))
+                        (plain (substring-no-properties clock-string-raw))
+                        (bracket1 (string-search "[" plain))
+                        (bracket2 (string-search "]" plain))
+                        (paren1 (string-search "(" plain))
+                        (paren2 (string-search ")" plain))
+                        (time-str (if (and bracket1 bracket2)
+                                        (substring plain (+ bracket1 1) bracket2)
+                                    ""))
+                        (task-name (if (and paren1 paren2)
+                                        (substring plain (+ paren1 1) paren2)
+                                        "")))
+                    ;; Use 'external-debugging-output' or just ensure it's wrapped
+                    (princ (json-encode `((task . ,task-name) (time . ,time-str)))))
+                (princ "null"))))
             """
 
             result = subprocess.run(
