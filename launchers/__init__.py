@@ -11,6 +11,8 @@ from .kill_launcher import KillLauncher, KillHook
 from .music_launcher import MusicLauncher, MusicHook
 from .refile_launcher import RefileLauncher, RefileHook
 from .shell_launcher import ShellLauncher, ShellHook
+# Notification launcher disabled for now
+# from .notification_launcher import NotificationLauncher, NotificationHook
 
 # Auto-instantiate launchers that don't require main launcher reference
 # Note: Launchers that need the main launcher reference will be instantiated
@@ -48,5 +50,8 @@ __all__ = [
     "RefileHook",
     "ShellLauncher",
     "ShellHook",
+    # Notification launcher disabled for now
+    # "NotificationLauncher",
+    # "NotificationHook",
     "auto_register_launchers",
 ]

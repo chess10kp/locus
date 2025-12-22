@@ -364,11 +364,7 @@ class MusicLauncher(LauncherInterface):
                 return
 
         if count == 0 and query:
-            launcher_core.list_box.append(
-                launcher_core.create_button_with_metadata(
-                    f"No matches for '{query}'", ""
-                )
-            )
+            launcher_core.add_launcher_result(f"No matches for '{query}'", "")
 
     def play_file(self, rel_path):
         self._run_mpc(["add", rel_path])

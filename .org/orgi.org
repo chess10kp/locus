@@ -8,11 +8,56 @@
 
   
 
-* TODO fix custom launcher integration
+* DONE fix custom launcher integration
   :PROPERTIES:
   :ID: task-20251220175020
   :TITLE: fix custom launcher integration
   :CREATED: <2025-12-20 Sat 17:50>
+  :END:
+
+  
+
+* TODO image view launcher
+  :PROPERTIES:
+  :ID: task-20251222113430
+  :TITLE: image view launcher
+  :CREATED: <2025-12-22 Mon 11:34>
+  :END:
+
+  
+
+* TODO clipboard launcher
+  :PROPERTIES:
+  :ID: task-20251222113441
+  :TITLE: clipboard launcher
+  :CREATED: <2025-12-22 Mon 11:34>
+  :END:
+
+  
+
+* DONE [#A] ctrl+number to yank
+  :PROPERTIES:
+  :ID: task-20251222114712
+  :TITLE: ctrl+number to yank
+  :CREATED: <2025-12-22 Mon 11:47>
+  :END:
+
+  
+
+* DONE [#B] bluetooth launcher (use specifal UI for selections as well)
+  :PROPERTIES:
+  :ID: task-20251222135256
+  :TITLE: bluetooth launcher (use specifal UI for selections as well)
+  :CREATED: <2025-12-22 Mon 13:52>
+  :END:
+
+  
+
+* TODO [#B] wifi launcher
+  :PROPERTIES:
+  :ID: task-20251222135309
+  :TITLE: wifi launcher
+  :CREATED: <2025-12-22 Mon 13:53>
   :END:
 
   

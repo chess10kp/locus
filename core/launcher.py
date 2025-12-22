@@ -23,6 +23,8 @@ import os
 import sys
 import shlex
 import logging
+import time
+import statistics
 from typing import Optional, List, Dict
 
 from utils import apply_styles
@@ -84,6 +86,56 @@ class WrappedSearchResult(GObject.Object):
 # Setup Logging
 logger = logging.getLogger("AppLauncher")
 logging.basicConfig(level=logging.INFO)
+
+
+class PerformanceMonitor:
+    """Track search performance statistics for optimization."""
+
+    def __init__(self, window_size: int = 100):
+        self.timings: List[Dict] = []
+        self.window_size = window_size
+
+    def record(
+        self, operation: str, duration_ms: float, query: str = "", result_count: int = 0
+    ):
+        """Record a performance measurement."""
+        self.timings.append(
+            {
+                "op": operation,
+                "time": duration_ms,
+                "query": query,
+                "results": result_count,
+                "ts": time.time(),
+            }
+        )
+
+        # Keep only recent measurements
+        if len(self.timings) > self.window_size:
+            self.timings = self.timings[-self.window_size :]
+
+    def get_stats(self) -> Dict:
+        """Get performance statistics."""
+        search_times = [t["time"] for t in self.timings if t["op"] == "search"]
+        if not search_times:
+            return {}
+
+        return {
+            "count": len(search_times),
+            "mean": statistics.mean(search_times),
+            "median": statistics.median(search_times),
+            "p95": statistics.quantiles(search_times, n=20)[18]
+            if len(search_times) > 20
+            else max(search_times),
+            "max": max(search_times),
+            "min": min(search_times),
+        }
+
+    def get_slow_searches(self, threshold_ms: float = 50) -> List[Dict]:
+        """Get searches that exceeded the threshold."""
+        return [
+            t for t in self.timings if t["op"] == "search" and t["time"] > threshold_ms
+        ]
+
 
 # --- GIO Compatibility Patching ---
 try:
@@ -430,6 +482,9 @@ class Launcher(Gtk.ApplicationWindow):
         self.METADATA = METADATA
         self.parse_time = parse_time
 
+        # Performance monitoring
+        self.perf_monitor = PerformanceMonitor()
+
         # Remove button pooling to prevent memory leaks - using direct widget creation
         self.last_search_text = ""  # Cache last search to avoid unnecessary updates
 
@@ -523,11 +578,11 @@ class Launcher(Gtk.ApplicationWindow):
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
         GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.EXCLUSIVE)
-        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
-        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
-        # Position above the statusbar (statusbar is 20px high, so use 25px margin)
-        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 25)
-        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
+        # Anchor to top only for vertical positioning, don't anchor left/right for horizontal centering
+        GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
+        # Position below the statusbar (20px high statusbar + 20px padding)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 40)
+        # No left/right margins for horizontal centering
 
         apply_styles(
             self.search_entry,
@@ -763,8 +818,23 @@ class Launcher(Gtk.ApplicationWindow):
 
         max_results = LAUNCHER_CONFIG["search"]["max_results"]
 
+        # Track search performance
+        start_time = time.time()
+
         # Use the new optimized app loader with fuzzy search
-        return self._app_loader.search_apps(filter_text, max_results)
+        results = self._app_loader.search_apps(filter_text, max_results)
+
+        # Record performance
+        duration_ms = (time.time() - start_time) * 1000
+        self.perf_monitor.record("search", duration_ms, filter_text, len(results))
+
+        # Log slow searches
+        if duration_ms > 50:
+            logger.warning(
+                f"Slow search '{filter_text}': {duration_ms:.2f}ms ({len(results)} results)"
+            )
+
+        return results
 
     def _clear_listbox(self):
         """Clear all items from the optimized list store."""
@@ -787,6 +857,8 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.wallpaper_launcher import WallpaperLauncher
             from launchers.kill_launcher import KillLauncher
             from launchers.shell_launcher import ShellLauncher
+            # Notification launcher disabled for now
+            # from launchers.notification_launcher import NotificationLauncher
 
             # Register all launchers
             music_launcher = MusicLauncher(self)
@@ -828,6 +900,11 @@ class Launcher(Gtk.ApplicationWindow):
             shell_launcher = ShellLauncher(self)
             if shell_launcher.name not in self.launcher_registry._launchers:
                 self.launcher_registry.register(shell_launcher)
+
+            # Notification launcher disabled for now
+            # notification_launcher = NotificationLauncher(self)
+            # if notification_launcher.name not in self.launcher_registry._launchers:
+            #     self.launcher_registry.register(notification_launcher)
 
             # Register builtin handlers
             with open("/tmp/locus_debug.log", "a") as f:
@@ -1126,7 +1203,9 @@ class Launcher(Gtk.ApplicationWindow):
         # Check if any registered launcher can handle this input
         trigger, launcher, query = self.launcher_registry.find_launcher_for_input(text)
         with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] Launcher registry: trigger='{trigger}', launcher={launcher}, query='{query}'\n")
+            f.write(
+                f"[DEBUG] Launcher registry: trigger='{trigger}', launcher={launcher}, query='{query}'\n"
+            )
 
         if launcher and launcher.handles_enter():
             # Let the launcher handle the enter key
@@ -1143,18 +1222,24 @@ class Launcher(Gtk.ApplicationWindow):
             with open("/tmp/locus_debug.log", "a") as f:
                 f.write(f"[DEBUG] Command detected: '{command}'\n")
 
-            launcher_names = [name for name, _ in self.launcher_registry.list_launchers()]
+            launcher_names = [
+                name for name, _ in self.launcher_registry.list_launchers()
+            ]
             with open("/tmp/locus_debug.log", "a") as f:
                 f.write(f"[DEBUG] Registered launchers: {launcher_names}\n")
 
             if command in launcher_names:
                 # This is a registered launcher command, don't execute as shell
                 with open("/tmp/locus_debug.log", "a") as f:
-                    f.write(f"[DEBUG] Command '{command}' is in registered launchers, returning without calling handle_custom_launcher\n")
+                    f.write(
+                        f"[DEBUG] Command '{command}' is in registered launchers, returning without calling handle_custom_launcher\n"
+                    )
                 return
             else:
                 with open("/tmp/locus_debug.log", "a") as f:
-                    f.write(f"[DEBUG] Command '{command}' not in registered launchers, calling handle_custom_launcher\n")
+                    f.write(
+                        f"[DEBUG] Command '{command}' not in registered launchers, calling handle_custom_launcher\n"
+                    )
                 if not handle_custom_launcher(command, self.apps, self):
                     with open("/tmp/locus_debug.log", "a") as f:
                         f.write(f"[DEBUG] handle_custom_launcher returned False")
@@ -1230,6 +1315,73 @@ class Launcher(Gtk.ApplicationWindow):
             else:
                 self._on_list_item_clicked(None, search_result)
 
+    def yank_by_index(self, index):
+        """Yank (copy) the item at the given index (0-based) to clipboard."""
+        n_items = self.list_store.get_n_items()
+        if index < 0 or index >= n_items:
+            return
+
+        search_result = self.list_store.get_item(index)
+        if search_result:
+            # Determine what text to copy based on result type
+            text_to_copy = None
+
+            if search_result.result_type.name == "APP":
+                # For apps, copy the app name
+                text_to_copy = search_result.title
+            elif search_result.result_type.name == "COMMAND":
+                # For commands, copy the command text (remove "Run: " prefix)
+                if search_result.title.startswith("Run: "):
+                    text_to_copy = search_result.title[5:]
+                else:
+                    text_to_copy = search_result.title
+            elif search_result.result_type.name == "LAUNCHER":
+                # For launchers, copy the launcher command (e.g., ">music")
+                text_to_copy = search_result.title
+            elif search_result.result_type.name == "CUSTOM":
+                # For custom results, copy the title
+                text_to_copy = search_result.title
+
+            if text_to_copy:
+                # Copy to clipboard
+                from utils.clipboard import copy_to_clipboard
+
+                success = copy_to_clipboard(text_to_copy)
+
+                if success:
+                    # Show brief feedback
+                    self._show_yank_feedback(text_to_copy)
+                else:
+                    print(f"Failed to copy to clipboard: {text_to_copy}")
+
+    def _show_yank_feedback(self, text: str, duration_ms: int = 1500):
+        """Show brief feedback when text is yanked to clipboard.
+
+        Args:
+            text: The text that was yanked
+            duration_ms: How long to show the feedback
+        """
+        # Truncate text if too long
+        display_text = text if len(text) <= 40 else text[:37] + "..."
+
+        # Show feedback in the search entry temporarily
+        original_text = self.search_entry.get_text()
+        placeholder_text = self.search_entry.get_placeholder_text()
+
+        # Set the search entry to show yanked text
+        self.search_entry.set_text(f"📋 Yanked: {display_text}")
+        self.search_entry.set_editable(False)
+
+        # Restore original state after duration
+        def restore_search_entry():
+            self.search_entry.set_editable(True)
+            self.search_entry.set_text(original_text)
+            if placeholder_text:
+                self.search_entry.set_placeholder_text(placeholder_text)
+
+        # Schedule restoration
+        GLib.timeout_add(duration_ms, restore_search_entry)
+
     def select_prev(self):
         """Select the previous item in the optimized ListView."""
         n_items = self.list_store.get_n_items()
@@ -1297,6 +1449,13 @@ class Launcher(Gtk.ApplicationWindow):
             if Gdk.KEY_1 <= keyval <= Gdk.KEY_9:
                 index = keyval - Gdk.KEY_1  # 0 for 1, 1 for 2, etc.
                 self.select_by_index(index)
+                return True
+
+        # Handle Ctrl+1 to Ctrl+9 for yanking (copying) items
+        if state & Gdk.ModifierType.CONTROL_MASK:  # Ctrl key
+            if Gdk.KEY_1 <= keyval <= Gdk.KEY_9:
+                index = keyval - Gdk.KEY_1  # 0 for 1, 1 for 2, etc.
+                self.yank_by_index(index)
                 return True
 
         if keyval == Gdk.KEY_Tab:
@@ -1468,12 +1627,18 @@ def show_lock_screen(launcher_instance):
     """Show the lock screen."""
     with open("/tmp/locus_debug.log", "a") as f:
         f.write(f"[DEBUG] show_lock_screen called\n")
-        f.write(f"[DEBUG] launcher_instance.lock_screen is {launcher_instance.lock_screen}\n")
-        f.write(f"[DEBUG] launcher_instance.get_application() = {launcher_instance.get_application()}\n")
+        f.write(
+            f"[DEBUG] launcher_instance.lock_screen is {launcher_instance.lock_screen}\n"
+        )
+        f.write(
+            f"[DEBUG] launcher_instance.get_application() = {launcher_instance.get_application()}\n"
+        )
 
     if launcher_instance.lock_screen is None:
         with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] Creating new LockScreen with password='{LOCK_PASSWORD}'\n")
+            f.write(
+                f"[DEBUG] Creating new LockScreen with password='{LOCK_PASSWORD}'\n"
+            )
         try:
             launcher_instance.lock_screen = LockScreen(
                 password=LOCK_PASSWORD, application=launcher_instance.get_application()

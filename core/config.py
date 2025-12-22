@@ -15,16 +15,41 @@ LOCK_PASSWORD = "admin"  # Default password - change this for security
 
 
 # =================================
+# NOTIFICATION CONFIGURATION
+# =================================
+
+NOTIFICATION_CONFIG = {
+    "history": {
+        "max_history": 500,  # Maximum notifications to store
+        "max_age_days": 30,  # Auto-delete after 30 days
+        "persist_path": "~/.cache/locus/notification_history.json",
+    },
+    "ui": {
+        "icon": "󰂚",  # Nerd Font icon
+        "show_unread_count": True,
+        "max_display": 50,  # Max notifications to display in menu
+        "group_by_app": True,
+        "timestamp_format": "%H:%M",
+    },
+    "daemon": {
+        "use_external": True,  # Use mako/dunst for displaying
+        "external_command": "notify-send",
+        "intercept_dbus": True,  # Monitor D-Bus for history
+    },
+}
+
+
+# =================================
 # LAUNCHER CONFIGURATION
 # =================================
 
 LAUNCHER_CONFIG = {
     # Display and Window Settings
     "window": {
-        "width": 600,
-        "height": 400,
-        "default_width": 600,
-        "default_height": 400,
+        "width": 900,
+        "height": 600,
+        "default_width": 900,
+        "default_height": 600,
         "resizable": True,
         "modal": False,
         "always_on_top": False,
@@ -38,7 +63,7 @@ LAUNCHER_CONFIG = {
         "enable_slide_in": True,
         "slide_duration": 20,  # milliseconds per frame
         "slide_step": 100,  # pixels per frame
-        "target_margin": 25,  # Target margin from bottom edge
+        "target_margin": 40,  # Target margin from top edge (20px statusbar + 20px padding)
     },
     # Search and Filtering
     "search": {
@@ -123,6 +148,7 @@ LAUNCHER_CONFIG = {
         "deduplicate_apps": True,  # Remove duplicate app entries
     },
 }
+
 
 def todo_capture():
     """Open Emacs org-capture for todo."""

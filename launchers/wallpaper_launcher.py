@@ -261,8 +261,7 @@ class WallpaperLauncher(LauncherInterface):
                 "No wallpapers found" if not query else f"No wallpapers match '{query}'"
             )
             metadata = launcher_core.METADATA.get(msg, "")
-            button = launcher_core.create_button_with_metadata(msg, metadata)
-            launcher_core.list_box.append(button)
+            launcher_core.add_launcher_result(msg, metadata)
         else:
             # Display wallpapers as text results (simplified for ListView compatibility)
             index = 1
@@ -349,7 +348,8 @@ class WallpaperLauncher(LauncherInterface):
 
     def on_wallpaper_clicked(self, button, wp):
         self.set_wallpaper(wp)
-        self.launcher.hide()
+        if self.launcher:
+            self.launcher.hide()
 
     def on_wallpaper_random(self, button):
         wp_dir = os.path.expanduser("~/Pictures/wp/")
@@ -359,7 +359,8 @@ class WallpaperLauncher(LauncherInterface):
             wp_path = random.choice(wallpapers)
             wp = os.path.basename(wp_path)
             self.set_wallpaper(wp)
-        self.launcher.hide()
+        if self.launcher:
+            self.launcher.hide()
 
     def on_wallpaper_cycle(self, button):
         wp_dir = os.path.expanduser("~/Pictures/wp/")
@@ -377,14 +378,16 @@ class WallpaperLauncher(LauncherInterface):
                 next_path = os.path.join(wp_dir, next_file)
                 if os.path.exists(next_path):
                     self.set_wallpaper(next_file)
-                    self.launcher.hide()
+                    if self.launcher:
+                        self.launcher.hide()
                     return
                 # Wrap to 1
                 first_file = f"{style}1.{ext}"
                 first_path = os.path.join(wp_dir, first_file)
                 if os.path.exists(first_path):
                     self.set_wallpaper(first_file)
-                    self.launcher.hide()
+                    if self.launcher:
+                        self.launcher.hide()
                     return
                 # Try other ext
                 alt_ext = "png" if ext == "jpg" else "jpg"
@@ -392,7 +395,8 @@ class WallpaperLauncher(LauncherInterface):
                 alt_path = os.path.join(wp_dir, alt_file)
                 if os.path.exists(alt_path):
                     self.set_wallpaper(alt_file)
-                    self.launcher.hide()
+                    if self.launcher:
+                        self.launcher.hide()
                     return
         # Fallback to random
         self.on_wallpaper_random(button)

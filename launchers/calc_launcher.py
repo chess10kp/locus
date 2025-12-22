@@ -92,13 +92,10 @@ class CalcLauncher(LauncherInterface):
             launcher_core.add_launcher_result(
                 label_text, metadata, index=1, action_data=result
             )
-            launcher_core.list_box.queue_draw()
-            launcher_core.scrolled.queue_draw()
             # Scroll to top
             vadj = launcher_core.scrolled.get_vadjustment()
             if vadj:
                 vadj.set_value(0)
-            launcher_core.queue_draw()
             launcher_core.current_apps = []
 
     def on_result_clicked(self, button, result):
@@ -121,4 +118,5 @@ class CalcLauncher(LauncherInterface):
                 )
             except subprocess.CalledProcessError:
                 print(f"Failed to copy to clipboard: {result}")
-        self.launcher.hide()
+        if self.launcher:
+            self.launcher.hide()

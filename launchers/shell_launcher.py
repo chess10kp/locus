@@ -90,13 +90,10 @@ class ShellLauncher(LauncherInterface):
                 label_text, metadata, index=1, action_data=f"exec:{query}"
             )
 
-        launcher_core.list_box.queue_draw()
-        launcher_core.scrolled.queue_draw()
         # Scroll to top
         vadj = launcher_core.scrolled.get_vadjustment()
         if vadj:
             vadj.set_value(0)
-        launcher_core.queue_draw()
         launcher_core.current_apps = []
 
     def execute_command(self, command: str):

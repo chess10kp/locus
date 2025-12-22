@@ -61,6 +61,20 @@ class StatusBar(Gtk.ApplicationWindow):
         # Initialize module manager
         self.module_manager = StatusbarModuleManager(self)
 
+        # Notification store disabled for now
+        # # Initialize notification store
+        # from .notification_store import get_notification_store
+        # self.notification_store = get_notification_store()
+        #
+        # # Start D-Bus interceptor if enabled
+        # from core.config import NOTIFICATION_CONFIG
+        # if NOTIFICATION_CONFIG["daemon"]["intercept_dbus"]:
+        #     try:
+        #         from utils.notification_utils import start_notification_interceptor
+        #         start_notification_interceptor(self.notification_store)
+        #     except Exception as e:
+        #         print(f"Error starting notification interceptor: {e}")
+
         # Styles
         self.label_style = """
             label {

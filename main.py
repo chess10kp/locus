@@ -86,15 +86,15 @@ def on_activate(app: Gtk.Application):
         GtkLayerShell.init_for_window(status_win)
         GtkLayerShell.set_monitor(status_win, monitor)
 
-        GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.BOTTOM)
+        GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.TOP)
 
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.LEFT, True)
         GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.RIGHT, True)
-        GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.BOTTOM, True)
+        GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.TOP, True)
 
         GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.LEFT, 0)
         GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.RIGHT, 0)
-        GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.BOTTOM, 0)
+        GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.TOP, 0)
 
         status_win.set_size_request(geometry.width, BAR_HEIGHT)
 
