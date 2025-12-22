@@ -9,10 +9,11 @@
 
 import subprocess
 import os
+import shlex
 from gi.repository import GLib
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from typing import Any, Optional
+from typing import Any, Optional, List, Union
 from utils import send_status_message
 from utils.launcher_utils import LauncherEnhancer
 from datetime import datetime, timedelta
@@ -120,6 +121,28 @@ class FocusLauncher(LauncherInterface):
 
         launcher_core.current_apps = []
 
+    def _run_hooks(self, hooks: List[Union[str, List[str]]]):
+        """Run a list of hook commands.
+
+        Args:
+            hooks: List of commands, each can be a string or list of strings
+        """
+        # Clean environment for child processes
+        env = dict(os.environ.items())
+        env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
+
+        for cmd in hooks:
+            try:
+                if isinstance(cmd, str):
+                    # Run as shell command
+                    subprocess.run(cmd, shell=True, env=env, check=False)
+                elif isinstance(cmd, list):
+                    # Run as command with arguments (no shell)
+                    subprocess.run(cmd, env=env, check=False)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                # Silently fail if command fails
+                pass
+
     def start_focus_session(self):
         """Start a focus session and begin counting elapsed time."""
         # Cancel any existing focus session
@@ -136,6 +159,10 @@ class FocusLauncher(LauncherInterface):
         self.focus_update_id = GLib.timeout_add_seconds(
             1, self.update_focus_status
         )
+
+        # Run on_start hooks from config
+        from core import config
+        self._run_hooks(config.FOCUS_MODE_HOOKS.get("on_start", []))
 
         # Send notification
         self._send_notification("Focus session started", "Time tracking begun")
@@ -163,6 +190,10 @@ class FocusLauncher(LauncherInterface):
                     "Focus session ended",
                     f"Total time: {time_str}"
                 )
+
+                # Run on_stop hooks from config
+                from core import config
+                self._run_hooks(config.FOCUS_MODE_HOOKS.get("on_stop", []))
 
                 # Clear status message after a short delay
                 GLib.timeout_add_seconds(3, lambda: send_status_message("status:"))

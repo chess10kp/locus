@@ -15,6 +15,24 @@ LOCK_PASSWORD = "admin"  # Default password - change this for security
 
 
 # =================================
+# FOCUS MODE CONFIGURATION
+# =================================
+
+FOCUS_MODE_HOOKS = {
+    "on_start": [],  # Commands to run when focus mode starts (e.g., ["notify-send", "Focus started"])
+    "on_stop": [],   # Commands to run when focus mode ends (e.g., ["notify-send", "Focus ended"])
+    # Each command can be:
+    # - str: A simple shell command
+    # - list: A command with arguments (e.g., ["notify-send", "Focus started"])
+    # Example:
+    # "on_start": [
+    #     "eww update focus-mode=true",
+    #     ["notify-send", "Focus mode", "Distractions blocked"]
+    # ],
+}
+
+
+# =================================
 # NOTIFICATION CONFIGURATION
 # =================================
 
