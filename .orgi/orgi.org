@@ -1,4 +1,3 @@
-
 * TODO file search w(adds file indexer dependency)
   :PROPERTIES:
   :ID: task-20251220164748
@@ -58,6 +57,15 @@
   :ID: task-20251222135309
   :TITLE: wifi launcher
   :CREATED: <2025-12-22 Mon 13:53>
+  :END:
+
+  
+
+* TODO [#A] file indexer shold ignore common patterns like node_modules
+  :PROPERTIES:
+  :ID: task-20251222150331
+  :TITLE: file indexer shold ignore common patterns like node_modules
+  :CREATED: <2025-12-22 Mon 15:03>
   :END:
 
   

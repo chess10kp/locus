@@ -55,9 +55,9 @@ class EmacsClockModule(StatusbarModuleInterface):
                 time_spent = clock_info.get("time", "")
 
                 if task_name and time_spent:
-                    widget.set_text(f"⏱ {task_name}: {time_spent}")
+                    widget.set_text(f"org: {task_name}: {time_spent}")
                 elif task_name:
-                    widget.set_text(f"⏱ {task_name}")
+                    widget.set_text(f"org: {task_name}")
                 else:
                     widget.set_text(self._fallback_text)
             else:
@@ -126,9 +126,7 @@ class EmacsClockModule(StatusbarModuleInterface):
     def get_styles(self) -> Optional[str]:
         return """
         #emacs-clock-label {
-            padding: 0 8px;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 500;
-            color: #8be9fd;
         }
         """

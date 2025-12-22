@@ -288,42 +288,41 @@ class FileIndexer:
         if not self.ready or not query:
             return []
 
-        with self.db_lock:
-            try:
-                with sqlite3.connect(self.db_path) as conn:
-                    # Use faster settings for searches
-                    conn.execute("PRAGMA synchronous = OFF")
-                    conn.execute("PRAGMA journal_mode = MEMORY")
+        try:
+            with sqlite3.connect(self.db_path, timeout=10.0) as conn:
+                # Don't override WAL mode - it allows concurrent reads during writes
+                # Just set busy timeout for concurrent access
+                conn.execute("PRAGMA busy_timeout = 10000")
 
-                    # FTS5 search with BM25 ranking + relevancy_score
-                    cursor = conn.execute("""
-                        SELECT
-                            f.path, f.name, f.parent_path, f.size,
-                            f.file_type, f.relevancy_score, f.last_modified_at
-                        FROM indexed_file f
-                        INNER JOIN unicode_idx u ON f.id = u.rowid
-                        WHERE unicode_idx MATCH ?
-                        ORDER BY
-                            (bm25(unicode_idx) * -1.0) + f.relevancy_score DESC
-                        LIMIT ?
-                    """, (self._prepare_fts_query(query), limit))
+                # FTS5 search with BM25 ranking + relevancy_score
+                cursor = conn.execute("""
+                    SELECT
+                        f.path, f.name, f.parent_path, f.size,
+                        f.file_type, f.relevancy_score, f.last_modified_at
+                    FROM indexed_file f
+                    INNER JOIN unicode_idx u ON f.id = u.rowid
+                    WHERE unicode_idx MATCH ?
+                    ORDER BY
+                        (bm25(unicode_idx) * -1.0) + f.relevancy_score DESC
+                    LIMIT ?
+                """, (self._prepare_fts_query(query), limit))
 
-                    results = []
-                    for row in cursor:
-                        results.append(FileResult(
-                            path=row[0],
-                            name=row[1],
-                            parent_path=row[2],
-                            size=row[3],
-                            file_type=row[4] or '',
-                            relevancy_score=row[5],
-                            last_modified_at=row[6]
-                        ))
+                results = []
+                for row in cursor:
+                    results.append(FileResult(
+                        path=row[0],
+                        name=row[1],
+                        parent_path=row[2],
+                        size=row[3],
+                        file_type=row[4] or '',
+                        relevancy_score=row[5],
+                        last_modified_at=row[6]
+                    ))
 
-                    return results
-            except Exception as e:
-                logger.error(f"Search error: {e}")
-                return []
+                return results
+        except Exception as e:
+            logger.error(f"Search error: {e}")
+            return []
 
     def _prepare_fts_query(self, query: str) -> str:
         """Prepare query for FTS5 (handle multi-word, quotes, etc.)."""

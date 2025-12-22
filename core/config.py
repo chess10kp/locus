@@ -171,8 +171,8 @@ def todo_capture():
 # - battery: Battery status
 # - custom_message: Custom status messages via IPC
 BAR_LAYOUT = {
-    "left": ["launcher", "binding_mode", "emacs_clock"],
-    "middle": ["workspaces"],
+    "left": ["launcher", "workspaces", "binding_mode", "emacs_clock"],
+    "middle": [],
     "right": ["time", "battery", "custom_message"],
 }
 
