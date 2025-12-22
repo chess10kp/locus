@@ -780,6 +780,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.music_launcher import MusicLauncher
             from launchers.refile_launcher import RefileLauncher
             from launchers.timer_launcher import TimerLauncher
+            from launchers.focus_launcher import FocusLauncher
             from launchers.calc_launcher import CalcLauncher
             from launchers.bookmark_launcher import BookmarkLauncher
             from launchers.bluetooth_launcher import BluetoothLauncher
@@ -799,6 +800,10 @@ class Launcher(Gtk.ApplicationWindow):
             timer_launcher = TimerLauncher(self)
             if timer_launcher.name not in self.launcher_registry._launchers:
                 self.launcher_registry.register(timer_launcher)
+
+            focus_launcher = FocusLauncher(self)
+            if focus_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(focus_launcher)
 
             calc_launcher = CalcLauncher(self)
             if calc_launcher.name not in self.launcher_registry._launchers:
