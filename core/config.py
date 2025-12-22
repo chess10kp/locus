@@ -2,7 +2,6 @@ import subprocess
 
 import os
 
-CITY: str = "detroit"
 APPNAME = "locus_bar"
 
 # Paths
@@ -10,25 +9,22 @@ MUSIC_DIR = os.path.expanduser("~/Music")
 WALLPAPER_DIR = os.path.expanduser("~/Pictures/wp/")
 SOCKET_PATH = "/tmp/locus_socket"
 
-# Lock screen configuration
-LOCK_PASSWORD = "admin"  # Default password - change this for security
+# LOCK CONFIG
+# TODO: get the user's sudo pass for the lock screen'
+LOCK_PASSWORD = "admin"  # Default password
 
-
-# =================================
-# FOCUS MODE CONFIGURATION
-# =================================
-
+# Each command can be:
+# - str: A simple shell command
+# - list: A command with arguments (e.g., ["notify-send", "Focus started"])
 FOCUS_MODE_HOOKS = {
-    "on_start": [],  # Commands to run when focus mode starts (e.g., ["notify-send", "Focus started"])
-    "on_stop": [],   # Commands to run when focus mode ends (e.g., ["notify-send", "Focus ended"])
-    # Each command can be:
-    # - str: A simple shell command
-    # - list: A command with arguments (e.g., ["notify-send", "Focus started"])
-    # Example:
-    # "on_start": [
-    #     "eww update focus-mode=true",
-    #     ["notify-send", "Focus mode", "Distractions blocked"]
-    # ],
+    "on_start": [
+        ["scrollmsg", "mode", "focus"],
+        ["emacsclient", "-e", "-u", "(ignore (org-clock-in-last) )"],
+    ],
+    "on_stop": [
+        ["scrollmsg", "mode", "default"],
+        ["emacsclient", "-e", "-u", "(ignore (org-clock-out) )"],
+    ],
 }
 
 
@@ -124,11 +120,11 @@ LAUNCHER_CONFIG = {
     },
     # Keyboard Shortcuts
     "keys": {
-        "up": ["Up", "Ctrl+P"],  # Navigate up
-        "down": ["Down", "Ctrl+N"],  # Navigate down
+        "up": ["Up", "Ctrl+P", "Ctrl+J"],  # Navigate up
+        "down": ["Down", "Ctrl+N", "Ctrl+K"],  # Navigate down
         "activate": ["Return", "KP_Enter"],  # Activate selected item
         "close": ["Escape"],  # Close launcher
-        "tab_complete": ["Tab"],  # Tab completion
+        "tab_complete": ["Tab", "Ctrl+L"],  # Tab completion
         "quick_select": [
             "Alt+1",
             "Alt+2",
@@ -214,7 +210,7 @@ MODULE_CONFIG = {
     },
     "emacs_clock": {
         "interval": 10,  # Update interval in seconds
-        "fallback_text": "⏱ --",  # Text when no clock active
+        "fallback_text": "Not (c)locked in",  # Text when no clock active
     },
     "launcher": {
         # No configuration needed for static module
@@ -244,9 +240,10 @@ CUSTOM_LAUNCHERS = {
     "calc": {"type": "builtin", "handler": "calculator"},
     "bookmark": {"type": "builtin", "handler": "bookmark"},
     "bluetooth": {"type": "builtin", "handler": "bluetooth"},
+    "wifi": {"type": "builtin", "handler": "wifi"},
     "wallpaper": {"type": "builtin", "handler": "wallpaper"},
     "timer": {"type": "builtin", "handler": "timer"},
-    "todo": {"type": "function", "func": todo_capture},
+    "todo": {"type": "function", "func": todo_capture},  # doesn't work for now
     "shutdown": {"type": "command", "cmd": "systemctl poweroff"},
     "reboot": {"type": "command", "cmd": "systemctl reboot"},
     "suspend": {"type": "command", "cmd": "systemctl suspend"},
@@ -263,6 +260,7 @@ METADATA.update(
         "calc": "Calculator",
         "bookmark": "Bookmarks",
         "bluetooth": "Bluetooth",
+        "wifi": "WiFi manager",
         "wallpaper": "Wallpaper",
         "timer": "Timer",
         "todo": "Todo capture",

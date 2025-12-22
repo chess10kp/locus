@@ -854,6 +854,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.calc_launcher import CalcLauncher
             from launchers.bookmark_launcher import BookmarkLauncher
             from launchers.bluetooth_launcher import BluetoothLauncher
+            from launchers.wifi_launcher import WifiLauncher
             from launchers.wallpaper_launcher import WallpaperLauncher
             from launchers.kill_launcher import KillLauncher
             from launchers.shell_launcher import ShellLauncher
@@ -889,6 +890,10 @@ class Launcher(Gtk.ApplicationWindow):
             bluetooth_launcher = BluetoothLauncher(self)
             if bluetooth_launcher.name not in self.launcher_registry._launchers:
                 self.launcher_registry.register(bluetooth_launcher)
+
+            wifi_launcher = WifiLauncher(self)
+            if wifi_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(wifi_launcher)
 
             wallpaper_launcher = WallpaperLauncher(self)
             if wallpaper_launcher.name not in self.launcher_registry._launchers:
@@ -1426,6 +1431,7 @@ class Launcher(Gtk.ApplicationWindow):
             "calc",
             "bookmark",
             "bluetooth",
+            "wifi",
             "wallpaper",
             "timer",
             "kill",

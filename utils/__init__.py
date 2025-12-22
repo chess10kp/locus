@@ -15,6 +15,17 @@ from .bluetooth import (
     bluetooth_toggle_discoverable,
     bluetooth_toggle_connection,
 )
+from .wifi import (
+    wifi_power_on,
+    wifi_get_saved_networks,
+    wifi_scan,
+    wifi_get_current_connection,
+    wifi_is_connected,
+    wifi_toggle_power,
+    wifi_connect,
+    wifi_disconnect,
+    wifi_forget,
+)
 from .monitor import get_monitors, toggle_monitor
 from .wm import detect_wm
 from .utils import (
@@ -42,6 +53,15 @@ __all__ = [
     "bluetooth_toggle_pairable",
     "bluetooth_toggle_discoverable",
     "bluetooth_toggle_connection",
+    "wifi_power_on",
+    "wifi_get_saved_networks",
+    "wifi_scan",
+    "wifi_get_current_connection",
+    "wifi_is_connected",
+    "wifi_toggle_power",
+    "wifi_connect",
+    "wifi_disconnect",
+    "wifi_forget",
     "get_monitors",
     "toggle_monitor",
     "detect_wm",

@@ -129,7 +129,7 @@ class FocusLauncher(LauncherInterface):
         """
         # Clean environment for child processes
         env = dict(os.environ.items())
-        env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
+        env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD cause this breaks stuff
 
         for cmd in hooks:
             try:

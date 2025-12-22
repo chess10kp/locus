@@ -102,20 +102,48 @@ class FileIndexer:
 
         # Configuration
         self.excluded_dirs = [
-            '.cache', '.local', '.config', '.npm', '.node_modules',
-            '.git', '.venv', 'venv', '__pycache__', '.mypy_cache',
-            'target', 'build', 'dist', '.cargo', '.rustup',
-            '.thumbnails', '.local/share/Trash', '.virtualenv',
-            'site-packages', '.pytest_cache', '.idea', '.vscode',
-            '.emacs.d', '.vim', '.cargo', 'debug', 'cmake-build-',
+            # System/Cache
+            '.cache', '.local', '.config', '.thumbnails', '.local/share/Trash',
+            # Version control
+            '.git', '.svn', '.hg',
+            # Python
+            '.venv', 'venv', '__pycache__', '.mypy_cache', '.pytest_cache',
+            '.virtualenv', 'site-packages', '.tox',
+            # Node.js/JavaScript
+            'node_modules', '.npm', '.yarn',
+            # Rust
+            'target', '.cargo', '.rustup',
+            # Java
+            'gradle', '.gradle', 'maven', '.m2',
+            # Go
+            'vendor', '.go',
+            # Ruby
+            '.bundle', 'vendor/bundle',
+            # PHP
+            'vendor',
+            # Build artifacts
+            'build', 'dist', 'out', '.next', '.nuxt', '.output',
+            'cmake-build-', 'debug', 'release',
+            # IDE
+            '.idea', '.vscode', '.emacs.d', '.vim',
+            # Misc
+            '.virtualenv',
         ]
 
         self.excluded_patterns = [
+            # Compiled binaries
             '*.o', '*.a', '*.so', '*.dylib', '*.dll', '*.exe',
-            '*.pyc', '*.pyo', '*.pyd', '*.log', '*.log.*',
-            '*.swp', '*.swo', '*~', '.DS_Store', 'Thumbs.db',
-            'desktop.ini', '*.part', '*.crdownload', '*.tmp',
-            '*.temp', '*.class', '*.jar', '*.war',
+            # Python bytecode
+            '*.pyc', '*.pyo', '*.pyd',
+            # Logs and temporary files
+            '*.log', '*.log.*', '*.swp', '*.swo', '*~',
+            '*.part', '*.crdownload', '*.tmp', '*.temp',
+            # System files
+            '.DS_Store', 'Thumbs.db', 'desktop.ini',
+            # Java
+            '*.class', '*.jar', '*.war',
+            # Build cache files
+            '*.min.js', '*.min.css', '*.map',
         ]
 
         # Minimum file size to index (100 bytes)

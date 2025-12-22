@@ -1,4 +1,4 @@
-* TODO file search w(adds file indexer dependency)
+* DONE file search w(adds file indexer dependency)
   :PROPERTIES:
   :ID: task-20251220164748
   :TITLE: file search w(adds file indexer dependency)
@@ -61,7 +61,7 @@
 
   
 
-* TODO [#A] file indexer shold ignore common patterns like node_modules
+* DONE [#A] file indexer shold ignore common patterns like node_modules
   :PROPERTIES:
   :ID: task-20251222150331
   :TITLE: file indexer shold ignore common patterns like node_modules
