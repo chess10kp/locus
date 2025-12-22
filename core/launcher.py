@@ -1295,12 +1295,20 @@ class Launcher(Gtk.ApplicationWindow):
             return
 
         current_selected = self.selection_model.get_selected()
+        new_position = current_selected
+
         if current_selected == Gtk.INVALID_LIST_POSITION:
             # No selection, select the first item
+            new_position = 0
             self.selection_model.set_selected(0)
         elif current_selected < n_items - 1:
             # Select the next item
-            self.selection_model.set_selected(current_selected + 1)
+            new_position = current_selected + 1
+            self.selection_model.set_selected(new_position)
+
+        # Scroll to the selected item to ensure it's visible (like arrow keys do)
+        if new_position != Gtk.INVALID_LIST_POSITION:
+            self.list_view.scroll_to(new_position, Gtk.ListScrollFlags.NONE)
 
         # Focus the search entry for better UX
         self.search_entry.grab_focus()
@@ -1399,12 +1407,17 @@ class Launcher(Gtk.ApplicationWindow):
             return
 
         current_selected = self.selection_model.get_selected()
+        new_position = current_selected
+
         if current_selected == Gtk.INVALID_LIST_POSITION:
             # No selection, focus search entry
             self.search_entry.grab_focus()
         elif current_selected > 0:
             # Select previous item
-            self.selection_model.set_selected(current_selected - 1)
+            new_position = current_selected - 1
+            self.selection_model.set_selected(new_position)
+            # Scroll to the selected item to ensure it's visible (like arrow keys do)
+            self.list_view.scroll_to(new_position, Gtk.ListScrollFlags.NONE)
             # Focus the search entry for better UX
             self.search_entry.grab_focus()
         else:

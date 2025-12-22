@@ -77,7 +77,7 @@ LAUNCHER_CONFIG = {
         "enable_slide_in": True,
         "slide_duration": 20,  # milliseconds per frame
         "slide_step": 100,  # pixels per frame
-        "target_margin": 40,  # Target margin from top edge (20px statusbar + 20px padding)
+        "target_margin": 20,  # Target margin from top edge (20px statusbar + 20px padding)
     },
     # Search and Filtering
     "search": {

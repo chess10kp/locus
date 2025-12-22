@@ -52,7 +52,7 @@
 
   
 
-* TODO [#B] wifi launcher
+* DONE [#B] wifi launcher
   :PROPERTIES:
   :ID: task-20251222135309
   :TITLE: wifi launcher
