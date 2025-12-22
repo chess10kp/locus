@@ -92,7 +92,7 @@ class EmacsClockModule(StatusbarModuleInterface):
             """
 
             result = subprocess.run(
-                ["emacsclient", "-e", emacs_script],
+                ["emacsclient", "--quiet", "-e", emacs_script],
                 capture_output=True,
                 text=True,
                 timeout=3,
@@ -106,6 +106,7 @@ class EmacsClockModule(StatusbarModuleInterface):
                 if output.startswith('"') and output.endswith('"'):
                     # Use codecs to decode the escaped string
                     import codecs
+
                     output = codecs.decode(output[1:-1], "unicode_escape")
                 if output and output != "null":
                     return json.loads(output)
