@@ -1942,6 +1942,7 @@ class Launcher(Gtk.ApplicationWindow):
             self.list_view.scroll_to(new_position, Gtk.ListScrollFlags.NONE)
 
         self.search_entry.grab_focus()
+        self.search_entry.set_position(-1)
 
     def select_by_index(self, index):
         """Select the item at the given index (0-based) and activate it."""
@@ -2044,6 +2045,7 @@ class Launcher(Gtk.ApplicationWindow):
         if current_selected == Gtk.INVALID_LIST_POSITION:
             # No selection, focus search entry
             self.search_entry.grab_focus()
+            self.search_entry.set_position(-1)
         elif current_selected > 0:
             # Select previous item
             new_position = current_selected - 1
@@ -2052,10 +2054,12 @@ class Launcher(Gtk.ApplicationWindow):
             self.list_view.scroll_to(new_position, Gtk.ListScrollFlags.NONE)
             # Focus the search entry for better UX
             self.search_entry.grab_focus()
+            self.search_entry.set_position(-1)
         else:
             # At first item, jump back to search entry
             self.selection_model.unselect_all()
             self.search_entry.grab_focus()
+            self.search_entry.set_position(-1)
 
     def set_wallpaper_mode_size(self):
         """Increase launcher size for wallpaper mode to accommodate larger thumbnails."""
@@ -2175,6 +2179,12 @@ class Launcher(Gtk.ApplicationWindow):
             self.select_next()
             return True
         if keyval == Gdk.KEY_p and (state & Gdk.ModifierType.CONTROL_MASK):
+            self.select_prev()
+            return True
+        if keyval == Gdk.KEY_j and (state & Gdk.ModifierType.CONTROL_MASK):
+            self.select_next()
+            return True
+        if keyval == Gdk.KEY_k and (state & Gdk.ModifierType.CONTROL_MASK):
             self.select_prev()
             return True
         if keyval == Gdk.KEY_Escape:

@@ -11,6 +11,7 @@ import os
 import glob
 import random
 import re
+import shutil
 import subprocess
 import hashlib
 from pathlib import Path
@@ -130,6 +131,7 @@ class WallpaperHook(LauncherHook):
 
     def _get_walset(self):
         """Get wallpaper setter command."""
+        # First, try to get from user config
         try:
             result = subprocess.run(
                 [
@@ -142,10 +144,24 @@ class WallpaperHook(LauncherHook):
             )
             if result.returncode == 0:
                 walset = result.stdout.strip()
-                return walset if walset else "swaybg -i"
+                if walset:
+                    return walset
         except Exception:
             pass
-        return "swaybg -i"  # default
+
+        # Auto-detect based on environment
+        if os.environ.get("WAYLAND_DISPLAY"):
+            if shutil.which("swaybg"):
+                return "swaybg -i"
+            elif shutil.which("swww"):
+                return "swww img"
+        elif os.environ.get("DISPLAY"):
+            if shutil.which("feh"):
+                return "feh --bg-scale"
+            elif shutil.which("nitrogen"):
+                return "nitrogen --set-scaled"
+
+        return "swaybg -i"  # fallback
 
     def _set_wallpaper(self, wp):
         """Set a specific wallpaper."""
@@ -169,10 +185,8 @@ class WallpaperHook(LauncherHook):
                         subprocess.run(["kill", pid], check=False)
             except Exception:
                 pass
-            subprocess.Popen(walset_parts + [wp_path])
-        else:
-            # For other setters like swww, use the symlink
-            subprocess.Popen(walset_parts + [default_link])
+        # Run the setter with the symlink path
+        subprocess.Popen(walset_parts + [default_link])
 
 
 class WallpaperLauncher(LauncherInterface):
@@ -184,6 +198,7 @@ class WallpaperLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_file_exists
+
         wp_dir = check_file_exists("~/Pictures/wp/")
         if not wp_dir:
             return False, "Wallpaper directory ~/Pictures/wp/ not found"
@@ -288,12 +303,19 @@ class WallpaperLauncher(LauncherInterface):
                     # Get or create cached thumbnail
                     pixbuf = self._get_cached_thumbnail_pixbuf(wp_path)
                     launcher_core.add_wallpaper_result(
-                        wp, wp_path, pixbuf=pixbuf, index=index if index <= 9 else None, action_data=wp
+                        wp,
+                        wp_path,
+                        pixbuf=pixbuf,
+                        index=index if index <= 9 else None,
+                        action_data=wp,
                     )
                 except Exception:
                     # Fallback to text result if image fails to load
                     launcher_core.add_launcher_result(
-                        wp, "Click to set as wallpaper", index=index if index <= 9 else None, action_data=wp
+                        wp,
+                        "Click to set as wallpaper",
+                        index=index if index <= 9 else None,
+                        action_data=wp,
                     )
                 index += 1
 
@@ -489,7 +511,5 @@ class WallpaperLauncher(LauncherInterface):
                         subprocess.run(["kill", pid], check=False)
             except Exception:
                 pass
-            subprocess.Popen(walset_parts + [wp_path])
-        else:
-            # For other setters like swww, use the symlink
-            subprocess.Popen(walset_parts + [default_link])
+        # Run the setter with the symlink path
+        subprocess.Popen(walset_parts + [default_link])

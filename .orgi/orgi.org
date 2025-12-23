@@ -70,7 +70,7 @@
 
   
 
-* TODO [#B] iadd decorations around launcher
+* DONE [#B] iadd decorations around launcher
   :PROPERTIES:
   :ID: task-20251222180811
   :TITLE: iadd decorations around launcher
@@ -133,7 +133,7 @@
 
   
 
-* TODO ctrl+n highlights the entire text entry
+* DONE ctrl+n highlights the entire text entry
   :PROPERTIES:
   :ID: task-20251223112642
   :TITLE: ctrl+n highlights the entire text entry
@@ -223,7 +223,7 @@
 
   
 
-* TODO user configurable prefixse
+* DONE user configurable prefixse
   :PROPERTIES:
   :ID: task-20251223145055
   :TITLE: user configurable prefixse
@@ -232,7 +232,7 @@
 
   
 
-* TODO ctrl+j ctrl+k keybindings
+* DONE ctrl+j ctrl+k keybindings
   :PROPERTIES:
   :ID: task-20251223150149
   :TITLE: ctrl+j ctrl+k keybindings
@@ -300,6 +300,33 @@
   :ID: task-20251223153614
   :TITLE: notification daemon
   :CREATED: <2025-12-23 Tue 15:36>
+  :END:
+
+  
+
+* TODO icons
+  :PROPERTIES:
+  :ID: task-20251223163433
+  :TITLE: icons
+  :CREATED: <2025-12-23 Tue 16:34>
+  :END:
+
+  
+
+* TODO LLM chat
+  :PROPERTIES:
+  :ID: task-20251223163452
+  :TITLE: LLM chat
+  :CREATED: <2025-12-23 Tue 16:34>
+  :END:
+
+  
+
+* TODO color picker
+  :PROPERTIES:
+  :ID: task-20251223163557
+  :TITLE: color picker
+  :CREATED: <2025-12-23 Tue 16:35>
   :END:
 
   

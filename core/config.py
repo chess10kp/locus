@@ -116,8 +116,8 @@ LAUNCHER_CONFIG = {
     },
     # Keyboard Shortcuts
     "keys": {
-        "up": ["Up", "Ctrl+P", "Ctrl+J"],  # Navigate up
-        "down": ["Down", "Ctrl+N", "Ctrl+K"],  # Navigate down
+        "up": ["Up", "Ctrl+P", "Ctrl+K"],  # Navigate up
+        "down": ["Down", "Ctrl+N", "Ctrl+J"],  # Navigate down
         "activate": ["Return", "KP_Enter"],  # Activate selected item
         "close": ["Escape"],  # Close launcher
         "tab_complete": ["Tab", "Ctrl+L"],  # Tab completion
