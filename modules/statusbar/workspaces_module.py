@@ -81,6 +81,16 @@ class WorkspacesModule(StatusbarModuleInterface):
                 ws_widget = Gtk.Label(label=label_text)
                 ws_widget.set_name(f"workspace-{workspace.num}")
                 ws_widget.set_size_request(16, -1)
+                apply_styles(
+                    ws_widget,
+                    """
+                    label {
+                        font-size: 16px;
+                        padding: 6px 12px;
+                        font-weight: 500;
+                    }
+                    """,
+                )
 
                 if (
                     workspace.focused or (workspace.num == 1 and not any_focused)
@@ -99,8 +109,6 @@ class WorkspacesModule(StatusbarModuleInterface):
                 # Add widget to container
                 self.workspaces_container.append(ws_widget)
                 self.workspace_widgets[workspace.num] = ws_widget
-
-            # Container is shown by default in GTK4
 
         except Exception as e:
             print(f"Error updating workspaces: {e}")
@@ -137,11 +145,8 @@ class WorkspacesModule(StatusbarModuleInterface):
 
         #workspaces-container label {
             padding: 0;
-            font-size: 12px;
-            font-weight: 500;
             margin: 0 0;
             border-radius: 3px;
-            transition: all 0.2s ease;
             color: #6272a4;
             background-color: transparent;
         }

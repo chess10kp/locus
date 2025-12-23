@@ -65,8 +65,7 @@ class CustomMessageModule(StatusbarModuleInterface):
             font-size: 12px;
             font-weight: 500;
             color: #f1fa8c;
-            background: rgba(241, 250, 140, 0.1);
+            background: #0e1419;
             border-radius: 4px;
-            margin: 0 4px;
         }
         """

@@ -41,22 +41,19 @@ class BatteryModule(StatusbarModuleInterface):
     def create_widget(self) -> Gtk.Widget:
         label = Gtk.Label()
         label.set_name("battery-label")
-        # Initial update
         self.update(label)
         return label
 
     def update(self, widget: Gtk.Widget) -> None:
         try:
-            # Get battery status using the utility function
             battery_info = self._get_battery_status()
             if battery_info:
-                icon = battery_info["icon"]
                 percentage = battery_info["percentage"]
 
                 if self._show_percentage:
-                    text = f"{icon} {percentage}%"
+                    text = f"{"Discharging" if battery_info["state"] == "discharging" else "Charging"} {percentage}%"
                 else:
-                    text = icon
+                    text = ""
 
                 widget.set_text(text)
             else:
@@ -67,7 +64,6 @@ class BatteryModule(StatusbarModuleInterface):
     def _get_battery_status(self) -> Optional[dict]:
         """Get battery status information."""
         try:
-            # Try to get battery info using upower
             result = subprocess.run(
                 ["upower", "-i", "/org/freedesktop/UPower/devices/battery_BAT0"],
                 capture_output=True,
@@ -88,41 +84,15 @@ class BatteryModule(StatusbarModuleInterface):
                         state = line.split(":")[1].strip().lower()
 
                 if percentage is not None and state is not None:
-                    # Determine icon based on percentage and state
                     perc = int(percentage)
-                    if state in ["charging", "fully-charged"]:
-                        if perc >= 90:
-                            icon = "󰂋"
-                        elif perc >= 70:
-                            icon = "󰂊"
-                        elif perc >= 50:
-                            icon = "󰢞"
-                        elif perc >= 30:
-                            icon = "󰂉"
-                        else:
-                            icon = "󰢜"
-                    else:
-                        if perc >= 90:
-                            icon = "󰁹"
-                        elif perc >= 70:
-                            icon = "󰂁"
-                        elif perc >= 50:
-                            icon = "󰂀"
-                        elif perc >= 30:
-                            icon = "󰁿"
-                        elif perc >= 10:
-                            icon = "󰁾"
-                        else:
-                            icon = "󰁼"
 
-                    return {"icon": icon, "percentage": perc, "state": state}
+                    return { "percentage": perc, "state": state}
 
         except (
             subprocess.TimeoutExpired,
             subprocess.CalledProcessError,
             FileNotFoundError,
         ):
-            # Fallback to basic battery check
             try:
                 with open("/sys/class/power_supply/BAT0/capacity", "r") as f:
                     percentage = int(f.read().strip())
@@ -130,19 +100,7 @@ class BatteryModule(StatusbarModuleInterface):
                 with open("/sys/class/power_supply/BAT0/status", "r") as f:
                     status = f.read().strip().lower()
 
-                # Simple icon determination
-                if "charging" in status or "full" in status:
-                    icon = "󰂈"
-                elif percentage >= 75:
-                    icon = "󰁹"
-                elif percentage >= 50:
-                    icon = "󰂂"
-                elif percentage >= 25:
-                    icon = "󰁻"
-                else:
-                    icon = "󰁺"
-
-                return {"icon": icon, "percentage": percentage, "state": status}
+                return {"percentage": percentage, "state": status}
             except (IOError, ValueError):
                 pass
 

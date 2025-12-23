@@ -29,7 +29,7 @@ class LauncherModule(StatusbarModuleInterface):
         return StatusbarUpdateMode.STATIC
 
     def create_widget(self) -> Gtk.Widget:
-        button = Gtk.Button(label="󰀻")
+        button = Gtk.Button(label="Launch")
         button.set_name("launcher-button")
         return button
 
@@ -46,9 +46,7 @@ class LauncherModule(StatusbarModuleInterface):
             border: none;
             background: none;
             padding: 6px 12px;
-            font-size: 24px;
-            color: #f8f8f2;
-            transition: all 0.2s ease;
+            font-size: 16px;
         }
         #launcher-button:hover {
             color: #50fa7b;

@@ -80,7 +80,6 @@ class NotificationModule(StatusbarModuleInterface):
             padding: 6px 12px;
             font-size: 18px;
             color: #f8f8f2;
-            transition: all 0.2s ease;
         }
         #notification-button:hover {
             color: #50fa7b;

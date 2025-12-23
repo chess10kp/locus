@@ -96,7 +96,10 @@ class StatusBar(Gtk.ApplicationWindow):
             }
         """
 
-        self.main_box = HBox(spacing=0, hexpand=True)
+        self.main_box = HBox(spacing=0, hexpand=True, vexpand=True)
+        self.main_box.set_halign(Gtk.Align.FILL)
+        self.main_box.set_valign(Gtk.Align.FILL)
+        self.main_box.set_name("main-box")
         self.set_child(self.main_box)
 
         # Build Layout
@@ -109,11 +112,13 @@ class StatusBar(Gtk.ApplicationWindow):
         # Spacers for centering middle
         left_spacer = Gtk.Label()
         left_spacer.set_hexpand(True)
+        left_spacer.set_halign(Gtk.Align.FILL)
 
         self.construct_modules(BAR_LAYOUT.get("middle", []), self.middle_box)
 
         right_spacer = Gtk.Label()
         right_spacer.set_hexpand(True)
+        right_spacer.set_halign(Gtk.Align.FILL)
 
         self.construct_modules(BAR_LAYOUT.get("right", []), self.right_box)
 
@@ -183,15 +188,22 @@ class StatusBar(Gtk.ApplicationWindow):
         css_provider = Gtk.CssProvider()
         css_provider.load_from_data(
             """
+            * {
+                margin: 0;
+                padding: 0;
+            }
+
             window {
                 background-color: #0e1419;
                 border-bottom: 1px solid #444444;
             }
 
+            #main-box, box {
+                background-color: #0e1419;
+            }
+
             .workspace-highlight {
                 background-color: #50fa7b;
-                margin: 0;
-                padding: 0;
                 border-radius: 2px;
             }
             """.encode()

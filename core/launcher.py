@@ -563,8 +563,12 @@ class Launcher(Gtk.ApplicationWindow):
         # Keep reference to old list_box for compatibility during transition
         self.list_box = None
 
-        # Main box
-        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        # Main box with padding
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        vbox.set_margin_top(12)
+        vbox.set_margin_bottom(12)
+        vbox.set_margin_start(12)
+        vbox.set_margin_end(12)
         vbox.append(self.search_entry)
         vbox.append(self.scrolled)
         self.set_child(vbox)
