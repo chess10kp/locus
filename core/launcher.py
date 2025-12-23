@@ -26,7 +26,7 @@ import shlex
 import logging
 import time
 import statistics
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 from utils import apply_styles
 from utils.app_loader import get_app_loader
@@ -40,6 +40,7 @@ from .search_models import (
     LauncherSearchResult,
     CustomSearchResult,
     LoadingSearchResult,
+    GridSearchResult,
 )
 from launchers.lock_launcher import LockScreen
 
@@ -512,6 +513,7 @@ class Launcher(Gtk.ApplicationWindow):
         self.wallpaper_loaded = False
         self.timer_remaining = 0
         self.timer_update_id = 0
+        self._current_grid_launcher = None  # Track current grid launcher for config
 
         # Search entry
         self.search_entry = Gtk.Entry()
@@ -571,6 +573,19 @@ class Launcher(Gtk.ApplicationWindow):
         vbox.set_margin_end(12)
         vbox.append(self.search_entry)
         vbox.append(self.scrolled)
+
+        # Footer
+        footer_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        footer_box.set_halign(Gtk.Align.FILL)
+        footer_box.add_css_class("footer-box")
+        footer_box.set_name("footer-box")
+        self.footer_label = Gtk.Label(label="Applications")
+        self.footer_label.set_halign(Gtk.Align.START)
+        self.footer_label.set_hexpand(True)
+        self.footer_label.set_name("footer-label")
+        footer_box.append(self.footer_label)
+        vbox.append(footer_box)
+
         self.set_child(vbox)
 
         # Handle key presses
@@ -624,6 +639,24 @@ class Launcher(Gtk.ApplicationWindow):
         )
 
         apply_styles(
+            self.footer_label,
+            """
+            .footer-label {
+                font-size: 12px;
+                padding: 12px 6px;
+            }
+            .footer-box {
+                font-size: 12px;
+            }
+            .footer-box label {
+                background-color: #3c3836;
+                padding: 4px 8px;
+                font-size: 12px;
+                font-family: Iosevka;
+            }
+            """,
+        )
+        apply_styles(
             self,
             """
             window {
@@ -636,6 +669,17 @@ class Launcher(Gtk.ApplicationWindow):
             .hint-label {
                 color: #888888;
                 font-size: 12px;
+                font-family: Iosevka;
+            }
+            .footer-box {
+                background-color: #3c3836;
+                padding: 4px 8px;
+                border-radius: 3px;
+                margin-top: 4px;
+                font-size: 12px;
+            }
+            .footer-box label {
+                color: #888888;
                 font-family: Iosevka;
             }
         """,
@@ -655,7 +699,6 @@ class Launcher(Gtk.ApplicationWindow):
                 button,
                 """
                 button {
-                    background: #3c3836;
                     color: #ebdbb2;
                     border: none;
                     border-radius: 3px;
@@ -899,40 +942,271 @@ class Launcher(Gtk.ApplicationWindow):
 
         return factory
 
+    def _setup_grid_factory(self, grid_config):
+        """Set up a custom ListItemFactory for grid view with configurable layout."""
+
+        def grid_setup_callback(factory, list_item):
+            """Called when a new list item widget is created for grid view."""
+            button = Gtk.Button()
+            button.set_hexpand(True)
+            button.set_vexpand(True)
+
+            # Apply button styling for grid items
+            apply_styles(
+                button,
+                """
+                button {
+                    background: #3c3836;
+                    color: #ebdbb2;
+                    border: none;
+                    border-radius: 3px;
+                    padding: 5px;
+                    margin: 2px;
+                }
+                button:hover {
+                    background: #504945;
+                    border-radius: 3px;
+                }
+            """,
+            )
+
+            # Create container based on metadata configuration
+            if grid_config.get("show_metadata", True):
+                vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                vbox.set_hexpand(True)
+                vbox.set_vexpand(True)
+
+                # Image widget
+                image = Gtk.Image()
+                image.set_hexpand(True)
+                image.set_vexpand(True)
+                image.set_size_request(
+                    grid_config.get("item_width", 200),
+                    grid_config.get("item_height", 200),
+                )
+
+                # Text container for metadata
+                text_hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+                text_hbox.set_hexpand(True)
+
+                # Title label
+                title_label = Gtk.Label()
+                title_label.set_halign(Gtk.Align.CENTER)
+                title_label.set_valign(Gtk.Align.END)
+                title_label.set_wrap(True)
+                title_label.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+                title_label.set_max_width_chars(grid_config.get("item_width", 200) // 8)
+                title_label.add_css_class("dim-label")
+
+                # Optional metadata label
+                metadata_label = Gtk.Label()
+                metadata_label.set_halign(Gtk.Align.CENTER)
+                metadata_label.set_valign(Gtk.Align.END)
+                metadata_label.set_wrap(True)
+                metadata_label.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+                metadata_label.set_max_width_chars(
+                    grid_config.get("item_width", 200) // 8
+                )
+                metadata_label.add_css_class("dim-label")
+
+                text_hbox.append(title_label)
+                if grid_config.get("metadata_position") == "bottom":
+                    text_hbox.append(metadata_label)
+
+                vbox.append(image)
+                vbox.append(text_hbox)
+                button.set_child(vbox)
+
+                # Store references
+                list_item.image = image
+                list_item.title_label = title_label
+                list_item.metadata_label = metadata_label
+            else:
+                # Image-only grid
+                image = Gtk.Image()
+                image.set_hexpand(True)
+                image.set_vexpand(True)
+                image.set_size_request(
+                    grid_config.get("item_width", 200),
+                    grid_config.get("item_height", 200),
+                )
+                button.set_child(image)
+
+                # Store reference
+                list_item.image = image
+
+            # Set child for the list item
+            list_item.set_child(button)
+            list_item.button = button
+
+        def grid_bind_callback(factory, list_item):
+            """Called when a list item needs to display grid data."""
+            search_result = list_item.get_item()
+            if not search_result or search_result.result_type.name != "GRID":
+                return
+
+            button = getattr(list_item, "button", None)
+            image = getattr(list_item, "image", None)
+            title_label = getattr(list_item, "title_label", None)
+            metadata_label = getattr(list_item, "metadata_label", None)
+
+            if not button:
+                return
+
+            # Set the image from the pixbuf (if available) or load from path
+            if image:
+                if search_result.pixbuf:
+                    # Use cached pixbuf
+                    texture = Gdk.Texture.new_for_pixbuf(search_result.pixbuf)
+                    image.set_paintable(texture)
+                elif search_result.image_path:
+                    # Initialize variables for use in except block
+                    item_width = grid_config.get("item_width", 200)
+                    item_height = grid_config.get("item_height", 200)
+                    aspect_ratio = grid_config.get("aspect_ratio", "original")
+                    try:
+                        # Load image from path with aspect ratio handling
+
+                        if aspect_ratio == "square":
+                            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                                search_result.image_path, item_width, item_height, True
+                            )
+                        elif aspect_ratio == "original":
+                            # Load with max dimensions, preserve aspect ratio
+                            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                                search_result.image_path, item_width, item_height, True
+                            )
+                        else:  # fixed
+                            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                                search_result.image_path, item_width, item_height, False
+                            )
+
+                        texture = Gdk.Texture.new_for_pixbuf(pixbuf)
+                        image.set_paintable(texture)
+                    except Exception as e:
+                        logger.warning(f"Failed to load grid image: {e}")
+                        # Set a placeholder
+                        image.set_from_icon_name("image-missing")
+                        image.set_pixel_size(min(item_width, item_height) // 2)
+
+            # Update text labels
+            if title_label:
+                title_label.set_text(search_result.title)
+                title_label.set_visible(True)
+
+            if metadata_label and grid_config.get("metadata_position") == "bottom":
+                metadata_text = ""
+                if search_result.grid_metadata:
+                    # Format metadata as a compact string
+                    metadata_parts = []
+                    for key, value in search_result.grid_metadata.items():
+                        if isinstance(value, (int, float)):
+                            metadata_parts.append(f"{key}: {value}")
+                        elif value:
+                            metadata_parts.append(str(value))
+                    metadata_text = " • ".join(metadata_parts[:2])  # Limit to 2 items
+
+                if metadata_text:
+                    metadata_label.set_text(metadata_text)
+                    metadata_label.set_visible(True)
+                else:
+                    metadata_label.set_visible(False)
+
+            # Remove old handler to prevent memory leaks
+            if hasattr(button, "clicked_handler_id"):
+                try:
+                    button.disconnect(button.clicked_handler_id)
+                except:
+                    pass
+
+            # Connect new handler
+            button.clicked_handler_id = button.connect(
+                "clicked", self._on_list_item_clicked, search_result
+            )
+
+        def grid_unbind_callback(factory, list_item):
+            """Called when a list item is no longer displaying data."""
+            button = getattr(list_item, "button", None)
+            if button:
+                try:
+                    if hasattr(button, "clicked_handler_id"):
+                        button.disconnect(button.clicked_handler_id)
+                except:
+                    pass
+
+        # Create the signal factory
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", grid_setup_callback)
+        factory.connect("bind", grid_bind_callback)
+        factory.connect("unbind", grid_unbind_callback)
+
+        return factory
+
     def set_wallpaper_factory(self):
         """Switch to wallpaper-specific factory for image grid view."""
         factory = self._setup_wallpaper_factory()
         self.list_view.set_factory(factory)
+
+        # Switch to list view if needed
+        try:
+            current_child = self.scrolled.get_child()
+            if self.grid_view and current_child == self.grid_view:
+                # Unparent the current grid view
+                self.grid_view.unparent()
+                self.scrolled.set_child(self.list_view)
+                self.current_view = self.list_view
+        except Exception:
+            # If there's an error, ensure we're using list view
+            if hasattr(self, "list_view"):
+                self.scrolled.set_child(self.list_view)
+                self.current_view = self.list_view
+
+    def set_grid_factory(self, grid_config):
+        """Switch to grid factory for grid view with configurable layout."""
+        # Create GridView if not exists
+        if self.grid_view is None:
+            self.grid_view = Gtk.GridView.new(self.selection_model)
+            self.grid_view.set_vexpand(True)
+            self.grid_view.set_max_columns(grid_config.get("columns", 4))
+
+        # Set factory for grid
+        factory = self._setup_grid_factory(grid_config)
+        self.grid_view.set_factory(factory)
+
+        # Switch to grid view
+        try:
+            current_child = self.scrolled.get_child()
+            if current_child == self.list_view:
+                self.list_view.unparent()
+                self.scrolled.set_child(self.grid_view)
+                self.current_view = self.grid_view
+            elif current_child != self.grid_view:
+                self.scrolled.set_child(self.grid_view)
+                self.current_view = self.grid_view
+        except Exception:
+            # Fallback - ensure grid view is set
+            self.scrolled.set_child(self.grid_view)
+            self.current_view = self.grid_view
 
     def set_default_factory(self):
         """Switch back to default factory for text-based results."""
         # Recreate the default factory
         self._setup_list_view_factory()
 
-    def _on_list_item_clicked(self, button, search_result):
-        """Handle clicks on list items in the optimized ListView."""
-        self.hide()
+        # Switch back to list view if needed
+        try:
+            current_child = self.scrolled.get_child()
+            if self.grid_view and current_child == self.grid_view:
+                # Unparent the current grid view
+                self.grid_view.unparent()
+                self.scrolled.set_child(self.list_view)
+                self.current_view = self.list_view
 
-        if search_result.result_type.name == "APP":
-            self.launch_app(search_result.app)
-        elif search_result.result_type.name == "COMMAND":
-            self.run_command(search_result.command)
-        elif search_result.result_type.name == "LAUNCHER":
-            # Handle action_data for launchers (e.g., wallpaper file paths)
-            if search_result.action_data:
-                self.hook_registry.execute_select_hooks(self, search_result.action_data)
-            else:
-                self.on_command_selected(button, search_result.command)
-        elif search_result.result_type.name == "WALLPAPER":
-            # Handle wallpaper selection
-            if search_result.action_data:
-                self.hook_registry.execute_select_hooks(self, search_result.action_data)
-        elif search_result.result_type.name == "CUSTOM":
-            if search_result.hook_data and self.hook_registry:
-                self.hook_registry.execute_select_hooks(self, search_result.hook_data)
-        elif search_result.result_type.name == "LOADING":
-            # Do nothing for loading items
-            pass
+        except Exception:
+            # Fallback - ensure list view is set
+            if hasattr(self, "grid_view") and self.grid_view:
+                self.scrolled.set_child(self.list_view)
+                self.current_view = self.list_view
 
     @property
     def apps(self):
@@ -987,6 +1261,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.shell_launcher import ShellLauncher
             from launchers.file_launcher import FileLauncher
             from launchers.emoji_launcher import EmojiLauncher
+            from launchers.gallery_launcher import GalleryLauncher
             # Notification launcher disabled for now
             # from launchers.notification_launcher import NotificationLauncher
 
@@ -1042,6 +1317,10 @@ class Launcher(Gtk.ApplicationWindow):
             emoji_launcher = EmojiLauncher(self)
             if emoji_launcher.name not in self.launcher_registry._launchers:
                 self.launcher_registry.register(emoji_launcher)
+
+            gallery_launcher = GalleryLauncher(self)
+            if gallery_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(gallery_launcher)
 
             # Notification launcher disabled for now
             # notification_launcher = NotificationLauncher(self)
@@ -1188,14 +1467,33 @@ class Launcher(Gtk.ApplicationWindow):
             filter_text
         )
 
+        # Update footer based on mode
+        if launcher:
+            self.footer_label.set_text(launcher.name.capitalize())
+        elif filter_text.startswith(">"):
+            command = filter_text[1:].strip()
+            if command:
+                self.footer_label.set_text(f"Command: {command}")
+            else:
+                self.footer_label.set_text("Commands")
+        else:
+            self.footer_label.set_text("Applications")
+
         # IMPORTANT: Set factory BEFORE clearing the listbox
         if launcher:
             size_mode, custom_size = launcher.get_size_mode()
+            # Store current launcher reference for grid mode
+            if size_mode.name == "grid":
+                self._current_grid_launcher = launcher
+            else:
+                self._current_grid_launcher = None
             self._apply_size_mode(size_mode, custom_size)
         elif filter_text.startswith(">"):
+            self._current_grid_launcher = None
             self.reset_launcher_size()
             self.set_default_factory()
         else:
+            self._current_grid_launcher = None
             self.reset_launcher_size()
             self.set_default_factory()
 
@@ -1262,11 +1560,56 @@ class Launcher(Gtk.ApplicationWindow):
         )
         self.list_store.append(WrappedSearchResult(result))
 
+    def add_grid_result(
+        self,
+        title: str,
+        image_path: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        pixbuf=None,
+        index: int | None = None,
+        action_data=None,
+    ):
+        """Add a grid search result with optional image and metadata."""
+        result = GridSearchResult(
+            title=title,
+            image_path=image_path,
+            metadata=metadata,
+            pixbuf=pixbuf,
+            index=index if index is not None else 0,
+            action_data=action_data,
+        )
+        self.list_store.append(WrappedSearchResult(result))
+
     def _apply_size_mode(self, size_mode, custom_size):
         """Apply the appropriate size mode for the launcher."""
         if size_mode.name == "wallpaper":
             self.set_wallpaper_mode_size()
             self.set_wallpaper_factory()
+        elif size_mode.name == "grid":
+            # Grid mode - get grid config from launcher
+            launcher = None  # Need to get the current launcher instance
+            # Find the current launcher that triggered grid mode
+            if hasattr(self, "_current_grid_launcher") and self._current_grid_launcher:
+                launcher = self._current_grid_launcher
+                grid_config = launcher.get_grid_config()
+                if grid_config and custom_size:
+                    width, height = custom_size
+                    self.set_default_size(width, height)
+                elif grid_config:
+                    # Calculate size based on grid config
+                    columns = grid_config.get("columns", 3)
+                    item_width = grid_config.get("item_width", 200)
+                    item_height = grid_config.get("item_height", 200)
+                    spacing = grid_config.get("spacing", 10)
+                    total_width = (columns * item_width) + ((columns + 1) * spacing)
+                    total_height = (4 * item_height) + (5 * spacing)  # Max 4 rows
+                    self.set_default_size(total_width, total_height)
+                # Set grid factory with config
+                self.set_grid_factory(grid_config)
+            else:
+                # Fallback to default if no launcher available
+                self.reset_launcher_size()
+                self.set_default_factory()
         elif size_mode.name == "custom" and custom_size:
             width, height = custom_size
             self.set_default_size(width, height)
@@ -1435,6 +1778,35 @@ class Launcher(Gtk.ApplicationWindow):
 
     def on_command_clicked(self, button, command):
         self.run_command(command)
+
+    def _on_list_item_clicked(self, button, search_result):
+        """Handle clicks on list items in both ListView and GridView."""
+        self.hide()
+
+        if search_result.result_type.name == "APP":
+            self.launch_app(search_result.app)
+        elif search_result.result_type.name == "COMMAND":
+            self.run_command(search_result.command)
+        elif search_result.result_type.name == "LAUNCHER":
+            # Handle action_data for launchers (e.g., wallpaper file paths)
+            if search_result.action_data:
+                self.hook_registry.execute_select_hooks(self, search_result.action_data)
+            else:
+                self.on_command_selected(button, search_result.command)
+        elif search_result.result_type.name == "WALLPAPER":
+            # Handle wallpaper selection
+            if search_result.action_data:
+                self.hook_registry.execute_select_hooks(self, search_result.action_data)
+        elif search_result.result_type.name == "GRID":
+            # Handle grid item selection
+            if search_result.action_data:
+                self.hook_registry.execute_select_hooks(self, search_result.action_data)
+        elif search_result.result_type.name == "CUSTOM":
+            if search_result.hook_data and self.hook_registry:
+                self.hook_registry.execute_select_hooks(self, search_result.hook_data)
+        elif search_result.result_type.name == "LOADING":
+            # Do nothing for loading items
+            pass
 
     # Calculator methods
 

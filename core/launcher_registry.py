@@ -8,7 +8,7 @@
 # ruff: ignore
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 
 
@@ -18,6 +18,7 @@ class LauncherSizeMode(Enum):
     DEFAULT = "default"
     WALLPAPER = "wallpaper"  # Larger size for wallpaper previews
     CUSTOM = "custom"
+    GRID = "grid"  # Grid layout for custom launchers
 
 
 class LauncherInterface(ABC):
@@ -53,6 +54,22 @@ class LauncherInterface(ABC):
             Tuple of (size_mode, optional_custom_size)
         """
         pass
+
+    def get_grid_config(self) -> Optional[Dict[str, Any]]:
+        """Return grid configuration if using grid mode.
+
+        Returns:
+            {
+                'columns': int,           # Number of columns
+                'item_width': int,        # Width of each grid item
+                'item_height': int,       # Height of each grid item
+                'spacing': int,           # Spacing between items
+                'show_metadata': bool,    # Whether to show text metadata
+                'metadata_position': str,  # 'bottom', 'overlay', 'hidden'
+                'aspect_ratio': str,      # 'square', 'original', 'fixed'
+            }
+        """
+        return None
 
     def handles_enter(self) -> bool:
         """Return True if this launcher wants to handle enter key presses."""

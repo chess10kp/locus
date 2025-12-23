@@ -11,6 +11,7 @@ class ResultType(Enum):
     LOADING = "loading"
     CUSTOM = "custom"
     WALLPAPER = "wallpaper"  # Wallpaper with image data
+    GRID = "grid"  # Grid items with configurable metadata
 
 
 class SearchResult:
@@ -52,7 +53,9 @@ class CommandSearchResult(SearchResult):
 class LauncherSearchResult(SearchResult):
     """Search result for registered launchers."""
 
-    def __init__(self, command: str, metadata: str = "", index: int = 0, action_data=None):
+    def __init__(
+        self, command: str, metadata: str = "", index: int = 0, action_data=None
+    ):
         super().__init__(f">{command}", metadata, ResultType.LAUNCHER)
         self.command = command
         self.index = index
@@ -84,9 +87,34 @@ class LoadingSearchResult(SearchResult):
 class WallpaperSearchResult(SearchResult):
     """Search result for wallpaper images with thumbnails."""
 
-    def __init__(self, title: str, image_path: str, pixbuf=None, index: int = 0, action_data=None):
+    def __init__(
+        self, title: str, image_path: str, pixbuf=None, index: int = 0, action_data=None
+    ):
         super().__init__(title, "", ResultType.WALLPAPER)
         self.image_path = image_path
         self.pixbuf = pixbuf  # GdkPixbuf for the thumbnail
         self.index = index
         self.action_data = action_data if action_data is not None else image_path
+
+
+class GridSearchResult(SearchResult):
+    """Search result for grid items with rich metadata and optional images."""
+
+    def __init__(
+        self,
+        title: str,
+        image_path: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        pixbuf=None,
+        index: Optional[int] = 0,
+        action_data=None,
+        **kwargs,
+    ):
+        # Use empty subtitle by default for grid items (metadata shown differently)
+        super().__init__(title, "", ResultType.GRID, **kwargs)
+        self.image_path = image_path
+        self.pixbuf = pixbuf  # GdkPixbuf for the thumbnail
+        self.grid_metadata = metadata or {}  # Custom metadata for grid display
+        self.index = index
+        # Action data defaults to metadata but can be overridden
+        self.action_data = action_data if action_data is not None else metadata

@@ -123,3 +123,12 @@
   :END:
 
   
+
+* TODO htiting enter is a bit slower than alt+1 selection
+  :PROPERTIES:
+  :ID: task-20251222234648
+  :TITLE: htiting enter is a bit slower than alt+1 selection
+  :CREATED: <2025-12-22 Mon 23:46>
+  :END:
+
+  
