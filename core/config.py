@@ -162,6 +162,10 @@ LAUNCHER_CONFIG = {
         "sort_apps_alphabetically": True,  # Sort apps by name
         "deduplicate_apps": True,  # Remove duplicate app entries
     },
+    # Behavior Options
+    "behavior": {
+        "desktop_launcher_fast_path": True,  # Skip hooks for desktop launcher mode (direct app launch)
+    },
 }
 
 
