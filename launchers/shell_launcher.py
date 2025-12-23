@@ -80,12 +80,12 @@ class ShellLauncher(LauncherInterface):
         if not query:
             # Show help text when no query
             label_text = "Enter shell command to execute"
-            metadata = "Type a command like 'ls -la' or 'echo hello'"
+            metadata = "Enter command"
             launcher_core.add_launcher_result(label_text, metadata, index=1)
         else:
             # Show the command that will be executed
             label_text = f"Execute: {query}"
-            metadata = "Press Enter or click to run this command"
+            metadata = "Run command"
             launcher_core.add_launcher_result(
                 label_text, metadata, index=1, action_data=f"exec:{query}"
             )

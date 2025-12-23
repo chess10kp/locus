@@ -158,6 +158,7 @@ class WifiLauncher(LauncherInterface):
 
         # Get available networks (with cache to avoid excessive scanning)
         import time
+
         current_time = time.time()
         if self._scan_cache is None or (current_time - self._scan_time) > 10:
             # Rescan if cache is old or doesn't exist
@@ -175,7 +176,7 @@ class WifiLauncher(LauncherInterface):
             if ssid not in shown_ssids:
                 is_current = current == ssid
                 status = "Connected" if is_current else "Saved"
-                display = f"{status}: {ssid} ({ssid})"
+                display = f"{status}: {ssid}"
                 metadata = launcher_core.METADATA.get("wifi", "")
 
                 # Check signal strength if in available networks
@@ -185,13 +186,13 @@ class WifiLauncher(LauncherInterface):
                         signal = net["signal"]
                         security = net["security"]
                         if signal:
-                            display = f"{status}: {ssid} ({signal}% {security}) ({ssid})"
+                            display = f"{status}: {ssid}"
                         break
 
                 launcher_core.add_launcher_result(
                     display,
                     metadata,
-                    index=index_counter if index_counter <= 9 else None
+                    index=index_counter if index_counter <= 9 else None,
                 )
                 shown_ssids.add(ssid)
                 index_counter += 1
@@ -205,12 +206,12 @@ class WifiLauncher(LauncherInterface):
                 if ssid and ssid not in shown_ssids:
                     signal = net["signal"]
                     security = net["security"]
-                    display = f"Available: {ssid} ({signal}% {security}) ({ssid})"
+                    display = f"Available: {ssid}"
                     metadata = launcher_core.METADATA.get("wifi", "")
                     launcher_core.add_launcher_result(
                         display,
                         metadata,
-                        index=index_counter if index_counter <= 9 else None
+                        index=index_counter if index_counter <= 9 else None,
                     )
                     shown_ssids.add(ssid)
                     index_counter += 1

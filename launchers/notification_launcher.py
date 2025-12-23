@@ -170,7 +170,9 @@ class NotificationLauncher(LauncherInterface):
         if not notifications:
             launcher_core.add_launcher_result(
                 text="No notifications",
-                subtitle="Clear to close" if filter_type == "all" else f"Try '>notifications' to see all",
+                subtitle="Clear to close"
+                if filter_type == "all"
+                else f"Try '>notifications' to see all",
                 index=None,
             )
         else:
@@ -191,7 +193,9 @@ class NotificationLauncher(LauncherInterface):
 
                 # Add notifications for this app
                 for notif in notifs:
-                    self._add_notification(notif, launcher_core, index if index <= 9 else None)
+                    self._add_notification(
+                        notif, launcher_core, index if index <= 9 else None
+                    )
                     index += 1
                     if index > 9:
                         break
@@ -216,7 +220,9 @@ class NotificationLauncher(LauncherInterface):
             # Filter by today's date
             all_notifications = self.store.get_recent_notifications(limit=500)
             today = datetime.now().date()
-            notifications = [n for n in all_notifications if n.timestamp.date() == today]
+            notifications = [
+                n for n in all_notifications if n.timestamp.date() == today
+            ]
         else:
             notifications = self.store.get_recent_notifications(limit=100)
 
@@ -313,14 +319,11 @@ class NotificationLauncher(LauncherInterface):
         subtitle = ""
 
         if notif.body:
-            subtitle = truncate_text(notif.body, 60)
+            subtitle = truncate_text(
+                notif.body, 30
+            )  # Shorter truncation for simplicity
 
-        # Add timestamp
-        time_str = format_timestamp(notif.timestamp)
-        if subtitle:
-            subtitle += f" - {time_str}"
-        else:
-            subtitle = time_str
+        # Just use the body without timestamp for cleaner display
 
         # Add read/unread indicator
         prefix = "🔵" if not notif.read else "⚪"

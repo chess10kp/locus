@@ -96,3 +96,30 @@
   :END:
 
   
+
+* DONE [#A] Reformat results as BOLD muted
+  :PROPERTIES:
+  :ID: task-20251222231803
+  :TITLE: Reformat results as BOLD muted
+  :CREATED: <2025-12-22 Mon 23:18>
+  :END:
+
+  
+
+* TODO Googlesearch
+  :PROPERTIES:
+  :ID: task-20251222232501
+  :TITLE: Googlesearch
+  :CREATED: <2025-12-22 Mon 23:25>
+  :END:
+
+  
+
+* TODO moving into a sublauncher should add metadata to the bottom of the llauncher/badge like indicator on the search entry
+  :PROPERTIES:
+  :ID: task-20251222232542
+  :TITLE: moving into a sublauncher should add metadata to the bottom of the llauncher/badge like indicator on the search entry
+  :CREATED: <2025-12-22 Mon 23:25>
+  :END:
+
+  

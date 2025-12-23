@@ -118,7 +118,7 @@ class BluetoothLauncher(LauncherInterface):
         device_items = []
         for mac, name in devices:
             status = "Connected" if bluetooth_device_connected(mac) else "Disconnected"
-            device_items.append(f"{name}: {status} ({mac})")
+            device_items.append(f"{name}: {status}")
         all_items = [
             power_status,
             scan_status,

@@ -239,7 +239,7 @@ class MusicLauncher(LauncherInterface):
             else "⏹"
         )
         header = f"{state_icon} {status['song'] or 'Stopped'}"
-        meta = f"Vol: {status.get('volume')} | Rep: {status.get('repeat')} | Rnd: {status.get('random')} | Sgl: {status.get('single')}"
+        meta = f"Volume: {status.get('volume')}"
 
         # Toggle Play/Pause button with hint
         self._add_button(
@@ -327,7 +327,7 @@ class MusicLauncher(LauncherInterface):
             if not query or query.lower() in display_name.lower():
                 self._add_button(
                     text=f"{pos}. {display_name or filename}",
-                    metadata="Click to play | Alt+Enter to remove",
+                    metadata="Play song",
                     action="play_position",
                     value=pos,
                     launcher_core=launcher_core,

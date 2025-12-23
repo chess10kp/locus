@@ -196,6 +196,6 @@ class RefileLauncher(LauncherInterface):
             item_data = {"type": "refile_workspace", "workspace": workspace}
             launcher_core.add_launcher_result(
                 f"Swap to: {workspace}",
-                f"Exchange containers with workspace '{workspace}'",
+                f"Move to workspace {workspace}",
                 action_data=item_data,
             )

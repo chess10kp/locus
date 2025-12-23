@@ -28,6 +28,7 @@ logger = logging.getLogger("FileLauncher")
 
 class FileAction(Enum):
     """Actions available for files."""
+
     OPEN = "open"
     REVEAL = "reveal"
     COPY_PATH = "copy_path"
@@ -78,27 +79,27 @@ class FileLauncher(LauncherInterface):
 
     # File type icons (emoji for simple visual indication)
     FILE_ICONS = {
-        'text/plain': '',
-        'text/markdown': '',
-        'text/x-python': '',
-        'text/javascript': '',
-        'text/typescript': '',
-        'application/json': '',
-        'application/pdf': '',
-        'image/png': '',
-        'image/jpeg': '',
-        'image/gif': '',
-        'image/svg+xml': '',
-        'image/webp': '',
-        'audio/mpeg': '',
-        'audio/flac': '',
-        'audio/wav': '',
-        'video/mp4': '',
-        'video/webm': '',
-        'application/zip': '',
-        'application/x-tar': '',
-        'application/gzip': '',
-        'application/octet-stream': '',
+        "text/plain": "",
+        "text/markdown": "",
+        "text/x-python": "",
+        "text/javascript": "",
+        "text/typescript": "",
+        "application/json": "",
+        "application/pdf": "",
+        "image/png": "",
+        "image/jpeg": "",
+        "image/gif": "",
+        "image/svg+xml": "",
+        "image/webp": "",
+        "audio/mpeg": "",
+        "audio/flac": "",
+        "audio/wav": "",
+        "video/mp4": "",
+        "video/webm": "",
+        "application/zip": "",
+        "application/x-tar": "",
+        "application/gzip": "",
+        "application/octet-stream": "",
     }
 
     def __init__(self, main_launcher=None):
@@ -141,26 +142,24 @@ class FileLauncher(LauncherInterface):
         # Show indexer status if not ready
         if not self.indexer.is_ready():
             scan_info = self.indexer.get_last_scan_info()
-            if scan_info['file_count'] == 0:
+            if scan_info["file_count"] == 0:
                 launcher_core.add_launcher_result(
                     "Indexing files...",
                     "Please wait for initial scan to complete",
-                    index=1
+                    index=1,
                 )
                 return
             else:
                 launcher_core.add_launcher_result(
                     f"Scanning... {scan_info['file_count']:,} files indexed",
                     "Search available, but index is still updating",
-                    index=1
+                    index=1,
                 )
 
         # Show empty query help
         if not query:
             launcher_core.add_launcher_result(
-                "File Search",
-                "Type to search files (~50ms for 100k+ files)",
-                index=1
+                "File Search", "Type to search files (~50ms for 100k+ files)", index=1
             )
 
             # Show scan info
@@ -168,7 +167,7 @@ class FileLauncher(LauncherInterface):
             launcher_core.add_launcher_result(
                 f"Indexed: {file_count:,} files",
                 f"Home directory with smart exclusions",
-                index=2
+                index=2,
             )
             return
 
@@ -179,7 +178,7 @@ class FileLauncher(LauncherInterface):
             launcher_core.add_launcher_result(
                 f"No results for '{query}'",
                 "Try different keywords or wait for scan to complete",
-                index=1
+                index=1,
             )
             return
 
@@ -198,26 +197,26 @@ class FileLauncher(LauncherInterface):
                 display_path = os.path.basename(file_result.parent_path) + "/"
 
             # Get icon for file type
-            icon = self.FILE_ICONS.get(file_result.file_type, '')
+            icon = self.FILE_ICONS.get(file_result.file_type, "")
 
             # Format size
             size_str = self._format_size(file_result.size)
 
-            metadata = f"{icon} {size_str} | {display_path}"
+            metadata = f"{icon} {size_str}"
 
             # Add action data
             action_data = {
                 "type": "file_action",
                 "action": FileAction.OPEN.value,
                 "path": file_result.path,
-                "file_result": file_result
+                "file_result": file_result,
             }
 
             launcher_core.add_launcher_result(
                 display_name,
                 metadata,
                 index=index if index <= 9 else None,
-                action_data=action_data
+                action_data=action_data,
             )
 
             index += 1
@@ -229,10 +228,10 @@ class FileLauncher(LauncherInterface):
         try:
             # Use xdg-open for cross-platform file opening
             subprocess.Popen(
-                ['xdg-open', file_path],
+                ["xdg-open", file_path],
                 start_new_session=True,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                stderr=subprocess.DEVNULL,
             )
             logger.info(f"Opened file: {file_path}")
             return True
@@ -244,10 +243,10 @@ class FileLauncher(LauncherInterface):
         """Reveal file in file manager."""
         try:
             subprocess.Popen(
-                ['xdg-open', os.path.dirname(file_path)],
+                ["xdg-open", os.path.dirname(file_path)],
                 start_new_session=True,
                 stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                stderr=subprocess.DEVNULL,
             )
             logger.info(f"Revealed file: {file_path}")
             return True
@@ -275,7 +274,7 @@ class FileLauncher(LauncherInterface):
 
     def _format_size(self, size_bytes: int) -> str:
         """Format file size for display."""
-        for unit in ['B', 'KB', 'MB', 'GB']:
+        for unit in ["B", "KB", "MB", "GB"]:
             if size_bytes < 1024.0:
                 return f"{size_bytes:.1f}{unit}"
             size_bytes /= 1024.0

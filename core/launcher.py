@@ -738,21 +738,18 @@ class Launcher(Gtk.ApplicationWindow):
             if not all([button, title_label, subtitle_label, hint_label]):
                 return
 
-            # Update title
+            # Update title with bold element
             if title_label:
                 if search_result.subtitle:
-                    markup = f"{search_result.title}\n<span size='smaller' color='#d5c4a1'>{search_result.subtitle}</span>"
+                    markup = f"<b>{search_result.title}</b>\n<span size='smaller' color='#928374'>{search_result.subtitle}</span>"
                     title_label.set_markup(markup)
                 else:
-                    title_label.set_text(search_result.title)
+                    markup = f"<b>{search_result.title}</b>"
+                    title_label.set_markup(markup)
 
-            # Update subtitle visibility
+            # Hide subtitle label since we're showing everything in the title label
             if subtitle_label:
-                if search_result.subtitle:
-                    subtitle_label.set_text(search_result.subtitle)
-                    subtitle_label.set_visible(True)
-                else:
-                    subtitle_label.set_visible(False)
+                subtitle_label.set_visible(False)
 
             # Update hint for Alt+number
             if hint_label:
