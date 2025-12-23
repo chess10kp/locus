@@ -6,6 +6,7 @@
 # pyright: reportUnknownVariableType=false
 # pyright: reportMissingImports=false
 # ruff: ignore
+from launchers.lock_launcher import apply_styles
 
 from typing import Tuple, Optional
 from gi.repository import Gtk
@@ -31,6 +32,7 @@ class LauncherModule(StatusbarModuleInterface):
     def create_widget(self) -> Gtk.Widget:
         button = Gtk.Button(label="Launch")
         button.set_name("launcher-button")
+        button.add_css_class("launcher-button")
         return button
 
     def update(self, widget: Gtk.Widget) -> None:
@@ -39,22 +41,6 @@ class LauncherModule(StatusbarModuleInterface):
 
     def get_size_mode(self) -> Tuple[StatusbarSizeMode, Optional[Tuple[int, int]]]:
         return StatusbarSizeMode.DEFAULT, None
-
-    def get_styles(self) -> Optional[str]:
-        return """
-        #launcher-button {
-            border: none;
-            background: none;
-            padding: 6px 12px;
-            font-size: 16px;
-        }
-        #launcher-button:hover {
-            color: #50fa7b;
-        }
-        #launcher-button:active {
-            color: #8be9fd;
-        }
-        """
 
     def handles_clicks(self) -> bool:
         return True

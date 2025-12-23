@@ -285,3 +285,21 @@
   :END:
 
   
+
+* TODO [#A] expose slancher styling through config file
+  :PROPERTIES:
+  :ID: task-20251223151253
+  :TITLE: expose slancher styling through config file
+  :CREATED: <2025-12-23 Tue 15:12>
+  :END:
+
+  
+
+* TODO notification daemon
+  :PROPERTIES:
+  :ID: task-20251223153614
+  :TITLE: notification daemon
+  :CREATED: <2025-12-23 Tue 15:36>
+  :END:
+
+  

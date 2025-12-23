@@ -505,6 +505,25 @@ class Launcher(Gtk.ApplicationWindow):
         self.hook_registry = HookRegistry()
         self.launcher_registry = launcher_registry
 
+        # Styles
+        self.keyb_badge_style = """
+            .badges-box label {
+                background-color: #3c3836;
+                padding: 4px 8px;
+                font-size: 12px;
+                font-family: Iosevka;
+            }
+        """
+        self.submit_style = """
+        .submit-button {
+            background-color: #3c3836;
+            border-radius: 0px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-family: Iosevka;
+        }
+        """
+
         # Auto-discover and register all launchers
         self._register_launchers()
 
@@ -571,7 +590,52 @@ class Launcher(Gtk.ApplicationWindow):
         vbox.set_margin_bottom(12)
         vbox.set_margin_start(12)
         vbox.set_margin_end(12)
-        vbox.append(self.search_entry)
+        # Search row with entry and button
+        search_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        search_row.append(self.search_entry)
+        submit_button = Gtk.Button(label="Launch")
+        submit_button.connect("clicked", self.on_entry_activate)
+        submit_button.set_name("submit-button")
+        submit_button.add_css_class("submit-button")
+        apply_styles(submit_button, self.submit_style)
+        search_row.append(submit_button)
+        vbox.append(search_row)
+        # Badges
+        badges_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        badges_box.set_halign(Gtk.Align.FILL)
+        badges_box.add_css_class("badges-box")
+        badges_box.set_name("badges-box")
+        enter_label = Gtk.Label(label="Enter: Activate")
+        badges_box.append(enter_label)
+        apply_styles(
+            enter_label,
+            self.keyb_badge_style,
+        )
+        up_label = Gtk.Label(label="↑: Select Previous")
+        badges_box.append(up_label)
+        apply_styles(
+            up_label,
+            self.keyb_badge_style,
+        )
+        down_label = Gtk.Label(label="↓: Select Next")
+        badges_box.append(down_label)
+        apply_styles(
+            down_label,
+            self.keyb_badge_style,
+        )
+
+        tab_label = Gtk.Label(label="Tab: Tab action")
+        badges_box.append(tab_label)
+        apply_styles(tab_label, self.keyb_badge_style)
+        apply_styles(
+            badges_box,
+            """
+            .badges-box {
+                font-size: 12px;
+            }
+        """,
+        )
+        vbox.append(badges_box)
         vbox.append(self.scrolled)
 
         # Footer
@@ -681,6 +745,18 @@ class Launcher(Gtk.ApplicationWindow):
             .footer-box label {
                 color: #888888;
                 font-family: Iosevka;
+            }
+            .badges-box {
+                background-color: #3c3836;
+                padding: 2px 8px;
+                border-radius: 3px;
+                margin-top: 4px;
+                font-size: 12px;
+            }
+            .badges-box label {
+                color: #888888;
+                font-family: Iosevka;
+                padding: 0px 4px;
             }
         """,
         )
@@ -1440,6 +1516,8 @@ class Launcher(Gtk.ApplicationWindow):
                 prefix=False,  # Don't add ">" prefix since it's not a command
             )
             self.list_store.append(WrappedSearchResult(result))
+            # Auto-select the web search since it's the only result
+            self.selection_model.set_selected(0)
 
     def populate_apps(self, filter_text=""):
         """Populate the launcher with apps or use registered launchers for commands."""
@@ -1860,11 +1938,9 @@ class Launcher(Gtk.ApplicationWindow):
             new_position = current_selected + 1
             self.selection_model.set_selected(new_position)
 
-        # Scroll to the selected item to ensure it's visible (like arrow keys do)
         if new_position != Gtk.INVALID_LIST_POSITION:
             self.list_view.scroll_to(new_position, Gtk.ListScrollFlags.NONE)
 
-        # Focus the search entry for better UX
         self.search_entry.grab_focus()
 
     def select_by_index(self, index):

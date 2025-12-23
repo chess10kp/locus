@@ -77,7 +77,7 @@ LAUNCHER_CONFIG = {
     },
     # Search and Filtering
     "search": {
-        "max_results": 14,  # Maximum number of search results to show
+        "max_results": 20,  # Maximum number of search results to show
         "max_command_results": 10,  # Max results for command mode
         "debounce_delay": 150,  # milliseconds to wait before searching
         "fuzzy_search": False,  # Enable fuzzy matching (not implemented yet)
@@ -266,7 +266,7 @@ SEARCH_ENGINES = {
 }
 
 # Default search engine (must be a key from SEARCH_ENGINES)
-DEFAULT_SEARCH_ENGINE = "gh"
+DEFAULT_SEARCH_ENGINE = "gg"
 
 # Command to open URLs (use None to let xdg-open decide)
 # Examples:
