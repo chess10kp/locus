@@ -1336,7 +1336,7 @@ class Launcher(Gtk.ApplicationWindow):
 
                 metadata = METADATA.get(cmd_name, "")
                 result = LauncherSearchResult(
-                    cmd_name, metadata, index if index <= 9 else None
+                    cmd_name, metadata, index if index <= 9 else 0
                 )
                 self.list_store.append(WrappedSearchResult(result))
                 index += 1
@@ -1382,7 +1382,7 @@ class Launcher(Gtk.ApplicationWindow):
 
                     metadata = METADATA.get(cmd, "")
                     result = LauncherSearchResult(
-                        cmd, metadata, index if index <= 9 else None
+                        cmd, metadata, index if index <= 9 else 0
                     )
                     self.list_store.append(WrappedSearchResult(result))
                     index += 1
@@ -1420,9 +1420,25 @@ class Launcher(Gtk.ApplicationWindow):
         for app in visible_apps:
             self.current_apps.append(app)
             metadata = METADATA.get(app["name"], "")
-            result = AppSearchResult(app, index if index <= 9 else None)
+            result = AppSearchResult(app, index if index <= 9 else 0)
             self.list_store.append(WrappedSearchResult(result))
             index += 1
+
+        # Add web search fallback if no apps matched and it's plain text (not a command)
+        if (
+            not self.list_store.get_n_items()
+            and filter_text
+            and not filter_text.startswith(">")
+        ):
+            hook_data = {"type": "web_search", "query": filter_text}
+            result = LauncherSearchResult(
+                command=f"Search web for '{filter_text}'",
+                metadata="Press Enter to search",
+                index=1,
+                action_data=hook_data,
+                prefix=False,  # Don't add ">" prefix since it's not a command
+            )
+            self.list_store.append(WrappedSearchResult(result))
 
     def populate_apps(self, filter_text=""):
         """Populate the launcher with apps or use registered launchers for commands."""
@@ -1512,7 +1528,11 @@ class Launcher(Gtk.ApplicationWindow):
         if result_type is None:
             result_type = ResultType.LAUNCHER
 
-        result = LauncherSearchResult(title, subtitle, index, action_data=action_data)
+        # Don't prefix launcher results with ">" since they're items within a launcher
+        safe_index = 0 if index is None else index
+        result = LauncherSearchResult(
+            title, subtitle, safe_index, action_data=action_data, prefix=False
+        )
         self.list_store.append(WrappedSearchResult(result))
 
     def add_wallpaper_result(
@@ -1875,6 +1895,8 @@ class Launcher(Gtk.ApplicationWindow):
                 success = copy_to_clipboard(text_to_copy)
 
                 if success:
+                    # Close the launcher window after yanking
+                    self.hide()
                     # Show brief feedback
                     self._show_yank_feedback(text_to_copy)
                 else:

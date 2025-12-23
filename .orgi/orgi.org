@@ -106,7 +106,7 @@
 
   
 
-* TODO Googlesearch
+* DONE Googlesearch
   :PROPERTIES:
   :ID: task-20251222232501
   :TITLE: Googlesearch
@@ -115,7 +115,7 @@
 
   
 
-* TODO moving into a sublauncher should add metadata to the bottom of the llauncher/badge like indicator on the search entry
+* DONE moving into a sublauncher should add metadata to the bottom of the llauncher/badge like indicator on the search entry
   :PROPERTIES:
   :ID: task-20251222232542
   :TITLE: moving into a sublauncher should add metadata to the bottom of the llauncher/badge like indicator on the search entry
@@ -142,7 +142,7 @@
 
   
 
-* TODO add checks for various launchers to make sure they actually work
+* DONE add checks for various launchers to make sure they actually work
   :PROPERTIES:
   :ID: task-20251223112854
   :TITLE: add checks for various launchers to make sure they actually work
@@ -160,7 +160,7 @@
 
   
 
-* TODO [#A] Yanking should close the illauncher AND yanking should not include the initial > from the search term"
+* DONE [#A] Yanking should close the illauncher AND yanking should not include the initial > from the search term"
   :PROPERTIES:
   :ID: task-20251223114043
   :TITLE: Yanking should close the illauncher AND yanking should not include the initial > from the search term"
@@ -192,6 +192,42 @@
   :ID: task-20251223115039
   :TITLE: multimonitor suppport + including nkilling the bar if a monitor dies
   :CREATED: <2025-12-23 Tue 11:50>
+  :END:
+
+  
+
+* TODO frecency + recency based sorting
+  :PROPERTIES:
+  :ID: task-20251223144744
+  :TITLE: frecency + recency based sorting
+  :CREATED: <2025-12-23 Tue 14:47>
+  :END:
+
+  
+
+* TODO [#A] sway launcher :sway:launcher:
+  :PROPERTIES:
+  :ID: task-20251223144759
+  :TITLE: sway launcher
+  :CREATED: <2025-12-23 Tue 14:47>
+  :END:
+
+  
+
+* TODO [#A] change default size to same size as laauncher
+  :PROPERTIES:
+  :ID: task-20251223145006
+  :TITLE: change default size to same size as laauncher
+  :CREATED: <2025-12-23 Tue 14:50>
+  :END:
+
+  
+
+* TODO user configurable prefixse
+  :PROPERTIES:
+  :ID: task-20251223145055
+  :TITLE: user configurable prefixse
+  :CREATED: <2025-12-23 Tue 14:50>
   :END:
 
   

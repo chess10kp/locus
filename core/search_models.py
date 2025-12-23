@@ -54,9 +54,10 @@ class LauncherSearchResult(SearchResult):
     """Search result for registered launchers."""
 
     def __init__(
-        self, command: str, metadata: str = "", index: int = 0, action_data=None
+        self, command: str, metadata: str = "", index: int = 0, action_data=None, prefix: bool = True
     ):
-        super().__init__(f">{command}", metadata, ResultType.LAUNCHER)
+        title = f">{command}" if prefix else command
+        super().__init__(title, metadata, ResultType.LAUNCHER)
         self.command = command
         self.index = index
         # Only set action_data to command if not explicitly provided

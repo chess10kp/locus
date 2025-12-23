@@ -20,23 +20,49 @@ class WebHook(LauncherHook):
         self.web_launcher = web_launcher
 
     def on_select(self, launcher, item_data: Any) -> bool:
-        """Handle search engine selection"""
+        """Handle search engine selection and fallback web search"""
         if isinstance(item_data, str) and item_data.startswith("engine:"):
             engine_name = item_data.split(":", 1)[1]
             self.web_launcher.set_engine(engine_name)
             launcher.hide()
             return True
+
+        # Handle fallback web search results from main launcher
+        if isinstance(item_data, dict) and item_data.get("type") == "web_search":
+            query = item_data.get("query", "")
+            if query:
+                self.web_launcher.search(query)
+                launcher.hide()
+                return True
+
         return False
 
     def on_enter(self, launcher, text: str) -> bool:
-        """Handle search query"""
-        # Strip the >web prefix if present
+        """Handle search query - only for explicit web search intent"""
+        # Handle explicit >web command
         if text.startswith(">web"):
             query = text[4:].strip()  # Remove ">web"
-        else:
-            query = text.strip()
+            if query:
+                self.web_launcher.search(query)
+                launcher.hide()
+                return True
+            return False
 
-        if query:
+        query = text.strip()
+
+        # Check for explicit web search intent
+        text_lower = text.lower()
+        is_web_intent = (
+            "http" in text_lower
+            or "www" in text_lower
+            or text_lower.startswith("search ")
+            or any(
+                engine in text_lower
+                for engine in ["google", "duckduckgo", "bing", "yahoo"]
+            )
+        )
+
+        if query and is_web_intent:
             self.web_launcher.search(query)
             launcher.hide()
             return True
@@ -132,7 +158,9 @@ class WebLauncher(LauncherInterface):
             env = os.environ.copy()
             env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
             env.pop("MALLOC_CHECK_", None)  # Remove malloc check for child processes
-            env.pop("MALLOC_PERTURB_", None)  # Remove malloc perturb for child processes
+            env.pop(
+                "MALLOC_PERTURB_", None
+            )  # Remove malloc perturb for child processes
 
             if URL_OPENER:
                 # Use configured browser
