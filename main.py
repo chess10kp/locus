@@ -151,7 +151,7 @@ def on_shutdown(app: Gtk.Application):
         try:
             status_bar.cleanup()
         except Exception as e:
-            print(f"Error during cleanup: {e}")
+            pass
     status_bars.clear()
     sys.exit(0)
 

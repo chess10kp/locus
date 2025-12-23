@@ -36,8 +36,7 @@ class CalcHook(LauncherHook):
                 sanitized = sanitize_expr(expr)
                 result, error = evaluate_calculator(sanitized)
                 if error:
-                    print(f"Calculator error: {error}")
-                    # Do not hide, let user correct
+                    pass  # Do not hide, let user correct
                 else:
                     self.calc_launcher.on_result_clicked(None, str(result))
                     return True
@@ -89,8 +88,7 @@ class CalcLauncher(LauncherInterface):
             sanitized = sanitize_expr(query)
             result, error = evaluate_calculator(sanitized)
             if error:
-                print(f"Calculator error: {error}")
-                # Don't hide, let user correct
+                pass  # Don't hide, let user correct
             else:
                 self.on_result_clicked(None, str(result))
                 return True
@@ -134,6 +132,6 @@ class CalcLauncher(LauncherInterface):
                     env=env,
                 )
             except subprocess.CalledProcessError:
-                print(f"Failed to copy to clipboard: {result}")
+                pass
         if self.launcher:
             self.launcher.hide()

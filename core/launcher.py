@@ -471,7 +471,7 @@ class Popup(Gtk.ApplicationWindow):
                 env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
                 subprocess.Popen(command, shell=True, env=env)
             except Exception as e:
-                print(f"Failed to run command: {e}")
+                pass
         self.hide()
 
     def show_popup(self):
@@ -2070,7 +2070,7 @@ class Launcher(Gtk.ApplicationWindow):
                     # Show brief feedback
                     self._show_yank_feedback(text_to_copy)
                 else:
-                    print(f"Failed to copy to clipboard: {text_to_copy}")
+                    pass
 
     def _show_yank_feedback(self, text: str, duration_ms: int = 500):
         """Show brief feedback when text is yanked to clipboard.
@@ -2151,7 +2151,7 @@ class Launcher(Gtk.ApplicationWindow):
             "wallpaper",
             "timer",
             "kill",
-            "music",
+            "mpd",
             "refile",
         ]:
             self.search_entry.set_text(f">{command} ")
@@ -2168,7 +2168,7 @@ class Launcher(Gtk.ApplicationWindow):
             env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
             subprocess.Popen(command, shell=True, env=env)
         except Exception as e:
-            print(f"Failed to run command: {e}")
+            pass
 
     def on_key_pressed(self, controller, keyval, keycode, state):
         # Handle Alt+1 to Alt+9 for selecting items

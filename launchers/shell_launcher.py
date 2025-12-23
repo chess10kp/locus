@@ -119,13 +119,9 @@ class ShellLauncher(LauncherInterface):
                 timeout=30,  # 30 second timeout
             )
 
-            # Print output to console for debugging
-            if result.stdout:
-                print(f"Command output: {result.stdout}")
-            if result.stderr:
-                print(f"Command error: {result.stderr}")
+            pass
 
         except subprocess.TimeoutExpired:
-            print(f"Command timed out: {command}")
+            pass
         except Exception as e:
-            print(f"Failed to execute command '{command}': {e}")
+            pass

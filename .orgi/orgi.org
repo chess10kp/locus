@@ -366,3 +366,21 @@
   :END:
 
   
+
+* TODO bookmarks does not launch iwth xgd-open when selecting it
+  :PROPERTIES:
+  :ID: task-20251223183514
+  :TITLE: bookmarks does not launch iwth xgd-open when selecting it
+  :CREATED: <2025-12-23 Tue 18:35>
+  :END:
+
+  
+
+* TODO resume launcher should resume wit hth the same state as it was
+  :PROPERTIES:
+  :ID: task-20251223184153
+  :TITLE: resume launcher should resume wit hth the same state as it was
+  :CREATED: <2025-12-23 Tue 18:41>
+  :END:
+
+  

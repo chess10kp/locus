@@ -30,7 +30,6 @@ class StatusbarModuleManager:
         """Create a module widget and start its update lifecycle."""
         module = statusbar_registry.get_module(module_name)
         if not module:
-            print(f"Module '{module_name}' not found in registry")
             return None
 
         try:
@@ -41,13 +40,11 @@ class StatusbarModuleManager:
                 instance = statusbar_registry.create_instance(module_name)
 
             if not instance:
-                print(f"Failed to create instance of module '{module_name}'")
                 return None
 
             # Create widget
             widget = instance.create_widget()
             if not widget:
-                print(f"Module '{module_name}' returned None widget")
                 return None
 
             # Apply custom styles if provided
@@ -79,7 +76,6 @@ class StatusbarModuleManager:
             return widget
 
         except Exception as e:
-            print(f"Error creating module '{module_name}': {e}")
             return None
 
     def destroy_module(self, module_name: str):
@@ -109,7 +105,7 @@ class StatusbarModuleManager:
             try:
                 instance.update(widget)
             except Exception as e:
-                print(f"Error updating module '{module_name}': {e}")
+                pass
 
     def handle_ipc_message(self, message: str) -> bool:
         """Route IPC message to appropriate modules."""
@@ -122,9 +118,7 @@ class StatusbarModuleManager:
                         if instance.handle_ipc_message(message, widget):
                             handled = True
                     except Exception as e:
-                        print(
-                            f"Error handling IPC message in module '{module_name}': {e}"
-                        )
+                        pass
 
         return handled
 
@@ -202,9 +196,7 @@ class StatusbarModuleManager:
                 if module_listeners:
                     listeners.extend(module_listeners)
             except Exception as e:
-                print(
-                    f"Error setting up event listeners for module '{module_name}': {e}"
-                )
+                pass
 
         self.event_listeners[module_name] = listeners
 
@@ -215,7 +207,7 @@ class StatusbarModuleManager:
             try:
                 return instance.handle_click(widget, event)
             except Exception as e:
-                print(f"Error handling click in module '{module_name}': {e}")
+                pass
 
         return False  # Event not handled
 

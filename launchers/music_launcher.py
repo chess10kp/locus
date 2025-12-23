@@ -145,7 +145,7 @@ class MpdLauncher(LauncherInterface):
                         rel_path = os.path.relpath(full_path, self.music_dir)
                         new_cache.append({"name": f, "path": rel_path})
         except Exception as e:
-            print(f"Music scan error: {e}")
+            pass
 
         self.files_cache = new_cache
         self.scanning = False
@@ -155,7 +155,6 @@ class MpdLauncher(LauncherInterface):
             result = subprocess.run(["mpc"] + args, capture_output=True, text=True)
             return result.stdout.strip()
         except Exception as e:
-            print(f"MPC Error: {e}")
             return ""
 
     def get_status(self) -> Dict[str, str]:

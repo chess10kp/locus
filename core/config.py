@@ -170,7 +170,6 @@ def todo_capture():
     # Check if emacs daemon is running
     result = subprocess.run(["pgrep", "-f", "emacs --daemon"], capture_output=True)
     if result.returncode != 0:
-        print("Emacs daemon not running")
         return
     # Open org-capture with todo template
     subprocess.Popen(["emacsclient", "-c", "-e", '(org-capture nil "t")'])
