@@ -37,23 +37,25 @@ class MusicHook(LauncherHook):
             elif action == "view_queue":
                 # Set search text to >music queue to trigger populate
                 launcher.search_entry.set_text(">music queue")
-                launcher.on_entry_activate(launcher.search_entry)
+                launcher.populate_apps(">music queue")
+                launcher.present()
+                return True
             elif action == "view_library":
                 # Set search text to >music to trigger library view
                 launcher.search_entry.set_text(">music")
-                launcher.on_entry_activate(launcher.search_entry)
+                launcher.populate_apps(">music")
+                launcher.present()
+                return True
 
             # Refresh if we are still open (control actions mostly)
             # If playing a file, we usually close
             if action in ["play_file", "play_position"]:
                 launcher.hide()
-            elif action in ["view_queue", "view_library"]:
-                # Already handled by setting search text
-                pass
             else:
-                # Refresh the view
+                # Refresh the view and stay open for controls/queue management
                 current_text = launcher.search_entry.get_text()
                 launcher.populate_apps(current_text)
+                launcher.present()
 
             return True
         return False
@@ -67,9 +69,17 @@ class MusicHook(LauncherHook):
                 launcher.hide()
                 return True
 
-            if cmd == "":
-                # Just refresh/populate default view
-                self.music_launcher.populate("")
+            if cmd == "queue":
+                launcher.search_entry.set_text(">music queue")
+                launcher.populate_apps(">music queue")
+                launcher.present()
+                return True
+
+            if cmd == "" or cmd == "library":
+                # Just refresh/populate library view
+                launcher.search_entry.set_text(">music")
+                launcher.populate_apps(">music")
+                launcher.present()
                 return True
         return False
 
@@ -173,7 +183,6 @@ class MusicLauncher(LauncherInterface):
         if not lines:
             return status
 
-        # Parse status
         # Example output:
         # The Song Name
         # [playing] #1/5   0:05/3:40 (2%)
@@ -254,7 +263,7 @@ class MusicLauncher(LauncherInterface):
             self._add_button(
                 "View Library",
                 "Switch to file browser",
-                "control",
+                "view_library",
                 "view_library",
                 launcher_core,
                 index=3,
@@ -263,7 +272,7 @@ class MusicLauncher(LauncherInterface):
             self._add_button(
                 "View Queue",
                 "Manage playback queue",
-                "control",
+                "view_queue",
                 "view_queue",
                 launcher_core,
                 index=2,

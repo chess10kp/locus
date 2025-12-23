@@ -265,7 +265,7 @@ class WallpaperLauncher(LauncherInterface):
         else:
             # Display wallpapers as image-only results
             index = 1
-            for wp in sorted(wallpapers):
+            for wp in sorted(wallpapers)[:20]:  # Limit to 20 for speed
                 wp_path = os.path.join(wp_dir, wp)
                 try:
                     # Get or create cached thumbnail
@@ -273,7 +273,7 @@ class WallpaperLauncher(LauncherInterface):
                     launcher_core.add_wallpaper_result(
                         wp, wp_path, pixbuf=pixbuf, index=index if index <= 9 else None, action_data=wp
                     )
-                except Exception as e:
+                except Exception:
                     # Fallback to text result if image fails to load
                     launcher_core.add_launcher_result(
                         wp, "Click to set as wallpaper", index=index if index <= 9 else None, action_data=wp

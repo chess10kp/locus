@@ -9,6 +9,7 @@
 
 from gi.repository import (
     Gdk,
+    GdkPixbuf,
     Gtk,
     Gio,
     GioUnix,
@@ -1176,27 +1177,34 @@ class Launcher(Gtk.ApplicationWindow):
             return
         self.last_search_text = filter_text
 
-        # Return buttons to pool instead of destroying them
-        self._clear_listbox()
-
         # Check if any registered launcher can handle this input
         trigger, launcher, query = self.launcher_registry.find_launcher_for_input(
             filter_text
         )
 
+        # IMPORTANT: Set factory BEFORE clearing the listbox
         if launcher:
-            # Use the registered launcher
             size_mode, custom_size = launcher.get_size_mode()
             self._apply_size_mode(size_mode, custom_size)
+        elif filter_text.startswith(">"):
+            self.reset_launcher_size()
+            self.set_default_factory()
+        else:
+            self.reset_launcher_size()
+            self.set_default_factory()
+
+        # Return buttons to pool instead of destroying them
+        self._clear_listbox()
+
+        if launcher:
+            # Use the registered launcher
             launcher.populate(query, self)
         elif filter_text.startswith(">"):
             # Command mode but no launcher found - show available commands
-            self.reset_launcher_size()
             command = filter_text[1:].strip()
             self.populate_command_mode(command)
         else:
             # Default app search mode
-            self.reset_launcher_size()
             if LAUNCHER_CONFIG["performance"]["batch_ui_updates"]:
                 # Use idle callback for better responsiveness
                 if self.idle_callback_id > 0:
@@ -1515,7 +1523,7 @@ class Launcher(Gtk.ApplicationWindow):
                 else:
                     print(f"Failed to copy to clipboard: {text_to_copy}")
 
-    def _show_yank_feedback(self, text: str, duration_ms: int = 1500):
+    def _show_yank_feedback(self, text: str, duration_ms: int = 500):
         """Show brief feedback when text is yanked to clipboard.
 
         Args:
@@ -1530,7 +1538,7 @@ class Launcher(Gtk.ApplicationWindow):
         placeholder_text = self.search_entry.get_placeholder_text()
 
         # Set the search entry to show yanked text
-        self.search_entry.set_text(f"📋 Yanked: {display_text}")
+        self.search_entry.set_text(f"Yanked: {display_text}")
         self.search_entry.set_editable(False)
 
         # Restore original state after duration
@@ -1739,10 +1747,6 @@ class Launcher(Gtk.ApplicationWindow):
         if self.idle_callback_id > 0:
             GLib.source_remove(self.idle_callback_id)
             self.idle_callback_id = 0
-
-        # Button pool is no longer used (buttons are destroyed immediately)
-
-        # Search cache is no longer needed with optimized ListView
 
     def animate_slide_in(self):
         from .config import LAUNCHER_CONFIG
