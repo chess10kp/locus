@@ -64,6 +64,7 @@ kill_previous_process()
 
 
 status_bars = []  # Global list to store StatusBar instances for cleanup
+monitor_to_window = {}  # Global dict to map monitors to their status bars
 
 
 def on_activate(app: Gtk.Application):
@@ -102,6 +103,51 @@ def on_activate(app: Gtk.Application):
 
         status_win.present()
         status_bars.append(status_win)
+        monitor_to_window[monitor] = status_win
+
+    # Define signal callback for monitors list changes
+    def on_monitors_changed(model, position, removed, added):
+        # Get current monitors
+        current_monitors = [model.get_item(i) for i in range(model.get_n_items())]
+        previous_monitors = list(monitor_to_window.keys())
+
+        # Find removed monitors
+        removed_monitors = [m for m in previous_monitors if m not in current_monitors]
+        # Find added monitors
+        added_monitors = [m for m in current_monitors if m not in previous_monitors]
+
+        # Handle removals
+        for monitor in removed_monitors:
+            print(f"[DEBUG] Monitor removed: {monitor}")
+            if monitor in monitor_to_window:
+                status_win = monitor_to_window[monitor]
+                status_win.cleanup()
+                status_win.destroy()
+                status_bars.remove(status_win)
+                del monitor_to_window[monitor]
+
+        # Handle additions
+        for monitor in added_monitors:
+            print(f"[DEBUG] Monitor added: {monitor}")
+            geometry = monitor.get_geometry()
+            status_win = StatusBar(application=app)
+            GtkLayerShell.init_for_window(status_win)
+            GtkLayerShell.set_monitor(status_win, monitor)
+            GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.TOP)
+            GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.LEFT, True)
+            GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.RIGHT, True)
+            GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.TOP, True)
+            GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.LEFT, 0)
+            GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.RIGHT, 0)
+            GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.TOP, 0)
+            status_win.set_size_request(geometry.width, BAR_HEIGHT)
+            GtkLayerShell.auto_exclusive_zone_enable(status_win)
+            status_win.present()
+            status_bars.append(status_win)
+            monitor_to_window[monitor] = status_win
+
+    # Connect to monitors list changes
+    monitors.connect("items-changed", on_monitors_changed)
 
 
 def on_shutdown(app: Gtk.Application):

@@ -92,10 +92,7 @@ class StatusbarModuleManager:
             self.event_listeners[module_name].clear()
             del self.event_listeners[module_name]
 
-        # Clean up widget
         if module_name in self.module_widgets:
-            widget = self.module_widgets[module_name]
-            widget.destroy()
             del self.module_widgets[module_name]
 
         # Clean up instance
