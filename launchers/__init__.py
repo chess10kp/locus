@@ -12,6 +12,7 @@ from .music_launcher import MpdLauncher, MpdHook
 from .refile_launcher import RefileLauncher, RefileHook
 from .shell_launcher import ShellLauncher, ShellHook
 from .file_launcher import FileLauncher, FileHook
+from .dmenu_launcher import DmenuLauncher, DmenuHook
 from .llm_launcher import LLMLauncher, LLMHook
 # Notification launcher disabled for now
 # from .notification_launcher import NotificationLauncher, NotificationHook
@@ -54,6 +55,8 @@ __all__ = [
     "ShellHook",
     "FileLauncher",
     "FileHook",
+    "DmenuLauncher",
+    "DmenuHook",
     "LLMLauncher",
     "LLMHook",
     # Notification launcher disabled for now

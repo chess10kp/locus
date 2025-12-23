@@ -151,7 +151,7 @@
 
   
 
-* TODO [#A] mpd launcher ndoes not allow queue operations
+* DONE [#A] mpd launcher ndoes not allow queue operations
   :PROPERTIES:
   :ID: task-20251223113838
   :TITLE: mpd launcher ndoes not allow queue operations
@@ -349,7 +349,7 @@
 
   
 
-* TODO perf: remove all debug logging :perf:
+* TODO perf: remove all debug logging :remove all debug logging:perf:
   :PROPERTIES:
   :ID: task-20251223180201
   :TITLE: perf: remove all debug logging

@@ -1368,6 +1368,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.kill_launcher import KillLauncher
             from launchers.shell_launcher import ShellLauncher
             from launchers.file_launcher import FileLauncher
+            from launchers.dmenu_launcher import DmenuLauncher
             from launchers.emoji_launcher import EmojiLauncher
             from launchers.gallery_launcher import GalleryLauncher
             from launchers.web_launcher import WebLauncher
@@ -1402,6 +1403,7 @@ class Launcher(Gtk.ApplicationWindow):
             register_launcher_with_check(KillLauncher)
             register_launcher_with_check(ShellLauncher)
             register_launcher_with_check(FileLauncher)
+            register_launcher_with_check(DmenuLauncher)
             register_launcher_with_check(EmojiLauncher)
             register_launcher_with_check(WebLauncher)
             register_launcher_with_check(GalleryLauncher)
