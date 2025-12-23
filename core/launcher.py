@@ -1371,6 +1371,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.emoji_launcher import EmojiLauncher
             from launchers.gallery_launcher import GalleryLauncher
             from launchers.web_launcher import WebLauncher
+            from launchers.llm_launcher import LLMLauncher
             # Notification launcher disabled for now
             # from launchers.notification_launcher import NotificationLauncher
 
@@ -1404,6 +1405,7 @@ class Launcher(Gtk.ApplicationWindow):
             register_launcher_with_check(EmojiLauncher)
             register_launcher_with_check(WebLauncher)
             register_launcher_with_check(GalleryLauncher)
+            register_launcher_with_check(LLMLauncher)
 
             # Notification launcher disabled for now
             # notification_launcher = NotificationLauncher(self)
@@ -1734,6 +1736,18 @@ class Launcher(Gtk.ApplicationWindow):
         elif size_mode.name == "custom" and custom_size:
             width, height = custom_size
             self.set_default_size(width, height)
+            # Center the launcher horizontally for custom sizes
+            screen = Gdk.Display.get_default().get_monitor_at_surface(
+                self.get_surface()
+            )
+            if screen:
+                monitor_geometry = screen.get_geometry()
+                center_x = monitor_geometry.width // 2
+                GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+                GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
+                GtkLayerShell.set_margin(
+                    self, GtkLayerShell.Edge.LEFT, center_x - width // 2
+                )
             self.set_default_factory()
         else:
             self.reset_launcher_size()

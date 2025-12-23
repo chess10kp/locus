@@ -339,3 +339,21 @@
   :END:
 
   
+
+* TODO fuzzy searc
+  :PROPERTIES:
+  :ID: task-20251223175955
+  :TITLE: fuzzy searc
+  :CREATED: <2025-12-23 Tue 17:59>
+  :END:
+
+  
+
+* TODO perf: remove all debug logging :perf:
+  :PROPERTIES:
+  :ID: task-20251223180201
+  :TITLE: perf: remove all debug logging
+  :CREATED: <2025-12-23 Tue 18:02>
+  :END:
+
+  

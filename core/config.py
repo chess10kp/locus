@@ -222,6 +222,36 @@ MODULE_CONFIG = {
 }
 
 
+# =================================
+# LLM CONFIGURATION
+# =================================
+
+LLM_CONFIG = {
+    "default_provider": "gemini",
+    "providers": {
+        "gemini": {
+            "api_key_env": "GEMINI_API_KEY",
+            "model": "gemini-2.0-flash",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        },
+        "openai": {
+            "api_key_env": "OPENAI_API_KEY",
+            "model": "gpt-4",
+            "endpoint": "https://api.openai.com/v1/chat/completions",
+        },
+        "claude": {
+            "api_key_env": "ANTHROPIC_API_KEY",
+            "model": "claude-3-sonnet-20240229",
+            "endpoint": "https://api.anthropic.com/v1/messages",
+        },
+        "grok": {
+            "api_key_env": "GROK_API_KEY",
+            "model": "grok-beta",
+            "endpoint": "https://api.x.ai/v1/chat/completions",
+        },
+    },
+}
+
 # Custom launchers configuration
 # Each launcher can be:
 # - str: app name to launch
@@ -254,6 +284,7 @@ CUSTOM_LAUNCHERS = {
     "lock": {"type": "builtin", "handler": "lock"},
     "music": {"type": "builtin", "handler": "music"},
     "refile": {"type": "builtin", "handler": "refile"},
+    "ai": {"type": "builtin", "handler": "llm_chat"},
 }
 
 # =================================
@@ -302,6 +333,7 @@ METADATA.update(
         "web": "Web search",
         "file": "File search",
         "f": "File search",
+        "ai": "AI Chat Assistant",
     }
 )
 
@@ -348,6 +380,7 @@ def add_metadata(identifier: str, metadata: str):
         add_metadata("calc", "Calculator mode")
     """
     METADATA[identifier] = metadata
+
 
 # Define custom prefixes for launchers to override default triggers.
 # Format: {launcher_name: [prefix1, prefix2, ...]}
