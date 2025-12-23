@@ -20,8 +20,9 @@ from datetime import datetime, timedelta
 import json
 
 import gi
-gi.require_version('Gio', '2.0')
-gi.require_version('GLib', '2.0')
+
+gi.require_version("Gio", "2.0")
+gi.require_version("GLib", "2.0")
 from gi.repository import Gio, GLib  # pyright: ignore
 from .app_tracker import get_app_tracker
 
@@ -57,6 +58,7 @@ class DesktopAppInfo:
             if exec_line:
                 # Take first part of command, remove field codes
                 import re
+
                 exec_line = re.sub(r"\%[uUfFdDnNickvm]", "", exec_line).strip()
                 self._exec = exec_line.split()[0] if exec_line.split() else ""
             else:
@@ -69,7 +71,11 @@ class DesktopAppInfo:
         if self._icon is None:
             self._icon = self._app_info.get_icon()
             if self._icon:
-                self._icon = self._icon.to_string() if hasattr(self._icon, 'to_string') else str(self._icon)
+                self._icon = (
+                    self._icon.to_string()
+                    if hasattr(self._icon, "to_string")
+                    else str(self._icon)
+                )
             else:
                 self._icon = ""
         return self._icon or ""
@@ -92,7 +98,9 @@ class DesktopAppInfo:
                     self._keywords = keywords_str
                 elif isinstance(keywords_str, str):
                     # Some versions return a semicolon-separated string
-                    self._keywords = [kw.strip() for kw in keywords_str.split(";") if kw.strip()]
+                    self._keywords = [
+                        kw.strip() for kw in keywords_str.split(";") if kw.strip()
+                    ]
                 else:
                     self._keywords = []
             else:
@@ -150,7 +158,11 @@ class FastAppLoader:
                 cache_data = json.load(f)
 
             # Check cache structure
-            if not isinstance(cache_data, dict) or "apps" not in cache_data or "timestamp" not in cache_data:
+            if (
+                not isinstance(cache_data, dict)
+                or "apps" not in cache_data
+                or "timestamp" not in cache_data
+            ):
                 return False
 
             # Check age
@@ -171,7 +183,7 @@ class FastAppLoader:
                 "apps": apps,
                 "timestamp": datetime.now().isoformat(),
                 "version": "2.0",
-                "count": len(apps)
+                "count": len(apps),
             }
 
             # Write to temp file first
@@ -219,7 +231,10 @@ class FastAppLoader:
                 for app_info in all_apps:
                     try:
                         # Skip apps that shouldn't be shown
-                        if hasattr(app_info, 'should_show') and not app_info.should_show():
+                        if (
+                            hasattr(app_info, "should_show")
+                            and not app_info.should_show()
+                        ):
                             continue
 
                         # Create basic app info
@@ -232,18 +247,24 @@ class FastAppLoader:
 
                         # Clean up field codes from exec line
                         import re
+
                         exec_line = re.sub(r"\%[uUfFdDnNickvm]", "", exec_line).strip()
                         exec_name = exec_line.split()[0] if exec_line.split() else ""
 
                         app_dict = {
                             "name": name,
                             "exec": exec_name,
-                            "icon": app_info.get_icon().to_string() if app_info.get_icon() else "",
+                            "icon": app_info.get_icon().to_string()
+                            if app_info.get_icon()
+                            else "",
                             "file": "",  # Gio.AppInfo doesn't provide filename
                             "description": app_info.get_description() or "",
                             "keywords": [],  # Keywords not easily accessible via Gio.AppInfo
                         }
 
+                        logger.debug(
+                            f"App '{name}': icon_name = '{app_dict.get('icon', 'NONE')}'"
+                        )
                         apps.append(app_dict)
 
                     except Exception as e:
@@ -260,9 +281,12 @@ class FastAppLoader:
             return apps
 
         except Exception as e:
-            logger.warning(f"Gio.AppInfo failed ({e}), falling back to desktop file scanning")
+            logger.warning(
+                f"Gio.AppInfo failed ({e}), falling back to desktop file scanning"
+            )
             # Fallback to the existing desktop file scanning method
             from utils.utils import load_desktop_apps
+
             return load_desktop_apps()
 
     def load_apps(self, force_refresh: bool = False) -> List[Dict]:
@@ -288,7 +312,9 @@ class FastAppLoader:
 
         return apps
 
-    def load_apps_background(self, callback: Optional[Callable[[List[Dict]], None]] = None):
+    def load_apps_background(
+        self, callback: Optional[Callable[[List[Dict]], None]] = None
+    ):
         """Load apps in background thread."""
         if self._loading:
             return  # Already loading
@@ -329,9 +355,7 @@ class FastAppLoader:
 
             # Sort by frequency weight
             sorted_apps = sorted(
-                apps,
-                key=lambda x: frequency_weights.get(x["name"], 1.0),
-                reverse=True
+                apps, key=lambda x: frequency_weights.get(x["name"], 1.0), reverse=True
             )
             return sorted_apps[:max_results]
 
@@ -348,7 +372,7 @@ class FastAppLoader:
             query=query,
             apps=apps,
             frequency_weights=frequency_weights,
-            max_results=max_results
+            max_results=max_results,
         )
 
     def track_app_launch(self, app_name: str):
@@ -359,11 +383,13 @@ class FastAppLoader:
         """Get statistics about the app loader."""
         return {
             "cached_apps_count": len(self._apps_cache),
-            "last_load_time": self._last_load_time.isoformat() if self._last_load_time else None,
+            "last_load_time": self._last_load_time.isoformat()
+            if self._last_load_time
+            else None,
             "cache_file": str(self.cache_file),
             "cache_valid": self.is_cache_valid(),
             "loading": self._loading,
-            "tracker_stats": self._app_tracker.get_stats()
+            "tracker_stats": self._app_tracker.get_stats(),
         }
 
 

@@ -39,7 +39,11 @@ from .wifi import (
     wifi_forget,
 )
 from .monitor import get_monitors, toggle_monitor
-from .wm import detect_wm
+
+try:
+    from .wm import detect_wm
+except ImportError:
+    detect_wm = None
 from .utils import (
     apply_styles,
     send_status_message,

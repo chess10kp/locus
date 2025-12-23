@@ -81,13 +81,19 @@ class ShellLauncher(LauncherInterface):
             # Show help text when no query
             label_text = "Enter shell command to execute"
             metadata = "Enter command"
-            launcher_core.add_launcher_result(label_text, metadata, index=1)
+            launcher_core.add_launcher_result(
+                label_text, metadata, index=1, icon_name="utilities-terminal"
+            )
         else:
             # Show the command that will be executed
             label_text = f"Execute: {query}"
             metadata = "Run command"
             launcher_core.add_launcher_result(
-                label_text, metadata, index=1, action_data=f"exec:{query}"
+                label_text,
+                metadata,
+                index=1,
+                action_data=f"exec:{query}",
+                icon_name="utilities-terminal",
             )
 
         # Scroll to top

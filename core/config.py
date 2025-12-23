@@ -48,11 +48,6 @@ NOTIFICATION_CONFIG = {
     },
 }
 
-
-# =================================
-# LAUNCHER CONFIGURATION
-# =================================
-
 LAUNCHER_CONFIG = {
     # Display and Window Settings
     "window": {
@@ -105,6 +100,16 @@ LAUNCHER_CONFIG = {
         "show_keyboard_hints": True,  # Show Alt+1-9 hints
         "clear_input_on_hide": True,  # Clear search input when hiding
         "auto_grab_focus": True,  # Auto-focus search entry when shown
+    },
+    # Icon Configuration
+    "icons": {
+        "enable_icons": True,  # Master toggle for icons in search results
+        "icon_size": 32,  # Icon size in pixels (default 32px)
+        "cache_icons": True,  # Cache loaded icons for performance
+        "cache_size": 200,  # Maximum number of icons to keep in memory cache
+        "fallback_icon": "image-missing",  # Fallback icon when icon fails to load
+        "use_file_type_icons": True,  # Use file type icons for files
+        "async_loading": True,  # Load icons asynchronously for better performance
     },
     # Behavior
     "behavior": {
@@ -310,10 +315,6 @@ def add_custom_launcher(name: str, launcher):
 
     Examples:
         add_custom_launcher("google", {"type": "url", "url": "https://google.com"})
-        add_custom_launcher("myterm", {"type": "command", "cmd": "alacritty"})
-        add_custom_launcher("vscode", {"type": "app", "name": "Visual Studio Code"})
-        add_custom_launcher("calc", {"type": "builtin", "handler": "calculator"})
-        add_custom_launcher("myfunc", {"type": "function", "func": my_python_function})
     """
     CUSTOM_LAUNCHERS[name] = launcher
 
@@ -347,11 +348,6 @@ def add_metadata(identifier: str, metadata: str):
         add_metadata("calc", "Calculator mode")
     """
     METADATA[identifier] = metadata
-
-
-# =================================
-# LAUNCHER CUSTOM PREFIXES
-# =================================
 
 # Define custom prefixes for launchers to override default triggers.
 # Format: {launcher_name: [prefix1, prefix2, ...]}

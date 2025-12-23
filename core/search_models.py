@@ -1,5 +1,8 @@
+import logging
 from typing import Optional, Any, Dict
 from enum import Enum
+
+logger = logging.getLogger("SearchModels")
 
 
 class ResultType(Enum):
@@ -26,6 +29,8 @@ class SearchResult:
         self.index = 0  # For Alt+number navigation
         self.hook_data = None  # For custom hook handling
         self.action_data = None  # Data needed to execute the action
+        self.icon_name = None  # Icon name or file path
+        self.icon_pixbuf = None  # Loaded GdkPixbuf (cached by icon manager)
 
 
 class AppSearchResult(SearchResult):
@@ -38,6 +43,23 @@ class AppSearchResult(SearchResult):
         self.app = app
         self.index = index
         self.action_data = app
+        self.icon_name = app.get("icon", None)  # Icon name or file path
+        self.icon_pixbuf = None  # Loaded GdkPixbuf (cached by icon manager)
+
+        logger.debug(
+            f"Creating AppSearchResult for '{title}': icon_name='{self.icon_name}'"
+        )
+        if self.icon_name:
+            try:
+                from utils.icon_manager import icon_manager
+
+                self.icon_pixbuf = icon_manager.get_icon(self.icon_name)
+                logger.debug(
+                    f"Loaded pixbuf for '{title}': {self.icon_pixbuf is not None}"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to load icon for '{title}': {e}")
+                self.icon_pixbuf = None
 
 
 class CommandSearchResult(SearchResult):
@@ -48,13 +70,21 @@ class CommandSearchResult(SearchResult):
         self.command = command
         self.index = index
         self.action_data = command
+        self.icon_name = "/usr/share/icons/AdwaitaLegacy/32x32/legacy/utilities-terminal.png"  # Default terminal icon
+        self.icon_pixbuf = None  # Loaded GdkPixbuf (cached by icon manager)
 
 
 class LauncherSearchResult(SearchResult):
     """Search result for registered launchers."""
 
     def __init__(
-        self, command: str, metadata: str = "", index: int = 0, action_data=None, prefix: bool = True
+        self,
+        command: str,
+        metadata: str = "",
+        index: int = 0,
+        action_data=None,
+        prefix: bool = True,
+        icon_name: Optional[str] = None,
     ):
         title = f">{command}" if prefix else command
         super().__init__(title, metadata, ResultType.LAUNCHER)
@@ -65,16 +95,41 @@ class LauncherSearchResult(SearchResult):
             self.action_data = action_data
         else:
             self.action_data = command
+        self.icon_name = icon_name
+        self.icon_pixbuf = None  # Loaded GdkPixbuf (cached by icon manager)
+
+        logger.debug(
+            f"Creating LauncherSearchResult for '{title}': icon_name='{self.icon_name}'"
+        )
+        if self.icon_name:
+            try:
+                from utils.icon_manager import icon_manager
+
+                self.icon_pixbuf = icon_manager.get_icon(self.icon_name)
+                logger.debug(
+                    f"Loaded pixbuf for launcher '{title}': {self.icon_pixbuf is not None}"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to load icon for launcher '{title}': {e}")
+                self.icon_pixbuf = None
 
 
 class CustomSearchResult(SearchResult):
     """Search result for custom handlers."""
 
-    def __init__(self, title: str, hook_data: Any = None, index: int = 0):
+    def __init__(
+        self,
+        title: str,
+        hook_data: Any = None,
+        index: int = 0,
+        icon_name: Optional[str] = None,
+    ):
         super().__init__(title, "", ResultType.CUSTOM)
         self.hook_data = hook_data
         self.index = index
         self.action_data = hook_data
+        self.icon_name = icon_name  # Optional icon for custom results
+        self.icon_pixbuf = None  # Loaded GdkPixbuf (cached by icon manager)
 
 
 class LoadingSearchResult(SearchResult):
@@ -89,13 +144,20 @@ class WallpaperSearchResult(SearchResult):
     """Search result for wallpaper images with thumbnails."""
 
     def __init__(
-        self, title: str, image_path: str, pixbuf=None, index: int = 0, action_data=None
+        self,
+        title: str,
+        image_path: str,
+        pixbuf=None,
+        index: int = 0,
+        action_data=None,
     ):
         super().__init__(title, "", ResultType.WALLPAPER)
         self.image_path = image_path
         self.pixbuf = pixbuf  # GdkPixbuf for the thumbnail
         self.index = index
         self.action_data = action_data if action_data is not None else image_path
+        self.icon_name = None  # Not used for wallpaper (uses image_path/pixbuf)
+        self.icon_pixbuf = None  # Not used for wallpaper (uses pixbuf directly)
 
 
 class GridSearchResult(SearchResult):
@@ -119,3 +181,5 @@ class GridSearchResult(SearchResult):
         self.index = index
         # Action data defaults to metadata but can be overridden
         self.action_data = action_data if action_data is not None else metadata
+        self.icon_name = None  # Not used for grid (uses image_path/pixbuf)
+        self.icon_pixbuf = None  # Not used for grid (uses pixbuf directly)

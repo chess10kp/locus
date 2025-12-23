@@ -77,29 +77,29 @@ class FileLauncher(LauncherInterface):
     Triggers: >file, >f
     """
 
-    # File type icons (emoji for simple visual indication)
+    # File type icons (theme icon names for proper visual indication)
     FILE_ICONS = {
-        "text/plain": "",
-        "text/markdown": "",
-        "text/x-python": "",
-        "text/javascript": "",
-        "text/typescript": "",
-        "application/json": "",
-        "application/pdf": "",
-        "image/png": "",
-        "image/jpeg": "",
-        "image/gif": "",
-        "image/svg+xml": "",
-        "image/webp": "",
-        "audio/mpeg": "",
-        "audio/flac": "",
-        "audio/wav": "",
-        "video/mp4": "",
-        "video/webm": "",
-        "application/zip": "",
-        "application/x-tar": "",
-        "application/gzip": "",
-        "application/octet-stream": "",
+        "text/plain": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "text/markdown": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "text/x-python": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/accessories-text-editor.png",
+        "text/javascript": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/accessories-text-editor.png",
+        "text/typescript": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/accessories-text-editor.png",
+        "application/json": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "application/pdf": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "image/png": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/insert-image.png",
+        "image/jpeg": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/insert-image.png",
+        "image/gif": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/insert-image.png",
+        "image/svg+xml": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/insert-image.png",
+        "image/webp": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/insert-image.png",
+        "audio/mpeg": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "audio/flac": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "audio/wav": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "video/mp4": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "video/webm": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "application/zip": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "application/x-tar": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "application/gzip": "/usr/share/icons/AdwaitaLegacy/32x32/legacy/document-new.png",
+        "application/octet-stream": "application-x-executable",
     }
 
     def __init__(self, main_launcher=None):
@@ -197,12 +197,12 @@ class FileLauncher(LauncherInterface):
                 display_path = os.path.basename(file_result.parent_path) + "/"
 
             # Get icon for file type
-            icon = self.FILE_ICONS.get(file_result.file_type, "")
+            icon_name = self.FILE_ICONS.get(file_result.file_type, "text-x-generic")
 
             # Format size
             size_str = self._format_size(file_result.size)
 
-            metadata = f"{icon} {size_str}"
+            metadata = f"{size_str}"
 
             # Add action data
             action_data = {
@@ -217,6 +217,7 @@ class FileLauncher(LauncherInterface):
                 metadata,
                 index=index if index <= 9 else None,
                 action_data=action_data,
+                icon_name=icon_name,
             )
 
             index += 1
@@ -274,11 +275,12 @@ class FileLauncher(LauncherInterface):
 
     def _format_size(self, size_bytes: int) -> str:
         """Format file size for display."""
+        size_float = float(size_bytes)
         for unit in ["B", "KB", "MB", "GB"]:
-            if size_bytes < 1024.0:
-                return f"{size_bytes:.1f}{unit}"
-            size_bytes /= 1024.0
-        return f"{size_bytes:.1f}TB"
+            if size_float < 1024.0:
+                return f"{size_float:.1f}{unit}"
+            size_float /= 1024.0
+        return f"{size_float:.1f}TB"
 
     def cleanup(self) -> None:
         """Clean up resources."""

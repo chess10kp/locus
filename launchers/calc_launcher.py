@@ -58,6 +58,7 @@ class CalcLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_clipboard
+
         if not check_clipboard():
             return False, "clipboard utility (wl-copy or xclip) not found"
         return True, ""
@@ -102,7 +103,11 @@ class CalcLauncher(LauncherInterface):
             label_text = f"Result: {result}"
             metadata = launcher_core.METADATA.get(label_text, "")
             launcher_core.add_launcher_result(
-                label_text, metadata, index=1, action_data=result
+                label_text,
+                metadata,
+                index=1,
+                action_data=result,
+                icon_name="accessories-calculator",
             )
             # Scroll to top
             vadj = launcher_core.scrolled.get_vadjustment()

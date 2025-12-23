@@ -89,13 +89,30 @@ class WrappedSearchResult(GObject.Object):
         return getattr(self.search_result, "image_path", None)
 
     @property
+    def icon_name(self):
+        icon_name = getattr(self.search_result, "icon_name", None)
+        logger.debug(f"WrappedSearchResult.icon_name accessed: '{icon_name}'")
+        return icon_name
+
+    @property
+    def icon_pixbuf(self):
+        pixbuf = getattr(self.search_result, "icon_pixbuf", None)
+        logger.debug(f"WrappedSearchResult.icon_pixbuf accessed: {pixbuf is not None}")
+        return pixbuf
+
+    @icon_pixbuf.setter
+    def icon_pixbuf(self, value):
+        logger.debug(f"WrappedSearchResult.icon_pixbuf set: {value is not None}")
+        setattr(self.search_result, "icon_pixbuf", value)
+
+    @property
     def pixbuf(self):
         return getattr(self.search_result, "pixbuf", None)
 
 
 # Setup Logging
 logger = logging.getLogger("AppLauncher")
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class PerformanceMonitor:
@@ -789,8 +806,14 @@ class Launcher(Gtk.ApplicationWindow):
             )
 
             # Create a horizontal box for content
-            hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+            hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
             hbox.set_hexpand(True)
+
+            # Icon image
+            icon_image = Gtk.Image()
+            icon_image.set_pixel_size(32)  # Match icon_size from config
+            icon_image.set_halign(Gtk.Align.START)
+            icon_image.set_valign(Gtk.Align.START)
 
             # Text container
             text_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -820,6 +843,7 @@ class Launcher(Gtk.ApplicationWindow):
             hint_label.set_hexpand(True)
             hint_label.add_css_class("hint-label")
 
+            hbox.append(icon_image)
             hbox.append(text_vbox)
             hbox.append(hint_label)
             button.set_child(hbox)
@@ -829,6 +853,7 @@ class Launcher(Gtk.ApplicationWindow):
 
             # Store references on the list item for later access
             list_item.button = button
+            list_item.icon_image = icon_image
             list_item.title_label = title_label
             list_item.subtitle_label = subtitle_label
             list_item.hint_label = hint_label
@@ -839,17 +864,15 @@ class Launcher(Gtk.ApplicationWindow):
             if not search_result:
                 return
 
-            # Get stored references
-            button = getattr(list_item, "button", None)
-            title_label = getattr(list_item, "title_label", None)
-            subtitle_label = getattr(list_item, "subtitle_label", None)
-            hint_label = getattr(list_item, "hint_label", None)
-
-            if not all([button, title_label, subtitle_label, hint_label]):
-                return
+            # Debug icon availability
+            icon_pixbuf = getattr(search_result, "icon_pixbuf", None)
+            logger.debug(
+                f"bind_callback: icon_pixbuf available for '{search_result.title}': {icon_pixbuf is not None}"
+            )
 
             # Get stored references
             button = getattr(list_item, "button", None)
+            icon_image = getattr(list_item, "icon_image", None)
             title_label = getattr(list_item, "title_label", None)
             subtitle_label = getattr(list_item, "subtitle_label", None)
             hint_label = getattr(list_item, "hint_label", None)
@@ -881,6 +904,15 @@ class Launcher(Gtk.ApplicationWindow):
                     hint_label.set_visible(True)
                 else:
                     hint_label.set_visible(False)
+
+            # Update icon
+            if icon_image:
+                if icon_pixbuf:
+                    icon_image.set_from_pixbuf(icon_pixbuf)
+                    icon_image.set_visible(True)
+                else:
+                    # No icon available, hide the image
+                    icon_image.set_visible(False)
 
             # Update button click handler
             # Remove old handlers to prevent memory leaks
@@ -1611,6 +1643,7 @@ class Launcher(Gtk.ApplicationWindow):
         index: int | None = None,
         result_type: ResultType | None = None,
         action_data=None,
+        icon_name: str | None = None,
     ):
         """Add a search result from a sublauncher. This replaces create_button_with_metadata."""
         if result_type is None:
@@ -1619,7 +1652,12 @@ class Launcher(Gtk.ApplicationWindow):
         # Don't prefix launcher results with ">" since they're items within a launcher
         safe_index = 0 if index is None else index
         result = LauncherSearchResult(
-            title, subtitle, safe_index, action_data=action_data, prefix=False
+            title,
+            subtitle,
+            safe_index,
+            action_data=action_data,
+            prefix=False,
+            icon_name=icon_name,
         )
         self.list_store.append(WrappedSearchResult(result))
 

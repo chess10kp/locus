@@ -79,7 +79,7 @@
 
   
 
-* TODO better search
+* DONE better search
   :PROPERTIES:
   :ID: task-20251222201159
   :TITLE: better search
@@ -187,7 +187,7 @@
 
   
 
-* TODO multimonitor suppport + including nkilling the bar if a monitor dies
+* DONE multimonitor suppport + including nkilling the bar if a monitor dies
   :PROPERTIES:
   :ID: task-20251223115039
   :TITLE: multimonitor suppport + including nkilling the bar if a monitor dies
@@ -304,7 +304,7 @@
 
   
 
-* TODO icons
+* DONE icons
   :PROPERTIES:
   :ID: task-20251223163433
   :TITLE: icons
@@ -327,6 +327,15 @@
   :ID: task-20251223163557
   :TITLE: color picker
   :CREATED: <2025-12-23 Tue 16:35>
+  :END:
+
+  
+
+* TODO [#A] scrollwm binding mode
+  :PROPERTIES:
+  :ID: task-20251223175747
+  :TITLE: scrollwm binding mode
+  :CREATED: <2025-12-23 Tue 17:57>
   :END:
 
   
