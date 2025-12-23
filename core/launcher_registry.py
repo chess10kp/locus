@@ -8,7 +8,7 @@
 # ruff: ignore
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Union
 from enum import Enum
 
 
@@ -101,7 +101,36 @@ class LauncherRegistry:
 
     def __init__(self):
         self._launchers: Dict[str, LauncherInterface] = {}
-        self._trigger_map: Dict[str, LauncherInterface] = {}
+        self._trigger_map: Dict[str, Any] = {}  # Maps custom prefixes to launchers
+        self._original_triggers: Dict[
+            str, Any
+        ] = {}  # Maps normalized original triggers to launchers
+
+    def _is_custom_prefix_trigger(
+        self, input_text: str
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """Check if input matches a custom trigger pattern (colon or space suffix).
+
+        Returns:
+            Tuple of (trigger_string, prefix_type) or (None, None)
+            where prefix_type is "colon" or "space"
+        """
+        if not input_text:
+            return None, None
+
+        # Check for colon-style triggers (e.g., "f:")
+        if ":" in input_text:
+            potential_trigger = input_text.split(":")[0]
+            if potential_trigger in self._trigger_map:
+                return potential_trigger, "colon"
+
+        # Check for space-style triggers (e.g., "f query")
+        if " " in input_text:
+            potential_trigger = input_text.split(" ")[0]
+            if potential_trigger in self._trigger_map:
+                return potential_trigger, "space"
+
+        return None, None
 
     def register(self, launcher: LauncherInterface) -> None:
         """Register a launcher plugin."""
@@ -110,18 +139,57 @@ class LauncherRegistry:
 
         self._launchers[launcher.name] = launcher
 
-        # Register command triggers
+        # Always register original triggers for traditional > matching
         for trigger in launcher.command_triggers:
-            if trigger in self._trigger_map:
-                # Allow multiple launchers with same trigger prefix
-                # but store them as a list for conflict resolution
-                existing = self._trigger_map[trigger]
+            # Normalize: remove leading > if present
+            normalized_trigger = trigger.lstrip(">")
+
+            # Store in original triggers map for traditional > matching
+            if normalized_trigger in self._original_triggers:
+                existing = self._original_triggers[normalized_trigger]
                 if isinstance(existing, list):
                     existing.append(launcher)
                 else:
-                    self._trigger_map[trigger] = [existing, launcher]
+                    self._original_triggers[normalized_trigger] = [existing, launcher]
             else:
-                self._trigger_map[trigger] = launcher
+                self._original_triggers[normalized_trigger] = launcher
+
+        # Check config for custom prefixes
+        from core.config import LAUNCHER_PREFIXES
+
+        if launcher.name in LAUNCHER_PREFIXES:
+            # Use custom prefixes from config (replaces default triggers for custom matching)
+            custom_triggers = LAUNCHER_PREFIXES[launcher.name]
+            # Register custom triggers
+            for trigger in custom_triggers:
+                # Normalize: remove leading > if present
+                normalized_trigger = trigger.lstrip(">")
+
+                if normalized_trigger in self._trigger_map:
+                    # Allow multiple launchers with same trigger prefix
+                    # but store them as a list for conflict resolution
+                    existing = self._trigger_map[normalized_trigger]
+                    if isinstance(existing, list):
+                        existing.append(launcher)
+                    else:
+                        self._trigger_map[normalized_trigger] = [existing, launcher]
+                else:
+                    self._trigger_map[normalized_trigger] = launcher
+        else:
+            # No custom prefixes - register original triggers in trigger map too for custom matching
+            for trigger in launcher.command_triggers:
+                # Normalize: remove leading > if present
+                normalized_trigger = trigger.lstrip(">")
+
+                # Also store in trigger map for custom matching
+                if normalized_trigger in self._trigger_map:
+                    existing = self._trigger_map[normalized_trigger]
+                    if isinstance(existing, list):
+                        existing.append(launcher)
+                    else:
+                        self._trigger_map[normalized_trigger] = [existing, launcher]
+                else:
+                    self._trigger_map[normalized_trigger] = launcher
 
     def unregister(self, name: str) -> None:
         """Unregister a launcher by name."""
@@ -130,18 +198,48 @@ class LauncherRegistry:
 
         launcher = self._launchers[name]
 
-        # Remove from trigger map
+        # Always remove from original triggers map
         for trigger in launcher.command_triggers:
-            if trigger in self._trigger_map:
-                existing = self._trigger_map[trigger]
+            normalized_trigger = trigger.lstrip(">")
+            if normalized_trigger in self._original_triggers:
+                existing = self._original_triggers[normalized_trigger]
                 if isinstance(existing, list):
-                    self._trigger_map[trigger] = [l for l in existing if l != launcher]
-                    if len(self._trigger_map[trigger]) == 1:
-                        self._trigger_map[trigger] = self._trigger_map[trigger][0]
-                    elif len(self._trigger_map[trigger]) == 0:
-                        del self._trigger_map[trigger]
+                    self._original_triggers[normalized_trigger] = [
+                        l for l in existing if l != launcher
+                    ]
+                    if len(self._original_triggers[normalized_trigger]) == 1:
+                        self._original_triggers[normalized_trigger] = (
+                            self._original_triggers[normalized_trigger][0]
+                        )
+                    elif len(self._original_triggers[normalized_trigger]) == 0:
+                        del self._original_triggers[normalized_trigger]
                 else:
-                    del self._trigger_map[trigger]
+                    del self._original_triggers[normalized_trigger]
+
+        # Remove from custom trigger map
+        from core.config import LAUNCHER_PREFIXES
+
+        if launcher.name in LAUNCHER_PREFIXES:
+            triggers = LAUNCHER_PREFIXES[launcher.name]
+        else:
+            triggers = launcher.command_triggers
+
+        for trigger in triggers:
+            normalized_trigger = trigger.lstrip(">")
+            if normalized_trigger in self._trigger_map:
+                existing = self._trigger_map[normalized_trigger]
+                if isinstance(existing, list):
+                    self._trigger_map[normalized_trigger] = [
+                        l for l in existing if l != launcher
+                    ]
+                    if len(self._trigger_map[normalized_trigger]) == 1:
+                        self._trigger_map[normalized_trigger] = self._trigger_map[
+                            normalized_trigger
+                        ][0]
+                    elif len(self._trigger_map[normalized_trigger]) == 0:
+                        del self._trigger_map[normalized_trigger]
+                else:
+                    del self._trigger_map[normalized_trigger]
 
         # Cleanup and remove launcher
         launcher.cleanup()
@@ -166,23 +264,56 @@ class LauncherRegistry:
     ) -> Tuple[Optional[str], Optional[LauncherInterface], str]:
         """Find launcher and remaining query for given input text.
 
+        Supports three trigger styles:
+        1. Traditional: ">file query" (with > prefix)
+        2. Colon-style: "f: query" (custom with colon)
+        3. Space-style: "f query" (custom with space)
+
         Returns:
             Tuple of (trigger_or_none, launcher_or_none, remaining_query)
         """
-        if not input_text or not input_text.startswith(">"):
+        if not input_text:
             return None, None, input_text
 
-        # Remove the > prefix
-        text_without_prefix = input_text[1:]
+        # Check for traditional > prefix first
+        if input_text.startswith(">"):
+            # Remove the > prefix
+            text_without_prefix = input_text[1:]
 
-        # Find the longest matching trigger
-        sorted_triggers = sorted(self._trigger_map.keys(), key=len, reverse=True)
+            # Find the longest matching trigger from original triggers
+            sorted_triggers = sorted(
+                self._original_triggers.keys(), key=len, reverse=True
+            )
 
-        for trigger in sorted_triggers:
-            if text_without_prefix.startswith(trigger):
-                launcher = self.get_launcher_by_trigger(trigger)
-                remaining_query = text_without_prefix[len(trigger) :].strip()
-                return trigger, launcher, remaining_query
+            for trigger in sorted_triggers:
+                if text_without_prefix.startswith(trigger):
+                    # Get launcher from original triggers map
+                    launcher_result = self._original_triggers[trigger]
+                    launcher = (
+                        launcher_result[0]
+                        if isinstance(launcher_result, list)
+                        else launcher_result
+                    )
+                    remaining_query = text_without_prefix[len(trigger) :].strip()
+                    return trigger, launcher, remaining_query
+
+            return None, None, input_text
+
+        # Check for custom trigger patterns (colon or space)
+        trigger, prefix_type = self._is_custom_prefix_trigger(input_text)
+
+        if trigger and trigger in self._trigger_map:
+            launcher = self.get_launcher_by_trigger(trigger)
+
+            # Extract remaining query based on prefix type
+            if prefix_type == "colon":
+                # Remove "f:" to get remaining
+                remaining_query = input_text[len(trigger) + 1 :].strip()
+            else:  # space
+                # Remove "f " to get remaining
+                remaining_query = input_text[len(trigger) + 1 :].strip()
+
+            return trigger, launcher, remaining_query
 
         return None, None, input_text
 

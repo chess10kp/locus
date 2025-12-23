@@ -1429,6 +1429,7 @@ class Launcher(Gtk.ApplicationWindow):
             not self.list_store.get_n_items()
             and filter_text
             and not filter_text.startswith(">")
+            and not self.launcher_registry._is_custom_prefix_trigger(filter_text)[0]
         ):
             hook_data = {"type": "web_search", "query": filter_text}
             result = LauncherSearchResult(
@@ -1461,14 +1462,20 @@ class Launcher(Gtk.ApplicationWindow):
         # Update footer based on mode
         if launcher:
             self.footer_label.set_text(launcher.name.capitalize())
+        # Check if it's a traditional command with > prefix
         elif filter_text.startswith(">"):
             command = filter_text[1:].strip()
             if command:
                 self.footer_label.set_text(f"Command: {command}")
             else:
                 self.footer_label.set_text("Commands")
+        # Check if it's a custom trigger (has colon or matching trigger)
         else:
-            self.footer_label.set_text("Applications")
+            trigger, _ = self.launcher_registry._is_custom_prefix_trigger(filter_text)
+            if trigger:
+                self.footer_label.set_text(f"Launcher: {trigger}")
+            else:
+                self.footer_label.set_text("Applications")
 
         # IMPORTANT: Set factory BEFORE clearing the listbox
         if launcher:
@@ -1479,14 +1486,17 @@ class Launcher(Gtk.ApplicationWindow):
             else:
                 self._current_grid_launcher = None
             self._apply_size_mode(size_mode, custom_size)
+        # Set default factory if no launcher found
         elif filter_text.startswith(">"):
             self._current_grid_launcher = None
             self.reset_launcher_size()
             self.set_default_factory()
         else:
-            self._current_grid_launcher = None
-            self.reset_launcher_size()
-            self.set_default_factory()
+            trigger, _ = self.launcher_registry._is_custom_prefix_trigger(filter_text)
+            if not trigger:
+                self._current_grid_launcher = None
+                self.reset_launcher_size()
+                self.set_default_factory()
 
         # Return buttons to pool instead of destroying them
         self._clear_listbox()
@@ -1726,8 +1736,24 @@ class Launcher(Gtk.ApplicationWindow):
                 return
 
         # Handle custom launchers from config
+        # Check for traditional > prefix OR custom triggers
         if text.startswith(">"):
             command = text[1:].strip()
+        else:
+            # Check for custom trigger
+            trigger, prefix_type = self.launcher_registry._is_custom_prefix_trigger(
+                text
+            )
+            if trigger:
+                # Extract command part after trigger
+                if prefix_type == "colon":
+                    command = text[len(trigger) + 1 :].strip()
+                else:  # space
+                    command = text[len(trigger) + 1 :].strip()
+            else:
+                command = None
+
+        if command is not None:
             with open("/tmp/locus_debug.log", "a") as f:
                 f.write(f"[DEBUG] Command detected: '{command}'\n")
 
@@ -2080,6 +2106,12 @@ class Launcher(Gtk.ApplicationWindow):
             return True
         if keyval == Gdk.KEY_c and (state & Gdk.ModifierType.CONTROL_MASK):
             self.hide()
+            return True
+        if keyval == Gdk.KEY_Up:
+            self.select_prev()
+            return True
+        if keyval == Gdk.KEY_Down:
+            self.select_next()
             return True
         return False
 

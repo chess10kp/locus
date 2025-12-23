@@ -231,3 +231,57 @@
   :END:
 
   
+
+* TODO ctrl+j ctrl+k keybindings
+  :PROPERTIES:
+  :ID: task-20251223150149
+  :TITLE: ctrl+j ctrl+k keybindings
+  :CREATED: <2025-12-23 Tue 15:01>
+  :END:
+
+  
+
+* TODO configurable keybindings through the config file
+  :PROPERTIES:
+  :ID: task-20251223150201
+  :TITLE: configurable keybindings through the config file
+  :CREATED: <2025-12-23 Tue 15:02>
+  :END:
+
+  
+
+* TODO sway keybinding launcher
+  :PROPERTIES:
+  :ID: task-20251223150326
+  :TITLE: sway keybinding launcher
+  :CREATED: <2025-12-23 Tue 15:03>
+  :END:
+
+  
+
+* TODO qualculate for calclations instead of ccustom calc  launcher
+  :PROPERTIES:
+  :ID: task-20251223150346
+  :TITLE: qualculate for calclations instead of ccustom calc  launcher
+  :CREATED: <2025-12-23 Tue 15:03>
+  :END:
+
+  
+
+* TODO api to configure ctrl and alt keybindings foofor a launcher
+  :PROPERTIES:
+  :ID: task-20251223150656
+  :TITLE: api to configure ctrl and alt keybindings foofor a launcher
+  :CREATED: <2025-12-23 Tue 15:06>
+  :END:
+
+  
+
+* TODO [#A] wp lancher doesn't set the wallpaper or show the images as buttons
+  :PROPERTIES:
+  :ID: task-20251223151003
+  :TITLE: wp lancher doesn't set the wallpaper or show the images as buttons
+  :CREATED: <2025-12-23 Tue 15:10>
+  :END:
+
+  

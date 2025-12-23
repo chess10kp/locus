@@ -28,10 +28,6 @@ FOCUS_MODE_HOOKS = {
 }
 
 
-# =================================
-# NOTIFICATION CONFIGURATION
-# =================================
-
 NOTIFICATION_CONFIG = {
     "history": {
         "max_history": 500,  # Maximum notifications to store
@@ -261,16 +257,16 @@ CUSTOM_LAUNCHERS = {
 
 # Search engine presets
 SEARCH_ENGINES = {
-    "google": "https://www.google.com/search?q={}",
-    "startpage": "https://www.startpage.com/sp/search?query={}",
-    "bravesearch": "https://search.brave.com/search?q={}",
-    "duckduckgo": "https://duckduckgo.com/?q={}",
-    "bing": "https://www.bing.com/search?q={}",
-    "ecosia": "https://www.ecosia.org/search?q={}",
+    "gg": "https://www.google.com/search?q={}",
+    "sp": "https://www.startpage.com/sp/search?query={}",
+    "bs": "https://search.brave.com/search?q={}",
+    "dg": "https://duckduckgo.com/?q={}",
+    "bg": "https://www.bing.com/search?q={}",
+    "ec": "https://www.ecosia.org/search?q={}",
 }
 
 # Default search engine (must be a key from SEARCH_ENGINES)
-DEFAULT_SEARCH_ENGINE = "google"
+DEFAULT_SEARCH_ENGINE = "gh"
 
 # Command to open URLs (use None to let xdg-open decide)
 # Examples:
@@ -351,6 +347,45 @@ def add_metadata(identifier: str, metadata: str):
         add_metadata("calc", "Calculator mode")
     """
     METADATA[identifier] = metadata
+
+
+# =================================
+# LAUNCHER CUSTOM PREFIXES
+# =================================
+
+# Define custom prefixes for launchers to override default triggers.
+# Format: {launcher_name: [prefix1, prefix2, ...]}
+#
+# Prefix styles supported:
+#   - Colon suffix: "f:" matches "f: query"
+#   - Space separator: "f" matches "f query" (f followed by space)
+#   - With > prefix: ">file" (traditional, but not recommended here)
+#
+# If a launcher is listed here, ONLY these triggers are used.
+# If not listed, the launcher's default triggers are used.
+#
+# Examples:
+#   LAUNCHER_PREFIXES = {
+#       "file": ["f:"],        # Use "f:" instead of ">file"
+#       "wallpaper": ["wp:"],   # Use "wp:" instead of ">wallpaper"
+#       "music": ["m:"],        # Use "m:" instead of ">music"
+#       "wifi": ["w:"],         # Use "w:" instead of ">wifi"
+#       "bluetooth": ["bt:"],   # Use "bt:" instead of ">bluetooth"
+#       "calc": ["c:"],         # Use "c:" instead of ">calc"
+#       "emoji": ["e:"],        # Use "e:" instead of ">emoji"
+#   }
+#
+# Available launcher names:
+#   file, wallpaper, music, wifi, bluetooth, calc, bookmark,
+#   timer, web, emoji, gallery, kill, shell, refile, focus, lock
+
+LAUNCHER_PREFIXES = {
+    # Example custom prefixes - feel free to modify
+    "file": ["f:"],  # Type "f:" instead of ">file"
+    "wallpaper": ["wp:"],  # Type "wp:" instead of ">wallpaper"
+    "music": ["m"],  # Type "m " instead of ">music"
+    "wifi": ["w"],  # Type "w " instead of ">wifi"
+}
 
 
 def remove_metadata(identifier: str):
