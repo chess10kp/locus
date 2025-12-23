@@ -24,7 +24,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
 
-from gi.repository import Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # noqa: E402  # pyright: ignore
+from gi.repository import Gdk, Gtk, Gtk4LayerShell as GtkLayerShell, GLib  # noqa: E402  # pyright: ignore
 
 # Initialize GTK immediately after imports, before any other modules
 Gtk.init()
@@ -64,6 +64,7 @@ kill_previous_process()
 
 
 status_bars = []  # Global list to store StatusBar instances for cleanup
+monitor_to_window = {}  # Global dict to map monitors to their status bars
 
 
 def on_activate(app: Gtk.Application):
@@ -102,6 +103,53 @@ def on_activate(app: Gtk.Application):
 
         status_win.present()
         status_bars.append(status_win)
+        monitor_to_window[monitor] = status_win
+
+    # Define signal callback for monitors list changes
+    def on_monitors_changed(model, position, removed, added):
+        print(
+            f"[DEBUG] Monitors changed: position={position}, removed={removed}, added={added}"
+        )
+        # Get current monitors
+        current_monitors = [model.get_item(i) for i in range(model.get_n_items())]
+
+        # Destroy all existing bars
+        for monitor, status_win in list(monitor_to_window.items()):
+            print(f"[DEBUG] Destroying bar for monitor: {monitor}")
+            status_win.cleanup()
+            status_win.destroy()
+            status_bars.remove(status_win)
+        monitor_to_window.clear()
+
+        # Schedule recreation after a short delay to allow geometry update
+        def recreate_bars(monitors):
+            for monitor in monitors:
+                geometry = monitor.get_geometry()
+                print(
+                    f"[DEBUG] Creating bar for monitor: {monitor}, width: {geometry.width}"
+                )
+                status_win = StatusBar(application=app)
+                GtkLayerShell.init_for_window(status_win)
+                GtkLayerShell.set_monitor(status_win, monitor)
+                GtkLayerShell.set_layer(status_win, GtkLayerShell.Layer.TOP)
+                GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.LEFT, True)
+                GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.RIGHT, True)
+                GtkLayerShell.set_anchor(status_win, GtkLayerShell.Edge.TOP, True)
+                GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.LEFT, 0)
+                GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.RIGHT, 0)
+                GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.TOP, 0)
+                status_win.set_size_request(geometry.width, BAR_HEIGHT)
+                GtkLayerShell.auto_exclusive_zone_enable(status_win)
+                status_win.present()
+                status_win.queue_resize()
+                status_bars.append(status_win)
+                monitor_to_window[monitor] = status_win
+            return False  # Remove the timeout
+
+        GLib.timeout_add(100, recreate_bars, current_monitors)  # 100ms delay
+
+    # Connect to monitors list changes
+    monitors.connect("items-changed", on_monitors_changed)
 
 
 def on_shutdown(app: Gtk.Application):
