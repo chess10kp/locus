@@ -101,10 +101,12 @@ class LauncherRegistry:
 
     def __init__(self):
         self._launchers: Dict[str, LauncherInterface] = {}
-        self._trigger_map: Dict[str, Any] = {}  # Maps custom prefixes to launchers
+        self._trigger_map: Dict[
+            str, Any
+        ] = {}  # Maps all prefixes (traditional + custom) to launchers
         self._original_triggers: Dict[
             str, Any
-        ] = {}  # Maps normalized original triggers to launchers
+        ] = {}  # Maps normalized original triggers to launchers (legacy)
 
     def _is_custom_prefix_trigger(
         self, input_text: str
@@ -144,7 +146,7 @@ class LauncherRegistry:
             # Normalize: remove leading > if present
             normalized_trigger = trigger.lstrip(">")
 
-            # Store in original triggers map for traditional > matching
+            # Store in original triggers map for legacy support
             if normalized_trigger in self._original_triggers:
                 existing = self._original_triggers[normalized_trigger]
                 if isinstance(existing, list):
@@ -176,12 +178,12 @@ class LauncherRegistry:
                 else:
                     self._trigger_map[normalized_trigger] = launcher
         else:
-            # No custom prefixes - register original triggers in trigger map too for custom matching
+            # No custom prefixes - register original triggers in trigger map too for both traditional and custom matching
             for trigger in launcher.command_triggers:
                 # Normalize: remove leading > if present
                 normalized_trigger = trigger.lstrip(">")
 
-                # Also store in trigger map for custom matching
+                # Store in trigger map for O(1) lookup
                 if normalized_trigger in self._trigger_map:
                     existing = self._trigger_map[normalized_trigger]
                     if isinstance(existing, list):
@@ -280,22 +282,32 @@ class LauncherRegistry:
             # Remove the > prefix
             text_without_prefix = input_text[1:]
 
-            # Find the longest matching trigger from original triggers
-            sorted_triggers = sorted(
-                self._original_triggers.keys(), key=len, reverse=True
-            )
+            # Use optimized hash lookup instead of linear search
+            # Find the longest matching trigger from trigger map
+            # This is O(1) instead of O(n log n) for sorted list
+            longest_match = None
+            longest_length = 0
 
-            for trigger in sorted_triggers:
-                if text_without_prefix.startswith(trigger):
-                    # Get launcher from original triggers map
-                    launcher_result = self._original_triggers[trigger]
-                    launcher = (
-                        launcher_result[0]
-                        if isinstance(launcher_result, list)
-                        else launcher_result
-                    )
-                    remaining_query = text_without_prefix[len(trigger) :].strip()
-                    return trigger, launcher, remaining_query
+            for trigger in self._trigger_map.keys():
+                trigger_length = len(trigger)
+                if (
+                    trigger_length > longest_length
+                    and trigger_length <= len(text_without_prefix)
+                    and text_without_prefix.startswith(trigger)
+                ):
+                    longest_match = trigger
+                    longest_length = trigger_length
+
+            if longest_match:
+                # Get launcher from trigger map
+                launcher_result = self._trigger_map[longest_match]
+                launcher = (
+                    launcher_result[0]
+                    if isinstance(launcher_result, list)
+                    else launcher_result
+                )
+                remaining_query = text_without_prefix[len(longest_match) :].strip()
+                return longest_match, launcher, remaining_query
 
             return None, None, input_text
 

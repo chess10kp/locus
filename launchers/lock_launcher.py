@@ -16,6 +16,7 @@ gi.require_version("Gtk4LayerShell", "1.0")
 from gi.repository import GLib, Gdk, Gtk, Gtk4LayerShell as GtkLayerShell  # pyright: ignore
 from typing_extensions import final
 import hashlib
+import logging
 
 
 def apply_styles(widget, css: str):
@@ -87,6 +88,10 @@ def get_monitor_geometry():
 
     # Final fallback to common resolution
     return None
+
+
+# Lock screen logger
+logger = logging.getLogger("LockScreen")
 
 
 @final
@@ -247,9 +252,7 @@ class LockScreen(Gtk.ApplicationWindow):
 
     def on_password_changed(self, entry):
         """Reset status label when user starts typing."""
-        self.status_label.set_markup(
-            '<span color="#98971a"></span>'
-        )
+        self.status_label.set_markup('<span color="#98971a"></span>')
 
     def on_password_entered(self, entry):
         """Handle password entry when Enter key is pressed."""
@@ -329,16 +332,18 @@ class LockScreen(Gtk.ApplicationWindow):
 
     def lock(self):
         """Show the lock screen."""
-        with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] LockScreen.lock() called\n")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("LockScreen.lock() called")
 
         self.password_entry.set_text("")
         self.attempts = 0
 
         monitor_geo = get_monitor_geometry_for_window(self)
         if monitor_geo:
-            with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[DEBUG] Monitor geometry: {monitor_geo.width}x{monitor_geo.height}\n")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Monitor geometry: {monitor_geo.width}x{monitor_geo.height}"
+                )
             # Set window to cover entire monitor
             self.set_default_size(monitor_geo.width, monitor_geo.height)
             # Maximize the window
@@ -347,8 +352,8 @@ class LockScreen(Gtk.ApplicationWindow):
             self.maximize()
 
         # Initialize GTK layer shell
-        with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] Initializing GTK layer shell...\n")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Initializing GTK layer shell...")
         try:
             GtkLayerShell.init_for_window(self)
             GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
@@ -357,45 +362,45 @@ class LockScreen(Gtk.ApplicationWindow):
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
-            with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[DEBUG] GTK layer shell initialized successfully\n")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("GTK layer shell initialized successfully")
         except Exception as e:
-            with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[ERROR] Failed to initialize GTK layer shell: {e}\n")
+            if logger.isEnabledFor(logging.ERROR):
+                logger.error(f"Failed to initialize GTK layer shell: {e}")
 
         # Try to set the monitor for GTK layer shell
         try:
             display = Gdk.Display.get_default()
-            with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[DEBUG] Display: {display}\n")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Display: {display}")
             if display:
                 monitor = (
                     display.get_monitor_at_surface(self.get_surface())
                     if self.get_surface()
                     else None
                 )
-                with open("/tmp/locus_debug.log", "a") as f:
-                    f.write(f"[DEBUG] Monitor: {monitor}\n")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Monitor: {monitor}")
                 if monitor:
                     GtkLayerShell.set_monitor(self, monitor)
-                    with open("/tmp/locus_debug.log", "a") as f:
-                        f.write(f"[DEBUG] Monitor set for layer shell\n")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("Monitor set for layer shell")
         except Exception as e:
-            with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[ERROR] Failed to set monitor: {e}\n")
+            if logger.isEnabledFor(logging.ERROR):
+                logger.error(f"Failed to set monitor: {e}")
 
-        with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] Presenting lock screen window...\n")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Presenting lock screen window...")
         try:
             self.present()
-            with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[DEBUG] Window presented successfully\n")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Window presented successfully")
         except Exception as e:
-            with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[ERROR] Failed to present window: {e}\n")
+            if logger.isEnabledFor(logging.ERROR):
+                logger.error(f"Failed to present window: {e}")
 
-        with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] Grabbing focus on password entry...\n")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Grabbing focus on password entry...")
         self.password_entry.grab_focus()
 
 
