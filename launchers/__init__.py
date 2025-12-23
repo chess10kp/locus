@@ -8,7 +8,7 @@ from .wallpaper_launcher import WallpaperLauncher, WallpaperHook
 from .timer_launcher import TimerLauncher, TimerHook
 from .focus_launcher import FocusLauncher, FocusHook
 from .kill_launcher import KillLauncher, KillHook
-from .music_launcher import MusicLauncher, MusicHook
+from .music_launcher import MpdLauncher, MpdHook
 from .refile_launcher import RefileLauncher, RefileHook
 from .shell_launcher import ShellLauncher, ShellHook
 from .file_launcher import FileLauncher, FileHook
@@ -46,7 +46,7 @@ __all__ = [
     "FocusHook",
     "KillLauncher",
     "KillHook",
-    "MusicLauncher",
+    "MpdLauncher",
     "MusicHook",
     "RefileLauncher",
     "RefileHook",

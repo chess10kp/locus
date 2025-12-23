@@ -49,7 +49,6 @@ def kill_previous_process():
                 if pid and int(pid) != current_pid:
                     try:
                         os.kill(int(pid), 9)  # SIGKILL
-                        print(f"Killed previous locus process {pid}")
                     except ProcessLookupError:
                         pass
                     except PermissionError:
@@ -107,15 +106,11 @@ def on_activate(app: Gtk.Application):
 
     # Define signal callback for monitors list changes
     def on_monitors_changed(model, position, removed, added):
-        print(
-            f"[DEBUG] Monitors changed: position={position}, removed={removed}, added={added}"
-        )
         # Get current monitors
         current_monitors = [model.get_item(i) for i in range(model.get_n_items())]
 
         # Destroy all existing bars
         for monitor, status_win in list(monitor_to_window.items()):
-            print(f"[DEBUG] Destroying bar for monitor: {monitor}")
             status_win.cleanup()
             status_win.destroy()
             status_bars.remove(status_win)
@@ -125,9 +120,6 @@ def on_activate(app: Gtk.Application):
         def recreate_bars(monitors):
             for monitor in monitors:
                 geometry = monitor.get_geometry()
-                print(
-                    f"[DEBUG] Creating bar for monitor: {monitor}, width: {geometry.width}"
-                )
                 status_win = StatusBar(application=app)
                 GtkLayerShell.init_for_window(status_win)
                 GtkLayerShell.set_monitor(status_win, monitor)

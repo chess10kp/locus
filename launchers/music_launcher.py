@@ -16,34 +16,36 @@ from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from utils.launcher_utils import LauncherEnhancer
 
 
-class MusicHook(LauncherHook):
-    def __init__(self, music_launcher):
-        self.music_launcher = music_launcher
+class MpdHook(LauncherHook):
+    def __init__(self, mpd_launcher):
+        self.mpd_launcher = mpd_launcher
 
     def on_select(self, launcher, item_data: Any) -> bool:
-        """Handle music item selection"""
-        if isinstance(item_data, dict) and item_data.get("type") == "music_item":
+        """Handle mpd item selection"""
+        if isinstance(item_data, dict) and item_data.get("type") == "mpd_item":
             action = item_data.get("action")
             value = item_data.get("value")
 
             if action == "play_file":
-                self.music_launcher.play_file(value)
+                self.mpd_launcher.play_file(value)
             elif action == "play_position":
-                self.music_launcher.play_position(value)
+                self.mpd_launcher.play_position(value)
             elif action == "queue_remove":
-                self.music_launcher.remove_from_queue(value)
+                self.mpd_launcher.remove_from_queue(value)
             elif action == "control":
-                self.music_launcher.control(value)
+                self.mpd_launcher.control(value)
             elif action == "view_queue":
-                # Set search text to >music queue to trigger populate
-                launcher.search_entry.set_text(">music queue")
-                launcher.populate_apps(">music queue")
+                # Set search text to >mpd queue to trigger populate
+                launcher.search_entry.set_text(">mpd queue")
+                launcher.search_entry.set_position(-1)
+                launcher.populate_apps(">mpd queue")
                 launcher.present()
                 return True
             elif action == "view_library":
-                # Set search text to >music to trigger library view
-                launcher.search_entry.set_text(">music")
-                launcher.populate_apps(">music")
+                # Set search text to >mpd to trigger library view
+                launcher.search_entry.set_text(">mpd")
+                launcher.search_entry.set_position(-1)
+                launcher.populate_apps(">mpd")
                 launcher.present()
                 return True
 
@@ -61,24 +63,26 @@ class MusicHook(LauncherHook):
         return False
 
     def on_enter(self, launcher, text: str) -> bool:
-        """Handle enter on music commands"""
-        if text.startswith(">music"):
-            cmd = text[6:].strip()
+        """Handle enter on mpd commands"""
+        if text.startswith(">mpd"):
+            cmd = text[4:].strip()
             if cmd in ["clear", "pause", "play"]:
                 self.music_launcher.control(cmd)
                 launcher.hide()
                 return True
 
             if cmd == "queue":
-                launcher.search_entry.set_text(">music queue")
-                launcher.populate_apps(">music queue")
+                launcher.search_entry.set_text(">mpd queue")
+                launcher.search_entry.set_position(-1)
+                launcher.populate_apps(">mpd queue")
                 launcher.present()
                 return True
 
             if cmd == "" or cmd == "library":
                 # Just refresh/populate library view
-                launcher.search_entry.set_text(">music")
-                launcher.populate_apps(">music")
+                launcher.search_entry.set_text(">mpd")
+                launcher.search_entry.set_position(-1)
+                launcher.populate_apps(">mpd")
                 launcher.present()
                 return True
         return False
@@ -93,7 +97,7 @@ class MusicHook(LauncherHook):
 from core.config import MUSIC_DIR
 
 
-class MusicLauncher(LauncherInterface):
+class MpdLauncher(LauncherInterface):
     @classmethod
     def check_dependencies(cls) -> tuple[bool, str]:
         """Check if required dependencies are available.
@@ -102,13 +106,14 @@ class MusicLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_mpc
+
         if not check_mpc():
             return False, "mpc (Music Player Daemon client) not found"
         return True, ""
 
     def __init__(self, main_launcher=None):
         if main_launcher:
-            self.hook = MusicHook(self)
+            self.hook = MpdHook(self)
             main_launcher.hook_registry.register_hook(self.hook)
 
         self.music_dir = MUSIC_DIR
@@ -118,11 +123,11 @@ class MusicLauncher(LauncherInterface):
 
     @property
     def command_triggers(self) -> list:
-        return ["music", "mu"]
+        return ["mpd"]
 
     @property
     def name(self) -> str:
-        return "music"
+        return "mpd"
 
     def get_size_mode(self) -> Tuple[LauncherSizeMode, Optional[Tuple[int, int]]]:
         return (LauncherSizeMode.DEFAULT, None)
@@ -291,7 +296,7 @@ class MusicLauncher(LauncherInterface):
             )
 
     def _add_button(self, text, metadata, action, value, launcher_core, index=None):
-        item_data = {"type": "music_item", "action": action, "value": value}
+        item_data = {"type": "mpd_item", "action": action, "value": value}
         launcher_core.add_launcher_result(
             text, metadata, index=index, action_data=item_data
         )

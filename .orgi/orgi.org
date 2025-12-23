@@ -357,3 +357,12 @@
   :END:
 
   
+
+* TODO test out llm launcher
+  :PROPERTIES:
+  :ID: task-20251223181421
+  :TITLE: test out llm launcher
+  :CREATED: <2025-12-23 Tue 18:14>
+  :END:
+
+  

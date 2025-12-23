@@ -1356,7 +1356,7 @@ class Launcher(Gtk.ApplicationWindow):
             import launchers  # noqa: F401
 
             # Import all launchers (except lock screen which is handled separately)
-            from launchers.music_launcher import MusicLauncher
+            from launchers.music_launcher import MpdLauncher
             from launchers.refile_launcher import RefileLauncher
             from launchers.timer_launcher import TimerLauncher
             from launchers.focus_launcher import FocusLauncher
@@ -1390,7 +1390,7 @@ class Launcher(Gtk.ApplicationWindow):
                     self.launcher_registry.register(launcher)
 
             # Register all launchers with dependency checks
-            register_launcher_with_check(MusicLauncher)
+            register_launcher_with_check(MpdLauncher)
             register_launcher_with_check(RefileLauncher)
             register_launcher_with_check(TimerLauncher)
             register_launcher_with_check(FocusLauncher)
@@ -1821,10 +1821,6 @@ class Launcher(Gtk.ApplicationWindow):
         with open("/tmp/locus_debug.log", "a") as f:
             f.write(f"[DEBUG] Text entered: '{text}'\n")
 
-        self.hide()
-        with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] Launcher hidden\n")
-
         # Check if there's a selected item in the ListView
         selected_pos = self.selection_model.get_selected()
         if selected_pos != Gtk.INVALID_LIST_POSITION:
@@ -1832,10 +1828,29 @@ class Launcher(Gtk.ApplicationWindow):
                 f.write(f"[DEBUG] Selected item at position {selected_pos}\n")
             search_result = self.list_store.get_item(selected_pos)
             if search_result:
+                self.hide()
+                with open("/tmp/locus_debug.log", "a") as f:
+                    f.write(f"[DEBUG] Launcher hidden\n")
                 self._on_list_item_clicked(None, search_result)
                 with open("/tmp/locus_debug.log", "a") as f:
                     f.write(f"[DEBUG] List item clicked, returning\n")
             return
+
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] No selected item, processing text: '{text}'\n")
+
+        # Try hooks first before hiding
+        hook_result = self.hook_registry.execute_enter_hooks(self, text)
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] Hook execution result: {hook_result}\n")
+        if hook_result:
+            with open("/tmp/locus_debug.log", "a") as f:
+                f.write(f"[DEBUG] Hook handled the command, returning\n")
+            return
+
+        self.hide()
+        with open("/tmp/locus_debug.log", "a") as f:
+            f.write(f"[DEBUG] Launcher hidden\n")
 
         with open("/tmp/locus_debug.log", "a") as f:
             f.write(f"[DEBUG] No selected item, processing text: '{text}'\n")
