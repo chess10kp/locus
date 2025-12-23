@@ -1262,6 +1262,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.file_launcher import FileLauncher
             from launchers.emoji_launcher import EmojiLauncher
             from launchers.gallery_launcher import GalleryLauncher
+            from launchers.web_launcher import WebLauncher
             # Notification launcher disabled for now
             # from launchers.notification_launcher import NotificationLauncher
 
@@ -1293,6 +1294,7 @@ class Launcher(Gtk.ApplicationWindow):
             register_launcher_with_check(ShellLauncher)
             register_launcher_with_check(FileLauncher)
             register_launcher_with_check(EmojiLauncher)
+            register_launcher_with_check(WebLauncher)
             register_launcher_with_check(GalleryLauncher)
 
             # Notification launcher disabled for now

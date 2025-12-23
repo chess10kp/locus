@@ -177,3 +177,21 @@
   :END:
 
   
+
+* TODO dmenu mode
+  :PROPERTIES:
+  :ID: task-20251223114838
+  :TITLE: dmenu mode
+  :CREATED: <2025-12-23 Tue 11:48>
+  :END:
+
+  
+
+* TODO multimonitor suppport + including nkilling the bar if a monitor dies
+  :PROPERTIES:
+  :ID: task-20251223115039
+  :TITLE: multimonitor suppport + including nkilling the bar if a monitor dies
+  :CREATED: <2025-12-23 Tue 11:50>
+  :END:
+
+  

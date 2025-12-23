@@ -243,6 +243,7 @@ CUSTOM_LAUNCHERS = {
     "wifi": {"type": "builtin", "handler": "wifi"},
     "wallpaper": {"type": "builtin", "handler": "wallpaper"},
     "timer": {"type": "builtin", "handler": "timer"},
+    "web": {"type": "builtin", "handler": "web"},
     "todo": {"type": "function", "func": todo_capture},  # doesn't work for now
     "shutdown": {"type": "command", "cmd": "systemctl poweroff"},
     "reboot": {"type": "command", "cmd": "systemctl reboot"},
@@ -254,7 +255,32 @@ CUSTOM_LAUNCHERS = {
     "refile": {"type": "builtin", "handler": "refile"},
 }
 
-# Add default metadata for built-in launchers
+# =================================
+# WEB SEARCH CONFIGURATION
+# =================================
+
+# Search engine presets
+SEARCH_ENGINES = {
+    "google": "https://www.google.com/search?q={}",
+    "startpage": "https://www.startpage.com/sp/search?query={}",
+    "bravesearch": "https://search.brave.com/search?q={}",
+    "duckduckgo": "https://duckduckgo.com/?q={}",
+    "bing": "https://www.bing.com/search?q={}",
+    "ecosia": "https://www.ecosia.org/search?q={}",
+}
+
+# Default search engine (must be a key from SEARCH_ENGINES)
+DEFAULT_SEARCH_ENGINE = "google"
+
+# Command to open URLs (use None to let xdg-open decide)
+# Examples:
+#   - None: use xdg-open (system default)
+#   - "firefox": open in Firefox
+#   - "chromium": open in Chromium
+#   - "google-chrome": open in Google Chrome
+URL_OPENER = None  # None means use xdg-open
+
+# Custom launchers configuration
 METADATA.update(
     {
         "calc": "Calculator",
@@ -272,6 +298,7 @@ METADATA.update(
         "lock": "Lock screen",
         "music": "Music player",
         "refile": "Workspace swapper",
+        "web": "Web search",
         "file": "File search",
         "f": "File search",
     }
