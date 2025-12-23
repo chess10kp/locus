@@ -62,6 +62,10 @@ class BluetoothHook(LauncherHook):
 
     def on_tab(self, launcher, text):
         """Handle tab completion for bluetooth commands."""
+        # Only handle bluetooth commands
+        if not text.startswith(">bluetooth"):
+            return None
+
         # Get current status items and devices for completion
         power_status = "Power: on" if bluetooth_power_on() else "Power: off"
         scan_status = "Scan: on" if bluetooth_scan_on() else "Scan: off"

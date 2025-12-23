@@ -56,6 +56,10 @@ class WallpaperHook(LauncherHook):
 
     def on_tab(self, launcher, text):
         """Handle tab completion for wallpaper files and commands."""
+        # Only handle wallpaper commands
+        if not text.startswith(">wallpaper"):
+            return None
+
         wp_dir = os.path.expanduser("~/Pictures/wp/")
         if not os.path.exists(wp_dir):
             return None

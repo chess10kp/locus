@@ -46,6 +46,10 @@ class BookmarkHook(LauncherHook):
 
     def on_tab(self, launcher, text):
         """Handle tab completion for bookmarks."""
+        # Only handle bookmark commands
+        if not text.startswith(">bookmark"):
+            return None
+
         bookmarks = get_bookmarks()
         matching_bookmarks = [
             b for b in bookmarks if b.lower().startswith(text.lower())

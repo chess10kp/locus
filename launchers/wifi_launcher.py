@@ -68,6 +68,10 @@ class WifiHook(LauncherHook):
 
     def on_tab(self, launcher, text):
         """Handle tab completion for WiFi commands."""
+        # Only handle WiFi commands
+        if not text.startswith(">wifi"):
+            return None
+
         text_lower = text.lower()
 
         # Status items for completion

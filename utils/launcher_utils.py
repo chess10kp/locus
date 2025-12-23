@@ -7,10 +7,6 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-"""
-Utilities for launcher enhancements including Alt+number selection and right-aligned hints.
-"""
-
 from gi.repository import Gdk, Gtk  # pyright: ignore
 from typing import Any, Optional, List
 

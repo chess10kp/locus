@@ -88,7 +88,7 @@
 
   
 
-* TODO tab complete is the one that is causing latency for basially everything
+* DONE tab complete is the one that is causing latency for basially everything
   :PROPERTIES:
   :ID: task-20251222231207
   :TITLE: tab complete is the one that is causing latency for basially everything
@@ -129,6 +129,24 @@
   :ID: task-20251222234648
   :TITLE: htiting enter is a bit slower than alt+1 selection
   :CREATED: <2025-12-22 Mon 23:46>
+  :END:
+
+  
+
+* TODO ctrl+n highlights the entire text entry
+  :PROPERTIES:
+  :ID: task-20251223112642
+  :TITLE: ctrl+n highlights the entire text entry
+  :CREATED: <2025-12-23 Tue 11:26>
+  :END:
+
+  
+
+* TODO add checks for various launchers to make sure they actually work
+  :PROPERTIES:
+  :ID: task-20251223112854
+  :TITLE: add checks for various launchers to make sure they actually work
+  :CREATED: <2025-12-23 Tue 11:28>
   :END:
 
   
