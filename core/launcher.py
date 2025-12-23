@@ -1265,62 +1265,35 @@ class Launcher(Gtk.ApplicationWindow):
             # Notification launcher disabled for now
             # from launchers.notification_launcher import NotificationLauncher
 
-            # Register all launchers
-            music_launcher = MusicLauncher(self)
-            if music_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(music_launcher)
+            # Helper function to register launcher with dependency check
+            def register_launcher_with_check(LauncherClass):
+                """Register a launcher only if its dependencies are met."""
+                # Check if launcher has check_dependencies method
+                if hasattr(LauncherClass, "check_dependencies"):
+                    available, error = LauncherClass.check_dependencies()
+                    if not available:
+                        logger.info(f"Skipping {LauncherClass.__name__}: {error}")
+                        return
+                # Create and register the launcher
+                launcher = LauncherClass(self)
+                if launcher.name not in self.launcher_registry._launchers:
+                    self.launcher_registry.register(launcher)
 
-            refile_launcher = RefileLauncher(self)
-            if refile_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(refile_launcher)
-
-            timer_launcher = TimerLauncher(self)
-            if timer_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(timer_launcher)
-
-            focus_launcher = FocusLauncher(self)
-            if focus_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(focus_launcher)
-
-            calc_launcher = CalcLauncher(self)
-            if calc_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(calc_launcher)
-
-            bookmark_launcher = BookmarkLauncher(self)
-            if bookmark_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(bookmark_launcher)
-
-            bluetooth_launcher = BluetoothLauncher(self)
-            if bluetooth_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(bluetooth_launcher)
-
-            wifi_launcher = WifiLauncher(self)
-            if wifi_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(wifi_launcher)
-
-            wallpaper_launcher = WallpaperLauncher(self)
-            if wallpaper_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(wallpaper_launcher)
-
-            kill_launcher = KillLauncher(self)
-            if kill_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(kill_launcher)
-
-            shell_launcher = ShellLauncher(self)
-            if shell_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(shell_launcher)
-
-            file_launcher = FileLauncher(self)
-            if file_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(file_launcher)
-
-            emoji_launcher = EmojiLauncher(self)
-            if emoji_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(emoji_launcher)
-
-            gallery_launcher = GalleryLauncher(self)
-            if gallery_launcher.name not in self.launcher_registry._launchers:
-                self.launcher_registry.register(gallery_launcher)
+            # Register all launchers with dependency checks
+            register_launcher_with_check(MusicLauncher)
+            register_launcher_with_check(RefileLauncher)
+            register_launcher_with_check(TimerLauncher)
+            register_launcher_with_check(FocusLauncher)
+            register_launcher_with_check(CalcLauncher)
+            register_launcher_with_check(BookmarkLauncher)
+            register_launcher_with_check(BluetoothLauncher)
+            register_launcher_with_check(WifiLauncher)
+            register_launcher_with_check(WallpaperLauncher)
+            register_launcher_with_check(KillLauncher)
+            register_launcher_with_check(ShellLauncher)
+            register_launcher_with_check(FileLauncher)
+            register_launcher_with_check(EmojiLauncher)
+            register_launcher_with_check(GalleryLauncher)
 
             # Notification launcher disabled for now
             # notification_launcher = NotificationLauncher(self)

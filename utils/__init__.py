@@ -2,6 +2,18 @@
 
 from .calculator import sanitize_expr, evaluate_calculator
 from .bookmarks import get_bookmarks
+from .deps import (
+    check_command_exists,
+    check_commands_exist,
+    check_file_exists,
+    check_notify_send,
+    check_clipboard,
+    check_nmcli,
+    check_bluetoothctl,
+    check_mpc,
+    check_swaymsg,
+    check_emacsclient,
+)
 from .bluetooth import (
     bluetooth_power_on,
     bluetooth_scan_on,
@@ -42,6 +54,16 @@ __all__ = [
     "sanitize_expr",
     "evaluate_calculator",
     "get_bookmarks",
+    "check_command_exists",
+    "check_commands_exist",
+    "check_file_exists",
+    "check_notify_send",
+    "check_clipboard",
+    "check_nmcli",
+    "check_bluetoothctl",
+    "check_mpc",
+    "check_swaymsg",
+    "check_emacsclient",
     "bluetooth_power_on",
     "bluetooth_scan_on",
     "bluetooth_pairable_on",

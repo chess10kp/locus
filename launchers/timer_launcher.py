@@ -47,6 +47,18 @@ class TimerHook(LauncherHook):
 
 
 class TimerLauncher(LauncherInterface):
+    @classmethod
+    def check_dependencies(cls) -> tuple[bool, str]:
+        """Check if required dependencies are available.
+
+        Returns:
+            Tuple of (available, error_message)
+        """
+        from utils import check_notify_send
+        if not check_notify_send():
+            return False, "notify-send not found"
+        return True, ""
+
     def __init__(self, main_launcher=None):
         self.launcher = main_launcher
         self.hook = TimerHook(self)

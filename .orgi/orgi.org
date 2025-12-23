@@ -150,3 +150,30 @@
   :END:
 
   
+
+* TODO [#A] mpd launcher ndoes not allow queue operations
+  :PROPERTIES:
+  :ID: task-20251223113838
+  :TITLE: mpd launcher ndoes not allow queue operations
+  :CREATED: <2025-12-23 Tue 11:38>
+  :END:
+
+  
+
+* TODO [#A] Yanking should close the illauncher AND yanking should not include the initial > from the search term"
+  :PROPERTIES:
+  :ID: task-20251223114043
+  :TITLE: Yanking should close the illauncher AND yanking should not include the initial > from the search term"
+  :CREATED: <2025-12-23 Tue 11:40>
+  :END:
+
+  
+
+* TODO [#A] search funcitons should let the user grep by multiple substrings by wseparated words
+  :PROPERTIES:
+  :ID: task-20251223114325
+  :TITLE: search funcitons should let the user grep by multiple substrings by wseparated words
+  :CREATED: <2025-12-23 Tue 11:43>
+  :END:
+
+  

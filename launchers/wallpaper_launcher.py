@@ -176,6 +176,19 @@ class WallpaperHook(LauncherHook):
 
 
 class WallpaperLauncher(LauncherInterface):
+    @classmethod
+    def check_dependencies(cls) -> tuple[bool, str]:
+        """Check if required dependencies are available.
+
+        Returns:
+            Tuple of (available, error_message)
+        """
+        from utils import check_file_exists
+        wp_dir = check_file_exists("~/Pictures/wp/")
+        if not wp_dir:
+            return False, "Wallpaper directory ~/Pictures/wp/ not found"
+        return True, ""
+
     def __init__(self, main_launcher=None):
         self.launcher = main_launcher
         self.cache_dir = Path.home() / ".cache" / "locus" / "wallpaper_thumbnails"

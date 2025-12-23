@@ -59,6 +59,23 @@ class FocusHook(LauncherHook):
 
 
 class FocusLauncher(LauncherInterface):
+    @classmethod
+    def check_dependencies(cls) -> tuple[bool, str]:
+        """Check if required dependencies are available.
+
+        Returns:
+            Tuple of (available, error_message)
+        """
+        from utils import check_emacsclient, check_notify_send
+        missing = []
+        if not check_emacsclient():
+            missing.append("emacsclient")
+        if not check_notify_send():
+            missing.append("notify-send")
+        if missing:
+            return False, f"Missing: {', '.join(missing)}"
+        return True, ""
+
     def __init__(self, main_launcher=None):
         self.launcher = main_launcher
         self.hook = FocusHook(self)

@@ -119,6 +119,18 @@ class WifiHook(LauncherHook):
 
 
 class WifiLauncher(LauncherInterface):
+    @classmethod
+    def check_dependencies(cls) -> tuple[bool, str]:
+        """Check if required dependencies are available.
+
+        Returns:
+            Tuple of (available, error_message)
+        """
+        from utils import check_nmcli
+        if not check_nmcli():
+            return False, "nmcli (NetworkManager) not found"
+        return True, ""
+
     def __init__(self, main_launcher=None):
         self.launcher = main_launcher
         self.hook = WifiHook(self)

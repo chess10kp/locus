@@ -94,6 +94,18 @@ from core.config import MUSIC_DIR
 
 
 class MusicLauncher(LauncherInterface):
+    @classmethod
+    def check_dependencies(cls) -> tuple[bool, str]:
+        """Check if required dependencies are available.
+
+        Returns:
+            Tuple of (available, error_message)
+        """
+        from utils import check_mpc
+        if not check_mpc():
+            return False, "mpc (Music Player Daemon client) not found"
+        return True, ""
+
     def __init__(self, main_launcher=None):
         if main_launcher:
             self.hook = MusicHook(self)

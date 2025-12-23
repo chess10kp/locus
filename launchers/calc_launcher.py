@@ -50,6 +50,18 @@ class CalcHook(LauncherHook):
 
 
 class CalcLauncher(LauncherInterface):
+    @classmethod
+    def check_dependencies(cls) -> tuple[bool, str]:
+        """Check if required dependencies are available.
+
+        Returns:
+            Tuple of (available, error_message)
+        """
+        from utils import check_clipboard
+        if not check_clipboard():
+            return False, "clipboard utility (wl-copy or xclip) not found"
+        return True, ""
+
     def __init__(self, main_launcher=None):
         self.launcher = main_launcher
         self.hook = CalcHook(self)
