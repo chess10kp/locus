@@ -78,3 +78,21 @@
   :END:
 
   
+
+* TODO better search
+  :PROPERTIES:
+  :ID: task-20251222201159
+  :TITLE: better search
+  :CREATED: <2025-12-22 Mon 20:11>
+  :END:
+
+  
+
+* TODO tab complete is the one that is causing latency for basially everything
+  :PROPERTIES:
+  :ID: task-20251222231207
+  :TITLE: tab complete is the one that is causing latency for basially everything
+  :CREATED: <2025-12-22 Mon 23:12>
+  :END:
+
+  

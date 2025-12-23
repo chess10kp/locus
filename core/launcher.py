@@ -989,6 +989,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.kill_launcher import KillLauncher
             from launchers.shell_launcher import ShellLauncher
             from launchers.file_launcher import FileLauncher
+            from launchers.emoji_launcher import EmojiLauncher
             # Notification launcher disabled for now
             # from launchers.notification_launcher import NotificationLauncher
 
@@ -1040,6 +1041,10 @@ class Launcher(Gtk.ApplicationWindow):
             file_launcher = FileLauncher(self)
             if file_launcher.name not in self.launcher_registry._launchers:
                 self.launcher_registry.register(file_launcher)
+
+            emoji_launcher = EmojiLauncher(self)
+            if emoji_launcher.name not in self.launcher_registry._launchers:
+                self.launcher_registry.register(emoji_launcher)
 
             # Notification launcher disabled for now
             # notification_launcher = NotificationLauncher(self)
@@ -1252,7 +1257,11 @@ class Launcher(Gtk.ApplicationWindow):
         from .search_models import WallpaperSearchResult
 
         result = WallpaperSearchResult(
-            title, image_path, pixbuf=pixbuf, index=index if index else 0, action_data=action_data
+            title,
+            image_path,
+            pixbuf=pixbuf,
+            index=index if index else 0,
+            action_data=action_data,
         )
         self.list_store.append(WrappedSearchResult(result))
 
