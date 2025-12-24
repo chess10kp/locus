@@ -86,6 +86,13 @@ class Launcher(Gtk.ApplicationWindow):
 
         self.current_apps = []
 
+        # Auto-present dmenu if items were piped
+        dmenu_launcher = self.launcher_registry.get_launcher_by_trigger("dmenu")
+        if dmenu_launcher and dmenu_launcher.items:
+            self.search_entry.set_text(">dmenu")
+            self.present()
+            self.on_entry_activate(self.search_entry)
+
         # Styles
         self.keyb_badge_style = """
             .badges-box label {
@@ -622,6 +629,9 @@ class Launcher(Gtk.ApplicationWindow):
         elif search_result.result_type.name == "LAUNCHER":
             # Handle action_data for launchers (e.g., wallpaper file paths)
             if search_result.action_data:
+                if search_result.action_data.get("type") == "help":
+                    # Do nothing for help items
+                    return
                 self.hook_registry.execute_select_hooks(self, search_result.action_data)
             else:
                 self.nav.on_command_selected(button, search_result.command)

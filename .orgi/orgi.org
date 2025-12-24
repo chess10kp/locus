@@ -178,7 +178,7 @@
 
   
 
-* TODO dmenu mode
+* DONE dmenu mode
   :PROPERTIES:
   :ID: task-20251223114838
   :TITLE: dmenu mode
@@ -277,7 +277,7 @@
 
   
 
-* TODO [#A] wp lancher doesn't set the wallpaper or show the images as buttons
+* DONE [#A] wp lancher doesn't set the wallpaper or show the images as buttons
   :PROPERTIES:
   :ID: task-20251223151003
   :TITLE: wp lancher doesn't set the wallpaper or show the images as buttons
@@ -349,7 +349,7 @@
 
   
 
-* DONE perf: remove all debug logging 
+* DONE perf: remove all debug logging
   :PROPERTIES:
   :ID: task-20251223180201
   :TITLE: perf: remove all debug logging

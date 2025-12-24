@@ -59,20 +59,6 @@ def kill_previous_process():
         pass
 
 
-setproctitle.setproctitle(APPNAME)
-
-kill_previous_process()
-
-# Check for required utilities
-vol_error = check_volume_utilities()
-if vol_error:
-    print(f"Warning: {vol_error}", file=sys.stderr)
-
-bright_error = check_brightness_utilities()
-if bright_error:
-    print(f"Warning: {bright_error}", file=sys.stderr)
-
-
 monitor_to_window = {}  # Global dict to map monitors to their status bars
 
 
@@ -167,25 +153,33 @@ def on_shutdown(app: Gtk.Application):
         except Exception as e:
             pass
     status_bars.clear()
-    sys.exit(0)
-
-
-app = Gtk.Application(application_id="com.example")
-app.connect("activate", on_activate)
-app.connect("shutdown", on_shutdown)
-
-display = Gdk.Display.get_default()
-if not display:
-    sys.exit()
-
-monitors = display.get_monitors()
-
-app.run(None)
 
 
 def main():
     """Main entry point for the locus application."""
+    setproctitle.setproctitle(APPNAME)
+
     kill_previous_process()
+
+    # Check for required utilities
+    vol_error = check_volume_utilities()
+    if vol_error:
+        print(f"Warning: {vol_error}", file=sys.stderr)
+
+    bright_error = check_brightness_utilities()
+    if bright_error:
+        print(f"Warning: {bright_error}", file=sys.stderr)
+
+    app = Gtk.Application(application_id="com.example")
+    app.connect("activate", on_activate)
+    app.connect("shutdown", on_shutdown)
+
+    display = Gdk.Display.get_default()
+    if not display:
+        sys.exit()
+
+    monitors = display.get_monitors()
+
     app.run(None)
 
 

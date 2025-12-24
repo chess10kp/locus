@@ -129,22 +129,26 @@ if __name__ == "__main__":
     elif len(sys.argv) >= 3 and sys.argv[1] == "brightness":
         handle_brightness(sys.argv[2])
     elif len(sys.argv) >= 2 and sys.argv[1] == "launcher":
-        if len(sys.argv) > 2:
-            # Check for special launcher commands
-            if sys.argv[2] in ["resume", "fresh"]:
-                command = sys.argv[2]
-                # Check if there's an app name after the command
-                if len(sys.argv) > 3:
-                    app_name = " ".join(sys.argv[3:])
-                    send_message(f"launcher:{command} {app_name}")
-                else:
-                    send_message(f"launcher:{command}")
-            else:
-                # Regular launcher with app name
-                app_name = " ".join(sys.argv[2:])
-                send_message(f"launcher {app_name}")
-        else:
-            send_message("launcher")
+         if len(sys.argv) > 2:
+             # Check for special launcher commands
+             if sys.argv[2] in ["resume", "fresh"]:
+                 command = sys.argv[2]
+                 # Check if there's an app name after the command
+                 if len(sys.argv) > 3:
+                     app_name = " ".join(sys.argv[3:])
+                     send_message(f"launcher:{command} {app_name}")
+                 else:
+                     send_message(f"launcher:{command}")
+             elif sys.argv[2] == "dmenu":
+                 # Read options from stdin
+                 options = sys.stdin.read()
+                 send_message(f"launcher dmenu:{options}")
+             else:
+                 # Regular launcher with app name
+                 app_name = " ".join(sys.argv[2:])
+                 send_message(f"launcher {app_name}")
+         else:
+             send_message("launcher")
     elif len(sys.argv) >= 2:
         message = " ".join(sys.argv[1:])
         send_message(message)

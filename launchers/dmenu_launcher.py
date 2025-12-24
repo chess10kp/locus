@@ -17,6 +17,7 @@ Exits immediately after selection.
 import sys
 import json
 import logging
+import os
 from typing import List, Dict, Any, Tuple, Optional
 
 from core.hooks import LauncherHook
@@ -41,11 +42,22 @@ class DmenuHook(LauncherHook):
         self.dmenu_launcher = dmenu_launcher
 
     def on_select(self, launcher, item_data) -> bool:
-        """Handle item selection - output to stdout and exit."""
+        """Handle item selection - output to stdout or execute command."""
         if isinstance(item_data, dict) and item_data.get("type") == "dmenu_item":
             command = item_data.get("command", "")
-            # Output command to stdout
-            print(command, end="")
+            if command.startswith(">"):
+                # Don't execute launcher commands
+                return False
+            if not sys.stdin.isatty():
+                # Piped input, output command to stdout
+                print(command, end="")
+            else:
+                # From client, execute the command
+                import subprocess
+
+                env = dict(os.environ.items())
+                env.pop("LD_PRELOAD", None)
+                subprocess.Popen(command, shell=True, env=env)
             # Exit immediately after selection
             sys.exit(0)
         return False
@@ -58,7 +70,17 @@ class DmenuHook(LauncherHook):
             command = (
                 first_item.action_data if first_item.action_data else first_item.title
             )
-            print(command, end="")
+            if command.startswith(">"):
+                # Don't execute launcher commands
+                return False
+            if not sys.stdin.isatty():
+                print(command, end="")
+            else:
+                import subprocess
+
+                env = dict(os.environ.items())
+                env.pop("LD_PRELOAD", None)
+                subprocess.Popen(command, shell=True, env=env)
             sys.exit(0)
         return False
 
@@ -84,8 +106,21 @@ class DmenuLauncher(LauncherInterface):
         if main_launcher and hasattr(main_launcher, "hook_registry"):
             main_launcher.hook_registry.register_hook(self.hook)
 
-        # Capture stdin data
-        self._capture_stdin()
+        # Capture stdin if piped
+        if not sys.stdin.isatty():
+            self._capture_stdin()
+
+    def set_options(self, options_str: str) -> None:
+        """Set options from a string (for IPC)."""
+        self.items = []
+        self._parse_options(options_str)
+
+    def _parse_options(self, options_str: str) -> None:
+        """Parse options from string."""
+        for line in options_str.split("\n"):
+            line = line.rstrip("\n\r")
+            if line.strip():
+                self._parse_line(line)
 
     @property
     def command_triggers(self) -> List[str]:
@@ -178,13 +213,15 @@ class DmenuLauncher(LauncherInterface):
             # No items captured - show help
             launcher_core.add_launcher_result(
                 "Dmenu Launcher",
-                "Pipe options to stdin: echo 'option1\\noption2' | locus launcher dmenu",
+                "Pipe options to stdin: echo -e 'option1\\noption2' | locus_client.py launcher dmenu",
                 index=1,
+                action_data={"type": "help"},
             )
             launcher_core.add_launcher_result(
                 "JSON format supported",
                 '{"title": "Option", "subtitle": "Description", "command": "cmd"}',
                 index=2,
+                action_data={"type": "help"},
             )
             return
 

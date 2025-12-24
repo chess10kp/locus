@@ -263,25 +263,36 @@ class StatusBar(Gtk.ApplicationWindow):
                                 self.launcher.launcher_state.clear_state()
                                 self.launcher.show_launcher()
                             handled = True
-                        elif data.startswith(">") or data.startswith("launcher "):
-                            # Send launcher commands to the launcher
+                        elif data.startswith("launcher dmenu:"):
+                            # Handle dmenu with options
                             if self.launcher:
-                                # Extract the command if it starts with "launcher "
-                                if data.startswith("launcher "):
-                                    command = data[8:]  # Remove "launcher " prefix
-                                    self.launcher.search_entry.set_text(command)
+                                options = data[14:]  # Remove "launcher dmenu:" prefix
+                                dmenu_launcher = self.launcher.launcher_registry.get_launcher_by_trigger("dmenu")
+                                if dmenu_launcher:
+                                    dmenu_launcher.set_options(options)
+                                    self.launcher.search_entry.set_text(">dmenu")
                                     self.launcher.present()
-                                    self.launcher.on_entry_activate(
-                                        self.launcher.search_entry
-                                    )
-                                else:
-                                    # Direct command starting with >
-                                    self.launcher.search_entry.set_text(data)
-                                    self.launcher.present()
-                                    self.launcher.on_entry_activate(
-                                        self.launcher.search_entry
-                                    )
+                                    self.launcher.on_entry_activate(self.launcher.search_entry)
                             handled = True
+                        elif data.startswith(">") or data.startswith("launcher "):
+                             # Send launcher commands to the launcher
+                             if self.launcher:
+                                 # Extract the command if it starts with "launcher "
+                                 if data.startswith("launcher "):
+                                     command = data[8:]  # Remove "launcher " prefix
+                                     self.launcher.search_entry.set_text(command)
+                                     self.launcher.present()
+                                     self.launcher.on_entry_activate(
+                                         self.launcher.search_entry
+                                     )
+                                 else:
+                                     # Direct command starting with >
+                                     self.launcher.search_entry.set_text(data)
+                                     self.launcher.present()
+                                     self.launcher.on_entry_activate(
+                                         self.launcher.search_entry
+                                     )
+                             handled = True
                         else:
                             # Handle the message through all module managers
                             handled = False
