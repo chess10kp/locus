@@ -51,10 +51,10 @@ NOTIFICATION_CONFIG = {
 LAUNCHER_CONFIG = {
     # Display and Window Settings
     "window": {
-        "width": 900,
-        "height": 600,
-        "default_width": 900,
-        "default_height": 600,
+        "width": 600,
+        "height": 400,
+        "default_width": 600,
+        "default_height": 400,
         "resizable": True,
         "modal": False,
         "always_on_top": False,

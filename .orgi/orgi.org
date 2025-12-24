@@ -169,7 +169,7 @@
 
   
 
-* TODO [#A] search funcitons should let the user grep by multiple substrings by wseparated words
+* DONE [#A] search funcitons should let the user grep by multiple substrings by wseparated words
   :PROPERTIES:
   :ID: task-20251223114325
   :TITLE: search funcitons should let the user grep by multiple substrings by wseparated words
@@ -214,7 +214,7 @@
 
   
 
-* TODO [#A] change default size to same size as laauncher
+* DONE [#A] change default size to same size as laauncher
   :PROPERTIES:
   :ID: task-20251223145006
   :TITLE: change default size to same size as laauncher
@@ -340,7 +340,7 @@
 
   
 
-* TODO fuzzy searc
+* DONE fuzzy searc
   :PROPERTIES:
   :ID: task-20251223175955
   :TITLE: fuzzy searc
@@ -349,7 +349,7 @@
 
   
 
-* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
+* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
   :PROPERTIES:
   :ID: task-20251223180201
   :TITLE: perf: remove all debug logging
@@ -367,7 +367,7 @@
 
   
 
-* TODO bookmarks does not launch iwth xgd-open when selecting it
+* DONE bookmarks does not launch iwth xgd-open when selecting it
   :PROPERTIES:
   :ID: task-20251223183514
   :TITLE: bookmarks does not launch iwth xgd-open when selecting it
@@ -399,6 +399,33 @@
   :ID: task-20251223190432
   :TITLE: lcok screen should be multi monitor
   :CREATED: <2025-12-23 Tue 19:04>
+  :END:
+
+  
+
+* TODO the launehr shshould be on the top layer so that it shows even over fullscreen windows
+  :PROPERTIES:
+  :ID: task-20251223220824
+  :TITLE: the launehr shshould be on the top layer so that it shows even over fullscreen windows
+  :CREATED: <2025-12-23 Tue 22:08>
+  :END:
+
+  
+
+* TODO sscreenshot utility
+  :PROPERTIES:
+  :ID: task-20251223220924
+  :TITLE: sscreenshot utility
+  :CREATED: <2025-12-23 Tue 22:09>
+  :END:
+
+  
+
+* TODO [#A] launcher size configurable thorough config file
+  :PROPERTIES:
+  :ID: task-20251223221627
+  :TITLE: launcher size configurable thorough config file
+  :CREATED: <2025-12-23 Tue 22:16>
   :END:
 
   
