@@ -21,9 +21,12 @@ class EmojiHook(LauncherHook):
 
     def on_select(self, launcher, item_data: Any) -> bool:
         """Handle emoji selection"""
-        if isinstance(item_data, str) and len(item_data) == 1:  # Single emoji
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+        if len(data_str) == 1:  # Single emoji
             # Copy emoji to clipboard
-            self.emoji_launcher.copy_to_clipboard(item_data)
+            self.emoji_launcher.copy_to_clipboard(data_str)
             return True
         return False
 
@@ -50,6 +53,7 @@ class EmojiLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_clipboard
+
         if not check_clipboard():
             return False, "clipboard utility (wl-copy or xclip) not found"
         return True, ""

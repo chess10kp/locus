@@ -35,17 +35,22 @@ class BluetoothHook(LauncherHook):
         if not item_data:
             return False
 
-        if item_data.startswith("Power:"):
+        # Handle both string and dict input
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+
+        if data_str.startswith("Power:"):
             bluetooth_toggle_power()
-        elif item_data.startswith("Scan:"):
+        elif data_str.startswith("Scan:"):
             bluetooth_toggle_scan()
-        elif item_data.startswith("Pairable:"):
+        elif data_str.startswith("Pairable:"):
             bluetooth_toggle_pairable()
-        elif item_data.startswith("Discoverable:"):
+        elif data_str.startswith("Discoverable:"):
             bluetooth_toggle_discoverable()
         else:
             # Device item - Extract mac from (mac)
-            match = re.search(r"\(([^)]+)\)", item_data)
+            match = re.search(r"\(([^)]+)\)", data_str)
             if match:
                 mac = match.group(1)
                 bluetooth_toggle_connection(mac)
@@ -100,6 +105,7 @@ class BluetoothLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_bluetoothctl
+
         if not check_bluetoothctl():
             return False, "bluetoothctl not found"
         return True, ""

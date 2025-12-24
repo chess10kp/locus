@@ -401,8 +401,6 @@
   :CREATED: <2025-12-23 Tue 19:04>
   :END:
 
-  <<<<<<< HEAD
-
 * TODO the launehr shshould be on the top layer so that it shows even over fullscreen windows
   :PROPERTIES:
   :ID: task-20251223220824
@@ -426,6 +424,42 @@
   :ID: task-20251223221627
   :TITLE: launcher size configurable thorough config file
   :CREATED: <2025-12-23 Tue 22:16>
+  :END:
+
+  
+
+* TODO contextual suggestions (app recs based on time or workspaec) :ux:
+  :PROPERTIES:
+  :ID: task-20251224004743
+  :TITLE: contextual suggestions (app recs based on time or workspaec)
+  :CREATED: <2025-12-24 Wed 00:47>
+  :END:
+
+  
+
+* TODO [#C] preview panels for images, markdown, metadata
+  :PROPERTIES:
+  :ID: task-20251224004804
+  :TITLE: preview panels for images, markdown, metadata
+  :CREATED: <2025-12-24 Wed 00:48>
+  :END:
+
+  this is really hard
+
+* TODO expose themeing through config (include prebuilt themes)
+  :PROPERTIES:
+  :ID: task-20251224004838
+  :TITLE: expose themeing through config (include prebuilt themes)
+  :CREATED: <2025-12-24 Wed 00:48>
+  :END:
+
+  
+
+* TODO [#B] smarter launcher detection (like bcalc and currency detection) :ux:
+  :PROPERTIES:
+  :ID: task-20251224004931
+  :TITLE: smarter launcher detection (like bcalc and currency detection)
+  :CREATED: <2025-12-24 Wed 00:49>
   :END:
 
   
