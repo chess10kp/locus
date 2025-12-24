@@ -1354,6 +1354,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.music_launcher import MpdLauncher
             from launchers.refile_launcher import RefileLauncher
             from launchers.timer_launcher import TimerLauncher
+            from launchers.brightness_launcher import BrightnessLauncher
             from launchers.focus_launcher import FocusLauncher
             from launchers.calc_launcher import CalcLauncher
             from launchers.bookmark_launcher import BookmarkLauncher
@@ -1389,6 +1390,7 @@ class Launcher(Gtk.ApplicationWindow):
             register_launcher_with_check(MpdLauncher)
             register_launcher_with_check(RefileLauncher)
             register_launcher_with_check(TimerLauncher)
+            register_launcher_with_check(BrightnessLauncher)
             register_launcher_with_check(FocusLauncher)
             register_launcher_with_check(CalcLauncher)
             register_launcher_with_check(BookmarkLauncher)

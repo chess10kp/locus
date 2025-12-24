@@ -6,6 +6,7 @@ from .bookmark_launcher import BookmarkLauncher, BookmarkHook
 from .bluetooth_launcher import BluetoothLauncher, BluetoothHook
 from .wallpaper_launcher import WallpaperLauncher, WallpaperHook
 from .timer_launcher import TimerLauncher, TimerHook
+from .brightness_launcher import BrightnessLauncher, BrightnessHook
 from .focus_launcher import FocusLauncher, FocusHook
 from .kill_launcher import KillLauncher, KillHook
 from .music_launcher import MpdLauncher, MpdHook
@@ -43,6 +44,8 @@ __all__ = [
     "WallpaperHook",
     "TimerLauncher",
     "TimerHook",
+    "BrightnessLauncher",
+    "BrightnessHook",
     "FocusLauncher",
     "FocusHook",
     "KillLauncher",
