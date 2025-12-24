@@ -287,6 +287,7 @@ class LauncherSearch:
         result_type: ResultType | None = None,
         action_data=None,
         icon_name: str | None = None,
+        pixbuf=None,
     ):
         """Add a search result from a sublauncher."""
         if result_type is None:
@@ -302,6 +303,8 @@ class LauncherSearch:
             prefix=False,
             icon_name=icon_name,
         )
+        if pixbuf is not None:
+            result.icon_pixbuf = pixbuf
         self.launcher.list_store.append(WrappedSearchResult(result))
 
     def add_wallpaper_result(

@@ -14,7 +14,7 @@ import re
 import logging
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from gi.repository import GdkPixbuf, GLib
+from gi.repository import GdkPixbuf
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 
@@ -142,6 +142,7 @@ class ColorLauncher(LauncherInterface):
                     subtitle=f"Color {i + 1}",
                     action_data=hex_color,
                     icon_name=None,  # Use pixbuf instead
+                    pixbuf=pixbuf,
                 )
 
         # Add "Pick Color" button at the end
@@ -199,12 +200,6 @@ class ColorLauncher(LauncherInterface):
         except Exception as e:
             self._show_error(f"Error picking color: {e}")
             self._show_launcher_centered()
-
-        except Exception as e:
-            self._show_error(f"Error picking color: {e}")
-            # Show launcher again on error
-            if self.launcher:
-                self.launcher.show_launcher()
 
     def _parse_color_to_hex(self, color_str: str) -> Optional[str]:
         """Parse various color formats to hex string."""

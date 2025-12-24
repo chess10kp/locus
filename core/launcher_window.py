@@ -669,10 +669,11 @@ class Launcher(Gtk.ApplicationWindow):
         result_type: ResultType | None = None,
         action_data=None,
         icon_name: str | None = None,
+        pixbuf=None,
     ):
         """Add a search result from a sublauncher."""
         self.search.add_launcher_result(
-            title, subtitle, index, result_type, action_data, icon_name
+            title, subtitle, index, result_type, action_data, icon_name, pixbuf
         )
 
     def add_wallpaper_result(
