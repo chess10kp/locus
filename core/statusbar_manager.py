@@ -216,9 +216,7 @@ class StatusbarModuleManager:
         css_provider = Gtk.CssProvider()
         css_provider.load_from_data(css.encode())
         style_context = widget.get_style_context()
-        style_context.add_provider(
-            css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        )
+        style_context.add_provider(css_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
     def cleanup(self):
         """Clean up all modules and stop updates."""

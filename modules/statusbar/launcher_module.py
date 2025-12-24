@@ -45,6 +45,13 @@ class LauncherModule(StatusbarModuleInterface):
     def handles_clicks(self) -> bool:
         return True
 
+    def get_styles(self) -> Optional[str]:
+        return """
+        #launcher-button {
+            font-size: 16px;
+        }
+        """
+
     def handle_click(self, widget: Gtk.Widget, event) -> bool:
         """Handle launcher button click."""
         # In GTK4, we use 'clicked' signal instead of 'button-press-event'

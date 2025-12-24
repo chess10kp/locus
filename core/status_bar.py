@@ -78,16 +78,16 @@ class StatusBar(Gtk.ApplicationWindow):
 
         # Styles
         self.label_style = """
-            label {
-                color: #ebdbb2;
-                font-size: 20px;
-                font-weight: normal;
-                font-family: Iosevka;
-                margin: 0;
-                padding: 0;
-                transition: opacity 0.2s ease;
-            }
-        """
+             label {
+                 color: #ebdbb2;
+                 font-size: 10px;
+                 font-weight: normal;
+                 font-family: Iosevka;
+                 margin: 0;
+                 padding: 0;
+                 transition: opacity 0.2s ease;
+             }
+         """
         self.sep_style = """
             label {
                 color: #888888;
