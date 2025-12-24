@@ -84,11 +84,7 @@ class LauncherSearchResult(SearchResult):
         super().__init__(title, metadata, ResultType.LAUNCHER)
         self.command = command
         self.index = index
-        # Only set action_data to command if not explicitly provided
-        if action_data is not None:
-            self.action_data = action_data
-        else:
-            self.action_data = command
+        self.action_data = action_data
         self.icon_name = icon_name
         self.icon_pixbuf = None  # Loaded GdkPixbuf (cached by icon manager)
 

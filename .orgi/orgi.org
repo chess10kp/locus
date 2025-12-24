@@ -403,6 +403,7 @@
 
   
 
+<<<<<<< HEAD
 * TODO the launehr shshould be on the top layer so that it shows even over fullscreen windows
   :PROPERTIES:
   :ID: task-20251223220824
@@ -421,7 +422,7 @@
 
   
 
-* TODO [#A] launcher size configurable thorough config file
+* DONE [#A] launcher size configurable thorough config file
   :PROPERTIES:
   :ID: task-20251223221627
   :TITLE: launcher size configurable thorough config file
