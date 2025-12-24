@@ -20,8 +20,11 @@ class ShellHook(LauncherHook):
 
     def on_select(self, launcher, item_data: Any) -> bool:
         """Handle shell command execution button clicks"""
-        if isinstance(item_data, str) and item_data.startswith("exec:"):
-            command = item_data[5:]  # Remove "exec:" prefix
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+        if data_str.startswith("exec:"):
+            command = data_str[5:]  # Remove "exec:" prefix
             self.shell_launcher.execute_command(command)
             launcher.hide()
             return True

@@ -25,8 +25,11 @@ class FocusHook(LauncherHook):
 
     def on_select(self, launcher, item_data: Any) -> bool:
         """Handle focus button clicks"""
-        if isinstance(item_data, str) and item_data.startswith("focus:"):
-            action = item_data[6:]  # Remove "focus:" prefix
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+        if data_str.startswith("focus:"):
+            action = data_str[6:]  # Remove "focus:" prefix
             if action == "start":
                 self.focus_launcher.start_focus_session()
             elif action in ["stop", "end"]:
@@ -67,6 +70,7 @@ class FocusLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_emacsclient, check_notify_send
+
         missing = []
         if not check_emacsclient():
             missing.append("emacsclient")
@@ -173,12 +177,11 @@ class FocusLauncher(LauncherInterface):
         self.update_focus_display()
 
         # Set up periodic updates every second
-        self.focus_update_id = GLib.timeout_add_seconds(
-            1, self.update_focus_status
-        )
+        self.focus_update_id = GLib.timeout_add_seconds(1, self.update_focus_status)
 
         # Run on_start hooks from config
         from core import config
+
         self._run_hooks(config.FOCUS_MODE_HOOKS.get("on_start", []))
 
         # Send notification
@@ -204,12 +207,12 @@ class FocusLauncher(LauncherInterface):
 
                 # Send summary notification
                 self._send_notification(
-                    "Focus session ended",
-                    f"Total time: {time_str}"
+                    "Focus session ended", f"Total time: {time_str}"
                 )
 
                 # Run on_stop hooks from config
                 from core import config
+
                 self._run_hooks(config.FOCUS_MODE_HOOKS.get("on_stop", []))
 
                 # Clear status message after a short delay
@@ -245,9 +248,7 @@ class FocusLauncher(LauncherInterface):
 
         try:
             subprocess.run(
-                ["notify-send", "-a", "Focus", title, body],
-                env=env,
-                check=True
+                ["notify-send", "-a", "Focus", title, body], env=env, check=True
             )
         except (subprocess.CalledProcessError, FileNotFoundError):
             # Silently fail if notify-send is not available

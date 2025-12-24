@@ -30,21 +30,26 @@ class WallpaperHook(LauncherHook):
         if not item_data:
             return False
 
-        if item_data == "Set random wallpaper":
+        # Handle both string and dict input
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+
+        if data_str == "Set random wallpaper":
             self._set_random_wallpaper()
             launcher.hide()
             return True
-        elif item_data == "Cycle wallpaper":
+        elif data_str == "Cycle wallpaper":
             self._cycle_wallpaper()
             launcher.hide()
             return True
-        elif item_data.startswith(("No wallpapers found", "Wallpaper directory")):
+        elif data_str.startswith(("No wallpapers found", "Wallpaper directory")):
             # Error messages, no action needed
             launcher.hide()
             return True
         else:
             # Individual wallpaper file
-            self._set_wallpaper(item_data)
+            self._set_wallpaper(data_str)
             launcher.hide()
             return True
 

@@ -42,15 +42,15 @@ class BluetoothHook(LauncherHook):
 
         if data_str.startswith("Power:"):
             bluetooth_toggle_power()
-        elif item_data.startswith("Scan:"):
+        elif data_str.startswith("Scan:"):
             bluetooth_toggle_scan()
-        elif item_data.startswith("Pairable:"):
+        elif data_str.startswith("Pairable:"):
             bluetooth_toggle_pairable()
-        elif item_data.startswith("Discoverable:"):
+        elif data_str.startswith("Discoverable:"):
             bluetooth_toggle_discoverable()
         else:
             # Device item - Extract mac from (mac)
-            match = re.search(r"\(([^)]+)\)", item_data)
+            match = re.search(r"\(([^)]+)\)", data_str)
             if match:
                 mac = match.group(1)
                 bluetooth_toggle_connection(mac)

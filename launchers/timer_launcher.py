@@ -23,8 +23,11 @@ class TimerHook(LauncherHook):
 
     def on_select(self, launcher, item_data: Any) -> bool:
         """Handle timer button clicks"""
-        if isinstance(item_data, str) and item_data.startswith("timer:"):
-            time_str = item_data[6:]  # Remove "timer:" prefix
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+        if data_str.startswith("timer:"):
+            time_str = data_str[6:]  # Remove "timer:" prefix
             self.timer_launcher.start_timer(time_str)
             launcher.hide()
             return True
@@ -55,6 +58,7 @@ class TimerLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_notify_send
+
         if not check_notify_send():
             return False, "notify-send not found"
         return True, ""

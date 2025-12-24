@@ -24,16 +24,21 @@ class BookmarkHook(LauncherHook):
         if not item_data:
             return False
 
+        # Handle both string and dict input
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+
         bookmarks = get_bookmarks()
-        if self.launcher.remove_mode and item_data in bookmarks:
-            # Remove the bookmark
-            remove_bookmark(item_data)
+        if self.launcher.remove_mode and data_str in bookmarks:
+            # Remove bookmark
+            remove_bookmark(data_str)
             self.launcher.remove_mode = False
             launcher.hide()
             return True
-        elif item_data in bookmarks:
+        elif data_str in bookmarks:
             # Open bookmark in default browser
-            print(f"Opening bookmark with xdg-open: {item_data}")
+            print(f"Opening bookmark with xdg-open: {data_str}")
             try:
                 env = os.environ.copy()
                 env.pop(
@@ -47,16 +52,16 @@ class BookmarkHook(LauncherHook):
 
                 # Use xdg-open to open in the default browser
                 result = subprocess.Popen(
-                    ["xdg-open", item_data], start_new_session=True, env=env
+                    ["xdg-open", data_str], start_new_session=True, env=env
                 )
                 print(f"subprocess.Popen returned: {result}")
             except Exception as e:
                 print(f"Failed to open bookmark: {e}")
             launcher.hide()
             return True
-        elif item_data in ["add", "replace"]:
+        elif data_str in ["add", "replace"]:
             # Handle other bookmark actions
-            print(f"Bookmark action: {item_data}")
+            print(f"Bookmark action: {data_str}")
             # Could implement dialogs here for add/replace
             launcher.hide()
             return True

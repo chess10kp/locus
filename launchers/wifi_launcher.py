@@ -31,24 +31,29 @@ class WifiHook(LauncherHook):
         if not item_data:
             return False
 
-        if item_data == "Power: toggle":
+        # Handle both string and dict input
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+
+        if data_str == "Power: toggle":
             wifi_toggle_power()
-        elif item_data == "Disconnect":
+        elif data_str == "Disconnect":
             wifi_disconnect()
-        elif item_data == "Rescan":
+        elif data_str == "Rescan":
             # Trigger a fresh scan
             self.launcher._scan_cache = None
-        elif item_data.startswith("Forget:"):
+        elif data_str.startswith("Forget:"):
             # Extract SSID from "Forget:SSID"
-            ssid = item_data.split(":", 1)[1] if ":" in item_data else None
+            ssid = data_str.split(":", 1)[1] if ":" in data_str else None
             if ssid:
                 wifi_forget(ssid)
         else:
             # Network item - Extract SSID from (SSID) format
-            ssid_start = item_data.rfind("(")
-            ssid_end = item_data.rfind(")")
+            ssid_start = data_str.rfind("(")
+            ssid_end = data_str.rfind(")")
             if ssid_start != -1 and ssid_end != -1 and ssid_end > ssid_start:
-                ssid = item_data[ssid_start + 1 : ssid_end]
+                ssid = data_str[ssid_start + 1 : ssid_end]
                 if ssid:
                     # If connected, disconnect; otherwise connect
                     if wifi_is_connected(ssid):
@@ -127,6 +132,7 @@ class WifiLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_nmcli
+
         if not check_nmcli():
             return False, "nmcli (NetworkManager) not found"
         return True, ""
