@@ -349,7 +349,7 @@
 
   
 
-* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
+* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
   :PROPERTIES:
   :ID: task-20251223180201
   :TITLE: perf: remove all debug logging
@@ -385,7 +385,7 @@
 
   
 
-* TODO volume and brightness menu
+* DONE volume and brightness menu
   :PROPERTIES:
   :ID: task-20251223185539
   :TITLE: volume and brightness menu
@@ -394,16 +394,15 @@
 
   
 
-* TODO lcok screen should be multi monitor
+* DONE lcok screen should be multi monitor
   :PROPERTIES:
   :ID: task-20251223190432
   :TITLE: lcok screen should be multi monitor
   :CREATED: <2025-12-23 Tue 19:04>
   :END:
 
-  
+  <<<<<<< HEAD
 
-<<<<<<< HEAD
 * TODO the launehr shshould be on the top layer so that it shows even over fullscreen windows
   :PROPERTIES:
   :ID: task-20251223220824
@@ -413,7 +412,7 @@
 
   
 
-* TODO sscreenshot utility
+* DONE sscreenshot utility
   :PROPERTIES:
   :ID: task-20251223220924
   :TITLE: sscreenshot utility
