@@ -285,17 +285,6 @@ class LockScreen(Gtk.ApplicationWindow):
                 """,
             )
 
-            # Hint label
-            apply_styles(
-                self.hint_label,
-                """
-                label {
-                    font-family: Iosevka, sans-serif;
-                    font-size: 14px;
-                }
-                """,
-            )
-
     def on_password_changed(self, entry):
         """Reset status label when user starts typing."""
         if self.is_input_enabled:
