@@ -30,8 +30,8 @@ from gi.repository import Gdk, Gtk, Gtk4LayerShell as GtkLayerShell, GLib  # noq
 Gtk.init()
 
 from core.status_bar import StatusBar  # noqa: E402
-
-setproctitle.setproctitle(APPNAME)
+from core import status_bars  # noqa: E402
+from utils.deps import check_volume_utilities, check_brightness_utilities  # noqa: E402
 
 
 def kill_previous_process():
@@ -59,10 +59,20 @@ def kill_previous_process():
         pass
 
 
+setproctitle.setproctitle(APPNAME)
+
 kill_previous_process()
 
+# Check for required utilities
+vol_error = check_volume_utilities()
+if vol_error:
+    print(f"Warning: {vol_error}", file=sys.stderr)
 
-status_bars = []  # Global list to store StatusBar instances for cleanup
+bright_error = check_brightness_utilities()
+if bright_error:
+    print(f"Warning: {bright_error}", file=sys.stderr)
+
+
 monitor_to_window = {}  # Global dict to map monitors to their status bars
 
 
@@ -142,6 +152,10 @@ def on_activate(app: Gtk.Application):
 
     # Connect to monitors list changes
     monitors.connect("items-changed", on_monitors_changed)
+
+    # Start IPC server on the first statusbar
+    if status_bars:
+        status_bars[0].start_ipc_server()
 
 
 def on_shutdown(app: Gtk.Application):

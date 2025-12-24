@@ -7,12 +7,12 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-import webbrowser
-from utils import get_bookmarks
+import os
+import subprocess
+from utils import get_bookmarks, remove_bookmark
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from typing import Optional
-from utils.launcher_utils import LauncherEnhancer
 
 
 class BookmarkHook(LauncherHook):
@@ -25,15 +25,37 @@ class BookmarkHook(LauncherHook):
             return False
 
         bookmarks = get_bookmarks()
-        if item_data in bookmarks:
-            # Open bookmark in browser
-            webbrowser.open(item_data)
+        if self.launcher.remove_mode and item_data in bookmarks:
+            # Remove the bookmark
+            remove_bookmark(item_data)
+            self.launcher.remove_mode = False
             launcher.hide()
             return True
-        elif item_data in ["add", "remove", "replace"]:
-            # Handle bookmark actions
+        elif item_data in bookmarks:
+            # Open bookmark in default browser
+            try:
+                env = os.environ.copy()
+                env.pop(
+                    "MALLOC_PERTURB_", None
+                )  # Remove malloc perturb for child processes
+
+                # Use xdg-open to open in the default browser
+                subprocess.Popen(
+                    ["xdg-open", item_data], start_new_session=True, env=env
+                )
+            except Exception as e:
+                print(f"Failed to open bookmark: {e}")
+            launcher.hide()
+            return True
+        elif item_data == "remove":
+            # Enter remove mode
+            self.launcher.remove_mode = True
+            self.launcher.populate_apps(">bookmark")
+            return False  # Don't hide, stay in launcher to show bookmarks
+        elif item_data in ["add", "replace"]:
+            # Handle other bookmark actions
             print(f"Bookmark action: {item_data}")
-            # Could implement dialogs here for add/remove
+            # Could implement dialogs here for add/replace
             launcher.hide()
             return True
 
@@ -41,7 +63,16 @@ class BookmarkHook(LauncherHook):
 
     def on_enter(self, launcher, text):
         """Handle enter key for bookmark operations."""
-        webbrowser.open(text)
+        try:
+            env = os.environ.copy()
+            env.pop(
+                "MALLOC_PERTURB_", None
+            )  # Remove malloc perturb for child processes
+
+            # Use xdg-open to open in the default browser
+            subprocess.Popen(["xdg-open", text], start_new_session=True, env=env)
+        except Exception as e:
+            print(f"Failed to open URL: {e}")
         return False
 
     def on_tab(self, launcher, text):
@@ -65,6 +96,7 @@ class BookmarkHook(LauncherHook):
 class BookmarkLauncher(LauncherInterface):
     def __init__(self, main_launcher=None):
         self.launcher = main_launcher
+        self.remove_mode = False
         self.hook = BookmarkHook(self)
 
         # Register the hook with the main launcher if available
@@ -97,17 +129,21 @@ class BookmarkLauncher(LauncherInterface):
 
     def populate(self, query, launcher_core):
         bookmarks = get_bookmarks()
-        if query:
-            bookmarks = [b for b in bookmarks if query.lower() in b.lower()]
-        actions = ["add", "remove", "replace"]
-        all_items = bookmarks + actions
+        if self.remove_mode:
+            # In remove mode, show all bookmarks for selection, no filter
+            all_items = bookmarks
+        else:
+            if query:
+                bookmarks = [b for b in bookmarks if query.lower() in b.lower()]
+            actions = ["add", "remove", "replace"]
+            all_items = bookmarks + actions
         index = 1
         for item in all_items:
             metadata = (
                 launcher_core.METADATA.get("bookmark", "") if item in bookmarks else ""
             )
             launcher_core.add_launcher_result(
-                item, metadata, index=index if index <= 9 else None
+                item, metadata, index=index if index <= 9 else None, action_data=item
             )
             index += 1
             if index > 9:  # Stop showing hints after 9

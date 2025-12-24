@@ -13,3 +13,13 @@ def get_bookmarks():
                     cleaned = " ".join(cleaned.split())
                     bookmarks.append(cleaned)
     return bookmarks
+
+
+def remove_bookmark(bookmark):
+    bookmarks = get_bookmarks()
+    if bookmark in bookmarks:
+        bookmarks.remove(bookmark)
+        bookmark_file = os.path.expanduser("~/.bookmarks")
+        with open(bookmark_file, "w") as f:
+            for b in bookmarks:
+                f.write(b + "\n")

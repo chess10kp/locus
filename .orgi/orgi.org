@@ -124,7 +124,7 @@
 
   
 
-* TODO htiting enter is a bit slower than alt+1 selection
+* DONE htiting enter is a bit slower than alt+1 selection
   :PROPERTIES:
   :ID: task-20251222234648
   :TITLE: htiting enter is a bit slower than alt+1 selection
@@ -349,7 +349,7 @@
 
   
 
-* TODO perf: remove all debug logging :remove all debug logging:remove all debug logging:perf:
+* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
   :PROPERTIES:
   :ID: task-20251223180201
   :TITLE: perf: remove all debug logging
@@ -390,6 +390,15 @@
   :ID: task-20251223185539
   :TITLE: volume and brightness menu
   :CREATED: <2025-12-23 Tue 18:55>
+  :END:
+
+  
+
+* TODO lcok screen should be multi monitor
+  :PROPERTIES:
+  :ID: task-20251223190432
+  :TITLE: lcok screen should be multi monitor
+  :CREATED: <2025-12-23 Tue 19:04>
   :END:
 
   

@@ -118,6 +118,7 @@ LAUNCHER_CONFIG = {
         "close_on_activate": True,  # Close launcher after launching
         "show_recent_apps": False,  # Show recently used apps (not implemented)
         "max_recent_apps": 5,  # Number of recent apps to show
+        "desktop_launcher_fast_path": True,  # Skip hooks for desktop launcher mode (direct app launch)
     },
     # Keyboard Shortcuts
     "keys": {
@@ -161,10 +162,6 @@ LAUNCHER_CONFIG = {
         "validate_desktop_files": True,  # Validate .desktop file format
         "sort_apps_alphabetically": True,  # Sort apps by name
         "deduplicate_apps": True,  # Remove duplicate app entries
-    },
-    # Behavior Options
-    "behavior": {
-        "desktop_launcher_fast_path": True,  # Skip hooks for desktop launcher mode (direct app launch)
     },
 }
 
@@ -410,6 +407,18 @@ def add_metadata(identifier: str, metadata: str):
 # Available launcher names:
 #   file, wallpaper, music, wifi, bluetooth, calc, bookmark,
 #   timer, web, emoji, gallery, kill, shell, refile, focus, lock
+
+# Volume and Brightness Commands
+# These are the shell commands used for adjusting and getting volume/brightness
+# Users can modify these strings to use different tools or step sizes
+VOL_UP_CMD = "pamixer --increase 5"
+VOL_DOWN_CMD = "pamixer --decrease 5"
+VOL_GET_CMD = "pamixer --get-volume"
+VOL_MUTE_CMD = "pamixer --toggle-mute"
+
+BRIGHT_UP_CMD = "brightnessctl set +5%"
+BRIGHT_DOWN_CMD = "brightnessctl set 5%-"
+BRIGHT_GET_CMD = "echo $(($(brightnessctl get) * 100)/ $(brightnessctl max))"
 
 LAUNCHER_PREFIXES = {
     # Example custom prefixes - feel free to modify

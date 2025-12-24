@@ -58,6 +58,7 @@ def check_file_exists(path: str) -> bool:
         True if the file exists, False otherwise
     """
     import os
+
     expanded = os.path.expanduser(path)
     return os.path.exists(expanded)
 
@@ -123,3 +124,56 @@ def check_emacsclient() -> bool:
         True if emacsclient exists, False otherwise
     """
     return check_command_exists("emacsclient")
+
+
+def check_pamixer() -> bool:
+    """Check if pamixer is available.
+
+    Returns:
+        True if pamixer exists, False otherwise
+    """
+    return check_command_exists("pamixer")
+
+
+def check_light() -> bool:
+    """Check if light is available.
+
+    Returns:
+        True if light exists, False otherwise
+    """
+    return check_command_exists("light")
+
+
+def check_amixer() -> bool:
+    """Check if amixer is available.
+
+    Returns:
+        True if amixer exists, False otherwise
+    """
+    return check_command_exists("amixer")
+
+
+def check_volume_utilities() -> Optional[str]:
+    """Check if volume utilities are available.
+
+    Returns:
+        None if available, error message if not
+    """
+    if check_pamixer():
+        return None
+    elif check_amixer():
+        return None
+    else:
+        return "No volume utilities found. Install pamixer or amixer."
+
+
+def check_brightness_utilities() -> Optional[str]:
+    """Check if brightness utilities are available.
+
+    Returns:
+        None if available, error message if not
+    """
+    if check_light():
+        return None
+    else:
+        return "No brightness utilities found. Install light."

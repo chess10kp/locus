@@ -24,6 +24,7 @@ from typing import Optional
 
 from .config import BAR_LAYOUT, MODULE_CONFIG
 from .statusbar_manager import StatusbarModuleManager
+from . import status_bars
 
 
 @final
@@ -267,8 +268,11 @@ class StatusBar(Gtk.ApplicationWindow):
                                     )
                             handled = True
                         else:
-                            # Handle the message through the module manager
-                            handled = self.module_manager.handle_ipc_message(data)
+                            # Handle the message through all module managers
+                            handled = False
+                            for sb in status_bars:
+                                if sb.module_manager.handle_ipc_message(data):
+                                    handled = True
                         if not handled:
                             print(f"Unhandled IPC message: {data}")
             except socket.timeout:

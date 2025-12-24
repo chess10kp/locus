@@ -160,38 +160,43 @@ class LauncherRegistry:
         from core.config import LAUNCHER_PREFIXES
 
         if launcher.name in LAUNCHER_PREFIXES:
-            # Use custom prefixes from config (replaces default triggers for custom matching)
+            # Use custom prefixes from config (ADDS to default triggers, doesn't replace)
             custom_triggers = LAUNCHER_PREFIXES[launcher.name]
-            # Register custom triggers
+            # Register custom triggers - extract trigger part only (remove colon/space)
             for trigger in custom_triggers:
-                # Normalize: remove leading > if present
-                normalized_trigger = trigger.lstrip(">")
+                # For custom prefixes, extract just the trigger part (before colon/space)
+                if ":" in trigger:
+                    trigger_part = trigger.split(":")[0]
+                elif " " in trigger:
+                    trigger_part = trigger.split(" ")[0]
+                else:
+                    trigger_part = trigger
 
-                if normalized_trigger in self._trigger_map:
+                if trigger_part in self._trigger_map:
                     # Allow multiple launchers with same trigger prefix
                     # but store them as a list for conflict resolution
-                    existing = self._trigger_map[normalized_trigger]
+                    existing = self._trigger_map[trigger_part]
                     if isinstance(existing, list):
                         existing.append(launcher)
                     else:
-                        self._trigger_map[normalized_trigger] = [existing, launcher]
+                        self._trigger_map[trigger_part] = [existing, launcher]
                 else:
-                    self._trigger_map[normalized_trigger] = launcher
-        else:
-            # No custom prefixes - register original triggers in trigger map too for both traditional and custom matching
-            for trigger in launcher.command_triggers:
-                # Normalize: remove leading > if present
-                normalized_trigger = trigger.lstrip(">")
+                    self._trigger_map[trigger_part] = launcher
 
-                # Store in trigger map for O(1) lookup
-                if normalized_trigger in self._trigger_map:
-                    existing = self._trigger_map[normalized_trigger]
-                    if isinstance(existing, list):
-                        existing.append(launcher)
-                    else:
-                        self._trigger_map[normalized_trigger] = [existing, launcher]
+        # Always register original triggers for traditional > matching
+        for trigger in launcher.command_triggers:
+            # Normalize: remove leading > if present
+            normalized_trigger = trigger.lstrip(">")
+
+            # Store in trigger map for O(1) lookup
+            if normalized_trigger in self._trigger_map:
+                existing = self._trigger_map[normalized_trigger]
+                if isinstance(existing, list):
+                    existing.append(launcher)
                 else:
-                    self._trigger_map[normalized_trigger] = launcher
+                    self._trigger_map[normalized_trigger] = [existing, launcher]
+            else:
+                self._trigger_map[normalized_trigger] = launcher
 
     def unregister(self, name: str) -> None:
         """Unregister a launcher by name."""
