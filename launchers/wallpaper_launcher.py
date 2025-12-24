@@ -35,6 +35,7 @@ class WallpaperHook(LauncherHook):
             item_data if isinstance(item_data, str) else str(item_data.get("", ""))
         )
 
+        # Global wallpaper commands work from any context
         if data_str == "Set random wallpaper":
             self._set_random_wallpaper()
             launcher.hide()
@@ -48,7 +49,9 @@ class WallpaperHook(LauncherHook):
             launcher.hide()
             return True
         else:
-            # Individual wallpaper file
+            # Individual wallpaper files only handled in wallpaper context
+            if launcher.active_launcher_context != "wallpaper":
+                return False
             self._set_wallpaper(data_str)
             launcher.hide()
             return True
@@ -299,12 +302,13 @@ class WallpaperLauncher(LauncherInterface):
             return
 
         # Supported image extensions
-        image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg'}
+        image_extensions = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".svg"}
 
         # Load and filter wallpapers - only image files
         wallpapers = glob.glob(os.path.join(wp_dir, "*"))
         wallpapers = [
-            os.path.basename(w) for w in wallpapers
+            os.path.basename(w)
+            for w in wallpapers
             if os.path.isfile(w) and os.path.splitext(w)[1].lower() in image_extensions
         ]
 

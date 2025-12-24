@@ -73,6 +73,9 @@ class Launcher(Gtk.ApplicationWindow):
         self.hook_registry = HookRegistry()
         self.launcher_registry = launcher_registry
 
+        # Track active launcher context for hook disambiguation
+        self.active_launcher_context = None
+
         # Initialize helper classes
         self.ui = LauncherUI(self)
         self.search = LauncherSearch(self)
@@ -240,7 +243,7 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Layer shell setup
         GtkLayerShell.init_for_window(self)
-        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
+        GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
         GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.EXCLUSIVE)
         # Anchor to top only for vertical positioning, don't anchor left/right for horizontal centering
         GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)

@@ -349,7 +349,7 @@
 
   
 
-* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
+* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
   :PROPERTIES:
   :ID: task-20251223180201
   :TITLE: perf: remove all debug logging
@@ -401,7 +401,9 @@
   :CREATED: <2025-12-23 Tue 19:04>
   :END:
 
-* TODO the launehr shshould be on the top layer so that it shows even over fullscreen windows
+  
+
+* DONE the launehr shshould be on the top layer so that it shows even over fullscreen windows
   :PROPERTIES:
   :ID: task-20251223220824
   :TITLE: the launehr shshould be on the top layer so that it shows even over fullscreen windows
@@ -464,7 +466,7 @@
 
   
 
-* TODO change font size of launch and foocus elemnets
+* DONE change font size of launch and foocus elemnets
   :PROPERTIES:
   :ID: task-20251224020837
   :TITLE: change font size of launch and foocus elemnets
@@ -473,7 +475,7 @@
 
   
 
-* TODO vol and brightness are broken again
+* DONE vol and brightness are broken again
   :PROPERTIES:
   :ID: task-20251224022224
   :TITLE: vol and brightness are broken again

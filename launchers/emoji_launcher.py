@@ -21,6 +21,9 @@ class EmojiHook(LauncherHook):
 
     def on_select(self, launcher, item_data: Any) -> bool:
         """Handle emoji selection"""
+        if launcher.active_launcher_context != "emoji":
+            return False
+
         data_str = (
             item_data if isinstance(item_data, str) else str(item_data.get("", ""))
         )

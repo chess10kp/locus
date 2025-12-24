@@ -200,6 +200,14 @@ class LauncherSearch:
             self.launcher.launcher_registry.find_launcher_for_input(filter_text)
         )
 
+        # Set active launcher context for hook disambiguation
+        if launcher:
+            self.launcher.active_launcher_context = launcher.name
+        elif filter_text.startswith(">"):
+            self.launcher.active_launcher_context = "command"
+        else:
+            self.launcher.active_launcher_context = "apps"
+
         # Update footer based on mode
         if launcher:
             self.launcher.footer_label.set_text(launcher.name.capitalize())

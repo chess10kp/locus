@@ -29,6 +29,8 @@ class BookmarkHook(LauncherHook):
             item_data if isinstance(item_data, str) else str(item_data.get("", ""))
         )
 
+        # Allow bookmark opening from any context (URLs might appear anywhere)
+        # But restrict removal to bookmark context
         bookmarks = get_bookmarks()
         if self.launcher.remove_mode and data_str in bookmarks:
             # Remove bookmark
