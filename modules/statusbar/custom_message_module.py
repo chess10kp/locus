@@ -24,6 +24,8 @@ class CustomMessageModule(StatusbarModuleInterface):
     def __init__(self):
         self.current_message = ""
         self.progress_visible = False
+        self.icon = Gtk.Image()
+        self.icon.set_pixel_size(14)
 
     @property
     def name(self) -> str:
@@ -37,19 +39,33 @@ class CustomMessageModule(StatusbarModuleInterface):
         self.stack = Gtk.Stack()
         self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self.stack.set_transition_duration(200)
+        self.stack.set_halign(Gtk.Align.CENTER)
 
         self.label = Gtk.Label()
         self.label.set_name("custom-message-label")
 
+        # Create progress box with icon and progress bar
+        self.progress_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+        self.progress_box.set_name("custom-progress-box")
+
+        self.icon.set_name("custom-progress-icon")
+
         self.progress_bar = Gtk.ProgressBar()
         self.progress_bar.set_name("custom-progress-bar")
         self.progress_bar.set_size_request(
-            120, 20
-        )  # Minimum width and height for visibility
-        self.progress_bar.set_show_text(True)
+            100, 20
+        )  # Reduced width since icon takes space
+        self.progress_bar.set_show_text(False)  # Disable text, use icon instead
+
+        self.progress_box.append(self.icon)
+        self.progress_box.append(self.progress_bar)
+
+        # Center the icon and progress bar vertically
+        self.icon.set_valign(Gtk.Align.CENTER)
+        self.progress_bar.set_valign(Gtk.Align.CENTER)
 
         self.stack.add_named(self.label, "label")
-        self.stack.add_named(self.progress_bar, "progress")
+        self.stack.add_named(self.progress_box, "progress")
 
         self.stack.set_visible_child_name("label")
 
@@ -92,12 +108,15 @@ class CustomMessageModule(StatusbarModuleInterface):
                     self.progress_bar.set_fraction(fraction)
                     if progress_type == "volume":
                         if len(parts) > 2 and parts[2] == "mute":
-                            self.progress_bar.set_text("Muted")
+                            self.icon.set_from_icon_name("audio-volume-muted-symbolic")
                         else:
-                            self.progress_bar.set_text("Volume")
+                            self.icon.set_from_icon_name("audio-volume-high-symbolic")
                     elif progress_type == "brightness":
-                        self.progress_bar.set_text("Brightness")
+                        self.icon.set_from_icon_name("display-brightness-symbolic")
                     else:
+                        # For other types, use a generic icon or keep text
+                        self.icon.set_from_icon_name("dialog-information-symbolic")
+                        self.progress_bar.set_show_text(True)
                         self.progress_bar.set_text(progress_type.title())
 
                     self.progress_visible = True
@@ -121,18 +140,24 @@ class CustomMessageModule(StatusbarModuleInterface):
         return """
         #custom-message-label {
             padding: 0 8px;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 500;
             color: #f1fa8c;
             background: #0e1419;
             border-radius: 4px;
         }
-        #custom-progress-bar {
-            min-width: 120px;
-            padding: 0 8px;
-            font-size: 12px;
-            font-weight: 500;
+        #custom-progress-box {
+            padding: 0 4px;
+            background: #0e1419;
+            border-radius: 4px;
+        }
+        #custom-progress-icon {
             color: #f1fa8c;
+            background: #0e1419;
+        }
+        #custom-progress-bar {
+            min-width: 100px;
+            padding: 0 4px;
             background: #0e1419;
             border-radius: 4px;
         }
