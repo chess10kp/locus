@@ -46,17 +46,11 @@ class AppSearchResult(SearchResult):
         self.icon_name = app.get("icon", None)  # Icon name or file path
         self.icon_pixbuf = None  # Loaded GdkPixbuf (cached by icon manager)
 
-        logger.debug(
-            f"Creating AppSearchResult for '{title}': icon_name='{self.icon_name}'"
-        )
         if self.icon_name:
             try:
                 from utils.icon_manager import icon_manager
 
                 self.icon_pixbuf = icon_manager.get_icon(self.icon_name)
-                logger.debug(
-                    f"Loaded pixbuf for '{title}': {self.icon_pixbuf is not None}"
-                )
             except Exception as e:
                 logger.warning(f"Failed to load icon for '{title}': {e}")
                 self.icon_pixbuf = None
@@ -98,17 +92,11 @@ class LauncherSearchResult(SearchResult):
         self.icon_name = icon_name
         self.icon_pixbuf = None  # Loaded GdkPixbuf (cached by icon manager)
 
-        logger.debug(
-            f"Creating LauncherSearchResult for '{title}': icon_name='{self.icon_name}'"
-        )
         if self.icon_name:
             try:
                 from utils.icon_manager import icon_manager
 
                 self.icon_pixbuf = icon_manager.get_icon(self.icon_name)
-                logger.debug(
-                    f"Loaded pixbuf for launcher '{title}': {self.icon_pixbuf is not None}"
-                )
             except Exception as e:
                 logger.warning(f"Failed to load icon for launcher '{title}': {e}")
                 self.icon_pixbuf = None

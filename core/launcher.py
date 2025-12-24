@@ -519,6 +519,8 @@ class Launcher(Gtk.ApplicationWindow):
         self.hook_registry = HookRegistry()
         self.launcher_registry = launcher_registry
 
+        self.current_apps = []
+
         # Styles
         self.keyb_badge_style = """
             .badges-box label {
