@@ -10,6 +10,7 @@
 from .launcher_ui import LauncherUI
 from .launcher_search import LauncherSearch
 from .launcher_navigation import LauncherNavigation
+from .launcher_window import Launcher
 from .utils.time_parsing import parse_time
 
 # Module-level exports for backward compatibility

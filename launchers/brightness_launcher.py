@@ -27,19 +27,25 @@ class BrightnessHook(LauncherHook):
         )
         if data_str == "brightness:up":
             self.adjust_brightness("up")
+            launcher.selected_row = None
+            launcher.populate_apps(">brightness")
+            return True
         elif data_str == "brightness:down":
             self.adjust_brightness("down")
+            launcher.selected_row = None
+            launcher.populate_apps(">brightness")
+            return True
         elif data_str.startswith("brightness:set:"):
             # Extract percentage from "brightness:set:50"
             try:
                 pct = int(data_str.split(":")[-1])
                 self.set_brightness(pct)
+                launcher.selected_row = None
+                launcher.populate_apps(">brightness")
+                return True
             except ValueError:
                 pass
-        # Refresh the display
-        launcher.selected_row = None
-        launcher.populate_apps(">brightness")
-        return True
+        return False
 
     def on_enter(self, launcher, text: str) -> bool:
         """Handle enter key for brightness commands"""

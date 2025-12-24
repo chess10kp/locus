@@ -42,23 +42,35 @@ class BluetoothHook(LauncherHook):
 
         if data_str.startswith("Power:"):
             bluetooth_toggle_power()
+            launcher.selected_row = None
+            launcher.populate_apps(">bluetooth")
+            return True
         elif data_str.startswith("Scan:"):
             bluetooth_toggle_scan()
+            launcher.selected_row = None
+            launcher.populate_apps(">bluetooth")
+            return True
         elif data_str.startswith("Pairable:"):
             bluetooth_toggle_pairable()
+            launcher.selected_row = None
+            launcher.populate_apps(">bluetooth")
+            return True
         elif data_str.startswith("Discoverable:"):
             bluetooth_toggle_discoverable()
+            launcher.selected_row = None
+            launcher.populate_apps(">bluetooth")
+            return True
         else:
             # Device item - Extract mac from (mac)
             match = re.search(r"\(([^)]+)\)", data_str)
             if match:
                 mac = match.group(1)
                 bluetooth_toggle_connection(mac)
+                launcher.selected_row = None
+                launcher.populate_apps(">bluetooth")
+                return True
 
-        # Refresh the menu by re-populating
-        launcher.selected_row = None
-        launcher.populate_apps(">bluetooth")
-        return True
+        return False
 
     def on_enter(self, launcher, text):
         """Handle enter key for bluetooth operations."""

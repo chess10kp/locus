@@ -66,8 +66,8 @@ class MpdHook(LauncherHook):
         """Handle enter on mpd commands"""
         if text.startswith(">mpd"):
             cmd = text[4:].strip()
-            if cmd in ["clear", "pause", "play"]:
-                self.music_launcher.control(cmd)
+            if cmd in ["clear", "pause", "play", "next", "prev"]:
+                self.mpd_launcher.control(cmd)
                 launcher.hide()
                 return True
 
@@ -267,6 +267,24 @@ class MpdLauncher(LauncherInterface):
             index=1,
         )
 
+        self._add_button(
+            "Next",
+            "Skip to next song",
+            "control",
+            "next",
+            launcher_core,
+            index=2,
+        )
+
+        self._add_button(
+            "Previous",
+            "Skip to previous song",
+            "control",
+            "prev",
+            launcher_core,
+            index=3,
+        )
+
         if is_queue_mode:
             self._add_button(
                 "Clear Queue",
@@ -274,7 +292,7 @@ class MpdLauncher(LauncherInterface):
                 "control",
                 "clear",
                 launcher_core,
-                index=2,
+                index=4,
             )
             self._add_button(
                 "View Library",
@@ -282,7 +300,7 @@ class MpdLauncher(LauncherInterface):
                 "view_library",
                 "view_library",
                 launcher_core,
-                index=3,
+                index=5,
             )
         else:
             self._add_button(
@@ -291,7 +309,7 @@ class MpdLauncher(LauncherInterface):
                 "view_queue",
                 "view_queue",
                 launcher_core,
-                index=2,
+                index=4,
             )
 
     def _add_button(self, text, metadata, action, value, launcher_core, index=None):
@@ -309,7 +327,7 @@ class MpdLauncher(LauncherInterface):
             launcher_core.add_launcher_result("Queue is empty", "")
             return
 
-        index = 4  # Start after control buttons (1=toggle, 2=clear, 3=view library)
+        index = 6  # Start after control buttons (1=toggle, 2=next, 3=prev, 4=clear, 5=view library)
         for line in lines:
             if not line.strip():
                 continue
@@ -366,7 +384,9 @@ class MpdLauncher(LauncherInterface):
 
         count = 0
         MAX_RESULTS = 50  # Limit results for performance
-        index = 3  # Start after control buttons (1=toggle, 2=view mode)
+        index = (
+            5  # Start after control buttons (1=toggle, 2=next, 3=prev, 4=view queue)
+        )
 
         for item in self.files_cache:
             if query and query.lower() not in item["name"].lower():

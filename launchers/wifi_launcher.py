@@ -38,16 +38,28 @@ class WifiHook(LauncherHook):
 
         if data_str == "Power: toggle":
             wifi_toggle_power()
+            launcher.selected_row = None
+            launcher.populate_apps(">wifi")
+            return True
         elif data_str == "Disconnect":
             wifi_disconnect()
+            launcher.selected_row = None
+            launcher.populate_apps(">wifi")
+            return True
         elif data_str == "Rescan":
             # Trigger a fresh scan
             self.launcher._scan_cache = None
+            launcher.selected_row = None
+            launcher.populate_apps(">wifi")
+            return True
         elif data_str.startswith("Forget:"):
             # Extract SSID from "Forget:SSID"
             ssid = data_str.split(":", 1)[1] if ":" in data_str else None
             if ssid:
                 wifi_forget(ssid)
+                launcher.selected_row = None
+                launcher.populate_apps(">wifi")
+                return True
         else:
             # Network item - Extract SSID from (SSID) format
             ssid_start = data_str.rfind("(")
@@ -60,11 +72,11 @@ class WifiHook(LauncherHook):
                         wifi_disconnect(ssid)
                     else:
                         wifi_connect(ssid)
+                    launcher.selected_row = None
+                    launcher.populate_apps(">wifi")
+                    return True
 
-        # Refresh the menu by re-populating
-        launcher.selected_row = None
-        launcher.populate_apps(">wifi")
-        return True
+        return False
 
     def on_enter(self, launcher, text):
         """Handle enter key for WiFi operations."""

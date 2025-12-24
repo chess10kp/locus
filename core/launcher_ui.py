@@ -304,12 +304,11 @@ class LauncherUI:
                 button,
                 """
                 button {
-                    background: #3c3836;
-                    color: #ebdbb2;
+                    background: transparent;
                     border: none;
                     border-radius: 3px;
-                    padding: 5px;
-                    margin: 2px;
+                    padding: 0px;
+                    margin: 0px;
                 }
                 button:hover {
                     background: #504945;
@@ -371,17 +370,27 @@ class LauncherUI:
                 list_item.metadata_label = metadata_label
             else:
                 # Image-only grid
-                image = Gtk.Image()
-                image.set_hexpand(True)
-                image.set_vexpand(True)
-                image.set_size_request(
-                    grid_config.get("item_width", 200),
-                    grid_config.get("item_height", 200),
-                )
-                button.set_child(image)
+                item_width = grid_config.get("item_width", 200)
+                item_height = grid_config.get("item_height", 150)
+
+                # Use Gtk.Picture instead of Gtk.Image for better scaling
+                picture = Gtk.Picture()
+                picture.set_hexpand(True)
+                picture.set_vexpand(True)
+                picture.set_halign(Gtk.Align.FILL)
+                picture.set_valign(Gtk.Align.FILL)
+                picture.set_size_request(item_width, item_height)
+                picture.set_can_shrink(False)
+                # Make the picture content scale to fill (not preserve aspect ratio)
+                picture.set_content_fit(Gtk.ContentFit.FILL)
+
+                button.set_child(picture)
 
                 # Store reference
-                list_item.image = image
+                list_item.image = picture
+                # Store dimensions for later use
+                list_item.item_width = item_width
+                list_item.item_height = item_height
 
             # Set child for the list item
             list_item.set_child(button)
@@ -402,40 +411,35 @@ class LauncherUI:
                 return
 
             # Set the image from the pixbuf (if available) or load from path
+            # Note: 'image' is actually a Gtk.Picture when show_metadata is False
             if image:
+                # Get item dimensions from list_item if available, else from config
+                item_width = getattr(list_item, 'item_width', grid_config.get("item_width", 200))
+                item_height = getattr(list_item, 'item_height', grid_config.get("item_height", 200))
+
                 if search_result.pixbuf:
-                    # Use cached pixbuf
-                    texture = Gdk.Texture.new_for_pixbuf(search_result.pixbuf)
-                    image.set_from_paintable(texture)
+                    # Use cached pixbuf - scale to fill container
+                    scaled_pixbuf = search_result.pixbuf.scale_simple(
+                        item_width, item_height, GdkPixbuf.InterpType.BILINEAR
+                    )
+                    texture = Gdk.Texture.new_for_pixbuf(scaled_pixbuf)
+                    image.set_paintable(texture)
                 elif search_result.image_path:
-                    # Initialize variables for use in except block
-                    item_width = grid_config.get("item_width", 200)
-                    item_height = grid_config.get("item_height", 200)
-                    aspect_ratio = grid_config.get("aspect_ratio", "original")
                     try:
-                        # Load image from path with aspect ratio handling
-
-                        if aspect_ratio == "square":
-                            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                                search_result.image_path, item_width, item_height, True
-                            )
-                        elif aspect_ratio == "original":
-                            # Load with max dimensions, preserve aspect ratio
-                            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                                search_result.image_path, item_width, item_height, True
-                            )
-                        else:  # fixed
-                            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                                search_result.image_path, item_width, item_height, False
-                            )
-
+                        # Load and scale image to exact dimensions (stretch to fit)
+                        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                            search_result.image_path, item_width, item_height, False
+                        )
                         texture = Gdk.Texture.new_for_pixbuf(pixbuf)
-                        image.set_from_paintable(texture)
+                        image.set_paintable(texture)
                     except Exception as e:
                         logger.warning(f"Failed to load grid image: {e}")
-                        # Set a placeholder
-                        image.set_from_icon_name("image-missing")
-                        image.set_pixel_size(min(item_width, item_height) // 2)
+                        # Set a placeholder icon for Gtk.Picture
+                        icon_theme = Gtk.IconTheme.get_for_display(image.get_display())
+                        if icon_theme:
+                            paintable = icon_theme.lookup_icon("image-missing", [], 200, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_SYMBOLIC)
+                            if paintable:
+                                image.set_paintable(paintable)
 
             # Update text labels
             if title_label:
