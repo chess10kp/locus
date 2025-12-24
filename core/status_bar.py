@@ -54,7 +54,7 @@ class StatusBar(Gtk.ApplicationWindow):
             load_desktop_apps,
         )
         from utils.wm import detect_wm
-        from .launcher import Launcher
+        from .launcher_window import Launcher
 
         self.wm_client = detect_wm()
         self.launcher = Launcher(application=kwargs.get("application"))

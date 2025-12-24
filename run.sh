@@ -3,4 +3,4 @@
 # See: https://github.com/wmww/gtk4-layer-shell/blob/main/linking.md
 #
 # Workaround for malloc corruption with Python 3.13:
-MALLOC_CHECK_=0 MALLOC_PERTURB_=0 LD_PRELOAD=/usr/lib/libgtk4-layer-shell.so PWD=/home/sigma/projects/repos/locus/locus-refactor uv run python ~/projects/repos/locus/locus-refactor/main.py & disown
+MALLOC_CHECK_=0 MALLOC_PERTURB_=0 LD_PRELOAD=/usr/lib/libgtk4-layer-shell.so PWD=/home/sigma/projects/repos/locus uv run python ~/projects/repos/locus/main.py & disown

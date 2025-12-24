@@ -360,7 +360,7 @@ class FastAppLoader:
             return sorted_apps[:max_results]
 
         # Use fuzzy search for query-based searches
-        from .fuzzy_search import filter_apps_with_fuzzy
+        from utils.fuzzy_search import filter_apps_with_fuzzy
 
         # Get frequency weights for all apps
         frequency_weights = {}

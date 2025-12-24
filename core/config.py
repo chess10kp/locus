@@ -331,8 +331,8 @@ METADATA.update(
         "hibernate": "Hibernate",
         "logout": "Logout",
         "lock": "Lock screen",
-        "music": "Music player",
-        "refile": "Workspace swapper",
+        "mpd": "MPD client",
+        "refile": "Sway Workspace swapper",
         "web": "Web search",
         "file": "File search",
         "f": "File search",
@@ -427,7 +427,7 @@ LAUNCHER_PREFIXES = {
     # Example custom prefixes - feel free to modify
     "file": ["f:"],  # Type "f:" instead of ">file"
     "wallpaper": ["wp:"],  # Type "wp:" instead of ">wallpaper"
-    "music": ["m"],  # Type "m " instead of ">music"
+    "mpd": ["m"],  # Type "m " instead of ">music"
     "wifi": ["w"],  # Type "w " instead of ">wifi"
 }
 
