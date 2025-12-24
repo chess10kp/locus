@@ -914,7 +914,7 @@ class Launcher(Gtk.ApplicationWindow):
                     # No icon available, hide the image
                     icon_image.set_visible(False)
 
-            # Update button click handler
+            # Note: Click handling moved to list_view activate signal
             # Remove old handlers to prevent memory leaks
             if button:
                 try:
@@ -922,11 +922,6 @@ class Launcher(Gtk.ApplicationWindow):
                         button.disconnect(button.clicked_handler_id)
                 except:
                     pass
-
-                # Connect new handler
-                button.clicked_handler_id = button.connect(
-                    "clicked", self._on_list_item_clicked, search_result
-                )
 
         def unbind_callback(factory, list_item):
             """Called when a list item is no longer displaying data."""
@@ -1993,6 +1988,12 @@ class Launcher(Gtk.ApplicationWindow):
         elif search_result.result_type.name == "LOADING":
             # Do nothing for loading items
             pass
+
+    def _on_list_item_activated(self, list_view, position):
+        """Handle activation of list items (e.g., single-click or Enter)."""
+        search_result = self.list_store.get_item(position)
+        if search_result:
+            self._on_list_item_clicked(None, search_result)
 
     # Calculator methods
 
