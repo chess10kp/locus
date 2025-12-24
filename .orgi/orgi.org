@@ -349,7 +349,7 @@
 
   
 
-* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
+* DONE perf: remove all debug logging 
   :PROPERTIES:
   :ID: task-20251223180201
   :TITLE: perf: remove all debug logging
@@ -448,7 +448,7 @@
 
   this is really hard
 
-* TODO expose themeing through config (include prebuilt themes)
+* DONE expose themeing through config (include prebuilt themes)
   :PROPERTIES:
   :ID: task-20251224004838
   :TITLE: expose themeing through config (include prebuilt themes)

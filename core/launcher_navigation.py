@@ -9,8 +9,14 @@
 
 import logging
 from gi.repository import Gdk, GLib, Gtk
-from .config import CUSTOM_LAUNCHERS, LAUNCHER_CONFIG
+from .config import (
+    CUSTOM_LAUNCHERS,
+    LAUNCHER_CONFIG,
+    LAUNCHER_PREFIXES,
+    LAUNCHER_PREFIX_SHORTCUTS,
+)
 from .process_launcher import handle_custom_launcher
+from utils.key_binding_parser import parse_key_bindings, key_matches
 
 logger = logging.getLogger("LauncherNavigation")
 
@@ -20,6 +26,18 @@ class LauncherNavigation:
 
     def __init__(self, launcher):
         self.launcher = launcher
+
+        # Parse key bindings from config
+        self.parsed_key_bindings = {}
+        for action, bindings in LAUNCHER_CONFIG.get("keys", {}).items():
+            self.parsed_key_bindings[action] = parse_key_bindings(bindings)
+
+        # Parse prefix shortcuts
+        self.parsed_prefix_shortcuts = {}
+        for binding, launcher_name in LAUNCHER_PREFIX_SHORTCUTS.items():
+            self.parsed_prefix_shortcuts[launcher_name] = parse_key_bindings([binding])[
+                0
+            ]
 
     def select_next(self):
         """Select the next item in the optimized ListView."""
@@ -134,6 +152,25 @@ class LauncherNavigation:
                 else:
                     pass
 
+    def _get_launcher_prefix(self, launcher_name: str) -> str:
+        """Get the prefix string to type for a launcher name.
+
+        Uses custom prefix if available, otherwise falls back to >name + space.
+        """
+        if launcher_name in LAUNCHER_PREFIXES:
+            # Use first custom prefix
+            prefix = LAUNCHER_PREFIXES[launcher_name][0]
+            # Add space if not already present
+            return prefix if prefix.endswith(" ") else prefix + " "
+        else:
+            return f">{launcher_name} "
+
+    def _handle_prefix_shortcut(self, launcher_name: str):
+        """Handle a prefix shortcut by typing the prefix into the search entry."""
+        prefix = self._get_launcher_prefix(launcher_name)
+        self.launcher.search_entry.set_text(prefix)
+        self.launcher.search_entry.set_position(-1)  # Move cursor to end
+
     def _show_yank_feedback(self, text: str, duration_ms: int = 500):
         """Show brief feedback when text is yanked to clipboard.
 
@@ -175,6 +212,65 @@ class LauncherNavigation:
         if handle_custom_launcher(command, self.launcher.apps, self.launcher):
             self.launcher.hide()
 
+    def _handle_tab_complete(self):
+        """Handle tab completion logic."""
+        text = self.launcher.search_entry.get_text()
+
+        # Try hooks first
+        result = self.launcher.hook_registry.execute_tab_hooks(self.launcher, text)
+        if result is not None:
+            self.launcher.search_entry.set_text(result)
+            self.launcher.search_entry.set_position(-1)
+            return True
+
+        # Check if any registered launcher can handle tab completion
+        trigger, launcher, query = (
+            self.launcher.launcher_registry.find_launcher_for_input(text)
+        )
+        if launcher and launcher.handles_tab():
+            completion = launcher.handle_tab(query, self.launcher)
+            if completion:
+                # Return the full command with completion
+                self.launcher.search_entry.set_text(f">{trigger}{completion}")
+                self.launcher.search_entry.set_position(-1)
+                return True
+
+        # Fall back to command completion from registry
+        if text.startswith(">"):
+            command = text[1:].strip()
+            all_commands = self.launcher.launcher_registry.get_all_triggers() + list(
+                CUSTOM_LAUNCHERS.keys()
+            )
+            if not command:
+                # No command yet, complete to first available
+                if all_commands:
+                    first_cmd = all_commands[0]
+                    is_launcher_trigger = (
+                        first_cmd in self.launcher.launcher_registry.get_all_triggers()
+                    )
+                    suffix = " " if is_launcher_trigger else ""
+                    self.launcher.search_entry.set_text(f">{first_cmd}{suffix}")
+                    self.launcher.search_entry.set_position(-1)
+                    return True
+            else:
+                # Partial command, find matching
+                matching = [cmd for cmd in all_commands if cmd.startswith(command)]
+                if matching:
+                    cmd = matching[0]
+                    is_launcher_trigger = (
+                        cmd in self.launcher.launcher_registry.get_all_triggers()
+                    )
+                    suffix = " " if is_launcher_trigger else ""
+                    self.launcher.search_entry.set_text(f">{cmd}{suffix}")
+                    self.launcher.search_entry.set_position(-1)
+                    return True
+        elif self.launcher.current_apps:
+            # App mode, complete to first app
+            self.launcher.search_entry.set_text(self.launcher.current_apps[0]["name"])
+            self.launcher.search_entry.set_position(-1)
+            return True
+        return True  # Prevent default tab behavior
+
     def on_command_selected(self, button, command):
         """Handle command selection."""
         # Set the search entry to >command and trigger activate
@@ -198,6 +294,12 @@ class LauncherNavigation:
 
     def on_key_pressed(self, controller, keyval, keycode, state):
         """Handle keyboard shortcuts."""
+        # Check for prefix shortcuts first
+        for launcher_name, parsed_binding in self.parsed_prefix_shortcuts.items():
+            if key_matches(keyval, state, [parsed_binding]):
+                self._handle_prefix_shortcut(launcher_name)
+                return True
+
         # Handle Alt+1 to Alt+9 for selecting items
         if state & Gdk.ModifierType.ALT_MASK:  # Alt key
             if Gdk.KEY_1 <= keyval <= Gdk.KEY_9:
@@ -212,90 +314,26 @@ class LauncherNavigation:
                 self.yank_by_index(index)
                 return True
 
-        if keyval == Gdk.KEY_Tab:
-            text = self.launcher.search_entry.get_text()
+        # Handle tab completion
+        if key_matches(keyval, state, self.parsed_key_bindings.get("tab_complete", [])):
+            return self._handle_tab_complete()
 
-            # Try hooks first
-            result = self.launcher.hook_registry.execute_tab_hooks(self.launcher, text)
-            if result is not None:
-                self.launcher.search_entry.set_text(result)
-                self.launcher.search_entry.set_position(-1)
-                return True
-
-            # Check if any registered launcher can handle tab completion
-            trigger, launcher, query = (
-                self.launcher.launcher_registry.find_launcher_for_input(text)
-            )
-            if launcher and launcher.handles_tab():
-                completion = launcher.handle_tab(query, self.launcher)
-                if completion:
-                    # Return the full command with completion
-                    self.launcher.search_entry.set_text(f">{trigger}{completion}")
-                    self.launcher.search_entry.set_position(-1)
-                    return True
-
-            # Fall back to command completion from registry
-            if text.startswith(">"):
-                command = text[1:].strip()
-                all_commands = (
-                    self.launcher.launcher_registry.get_all_triggers()
-                    + list(CUSTOM_LAUNCHERS.keys())
-                )
-                if not command:
-                    # No command yet, complete to first available
-                    if all_commands:
-                        first_cmd = all_commands[0]
-                        is_launcher_trigger = (
-                            first_cmd
-                            in self.launcher.launcher_registry.get_all_triggers()
-                        )
-                        suffix = " " if is_launcher_trigger else ""
-                        self.launcher.search_entry.set_text(f">{first_cmd}{suffix}")
-                        self.launcher.search_entry.set_position(-1)
-                        return True
-                else:
-                    # Partial command, find matching
-                    matching = [cmd for cmd in all_commands if cmd.startswith(command)]
-                    if matching:
-                        cmd = matching[0]
-                        is_launcher_trigger = (
-                            cmd in self.launcher.launcher_registry.get_all_triggers()
-                        )
-                        suffix = " " if is_launcher_trigger else ""
-                        self.launcher.search_entry.set_text(f">{cmd}{suffix}")
-                        self.launcher.search_entry.set_position(-1)
-                        return True
-            elif self.launcher.current_apps:
-                # App mode, complete to first app
-                self.launcher.search_entry.set_text(
-                    self.launcher.current_apps[0]["name"]
-                )
-                self.launcher.search_entry.set_position(-1)
-                return True
-            return True  # Prevent default tab behavior
-
-        if keyval == Gdk.KEY_n and (state & Gdk.ModifierType.CONTROL_MASK):
-            self.select_next()
-            return True
-        if keyval == Gdk.KEY_p and (state & Gdk.ModifierType.CONTROL_MASK):
+        # Handle navigation keys using config
+        if key_matches(keyval, state, self.parsed_key_bindings.get("up", [])):
             self.select_prev()
             return True
-        if keyval == Gdk.KEY_j and (state & Gdk.ModifierType.CONTROL_MASK):
+        if key_matches(keyval, state, self.parsed_key_bindings.get("down", [])):
             self.select_next()
             return True
-        if keyval == Gdk.KEY_k and (state & Gdk.ModifierType.CONTROL_MASK):
-            self.select_prev()
+
+        # Handle activation
+        if key_matches(keyval, state, self.parsed_key_bindings.get("activate", [])):
+            self.launcher.on_entry_activate(self.launcher.search_entry)
             return True
-        if keyval == Gdk.KEY_Escape:
+
+        # Handle close/escape
+        if key_matches(keyval, state, self.parsed_key_bindings.get("close", [])):
             self.launcher.hide()
             return True
-        if keyval == Gdk.KEY_c and (state & Gdk.ModifierType.CONTROL_MASK):
-            self.launcher.hide()
-            return True
-        if keyval == Gdk.KEY_Up:
-            self.select_prev()
-            return True
-        if keyval == Gdk.KEY_Down:
-            self.select_next()
-            return True
+
         return False

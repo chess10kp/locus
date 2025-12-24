@@ -446,6 +446,13 @@ LAUNCHER_PREFIXES = {
     "wifi": ["w"],  # Type "w " instead of ">wifi"
 }
 
+LAUNCHER_PREFIX_SHORTCUTS = {
+    # Key bindings to automatically type launcher prefixes
+    # These work even when text is already in the search entry
+    "Ctrl+F": "file",  # Types "f: " (using custom prefix)
+    "Ctrl+W": "wallpaper",  # Types "wp: " (using custom prefix)
+}
+
 
 def remove_metadata(identifier: str):
     """Remove metadata for a launcher entry."""

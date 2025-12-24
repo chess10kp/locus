@@ -125,6 +125,7 @@ class Launcher(Gtk.ApplicationWindow):
         self.search_entry.set_placeholder_text(
             LAUNCHER_CONFIG["ui"]["placeholder_text"]
         )
+
         self.search_timer = None  # For debouncing search
         self._in_search_changed = False  # Guard against recursion
 
@@ -230,8 +231,9 @@ class Launcher(Gtk.ApplicationWindow):
 
         self.set_child(vbox)
 
-        # Handle key presses
+        # Handle key presses on window
         controller = Gtk.EventControllerKey()
+        controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
         controller.connect("key-pressed", self.nav.on_key_pressed)
         self.add_controller(controller)
 
