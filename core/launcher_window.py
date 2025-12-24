@@ -372,6 +372,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.gallery_launcher import GalleryLauncher
             from launchers.web_launcher import WebLauncher
             from launchers.llm_launcher import LLMLauncher
+            from launchers.color_launcher import ColorLauncher
             # Notification launcher disabled for now
             # from launchers.notification_launcher import NotificationLauncher
 
@@ -409,6 +410,7 @@ class Launcher(Gtk.ApplicationWindow):
             register_launcher_with_check(WebLauncher)
             register_launcher_with_check(GalleryLauncher)
             register_launcher_with_check(LLMLauncher)
+            register_launcher_with_check(ColorLauncher)
 
             # Register builtin handlers
             if logger.isEnabledFor(logging.DEBUG):

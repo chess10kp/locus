@@ -70,3 +70,7 @@ class WrappedSearchResult(GObject.Object):
     @property
     def pixbuf(self):
         return getattr(self.search_result, "pixbuf", None)
+
+    @property
+    def grid_metadata(self):
+        return getattr(self.search_result, "grid_metadata", {})

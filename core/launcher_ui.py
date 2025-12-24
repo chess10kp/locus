@@ -245,7 +245,7 @@ class LauncherUI:
             if search_result.pixbuf:
                 # Use cached pixbuf
                 texture = Gdk.Texture.new_for_pixbuf(search_result.pixbuf)
-                image.set_paintable(texture)
+                image.set_from_paintable(texture)
             elif search_result.image_path:
                 try:
                     # Load image from path
@@ -253,7 +253,7 @@ class LauncherUI:
                         search_result.image_path, 200, 150, True
                     )
                     texture = Gdk.Texture.new_for_pixbuf(pixbuf)
-                    image.set_paintable(texture)
+                    image.set_from_paintable(texture)
                 except Exception as e:
                     logger.warning(f"Failed to load wallpaper image: {e}")
                     # Set a placeholder
@@ -414,8 +414,12 @@ class LauncherUI:
             # Note: 'image' is actually a Gtk.Picture when show_metadata is False
             if image:
                 # Get item dimensions from list_item if available, else from config
-                item_width = getattr(list_item, 'item_width', grid_config.get("item_width", 200))
-                item_height = getattr(list_item, 'item_height', grid_config.get("item_height", 200))
+                item_width = getattr(
+                    list_item, "item_width", grid_config.get("item_width", 200)
+                )
+                item_height = getattr(
+                    list_item, "item_height", grid_config.get("item_height", 200)
+                )
 
                 if search_result.pixbuf:
                     # Use cached pixbuf - scale to fill container
@@ -423,7 +427,11 @@ class LauncherUI:
                         item_width, item_height, GdkPixbuf.InterpType.BILINEAR
                     )
                     texture = Gdk.Texture.new_for_pixbuf(scaled_pixbuf)
-                    image.set_paintable(texture)
+                    # Handle both Gtk.Image and Gtk.Picture
+                    if hasattr(image, "set_paintable"):
+                        image.set_paintable(texture)  # Gtk.Picture
+                    else:
+                        image.set_from_paintable(texture)  # Gtk.Image
                 elif search_result.image_path:
                     try:
                         # Load and scale image to exact dimensions (stretch to fit)
@@ -431,15 +439,33 @@ class LauncherUI:
                             search_result.image_path, item_width, item_height, False
                         )
                         texture = Gdk.Texture.new_for_pixbuf(pixbuf)
-                        image.set_paintable(texture)
+                        # Handle both Gtk.Image and Gtk.Picture
+                        if hasattr(image, "set_paintable"):
+                            image.set_paintable(texture)  # Gtk.Picture
+                        else:
+                            image.set_from_paintable(texture)  # Gtk.Image
                     except Exception as e:
                         logger.warning(f"Failed to load grid image: {e}")
-                        # Set a placeholder icon for Gtk.Picture
-                        icon_theme = Gtk.IconTheme.get_for_display(image.get_display())
-                        if icon_theme:
-                            paintable = icon_theme.lookup_icon("image-missing", [], 200, 1, Gtk.TextDirection.NONE, Gtk.IconLookupFlags.FORCE_SYMBOLIC)
-                            if paintable:
-                                image.set_paintable(paintable)
+                        # Set a placeholder icon
+                        if hasattr(image, "set_paintable"):
+                            # Gtk.Picture
+                            icon_theme = Gtk.IconTheme.get_for_display(
+                                image.get_display()
+                            )
+                            if icon_theme:
+                                paintable = icon_theme.lookup_icon(
+                                    "image-missing",
+                                    [],
+                                    200,
+                                    1,
+                                    Gtk.TextDirection.NONE,
+                                    Gtk.IconLookupFlags.FORCE_SYMBOLIC,
+                                )
+                                if paintable:
+                                    image.set_paintable(paintable)
+                        else:
+                            # Gtk.Image
+                            image.set_from_icon_name("image-missing")
 
             # Update text labels
             if title_label:
