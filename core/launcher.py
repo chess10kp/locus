@@ -544,7 +544,7 @@ class Launcher(Gtk.ApplicationWindow):
         self._register_launchers()
 
         # Legacy lock screen support (created when needed)
-        self.lock_screen = None
+        self.lock_screens = []
         self.wallpaper_loaded = False
         self.timer_remaining = 0
         self.timer_update_id = 0
@@ -1419,7 +1419,7 @@ class Launcher(Gtk.ApplicationWindow):
                 logger.debug(f"Builtin handlers: {list(BUILTIN_HANDLERS.keys())}")
 
             # Lock screen is handled separately (not a launcher)
-            self.lock_screen = None
+            self.lock_screens = []
 
             # Note: Individual launchers should register themselves in their __init__
 
@@ -2390,37 +2390,92 @@ class Launcher(Gtk.ApplicationWindow):
 
 
 def show_lock_screen(launcher_instance):
-    """Show the lock screen."""
+    """Show the lock screen on all monitors."""
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("show_lock_screen called")
         logger.debug(
-            f"launcher_instance.lock_screen is {launcher_instance.lock_screen}"
-        )
-        logger.debug(
-            f"launcher_instance.get_application() = {launcher_instance.get_application()}"
+            f"launcher_instance.lock_screens is {launcher_instance.lock_screens}"
         )
 
-    if launcher_instance.lock_screen is None:
+    # If already locked, do nothing
+    if launcher_instance.lock_screens:
+        return
+
+    display = Gdk.Display.get_default()
+    if not display:
+        if logger.isEnabledFor(logging.ERROR):
+            logger.error("No display available for lock screen")
+        return
+
+    monitors = display.get_monitors()
+    n_monitors = monitors.get_n_items()
+
+    if n_monitors == 0:
+        if logger.isEnabledFor(logging.ERROR):
+            logger.error("No monitors available for lock screen")
+        return
+
+    # Define unlock_all callback
+    def unlock_all():
+        for lock_screen in launcher_instance.lock_screens:
+            lock_screen.hide()
+            lock_screen.destroy()
+        launcher_instance.lock_screens.clear()
+        # Disconnect monitor change handler
+        if (
+            hasattr(launcher_instance, "monitor_changed_handler_id")
+            and launcher_instance.monitor_changed_handler_id
+        ):
+            monitors.disconnect(launcher_instance.monitor_changed_handler_id)
+            launcher_instance.monitor_changed_handler_id = None
+
+    # Create lock screens for each monitor
+    for i in range(n_monitors):
+        monitor = monitors.get_item(i)
+        is_input_enabled = i == 0  # Only first monitor gets input
+
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Creating new LockScreen with password='{LOCK_PASSWORD}'")
-        try:
-            launcher_instance.lock_screen = LockScreen(
-                password=LOCK_PASSWORD, application=launcher_instance.get_application()
+            logger.debug(
+                f"Creating LockScreen for monitor {i}, input_enabled={is_input_enabled}"
             )
+
+        try:
+            lock_screen = LockScreen(
+                password=LOCK_PASSWORD,
+                application=launcher_instance.get_application(),
+                monitor=monitor,
+                is_input_enabled=is_input_enabled,
+                unlock_all_callback=unlock_all if is_input_enabled else None,
+            )
+            launcher_instance.lock_screens.append(lock_screen)
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("LockScreen created successfully")
+                logger.debug(f"LockScreen {i} created successfully")
         except Exception as e:
             if logger.isEnabledFor(logging.ERROR):
-                logger.error(f"Failed to create LockScreen: {e}")
-            raise
+                logger.error(f"Failed to create LockScreen for monitor {i}: {e}")
+            continue
 
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("Calling lock_screen.lock()")
-    try:
-        launcher_instance.lock_screen.lock()
+    # Lock all screens
+    for i, lock_screen in enumerate(launcher_instance.lock_screens):
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("lock_screen.lock() completed")
-    except Exception as e:
-        if logger.isEnabledFor(logging.ERROR):
-            logger.error(f"lock_screen.lock() failed: {e}")
-        raise
+            logger.debug(f"Calling lock_screen.lock() for monitor {i}")
+        try:
+            lock_screen.lock()
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"lock_screen.lock() completed for monitor {i}")
+        except Exception as e:
+            if logger.isEnabledFor(logging.ERROR):
+                logger.error(f"lock_screen.lock() failed for monitor {i}: {e}")
+
+    # Handle monitor changes
+    def on_monitors_changed(model, position, removed, added):
+        if not launcher_instance.lock_screens:
+            return
+        # Recreate lock screens for new monitor configuration
+        unlock_all()  # Destroy existing
+        # Re-call show_lock_screen to recreate
+        show_lock_screen(launcher_instance)
+
+    launcher_instance.monitor_changed_handler_id = monitors.connect(
+        "items-changed", on_monitors_changed
+    )

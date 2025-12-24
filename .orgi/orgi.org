@@ -402,3 +402,12 @@
   :END:
 
   
+
+* TODO lcok screen is not launched when using hte alt selction or clicking on the button
+  :PROPERTIES:
+  :ID: task-20251223221525
+  :TITLE: lcok screen is not launched when using hte alt selction or clicking on the button
+  :CREATED: <2025-12-23 Tue 22:15>
+  :END:
+
+  

@@ -96,7 +96,14 @@ logger = logging.getLogger("LockScreen")
 
 @final
 class LockScreen(Gtk.ApplicationWindow):
-    def __init__(self, password="admin", **kwargs):
+    def __init__(
+        self,
+        password="admin",
+        monitor=None,
+        is_input_enabled=True,
+        unlock_all_callback=None,
+        **kwargs,
+    ):
         # Use a common resolution initially, will be adjusted in lock()
         width = 1920
         height = 1080
@@ -117,6 +124,9 @@ class LockScreen(Gtk.ApplicationWindow):
         self.correct_password_hash = hashlib.sha256(password.encode()).hexdigest()
         self.attempts = 0
         self.max_attempts = 3
+        self.monitor = monitor  # Assigned monitor
+        self.is_input_enabled = is_input_enabled
+        self.unlock_all_callback = unlock_all_callback
 
         # Create main container
         self.main_box = VBox(spacing=20)
@@ -128,25 +138,37 @@ class LockScreen(Gtk.ApplicationWindow):
         self.center_box.set_valign(Gtk.Align.CENTER)
         self.center_box.set_halign(Gtk.Align.CENTER)
 
-        # Password entry
-        self.password_entry = Gtk.Entry()
-        self.password_entry.set_visibility(False)  # Hide password
-        self.password_entry.set_placeholder_text("Enter password to unlock")
-        self.password_entry.set_width_chars(30)
-        self.password_entry.set_halign(Gtk.Align.CENTER)
-        self.password_entry.set_margin_start(20)
-        self.password_entry.set_margin_end(20)
-        self.password_entry.connect("activate", self.on_password_entered)
-        self.password_entry.connect("changed", self.on_password_changed)
+        if self.is_input_enabled:
+            # Password entry
+            self.password_entry = Gtk.Entry()
+            self.password_entry.set_visibility(False)  # Hide password
+            self.password_entry.set_placeholder_text("Enter password to unlock")
+            self.password_entry.set_width_chars(30)
+            self.password_entry.set_halign(Gtk.Align.CENTER)
+            self.password_entry.set_margin_start(20)
+            self.password_entry.set_margin_end(20)
+            self.password_entry.connect("activate", self.on_password_entered)
+            self.password_entry.connect("changed", self.on_password_changed)
 
-        # Status label
-        self.status_label = Gtk.Label()
-        self.status_label.set_margin_top(10)
-        self.status_label.set_halign(Gtk.Align.CENTER)
+            # Status label
+            self.status_label = Gtk.Label()
+            self.status_label.set_margin_top(10)
+            self.status_label.set_halign(Gtk.Align.CENTER)
 
-        # Assemble the UI
-        self.center_box.append(self.password_entry)
-        self.center_box.append(self.status_label)
+            # Assemble the UI
+            self.center_box.append(self.password_entry)
+            self.center_box.append(self.status_label)
+        else:
+            # Non-input screen: show locked message
+            self.locked_label = Gtk.Label()
+            self.locked_label.set_markup(
+                '<span size="large" color="#ebdbb2">Screen Locked</span>'
+            )
+            self.locked_label.set_halign(Gtk.Align.CENTER)
+
+            # Assemble the UI
+            self.center_box.append(self.locked_label)
+
         self.main_box.append(self.center_box)
         self.main_box.set_valign(Gtk.Align.CENTER)
 
@@ -212,47 +234,72 @@ class LockScreen(Gtk.ApplicationWindow):
             """,
         )
 
-        # Password entry
-        apply_styles(
-            self.password_entry,
-            """
-            entry {
-                background: #0e1419;
-                color: #ebdbb2;
-                border: none;
-                outline: none;
-                box-shadow: none;
-                padding: 12px;
-                font-size: 16px;
-                font-family: Iosevka, monospace;
-            }
-            entry:focus {
-                border: none;
-                outline: none;
-                box-shadow: none;
-            }
-            entry:focus-visible {
-                border: none;
-                outline: none;
-                box-shadow: none;
-            }
-            """,
-        )
+        if self.is_input_enabled:
+            # Password entry
+            apply_styles(
+                self.password_entry,
+                """
+                entry {
+                    background: #0e1419;
+                    color: #ebdbb2;
+                    border: none;
+                    outline: none;
+                    box-shadow: none;
+                    padding: 12px;
+                    font-size: 16px;
+                    font-family: Iosevka, monospace;
+                }
+                entry:focus {
+                    border: none;
+                    outline: none;
+                    box-shadow: none;
+                }
+                entry:focus-visible {
+                    border: none;
+                    outline: none;
+                    box-shadow: none;
+                }
+                """,
+            )
 
-        # Status label
-        apply_styles(
-            self.status_label,
-            """
-            label {
-                font-family: Iosevka, sans-serif;
-                font-size: 14px;
-            }
-            """,
-        )
+            # Status label
+            apply_styles(
+                self.status_label,
+                """
+                label {
+                    font-family: Iosevka, sans-serif;
+                    font-size: 14px;
+                }
+                """,
+            )
+        else:
+            # Locked label
+            apply_styles(
+                self.locked_label,
+                """
+                label {
+                    font-family: Iosevka, sans-serif;
+                    font-size: 24px;
+                    font-weight: bold;
+                }
+                """,
+            )
+
+            # Hint label
+            apply_styles(
+                self.hint_label,
+                """
+                label {
+                    font-family: Iosevka, sans-serif;
+                    font-size: 14px;
+                }
+                """,
+            )
 
     def on_password_changed(self, entry):
         """Reset status label when user starts typing."""
-        self.status_label.set_markup('<span color="#98971a"></span>')
+        if self.is_input_enabled:
+            self.status_label.set_markup('<span color="#98971a"></span>')
 
     def on_password_entered(self, entry):
         """Handle password entry when Enter key is pressed."""
@@ -292,12 +339,12 @@ class LockScreen(Gtk.ApplicationWindow):
 
     def on_key_pressed(self, controller, keyval, keycode, state):
         """Handle key press events."""
-        # Escape to hide password (but not close window)
-        if keyval == Gdk.KEY_Escape:
+        # Escape to hide password (but not close window) - only for input screens
+        if self.is_input_enabled and keyval == Gdk.KEY_Escape:
             self.password_entry.set_text("")
             return True
 
-        # Prevent Alt+Tab, Ctrl+Alt+F1, etc.
+        # Prevent Alt+Tab, Ctrl+Alt+F1, etc. on all screens
         if (state & Gdk.ModifierType.ALT_MASK and keyval == Gdk.KEY_Tab) or (
             state & Gdk.ModifierType.CONTROL_MASK
             and state & Gdk.ModifierType.ALT_MASK
@@ -327,18 +374,30 @@ class LockScreen(Gtk.ApplicationWindow):
 
     def unlock(self):
         """Unlock the screen."""
-        self.hide()
-        self.destroy()
+        if self.unlock_all_callback and self.is_input_enabled:
+            # Input screen: unlock all screens
+            self.unlock_all_callback()
+        else:
+            # Non-input screen or no callback: just unlock this one
+            self.hide()
+            self.destroy()
 
     def lock(self):
         """Show the lock screen."""
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("LockScreen.lock() called")
 
-        self.password_entry.set_text("")
+        if self.is_input_enabled:
+            self.password_entry.set_text("")
         self.attempts = 0
 
-        monitor_geo = get_monitor_geometry_for_window(self)
+        # Use assigned monitor or detect it
+        monitor = self.monitor
+        if not monitor:
+            monitor_geo = get_monitor_geometry_for_window(self)
+        else:
+            monitor_geo = monitor.get_geometry()
+
         if monitor_geo:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
@@ -346,48 +405,44 @@ class LockScreen(Gtk.ApplicationWindow):
                 )
             # Set window to cover entire monitor
             self.set_default_size(monitor_geo.width, monitor_geo.height)
-            # Maximize the window
-            self.maximize()
         else:
-            self.maximize()
+            # Fallback size
+            self.set_default_size(1920, 1080)
 
         # Initialize GTK layer shell
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Initializing GTK layer shell...")
         try:
             GtkLayerShell.init_for_window(self)
-            GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
-            GtkLayerShell.set_keyboard_mode(self, GtkLayerShell.KeyboardMode.EXCLUSIVE)
+            GtkLayerShell.set_layer(self, GtkLayerShell.Layer.OVERLAY)
+            keyboard_mode = (
+                GtkLayerShell.KeyboardMode.EXCLUSIVE
+            )  # Lock keyboard on all screens
+            GtkLayerShell.set_keyboard_mode(self, keyboard_mode)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.TOP, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.BOTTOM, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
             GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
+            # Set margins to 0 to ensure fullscreen coverage
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.RIGHT, 0)
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.TOP, 0)
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, 0)
+            GtkLayerShell.auto_exclusive_zone_enable(self)
+            # Set monitor before presenting if assigned
+            if monitor:
+                try:
+                    GtkLayerShell.set_monitor(self, monitor)
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug("Monitor set for layer shell before present")
+                except Exception as e:
+                    if logger.isEnabledFor(logging.ERROR):
+                        logger.error(f"Failed to set monitor before present: {e}")
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("GTK layer shell initialized successfully")
         except Exception as e:
             if logger.isEnabledFor(logging.ERROR):
                 logger.error(f"Failed to initialize GTK layer shell: {e}")
-
-        # Try to set the monitor for GTK layer shell
-        try:
-            display = Gdk.Display.get_default()
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"Display: {display}")
-            if display:
-                monitor = (
-                    display.get_monitor_at_surface(self.get_surface())
-                    if self.get_surface()
-                    else None
-                )
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"Monitor: {monitor}")
-                if monitor:
-                    GtkLayerShell.set_monitor(self, monitor)
-                    if logger.isEnabledFor(logging.DEBUG):
-                        logger.debug("Monitor set for layer shell")
-        except Exception as e:
-            if logger.isEnabledFor(logging.ERROR):
-                logger.error(f"Failed to set monitor: {e}")
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Presenting lock screen window...")
@@ -399,11 +454,24 @@ class LockScreen(Gtk.ApplicationWindow):
             if logger.isEnabledFor(logging.ERROR):
                 logger.error(f"Failed to present window: {e}")
 
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Grabbing focus on password entry...")
-        self.password_entry.grab_focus()
+        if self.is_input_enabled:
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Grabbing focus on password entry...")
+            self.password_entry.grab_focus()
 
 
-def create_lock_screen(password="admin", application=None):
+def create_lock_screen(
+    password="admin",
+    application=None,
+    monitor=None,
+    is_input_enabled=True,
+    unlock_all_callback=None,
+):
     """Create and return a lock screen instance."""
-    return LockScreen(password=password, application=application)
+    return LockScreen(
+        password=password,
+        application=application,
+        monitor=monitor,
+        is_input_enabled=is_input_enabled,
+        unlock_all_callback=unlock_all_callback,
+    )
