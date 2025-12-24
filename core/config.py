@@ -225,6 +225,18 @@ MODULE_CONFIG = {
 }
 
 
+CLIPBOARD_CONFIG = {
+    "history": {
+        "max_history": 30,  # Show 30 entries
+        "max_age_days": 30,  # Keep timestamps for 30 days
+        "timestamp_cache": "~/.cache/locus/clipboard_timestamps.json",
+    },
+    "ui": {
+        "preview_length": 100,  # Characters to show (from cliphist)
+        "timestamp_format": "relative",  # "relative" or "absolute"
+    },
+}
+
 # =================================
 # LLM CONFIGURATION
 # =================================
@@ -278,6 +290,7 @@ CUSTOM_LAUNCHERS = {
     "wallpaper": {"type": "builtin", "handler": "wallpaper"},
     "timer": {"type": "builtin", "handler": "timer"},
     "web": {"type": "builtin", "handler": "web"},
+    "clipboard": {"type": "builtin", "handler": "clipboard"},
     "todo": {"type": "function", "func": todo_capture},  # doesn't work for now
     "shutdown": {"type": "command", "cmd": "systemctl poweroff"},
     "reboot": {"type": "command", "cmd": "systemctl reboot"},
@@ -325,6 +338,7 @@ METADATA.update(
         "wifi": "WiFi manager",
         "wallpaper": "Wallpaper",
         "timer": "Timer",
+        "clipboard": "Clipboard History",
         "todo": "Todo capture",
         "shutdown": "Shutdown",
         "reboot": "Reboot",

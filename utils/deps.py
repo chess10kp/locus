@@ -177,3 +177,21 @@ def check_brightness_utilities() -> Optional[str]:
         return None
     else:
         return "No brightness utilities found. Install light."
+
+
+def check_cliphist() -> bool:
+    """Check if cliphist is available.
+
+    Returns:
+        True if cliphist exists, False otherwise
+    """
+    return check_command_exists("cliphist")
+
+
+def check_wl_paste() -> bool:
+    """Check if wl-paste is available.
+
+    Returns:
+        True if wl-paste exists, False otherwise
+    """
+    return check_command_exists("wl-paste")

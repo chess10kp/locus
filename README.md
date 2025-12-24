@@ -1,5 +1,41 @@
 Desktop Shell
 
+## Clipboard History Launcher
+
+The clipboard history launcher allows you to quickly access and select from your recent clipboard history.
+
+### Dependencies
+
+The clipboard history launcher requires `cliphist` and `wl-clipboard`:
+
+```bash
+# Install cliphist (Wayland clipboard manager)
+go install go.senan.xyz/cliphist@latest
+
+# Install wl-clipboard (Wayland clipboard utilities)
+# On Arch: pacman -S wl-clipboard
+# On Ubuntu/Debian: apt install wl-clipboard
+# On NixOS: nix-env -iA nixpkgs.wl-clipboard
+```
+
+### Setup
+
+Add this to your Wayland compositor startup (e.g., Sway, Hyprland):
+
+```bash
+# Start clipboard monitoring
+exec wl-paste --watch cliphist store
+```
+
+This will monitor clipboard changes and store them in cliphist's database.
+
+### Usage
+
+- Launch with `>clipboard` or `cb:`
+- Filter history by typing search terms
+- Select an item to copy it to clipboard
+- Each item shows a preview (up to 100 characters) and timestamp
+
 ## Adding a New Statusbar Module
 
 To add a new module to the statusbar:

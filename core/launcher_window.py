@@ -364,6 +364,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.kill_launcher import KillLauncher
             from launchers.shell_launcher import ShellLauncher
             from launchers.file_launcher import FileLauncher
+            from launchers.clipboard_launcher import ClipboardLauncher
             from launchers.dmenu_launcher import DmenuLauncher
             from launchers.emoji_launcher import EmojiLauncher
             from launchers.gallery_launcher import GalleryLauncher
@@ -396,6 +397,7 @@ class Launcher(Gtk.ApplicationWindow):
             register_launcher_with_check(BookmarkLauncher)
             register_launcher_with_check(BluetoothLauncher)
             register_launcher_with_check(WifiLauncher)
+            register_launcher_with_check(ClipboardLauncher)
             register_launcher_with_check(WallpaperLauncher)
             register_launcher_with_check(KillLauncher)
             register_launcher_with_check(ShellLauncher)
