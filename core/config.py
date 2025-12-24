@@ -55,6 +55,8 @@ LAUNCHER_CONFIG = {
         "height": 400,
         "default_width": 600,
         "default_height": 400,
+        "wallpaper_width": 1000,
+        "wallpaper_height": 600,
         "resizable": True,
         "modal": False,
         "always_on_top": False,

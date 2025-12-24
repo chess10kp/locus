@@ -2161,11 +2161,21 @@ class Launcher(Gtk.ApplicationWindow):
 
     def set_wallpaper_mode_size(self):
         """Increase launcher size for wallpaper mode to accommodate larger thumbnails."""
-        self.set_default_size(1000, 600)
+        from .config import LAUNCHER_CONFIG
+
+        window_config = LAUNCHER_CONFIG["window"]
+        self.set_default_size(
+            window_config["wallpaper_width"], window_config["wallpaper_height"]
+        )
 
     def reset_launcher_size(self):
         """Reset launcher to default size for non-wallpaper modes."""
-        self.set_default_size(600, 400)
+        from .config import LAUNCHER_CONFIG
+
+        window_config = LAUNCHER_CONFIG["window"]
+        self.set_default_size(
+            window_config["default_width"], window_config["default_height"]
+        )
 
     def on_custom_launcher_clicked(self, button, command):
         if handle_custom_launcher(command, self.apps, self):
