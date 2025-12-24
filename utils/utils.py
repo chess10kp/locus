@@ -38,7 +38,8 @@ def send_status_message(message: str):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(1.0)  # 1 second timeout
         sock.connect(SOCKET_PATH)
-        sock.sendall(message.encode("utf-8"))
+        # Prefix with "status:" so the custom_message_module handles it
+        sock.sendall(f"status:{message}".encode("utf-8"))
         sock.close()
     except (OSError, socket.timeout):
         # Silently ignore IPC failures to avoid spam

@@ -188,18 +188,17 @@ class ColorLauncher(LauncherInterface):
                     self.copy_to_clipboard(hex_color)
 
                     # Show launcher again to display updated history
-                    if self.launcher:
-                        self.launcher.show_launcher()
+                    self._show_launcher_centered()
                 else:
                     self._show_error(f"Could not parse color: {color_str}")
-                    # Show launcher again on error
-                    if self.launcher:
-                        self.launcher.show_launcher()
+                    self._show_launcher_centered()
             else:
                 self._show_error("Color picking cancelled or failed")
-                # Show launcher again on cancellation
-                if self.launcher:
-                    self.launcher.show_launcher()
+                self._show_launcher_centered()
+
+        except Exception as e:
+            self._show_error(f"Error picking color: {e}")
+            self._show_launcher_centered()
 
         except Exception as e:
             self._show_error(f"Error picking color: {e}")
@@ -358,6 +357,11 @@ class ColorLauncher(LauncherInterface):
         from utils import send_status_message
 
         send_status_message(f"Color picker: {message}")
+
+    def _show_launcher_centered(self):
+        """Show the launcher (GTK will preserve positioning)."""
+        if self.launcher:
+            self.launcher.present()
 
     def cleanup(self) -> None:
         """Clean up resources and save history."""
