@@ -224,7 +224,7 @@ class LauncherSearch:
         if launcher:
             size_mode, custom_size = launcher.get_size_mode()
             # Store current launcher reference for grid mode
-            if size_mode.name == "grid":
+            if size_mode.name == "GRID":
                 self.launcher._current_grid_launcher = launcher
             else:
                 self.launcher._current_grid_launcher = None

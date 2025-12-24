@@ -463,3 +463,21 @@
   :END:
 
   
+
+* TODO change font size of launch and foocus elemnets
+  :PROPERTIES:
+  :ID: task-20251224020837
+  :TITLE: change font size of launch and foocus elemnets
+  :CREATED: <2025-12-24 Wed 02:08>
+  :END:
+
+  
+
+* TODO vol and brightness are broken again
+  :PROPERTIES:
+  :ID: task-20251224022224
+  :TITLE: vol and brightness are broken again
+  :CREATED: <2025-12-24 Wed 02:22>
+  :END:
+
+  

@@ -576,10 +576,10 @@ class LauncherUI:
 
     def apply_size_mode(self, size_mode, custom_size):
         """Apply the appropriate size mode for the launcher."""
-        if size_mode.name == "wallpaper":
+        if size_mode.name == "WALLPAPER":
             self.set_wallpaper_mode_size()
             self.set_wallpaper_factory()
-        elif size_mode.name == "grid":
+        elif size_mode.name == "GRID":
             # Grid mode - get grid config from launcher
             launcher = None  # Need to get the current launcher instance
             # Find the current launcher that triggered grid mode
@@ -607,7 +607,7 @@ class LauncherUI:
                 # Fallback to default if no launcher available
                 self.reset_launcher_size()
                 self.set_default_factory()
-        elif size_mode.name == "custom" and custom_size:
+        elif size_mode.name == "CUSTOM" and custom_size:
             width, height = custom_size
             self.launcher.set_default_size(width, height)
             # Center the launcher horizontally for custom sizes

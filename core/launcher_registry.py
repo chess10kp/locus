@@ -299,6 +299,15 @@ class LauncherRegistry:
                     trigger_length > longest_length
                     and trigger_length <= len(text_without_prefix)
                     and text_without_prefix.startswith(trigger)
+                    and (
+                        # Exact match (e.g., "wallpaper" matches "wallpaper")
+                        text_without_prefix == trigger
+                        or (
+                            # Trigger followed by space (e.g., "wallpaper " matches "wallpaper")
+                            len(text_without_prefix) > trigger_length
+                            and text_without_prefix[trigger_length] == " "
+                        )
+                    )
                 ):
                     longest_match = trigger
                     longest_length = trigger_length

@@ -228,7 +228,18 @@ class WallpaperLauncher(LauncherInterface):
         return "wallpaper"
 
     def get_size_mode(self):
-        return LauncherSizeMode.WALLPAPER, (1000, 600)
+        return LauncherSizeMode.GRID, (1200, 800)
+
+    def get_grid_config(self):
+        return {
+            "columns": 5,
+            "item_width": 200,
+            "item_height": 150,
+            "spacing": 10,
+            "show_metadata": False,
+            "metadata_position": "hidden",
+            "aspect_ratio": "original",
+        }
 
     def handles_tab(self):
         return True
@@ -262,24 +273,27 @@ class WallpaperLauncher(LauncherInterface):
     def populate(self, query, launcher_core):
         wp_dir = os.path.expanduser("~/Pictures/wp/")
         if not os.path.exists(wp_dir):
-            label_text = "Wallpaper directory ~/Pictures/wp/ not found"
-            metadata = launcher_core.METADATA.get(label_text, "")
-            launcher_core.add_launcher_result(label_text, metadata)
+            launcher_core.add_grid_result(
+                title="Wallpaper directory not found",
+                metadata={"error": "~/Pictures/wp/ not found"},
+            )
             launcher_core.current_apps = []
             return
 
         # Handle special commands
         if query == "random":
-            metadata = launcher_core.METADATA.get("wallpaper", "")
-            launcher_core.add_launcher_result(
-                "Set random wallpaper", metadata, action_data="Set random wallpaper"
+            launcher_core.add_grid_result(
+                title="Set Random Wallpaper",
+                metadata={"action": "random"},
+                action_data="Set random wallpaper",
             )
             launcher_core.current_apps = []
             return
         elif query == "cycle":
-            metadata = launcher_core.METADATA.get("wallpaper", "")
-            launcher_core.add_launcher_result(
-                "Cycle wallpaper", metadata, action_data="Cycle wallpaper"
+            launcher_core.add_grid_result(
+                title="Cycle Wallpaper",
+                metadata={"action": "cycle"},
+                action_data="Cycle wallpaper",
             )
             launcher_core.current_apps = []
             return
@@ -297,32 +311,21 @@ class WallpaperLauncher(LauncherInterface):
             msg = (
                 "No wallpapers found" if not query else f"No wallpapers match '{query}'"
             )
-            metadata = launcher_core.METADATA.get(msg, "")
-            launcher_core.add_launcher_result(msg, metadata)
+            launcher_core.add_grid_result(
+                title=msg,
+                metadata={"error": "No wallpapers found"},
+            )
         else:
-            # Display wallpapers as image-only results
-            index = 1
-            for wp in sorted(wallpapers)[:20]:  # Limit to 20 for speed
+            # Display wallpapers as grid results (image-only)
+            for i, wp in enumerate(sorted(wallpapers)[:25]):  # Show more in grid
                 wp_path = os.path.join(wp_dir, wp)
-                try:
-                    # Get or create cached thumbnail
-                    pixbuf = self._get_cached_thumbnail_pixbuf(wp_path)
-                    launcher_core.add_wallpaper_result(
-                        wp,
-                        wp_path,
-                        pixbuf=pixbuf,
-                        index=index if index <= 9 else None,
-                        action_data=wp,
-                    )
-                except Exception:
-                    # Fallback to text result if image fails to load
-                    launcher_core.add_launcher_result(
-                        wp,
-                        "Click to set as wallpaper",
-                        index=index if index <= 9 else None,
-                        action_data=wp,
-                    )
-                index += 1
+                launcher_core.add_grid_result(
+                    title=wp,
+                    image_path=wp_path,
+                    metadata={"filename": wp},
+                    index=i + 1 if i < 9 else None,
+                    action_data=wp,
+                )
 
         launcher_core.current_apps = []
 
