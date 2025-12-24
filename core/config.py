@@ -318,6 +318,7 @@ METADATA.update(
         "calc": "Calculator",
         "bookmark": "Bookmarks",
         "bluetooth": "Bluetooth",
+        "brightness": "Brightness control",
         "wifi": "WiFi manager",
         "wallpaper": "Wallpaper",
         "timer": "Timer",
@@ -418,7 +419,7 @@ VOL_MUTE_CMD = "pamixer --toggle-mute"
 
 BRIGHT_UP_CMD = "brightnessctl set +5%"
 BRIGHT_DOWN_CMD = "brightnessctl set 5%-"
-BRIGHT_GET_CMD = "echo $(($(brightnessctl get) * 100)/ $(brightnessctl max))"
+BRIGHT_GET_CMD = "echo $(( $(brightnessctl get) * 100 / $(brightnessctl max) ))"
 
 LAUNCHER_PREFIXES = {
     # Example custom prefixes - feel free to modify

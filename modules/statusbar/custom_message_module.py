@@ -43,7 +43,10 @@ class CustomMessageModule(StatusbarModuleInterface):
 
         self.progress_bar = Gtk.ProgressBar()
         self.progress_bar.set_name("custom-progress-bar")
-        self.progress_bar.set_size_request(120, -1)  # Minimum width for visibility
+        self.progress_bar.set_size_request(
+            120, 20
+        )  # Minimum width and height for visibility
+        self.progress_bar.set_show_text(True)
 
         self.stack.add_named(self.label, "label")
         self.stack.add_named(self.progress_bar, "progress")
