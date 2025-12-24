@@ -35,7 +35,12 @@ class BluetoothHook(LauncherHook):
         if not item_data:
             return False
 
-        if item_data.startswith("Power:"):
+        # Handle both string and dict input
+        data_str = (
+            item_data if isinstance(item_data, str) else str(item_data.get("", ""))
+        )
+
+        if data_str.startswith("Power:"):
             bluetooth_toggle_power()
         elif item_data.startswith("Scan:"):
             bluetooth_toggle_scan()
@@ -100,6 +105,7 @@ class BluetoothLauncher(LauncherInterface):
             Tuple of (available, error_message)
         """
         from utils import check_bluetoothctl
+
         if not check_bluetoothctl():
             return False, "bluetoothctl not found"
         return True, ""

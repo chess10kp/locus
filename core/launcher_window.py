@@ -688,6 +688,12 @@ class Launcher(Gtk.ApplicationWindow):
             title, image_path, metadata, pixbuf, index, action_data
         )
 
+    def populate_apps(self, filter_text=""):
+        """Populate the launcher with apps or use registered launchers for commands.
+        Delegates to search manager.
+        """
+        self.search.populate_apps(filter_text)
+
     # Window methods
     def on_map(self, widget):
         """Handle window map event."""

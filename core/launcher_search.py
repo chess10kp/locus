@@ -290,7 +290,7 @@ class LauncherSearch:
             title,
             subtitle,
             safe_index,
-            action_data=action_data,
+            action_data=action_data if action_data is not None else title,
             prefix=False,
             icon_name=icon_name,
         )
