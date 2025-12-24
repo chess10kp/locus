@@ -8,31 +8,19 @@
 # ruff: ignore
 
 """
-High-performance fuzzy search implementation based on Ulauncher patterns.
-Uses Levenshtein distance for fast fuzzy matching with LRU caching.
+High-performance fuzzy search implementation using RapidFuzz.
+Uses RapidFuzz's process module for batch scoring - significantly faster than manual loops.
 Optimized for 10k+ items with two-stage filtering and result caching.
 """
 
-import re
-import unicodedata
 import time
 import logging
 from collections import OrderedDict
 from functools import lru_cache
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, Any
+from rapidfuzz import process, fuzz, utils
 
 logger = logging.getLogger("FuzzySearch")
-
-try:
-    # Try to use python-Levenshtein (fastest, ~10x faster than native)
-    import Levenshtein
-except ImportError:
-    try:
-        # Fall back to rapidfuzz
-        import rapidfuzz.distance as Levenshtein
-    except ImportError:
-        # Fall back to native Python
-        Levenshtein = None
 
 
 def normalize(text: str) -> str:
@@ -43,10 +31,8 @@ def normalize(text: str) -> str:
     if not text:
         return ""
 
-    # Remove accents
-    normalized = unicodedata.normalize("NFKD", text)
-    # Remove diacritical marks and convert to lowercase
-    return "".join(c for c in normalized if not unicodedata.combining(c)).lower()
+    # Use RapidFuzz's default processor which handles normalization
+    return utils.default_process(text)
 
 
 class SearchCache:
@@ -58,13 +44,13 @@ class SearchCache:
         self.hits = 0
         self.misses = 0
 
-    def get(self, query: str, apps_hash: int) -> Optional[List[Dict]]:
+    def get(self, query: str, apps_hash: int) -> Optional[List[Dict[str, Any]]]:
         """Get cached results for a query."""
         key = f"{query.lower()}:{apps_hash}"
         if key in self.cache:
             self.hits += 1
             self.cache.move_to_end(key)
-            return self.cache[key][1]  # Return results
+            return self.cache[key][1]
         self.misses += 1
         return None
 
@@ -110,184 +96,76 @@ def get_search_cache() -> SearchCache:
 
 def get_apps_hash(apps: List[Dict]) -> int:
     """Get a hash of the apps list for cache invalidation."""
-    # Simple hash based on count and first app name
-    # This is efficient and works for cache invalidation when apps change
     if not apps:
         return 0
     return hash((len(apps), apps[0].get("name", "") if apps else ""))
-
-
-def adaptive_limit(query: str, max_results: int = 50) -> int:
-    """
-    Dynamically adjust the candidate limit based on query characteristics.
-    Shorter queries need more candidates, longer queries need fewer.
-    """
-    query_len = len(query.strip())
-
-    if query_len == 0:
-        # Empty query: just return max_results
-        return max_results
-    elif query_len <= 2:
-        # Very short queries: check more candidates
-        return min(max_results * 10, 1000)
-    elif query_len <= 4:
-        # Short queries: check moderate candidates
-        return min(max_results * 5, 500)
-    else:
-        # Longer queries: check fewer candidates (more specific)
-        return min(max_results * 3, 300)
-
-
-def fast_prefix_filter(query: str, apps: List[Dict], limit: int) -> List[Dict]:
-    """
-    Fast prefix-based filtering to reduce the number of apps for fuzzy scoring.
-    This is much faster than fuzzy matching all apps.
-    """
-    if not query:
-        return apps[:limit]
-
-    query_norm = normalize(query).lower()
-    candidates = []
-
-    # First pass: exact prefix matches
-    for app in apps:
-        name = app.get("name", "")
-        if name and normalize(name).lower().startswith(query_norm):
-            candidates.append(app)
-            if len(candidates) >= limit:
-                return candidates
-
-    # If we don't have enough candidates, add substring matches
-    if len(candidates) < limit:
-        for app in apps:
-            if app in candidates:
-                continue
-            name = app.get("name", "")
-            if name and query_norm in normalize(name).lower():
-                candidates.append(app)
-                if len(candidates) >= limit * 2:  # Get more for substring
-                    return candidates[:limit]
-
-    return candidates[:limit]
-
-
-@lru_cache(maxsize=1000)
-def get_score(query: str, text: str) -> float:
-    """
-    Calculate fuzzy search score between query and text.
-    Returns a score between 0.0 (no match) and 1.0 (perfect match).
-
-    Uses Longest Common Subsequence algorithm with optimizations from Ulauncher.
-    """
-    if not query or not text:
-        return 0.0
-
-    # Normalize both strings
-    query_norm = normalize(query)
-    text_norm = normalize(text)
-
-    # Early exit for perfect match
-    if query_norm == text_norm:
-        return 1.0
-
-    # Early exit for empty query
-    if not query_norm:
-        return 0.0
-
-    # If query is longer than text, can't be a good match
-    if len(query_norm) > len(text_norm) * 1.5:
-        return 0.0
-
-    # Use Levenshtein if available (much faster)
-    if Levenshtein:
-        try:
-            # Calculate normalized similarity
-            distance = Levenshtein.distance(query_norm, text_norm)
-            max_len = max(len(query_norm), len(text_norm))
-            similarity = 1.0 - (distance / max_len)
-            return similarity
-        except Exception:
-            # Fall back to native implementation if Levenshtein fails
-            pass
-
-    # Native Python Longest Common Subsequence implementation
-    return _lcs_similarity(query_norm, text_norm)
-
-
-def _lcs_similarity(query: str, text: str) -> float:
-    """
-    Calculate similarity using Longest Common Subsequence.
-    Fallback implementation when Levenshtein is not available.
-    """
-    if not query or not text:
-        return 0.0
-
-    # Dynamic programming for LCS
-    m, n = len(query), len(text)
-    dp = [[0] * (n + 1) for _ in range(m + 1)]
-
-    for i in range(1, m + 1):
-        for j in range(1, n + 1):
-            if query[i - 1] == text[j - 1]:
-                dp[i][j] = dp[i - 1][j - 1] + 1
-            else:
-                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
-
-    # Normalize similarity
-    lcs_length = dp[m][n]
-    return lcs_length / max(len(query), len(text))
 
 
 def search_items(
     query: str,
     items: List[Tuple[str, float]],
     min_score: float = 0.3,
-    max_results: int = 50
-) -> List[Tuple[str, float, str]]:
+    max_results: int = 50,
+) -> List[Tuple[Any, float, Any]]:
     """
-    Search through items with scores using fuzzy matching.
+    Search through items with scores using RapidFuzzy fuzzy matching.
 
     Args:
         query: Search query
         items: List of (text, score) tuples
-        min_score: Minimum score threshold
+        min_score: Minimum score threshold (0-100 for RapidFuzz)
         max_results: Maximum number of results to return
 
     Returns:
         List of (text, final_score, original_text) tuples sorted by score
     """
     if not query:
-        # Return top items by score if no query
-        return [(text, score, text) for text, score in sorted(items, key=lambda x: x[1], reverse=True)[:max_results]]
+        return [
+            (text, score, text)
+            for text, score in sorted(items, key=lambda x: x[1], reverse=True)[
+                :max_results
+            ]
+        ]
 
-    results = []
-    query_lower = normalize(query)
+    # Extract texts for batch processing
+    texts = [text for text, _ in items]
 
-    for text, base_score in items:
-        # Calculate fuzzy match score
-        fuzzy_score = get_score(query_lower, text)
+    # Use RapidFuzz process.extract for fast batch matching
+    # Returns list of (match, score, index) tuples
+    results = process.extract(
+        query,
+        texts,
+        scorer=fuzz.WRatio,
+        processor=normalize,
+        limit=max_results * 2,  # Get more to filter by base_score later
+    )
 
-        # Combine base score with fuzzy score
-        final_score = fuzzy_score * base_score
+    # Combine with base scores
+    final_results = []
+    for match_text, fuzzy_score, idx in results:
+        # Convert fuzzy_score (0-100) to 0-1 range for consistency
+        fuzzy_score_normalized = fuzzy_score / 100.0
+        base_score = items[idx][1]
+        final_score = fuzzy_score_normalized * base_score
 
         # Filter by minimum score
         if final_score >= min_score:
-            results.append((text, final_score, text))
+            final_results.append((match_text, final_score, match_text))
 
     # Sort by score (descending) and limit results
-    results.sort(key=lambda x: x[1], reverse=True)
-    return results[:max_results]
+    final_results.sort(key=lambda x: x[1], reverse=True)
+    return final_results[:max_results]
 
 
 def filter_apps_with_fuzzy(
     query: str,
-    apps: List[dict],
-    frequency_weights: dict = None,
-    max_results: int = 50
-) -> List[dict]:
+    apps: List[Dict[str, Any]],
+    frequency_weights: Optional[Dict[str, float]] = None,
+    max_results: int = 50,
+) -> List[Dict[str, Any]]:
     """
-    Filter apps using fuzzy search with frequency weighting.
-    Optimized for 10k+ items with two-stage filtering and result caching.
+    Filter apps using RapidFuzz fuzzy search with frequency weighting.
+    Optimized for 10k+ items using process.extract for batch scoring.
 
     Args:
         query: Search query
@@ -313,42 +191,48 @@ def filter_apps_with_fuzzy(
             sorted_apps = sorted(
                 apps,
                 key=lambda x: frequency_weights.get(x.get("name", ""), 0),
-                reverse=True
+                reverse=True,
             )
         else:
             sorted_apps = apps[:max_results]
         results = sorted_apps[:max_results]
     else:
-        # Stage 1: Fast prefix filtering to reduce candidates
-        candidate_limit = adaptive_limit(query, max_results)
-        candidates = fast_prefix_filter(query, apps, candidate_limit)
+        # Batch fuzzy matching using RapidFuzz process.extract
+        # This handles fuzzy matching efficiently without needing pre-filtering
+        app_names = [app.get("name", "") for app in apps]
+        app_dict = {app.get("name", ""): app for app in apps}
 
-        # Stage 2: Fuzzy scoring on reduced candidate set
+        # Use RapidFuzz for fast batch fuzzy matching
+        # limit parameter allows RapidFuzz to optimize internally
+        matches = process.extract(
+            query,
+            app_names,
+            scorer=fuzz.WRatio,
+            processor=normalize,
+            limit=max_results * 2,
+            score_cutoff=25,  # Minimum similarity score (25/100 = 25%)
+        )
+
+        # Combine fuzzy scores with frequency weights
         results = []
-        query_norm = normalize(query)
-
-        for app in candidates:
-            app_name = app.get("name", "")
-            if not app_name:
-                continue
-
-            # Calculate fuzzy match score for app name
-            name_score = get_score(query_norm, app_name)
+        for app_name, fuzzy_score, _ in matches:
+            # fuzzy_score is 0-100 from RapidFuzz
+            fuzzy_score_normalized = fuzzy_score / 100.0
 
             # Get frequency weight (default to 1.0 if no tracking)
             freq_weight = 1.0
             if frequency_weights:
                 freq_weight = frequency_weights.get(app_name, 1.0)
-                # Normalize frequency weight to range [0.5, 1.5] like Ulauncher
+                # Normalize frequency weight to range [0.5, 1.5]
                 if freq_weight > 0:
                     freq_weight = 0.5 + min(freq_weight, 1.0)
 
             # Combine scores
-            final_score = name_score * freq_weight
+            final_score = fuzzy_score_normalized * freq_weight
 
-            # Add to results if score is good enough
-            if final_score >= 0.3:  # Minimum threshold
-                app_copy = app.copy()
+            # Add to results
+            if app_name in app_dict:
+                app_copy = app_dict[app_name].copy()
                 app_copy["_search_score"] = final_score
                 results.append(app_copy)
 
@@ -362,7 +246,9 @@ def filter_apps_with_fuzzy(
 
     # Log slow searches
     if duration_ms > 50:
-        logger.warning(f"Slow search '{query}': {duration_ms:.2f}ms ({len(results)} results from {len(apps)} apps)")
+        logger.warning(
+            f"Slow search '{query}': {duration_ms:.2f}ms ({len(results)} results from {len(apps)} apps)"
+        )
     else:
         logger.debug(f"Search '{query}': {duration_ms:.2f}ms ({len(results)} results)")
 
@@ -374,11 +260,11 @@ def create_searchable_fields(
     name: str,
     exec_name: str = "",
     description: str = "",
-    keywords: list = None,
-    frequency_weight: float = 1.0
+    keywords: Optional[List[str]] = None,
+    frequency_weight: float = 1.0,
 ) -> List[Tuple[str, float]]:
     """
-    Create searchable fields with weights, similar to Ulauncher's approach.
+    Create searchable fields with weights.
 
     Args:
         name: App name
