@@ -406,7 +406,7 @@ class LauncherUI:
                 if search_result.pixbuf:
                     # Use cached pixbuf
                     texture = Gdk.Texture.new_for_pixbuf(search_result.pixbuf)
-                    image.set_paintable(texture)
+                    image.set_from_paintable(texture)
                 elif search_result.image_path:
                     # Initialize variables for use in except block
                     item_width = grid_config.get("item_width", 200)
@@ -430,7 +430,7 @@ class LauncherUI:
                             )
 
                         texture = Gdk.Texture.new_for_pixbuf(pixbuf)
-                        image.set_paintable(texture)
+                        image.set_from_paintable(texture)
                     except Exception as e:
                         logger.warning(f"Failed to load grid image: {e}")
                         # Set a placeholder

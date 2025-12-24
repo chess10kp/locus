@@ -298,9 +298,15 @@ class WallpaperLauncher(LauncherInterface):
             launcher_core.current_apps = []
             return
 
-        # Load and filter wallpapers
+        # Supported image extensions
+        image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg'}
+
+        # Load and filter wallpapers - only image files
         wallpapers = glob.glob(os.path.join(wp_dir, "*"))
-        wallpapers = [os.path.basename(w) for w in wallpapers if os.path.isfile(w)]
+        wallpapers = [
+            os.path.basename(w) for w in wallpapers
+            if os.path.isfile(w) and os.path.splitext(w)[1].lower() in image_extensions
+        ]
 
         # Filter by search term if provided (but still filter)
         if query:
