@@ -10,7 +10,7 @@
 import os
 import threading
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable
 from concurrent.futures import ThreadPoolExecutor
 from gi.repository import GdkPixbuf, Gtk, Gio, GLib, Gdk
 
@@ -35,16 +35,13 @@ class IconManager:
 
     def __init__(self):
         if hasattr(self, "_initialized"):
-            logger.debug("IconManager already initialized, returning")
             return
 
-        logger.debug("Initializing IconManager")
         self._initialized = True
         from core.config import LAUNCHER_CONFIG
 
         # Load configuration
         self.config = LAUNCHER_CONFIG.get("icons", {})
-        logger.debug(f"Loaded icon config: {self.config}")
 
         self.enable_icons = self.config.get("enable_icons", True)
         self.icon_size = self.config.get("icon_size", 32)
@@ -54,10 +51,6 @@ class IconManager:
             self.config.get("fallback_icon", "image-missing") or "image-missing"
         )
         self.async_loading = self.config.get("async_loading", True)
-
-        logger.debug(
-            f"IconManager config: enable_icons={self.enable_icons}, icon_size={self.icon_size}, cache_enabled={self.cache_enabled}"
-        )
 
         # Memory cache for loaded icons
         self._memory_cache: Dict[str, GdkPixbuf.Pixbuf] = {}
@@ -71,11 +64,9 @@ class IconManager:
         # Icon theme for theme icon resolution
         try:
             display = Gdk.Display.get_default()
-            logger.debug(f"GDK Display: {display}")
             self.icon_theme = (
                 Gtk.IconTheme.get_for_display(display) if display else None
             )
-            logger.debug(f"Icon theme: {self.icon_theme}")
         except Exception as e:
             logger.error(f"Failed to get icon theme: {e}")
             self.icon_theme = None
@@ -104,10 +95,6 @@ class IconManager:
             "application/gzip": "application-x-gzip",
         }
 
-        logger.debug(
-            f"IconManager initialized: size={self.icon_size}, cache={self.cache_enabled}"
-        )
-
     def get_icon(
         self,
         icon_name: Optional[str] = None,
@@ -127,64 +114,41 @@ class IconManager:
         Returns:
             GdkPixbuf.Pixbuf or None if icon loading fails
         """
-        # Debug logging
-        logger.debug(
-            f"IconManager.get_icon called with: icon_name={icon_name}, file_path={file_path}, mime_type={mime_type}"
-        )
 
         if not self.enable_icons:
-            logger.debug("Icons disabled in config, returning None")
             return None
 
         # Use cache setting from param or config
         should_cache = use_cache if use_cache is not None else self.cache_enabled
-        logger.debug(
-            f"Using cache: {should_cache}, cache enabled: {self.cache_enabled}"
-        )
 
         # Determine icon name
         if not icon_name:
             if file_path:
                 icon_name = self._get_file_icon_name(file_path, mime_type)
-                logger.debug(f"Resolved file icon name: {icon_name}")
             else:
                 icon_name = self.fallback_icon
-                logger.debug(f"Using fallback icon: {icon_name}")
 
         if not icon_name:
             icon_name = self.fallback_icon
-            logger.debug(f"Final fallback icon: {icon_name}")
 
         # Check cache first
         cache_key = f"{icon_name}_{self.icon_size}"
         if should_cache and cache_key in self._memory_cache:
             self._update_cache_access_order(cache_key)
-            logger.debug(
-                f"IconManager.get_icon('{icon_name}', size={self.icon_size}) - CACHE HIT"
-            )
             return self._memory_cache[cache_key]
         else:
-            logger.debug(
-                f"IconManager.get_icon('{icon_name}', size={self.icon_size}) - CACHE MISS"
-            )
+            pass
 
         # Load icon
         if not icon_name:
             icon_name = self.fallback_icon
-        logger.debug(f"Loading icon synchronously: {icon_name}")
         pixbuf = self._load_icon_sync(icon_name)
 
         if pixbuf:
-            logger.debug(
-                f"Icon loaded successfully: {pixbuf.get_width()}x{pixbuf.get_height()}"
-            )
             # Cache the result
             if should_cache:
                 self._cache_icon(cache_key, pixbuf)
-                logger.debug(f"Cached icon: {cache_key}")
             return pixbuf
-        else:
-            logger.debug(f"Failed to load icon: {icon_name}")
 
         return None
 
@@ -194,7 +158,7 @@ class IconManager:
         file_path: Optional[str] = None,
         mime_type: Optional[str] = None,
         use_cache: Optional[bool] = None,
-        callback: callable = None,
+        callback: Optional[Callable] = None,
     ) -> None:
         """
         Load icon asynchronously with callback.
@@ -246,7 +210,6 @@ class IconManager:
         """Clear the in-memory icon cache."""
         self._memory_cache.clear()
         self._cache_access_order.clear()
-        logger.debug("Icon cache cleared")
 
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get current cache statistics."""
@@ -261,24 +224,15 @@ class IconManager:
     def _load_icon_sync(self, icon_name: str) -> Optional[GdkPixbuf.Pixbuf]:
         """Load icon synchronously with fallback handling."""
         if not icon_name:
-            logger.debug("Icon name is empty, returning None")
             return None
-
-        logger.debug(f"_load_icon_sync: Loading icon '{icon_name}'")
 
         try:
             if self.icon_theme and self.icon_theme.has_icon(icon_name):
-                logger.debug(
-                    f"Theme has icon '{icon_name}', attempting to load from theme"
-                )
                 return self._load_theme_icon(icon_name)
 
             # Try file path
             if os.path.isfile(icon_name):
-                logger.debug(f"Icon '{icon_name}' is a file, loading from file")
                 return self._load_file_icon(icon_name)
-
-            logger.debug(f"Icon '{icon_name}' not found as file, trying variations")
 
             # Try common icon variations
             variations = [
@@ -294,16 +248,9 @@ class IconManager:
                     ]
                 )
 
-            logger.debug(f"Trying variations: {variations}")
-
             for variation in variations:
                 if self.icon_theme and self.icon_theme.has_icon(variation):
-                    logger.debug(f"Found theme variation '{variation}', loading")
                     return self._load_theme_icon(variation)
-
-            logger.debug(
-                f"No variations found for '{icon_name}', trying fallback paths"
-            )
 
             # Try to load at common icon paths
             icon_paths = [
@@ -312,7 +259,7 @@ class IconManager:
                 f"/usr/share/icons/hicolor/scalable/apps/{icon_name}.svg",
                 f"/usr/share/pixmaps/{icon_name}.png",
                 f"/usr/share/pixmaps/{icon_name}.svg",
-                # AdwaitaLegacy paths 
+                # AdwaitaLegacy paths
                 f"/usr/share/icons/AdwaitaLegacy/{self.icon_size}x{self.icon_size}/legacy/{icon_name}.png",
                 f"/usr/share/icons/AdwaitaLegacy/{self.icon_size}x{self.icon_size}/legacy/{icon_name}.svg",
                 f"/usr/share/icons/AdwaitaLegacy/scalable/legacy/{icon_name}.svg",
@@ -320,10 +267,8 @@ class IconManager:
 
             for icon_path in icon_paths:
                 if os.path.exists(icon_path):
-                    logger.debug(f"Found icon file at fallback path: {icon_path}")
                     return self._load_file_icon(icon_path)
 
-            logger.debug(f"No icon found for '{icon_name}'")
             return None
 
         except Exception as e:
@@ -335,44 +280,26 @@ class IconManager:
 
     def _load_theme_icon(self, icon_name: str) -> Optional[GdkPixbuf.Pixbuf]:
         """Load icon from GTK theme."""
-        logger.debug(f"_load_theme_icon: Loading theme icon '{icon_name}'")
 
         if not self.icon_theme:
-            logger.debug("No icon theme available")
             return None
 
         try:
-            logger.debug(
-                f"Icon theme available, has_icon('{icon_name}'): {self.icon_theme.has_icon(icon_name)}"
-            )
-
             icon_paintable = self.icon_theme.lookup_icon(
                 icon_name, None, self.icon_size, 1, Gtk.TextDirection.NONE, 0
             )
 
-            logger.debug(f"lookup_icon returned: {icon_paintable}")
-
             if icon_paintable:
-                logger.debug(f"IconPaintable type: {type(icon_paintable)}")
-
                 # Try to get the file path from the icon paintable
-                try:
-                    # Some GTK4 implementations support getting the file
-                    if hasattr(icon_paintable, "get_file"):
-                        logger.debug("IconPaintable has get_file method")
-                        icon_file = icon_paintable.get_file()
-                        logger.debug(f"get_file() returned: {icon_file}")
-                        if icon_file:
-                            file_path = icon_file.get_path()
-                            logger.debug(f"File path: {file_path}")
-                            if file_path and os.path.exists(file_path):
-                                logger.debug(f"Loading from file path: {file_path}")
-                                return self._load_file_icon(file_path)
-                except Exception as e:
-                    logger.debug(f"Failed to get file from paintable: {e}")
+                # Some GTK4 implementations support getting the file
+                if hasattr(icon_paintable, "get_file"):
+                    icon_file = icon_paintable.get_file()
+                    if icon_file:
+                        file_path = icon_file.get_path()
+                        if file_path and os.path.exists(file_path):
+                            return self._load_file_icon(file_path)
 
                 # Fallback: try to load at common icon paths
-                logger.debug("Trying fallback paths")
                 icon_paths = [
                     f"/usr/share/icons/hicolor/{self.icon_size}x{self.icon_size}/apps/{icon_name}.png",
                     f"/usr/share/icons/hicolor/{self.icon_size}x{self.icon_size}/apps/{icon_name}.svg",
@@ -387,10 +314,7 @@ class IconManager:
 
                 for icon_path in icon_paths:
                     if os.path.exists(icon_path):
-                        logger.debug(f"Found icon file at fallback path: {icon_path}")
                         return self._load_file_icon(icon_path)
-
-                logger.debug(f"No fallback paths found for '{icon_name}'")
 
         except Exception as e:
             logger.error(f"Failed to load theme icon '{icon_name}': {e}")
@@ -398,26 +322,17 @@ class IconManager:
 
             logger.error(f"Traceback: {traceback.format_exc()}")
 
-        logger.debug(f"Returning None for theme icon '{icon_name}'")
         return None
 
     def _load_file_icon(self, file_path: str) -> Optional[GdkPixbuf.Pixbuf]:
         """Load icon from file path."""
-        logger.debug(f"_load_file_icon: Loading from file '{file_path}'")
 
         try:
             if not os.path.exists(file_path):
-                logger.debug(f"File does not exist: {file_path}")
                 return None
 
-            logger.debug(
-                f"File exists, loading with size {self.icon_size}x{self.icon_size}"
-            )
             pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 file_path, self.icon_size, self.icon_size
-            )
-            logger.debug(
-                f"Successfully loaded pixbuf: {pixbuf.get_width()}x{pixbuf.get_height()}"
             )
             return pixbuf
         except Exception as e:

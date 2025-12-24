@@ -47,13 +47,17 @@ class HookRegistry:
 
     def execute_select_hooks(self, launcher, item_data: Any) -> bool:
         """Execute select hooks in registration order. Return True if any hook handled the event."""
+        print(f"execute_select_hooks: item_data={item_data}, hooks={len(self.hooks)}")
         for hook in self.hooks:
+            print(f"calling hook {type(hook).__name__}")
             try:
                 if hook.on_select(launcher, item_data):
+                    print("hook handled")
                     return True
             except Exception as e:
                 print(f"Error in select hook: {e}")
                 continue
+        print("no hook handled")
         return False
 
     def execute_enter_hooks(self, launcher, text: str) -> bool:

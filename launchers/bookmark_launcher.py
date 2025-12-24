@@ -33,25 +33,27 @@ class BookmarkHook(LauncherHook):
             return True
         elif item_data in bookmarks:
             # Open bookmark in default browser
+            print(f"Opening bookmark with xdg-open: {item_data}")
             try:
                 env = os.environ.copy()
                 env.pop(
                     "MALLOC_PERTURB_", None
                 )  # Remove malloc perturb for child processes
+                env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
+                # Clean GTK/GDK environment variables to prevent crashes in child processes
+                gtk_gdk_keys = [k for k in env if k.startswith(("GTK_", "GDK_"))]
+                for key in gtk_gdk_keys:
+                    env.pop(key, None)
 
                 # Use xdg-open to open in the default browser
-                subprocess.Popen(
+                result = subprocess.Popen(
                     ["xdg-open", item_data], start_new_session=True, env=env
                 )
+                print(f"subprocess.Popen returned: {result}")
             except Exception as e:
                 print(f"Failed to open bookmark: {e}")
             launcher.hide()
             return True
-        elif item_data == "remove":
-            # Enter remove mode
-            self.launcher.remove_mode = True
-            self.launcher.populate_apps(">bookmark")
-            return False  # Don't hide, stay in launcher to show bookmarks
         elif item_data in ["add", "replace"]:
             # Handle other bookmark actions
             print(f"Bookmark action: {item_data}")
@@ -133,10 +135,15 @@ class BookmarkLauncher(LauncherInterface):
             # In remove mode, show all bookmarks for selection, no filter
             all_items = bookmarks
         else:
-            if query:
-                bookmarks = [b for b in bookmarks if query.lower() in b.lower()]
-            actions = ["add", "remove", "replace"]
-            all_items = bookmarks + actions
+            if query == "remove":
+                # Enter remove mode when typing ">bookmark remove"
+                self.remove_mode = True
+                all_items = bookmarks
+            else:
+                if query:
+                    bookmarks = [b for b in bookmarks if query.lower() in b.lower()]
+                actions = ["add", "replace"]  # "remove" requires typing "remove"
+                all_items = bookmarks + actions
         index = 1
         for item in all_items:
             metadata = (

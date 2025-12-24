@@ -91,18 +91,15 @@ class WrappedSearchResult(GObject.Object):
     @property
     def icon_name(self):
         icon_name = getattr(self.search_result, "icon_name", None)
-        logger.debug(f"WrappedSearchResult.icon_name accessed: '{icon_name}'")
         return icon_name
 
     @property
     def icon_pixbuf(self):
         pixbuf = getattr(self.search_result, "icon_pixbuf", None)
-        logger.debug(f"WrappedSearchResult.icon_pixbuf accessed: {pixbuf is not None}")
         return pixbuf
 
     @icon_pixbuf.setter
     def icon_pixbuf(self, value):
-        logger.debug(f"WrappedSearchResult.icon_pixbuf set: {value is not None}")
         setattr(self.search_result, "icon_pixbuf", value)
 
     @property
@@ -864,11 +861,7 @@ class Launcher(Gtk.ApplicationWindow):
             if not search_result:
                 return
 
-            # Debug icon availability
             icon_pixbuf = getattr(search_result, "icon_pixbuf", None)
-            logger.debug(
-                f"bind_callback: icon_pixbuf available for '{search_result.title}': {icon_pixbuf is not None}"
-            )
 
             # Get stored references
             button = getattr(list_item, "button", None)
@@ -914,7 +907,7 @@ class Launcher(Gtk.ApplicationWindow):
                     # No icon available, hide the image
                     icon_image.set_visible(False)
 
-            # Note: Click handling moved to list_view activate signal
+            # Update button click handler
             # Remove old handlers to prevent memory leaks
             if button:
                 try:
@@ -922,6 +915,11 @@ class Launcher(Gtk.ApplicationWindow):
                         button.disconnect(button.clicked_handler_id)
                 except:
                     pass
+
+                # Connect new handler
+                button.clicked_handler_id = button.connect(
+                    "clicked", self._on_list_item_clicked, search_result
+                )
 
         def unbind_callback(factory, list_item):
             """Called when a list item is no longer displaying data."""
@@ -1840,6 +1838,13 @@ class Launcher(Gtk.ApplicationWindow):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"No selected item, processing text: '{text}'")
 
+        # Special case: if typing ">bookmark" and no selection, activate first bookmark
+        if text == ">bookmark" and self.list_store.get_n_items() > 0:
+            search_result = self.list_store.get_item(0)
+            if search_result:
+                self._on_list_item_clicked(None, search_result)
+            return
+
         # FAST PATH: Skip hooks for desktop launcher mode if enabled
         if (
             LAUNCHER_CONFIG["behavior"]["desktop_launcher_fast_path"]
@@ -1962,6 +1967,9 @@ class Launcher(Gtk.ApplicationWindow):
 
     def _on_list_item_clicked(self, button, search_result):
         """Handle clicks on list items in both ListView and GridView."""
+        print(
+            f"_on_list_item_clicked: result_type={search_result.result_type.name}, action_data={search_result.action_data}"
+        )
         self.hide()
 
         if search_result.result_type.name == "APP":

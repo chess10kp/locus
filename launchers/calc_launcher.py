@@ -22,7 +22,7 @@ class CalcHook(LauncherHook):
 
     def on_select(self, launcher, item_data: Any) -> bool:
         """Handle calculator result button clicks"""
-        if isinstance(item_data, (int, float, str)):
+        if isinstance(item_data, (int, float)):
             # Copy result to clipboard
             self.calc_launcher.on_result_clicked(None, str(item_data))
             return True
