@@ -349,7 +349,7 @@
 
   
 
-* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
+* DONE perf: remove all debug logging :remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:remove all debug logging:perf:
   :PROPERTIES:
   :ID: task-20251223180201
   :TITLE: perf: remove all debug logging
@@ -376,7 +376,7 @@
 
   
 
-* TODO resume launcher should resume wit hth the same state as it was
+* DONE resume launcher should resume wit hth the same state as it was
   :PROPERTIES:
   :ID: task-20251223184153
   :TITLE: resume launcher should resume wit hth the same state as it was

@@ -20,13 +20,13 @@ from utils.app_tracker import get_app_tracker
 
 from .config import METADATA, LOCK_PASSWORD, LAUNCHER_CONFIG
 from .search_models import ResultType
-from .wrapped_result import WrappedSearchResult
 from .process_launcher import AppLauncher, register_builtin_handler, BUILTIN_HANDLERS
 from .launcher_ui import LauncherUI
 from .launcher_search import LauncherSearch
 from .launcher_navigation import LauncherNavigation
 from .hooks import HookRegistry
 from .launcher_registry import launcher_registry
+from .launcher_state import get_launcher_state
 from .utils.time_parsing import parse_time
 from launchers.lock_launcher import LockScreen
 
@@ -80,6 +80,9 @@ class Launcher(Gtk.ApplicationWindow):
         self.ui = LauncherUI(self)
         self.search = LauncherSearch(self)
         self.nav = LauncherNavigation(self)
+
+        # Initialize state manager for resume functionality
+        self.launcher_state = get_launcher_state()
 
         self.current_apps = []
 
@@ -467,7 +470,7 @@ class Launcher(Gtk.ApplicationWindow):
             if search_result:
                 self.hide()
                 with open("/tmp/locus_debug.log", "a") as f:
-                    f.write(f"[DEBUG] Launcher hidden\n")
+                    f.write("[DEBUG] Launcher hidden\n")
                 self._on_list_item_clicked(None, search_result)
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug("List item clicked, returning")
@@ -503,12 +506,12 @@ class Launcher(Gtk.ApplicationWindow):
             f.write(f"[DEBUG] Hook execution result: {hook_result}\n")
         if hook_result:
             with open("/tmp/locus_debug.log", "a") as f:
-                f.write(f"[DEBUG] Hook handled the command, returning\n")
+                f.write("[DEBUG] Hook handled the command, returning\n")
             return
 
         self.hide()
         with open("/tmp/locus_debug.log", "a") as f:
-            f.write(f"[DEBUG] Launcher hidden\n")
+            f.write("[DEBUG] Launcher hidden\n")
 
         with open("/tmp/locus_debug.log", "a") as f:
             f.write(f"[DEBUG] No selected item, processing text: '{text}'\n")
@@ -644,7 +647,7 @@ class Launcher(Gtk.ApplicationWindow):
             env = dict(os.environ.items())
             env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
             subprocess.Popen(command, shell=True, env=env)
-        except Exception as e:
+        except Exception:
             pass
 
     def get_application(self):
@@ -717,6 +720,18 @@ class Launcher(Gtk.ApplicationWindow):
             GLib.source_remove(self.idle_callback_id)
             self.idle_callback_id = 0
 
+        # Save state before clearing (if resume is enabled)
+        if LAUNCHER_CONFIG["ui"]["resume_last_session"]:
+            search_text = self.search_entry.get_text()
+            selected_index = self.selection_model.get_selected()
+            # Save state if there's search text or a valid selection
+            if search_text.strip() or selected_index != Gtk.INVALID_LIST_POSITION:
+                self.launcher_state.save_state(
+                    search_text=search_text,
+                    selected_index=selected_index,  # Save actual index, including INVALID_LIST_POSITION
+                    active_launcher_context=self.active_launcher_context or "apps",
+                )
+
         if LAUNCHER_CONFIG["ui"]["clear_input_on_hide"]:
             self.search_entry.set_text("")
 
@@ -759,8 +774,52 @@ class Launcher(Gtk.ApplicationWindow):
                 self.search_entry.grab_focus()
         return False
 
+    def resume_launcher(self, center_x=None):
+        """Resume launcher with previously saved state."""
+        saved = self.launcher_state.load_state()
+        if not saved:
+            return False
+
+        # Position window first (similar to show_launcher)
+        GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, -400)
+
+        if center_x is not None:
+            # Center horizontally by disabling left/right anchors
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, True)
+            GtkLayerShell.set_margin(
+                self, GtkLayerShell.Edge.LEFT, center_x - self.get_width() // 2
+            )
+        else:
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.LEFT, True)
+            GtkLayerShell.set_anchor(self, GtkLayerShell.Edge.RIGHT, False)
+            GtkLayerShell.set_margin(self, GtkLayerShell.Edge.LEFT, 0)
+
+        # Set the search text (this will trigger populate_apps and restore view)
+        self.search_entry.set_text(saved["search_text"])
+        self.last_search_text = ""  # Reset cache to force population
+
+        self.present()
+
+        # Restore selection after population completes (use idle callback)
+        def restore_selection():
+            # Only restore selection if it's a valid index (>= 0)
+            if saved["selected_index"] >= 0:
+                self.selection_model.set_selected(saved["selected_index"])
+            return False
+
+        GLib.idle_add(restore_selection)
+        self.animate_slide_in()
+        return True
+
     def show_launcher(self, center_x=None):
         """Show the launcher window."""
+        # Try to resume if enabled and state exists
+        if LAUNCHER_CONFIG["ui"]["resume_last_session"]:
+            if self.resume_launcher(center_x):
+                return  # Successfully resumed
+
+        # Fresh start (fallback)
         self.search_entry.set_text("")
         self.last_search_text = ""  # Reset search cache
         GtkLayerShell.set_margin(self, GtkLayerShell.Edge.BOTTOM, -400)

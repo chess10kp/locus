@@ -56,12 +56,18 @@ class LauncherModule(StatusbarModuleInterface):
         """Handle launcher button click."""
         # In GTK4, we use 'clicked' signal instead of 'button-press-event'
         # Import here to avoid circular imports
+        from core import status_bars
+
+        # Use the existing launcher instance from the first status bar
+        # instead of creating a new one
+        if status_bars and len(status_bars) > 0 and status_bars[0].launcher:
+            status_bars[0].launcher.present()
+            return True
+
+        # Fallback: create new launcher if status bar launcher doesn't exist
         from core.launcher import Launcher
 
-        # Get the application from the widget's ancestor
         app = widget.get_root().get_application()
-
-        # Create and show the launcher with application context
         launcher = Launcher(application=app)
         launcher.present()
         return True

@@ -130,8 +130,19 @@ if __name__ == "__main__":
         handle_brightness(sys.argv[2])
     elif len(sys.argv) >= 2 and sys.argv[1] == "launcher":
         if len(sys.argv) > 2:
-            app_name = " ".join(sys.argv[2:])
-            send_message(f"launcher {app_name}")
+            # Check for special launcher commands
+            if sys.argv[2] in ["resume", "fresh"]:
+                command = sys.argv[2]
+                # Check if there's an app name after the command
+                if len(sys.argv) > 3:
+                    app_name = " ".join(sys.argv[3:])
+                    send_message(f"launcher:{command} {app_name}")
+                else:
+                    send_message(f"launcher:{command}")
+            else:
+                # Regular launcher with app name
+                app_name = " ".join(sys.argv[2:])
+                send_message(f"launcher {app_name}")
         else:
             send_message("launcher")
     elif len(sys.argv) >= 2:
@@ -139,7 +150,7 @@ if __name__ == "__main__":
         send_message(message)
     else:
         print(
-            "Usage: python locus_client.py volume|brightness up|down|mute|get | launcher [app] | <message>",
+            "Usage: python locus_client.py volume|brightness up|down|mute|get | launcher [resume|fresh] [app] | <message>",
             file=sys.stderr,
         )
         sys.exit(1)

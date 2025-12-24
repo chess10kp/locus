@@ -243,10 +243,25 @@ class StatusBar(Gtk.ApplicationWindow):
                 with client_socket:
                     data = client_socket.recv(1024).decode().strip()
                     if data:
+                        handled = False  # Initialize handled flag
                         # Special handling for launcher command
                         if data == "launcher":
                             if self.launcher:
                                 self.launcher.present()
+                            handled = True
+                        elif data == "launcher:resume":
+                            if self.launcher:
+                                # Force resume even if config disabled
+                                result = self.launcher.resume_launcher()
+                                # If resume failed (no state), still show the launcher
+                                if not result:
+                                    self.launcher.present()
+                            handled = True
+                        elif data == "launcher:fresh":
+                            if self.launcher:
+                                # Force fresh start - clear state and show empty
+                                self.launcher.launcher_state.clear_state()
+                                self.launcher.show_launcher()
                             handled = True
                         elif data.startswith(">") or data.startswith("launcher "):
                             # Send launcher commands to the launcher

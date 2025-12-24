@@ -100,8 +100,9 @@ LAUNCHER_CONFIG = {
         "show_loading_indicator": True,
         "loading_text": "Loading applications...",
         "show_keyboard_hints": True,  # Show Alt+1-9 hints
-        "clear_input_on_hide": True,  # Clear search input when hiding
+        "clear_input_on_hide": False,  # Clear search input when hiding (must be False for resume)
         "auto_grab_focus": True,  # Auto-focus search entry when shown
+        "resume_last_session": True,  # Resume launcher with previous state
     },
     # Icon Configuration
     "icons": {
