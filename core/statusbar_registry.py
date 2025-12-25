@@ -72,7 +72,6 @@ class StatusbarModuleRegistry:
 
     def get_modules_by_update_mode(self, update_mode) -> List[StatusbarModuleInterface]:
         """Get all modules with specific update mode."""
-        from .statusbar_interface import StatusbarUpdateMode
 
         return [m for m in self._modules.values() if m.update_mode == update_mode]
 

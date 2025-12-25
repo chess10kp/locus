@@ -65,7 +65,7 @@ class Popup(Gtk.ApplicationWindow):
                 env = dict(os.environ.items())
                 env.pop("LD_PRELOAD", None)  # Remove LD_PRELOAD for child processes
                 subprocess.Popen(command, shell=True, env=env)
-            except Exception as e:
+            except Exception:
                 pass
         self.hide()
 

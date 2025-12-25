@@ -7,7 +7,6 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-import subprocess
 import os
 import sys
 import shlex

@@ -16,7 +16,7 @@ from core.statusbar_interface import (
     StatusbarUpdateMode,
     StatusbarSizeMode,
 )
-from core.config import NOTIFICATION_CONFIG, SOCKET_PATH
+from core.config import SOCKET_PATH
 
 
 class NotificationModule(StatusbarModuleInterface):

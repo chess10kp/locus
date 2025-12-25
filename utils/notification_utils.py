@@ -18,8 +18,7 @@ gi.require_version("GLib", "2.0")
 gi.require_version("Gio", "2.0")
 from gi.repository import GLib, Gio
 
-from core.notification_store import Notification, NotificationStore
-from core.config import NOTIFICATION_CONFIG
+from core.notification_store import NotificationStore
 
 
 def send_notification(

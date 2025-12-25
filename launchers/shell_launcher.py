@@ -126,5 +126,5 @@ class ShellLauncher(LauncherInterface):
 
         except subprocess.TimeoutExpired:
             pass
-        except Exception as e:
+        except Exception:
             pass

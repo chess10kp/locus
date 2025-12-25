@@ -1,9 +1,8 @@
 """Unit tests for scroll config parser."""
 
-import pytest
 import tempfile
 import os
-from utils.scroll_config_parser import ScrollConfigParser, Keybinding
+from utils.scroll_config_parser import ScrollConfigParser
 
 
 class TestScrollConfigParser:

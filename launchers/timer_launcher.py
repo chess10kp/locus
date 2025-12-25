@@ -14,7 +14,6 @@ from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from typing import Any, Optional
 from utils import send_status_message
-from utils.launcher_utils import LauncherEnhancer
 
 
 class TimerHook(LauncherHook):

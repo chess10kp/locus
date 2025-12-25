@@ -20,7 +20,7 @@ from enum import Enum
 
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from utils.file_indexer import get_file_indexer, FileResult
+from utils.file_indexer import get_file_indexer
 from utils.clipboard import copy_to_clipboard
 
 logger = logging.getLogger("FileLauncher")
@@ -166,7 +166,7 @@ class FileLauncher(LauncherInterface):
             file_count = self.indexer.get_file_count()
             launcher_core.add_launcher_result(
                 f"Indexed: {file_count:,} files",
-                f"Home directory with smart exclusions",
+                "Home directory with smart exclusions",
                 index=2,
             )
             return

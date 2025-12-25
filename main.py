@@ -150,7 +150,7 @@ def on_shutdown(app: Gtk.Application):
     for status_bar in status_bars:
         try:
             status_bar.cleanup()
-        except Exception as e:
+        except Exception:
             pass
     status_bars.clear()
 

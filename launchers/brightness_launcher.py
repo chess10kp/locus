@@ -12,7 +12,7 @@ import os
 import socket
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from core.config import BRIGHT_UP_CMD, BRIGHT_DOWN_CMD, BRIGHT_GET_CMD, SOCKET_PATH
+from core.config import BRIGHT_UP_CMD, BRIGHT_DOWN_CMD, SOCKET_PATH
 from typing import Any, Optional
 
 

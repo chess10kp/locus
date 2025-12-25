@@ -380,7 +380,6 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.emoji_launcher import EmojiLauncher
             from launchers.gallery_launcher import GalleryLauncher
             from launchers.web_launcher import WebLauncher
-            from launchers.llm_launcher import LLMLauncher
             from launchers.color_launcher import ColorLauncher
             from launchers.keybinding_launcher import KeybindingLauncher
             # Notification launcher disabled for now
@@ -419,7 +418,6 @@ class Launcher(Gtk.ApplicationWindow):
             register_launcher_with_check(EmojiLauncher)
             register_launcher_with_check(WebLauncher)
             register_launcher_with_check(GalleryLauncher)
-            register_launcher_with_check(LLMLauncher)
             register_launcher_with_check(ColorLauncher)
             register_launcher_with_check(KeybindingLauncher)
 

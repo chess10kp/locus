@@ -7,10 +7,7 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-import os
-import random
 from typing import List, Dict, Any, Optional
-from pathlib import Path
 
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from utils.app_loader import get_app_loader

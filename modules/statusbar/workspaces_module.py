@@ -38,7 +38,6 @@ class WorkspacesModule(StatusbarModuleInterface):
         return StatusbarUpdateMode.EVENT_DRIVEN
 
     def create_widget(self) -> Gtk.Widget:
-        from utils.utils import apply_styles
 
         self.fixed = Gtk.Fixed()
         self.fixed.set_hexpand(True)

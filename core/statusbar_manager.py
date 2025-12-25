@@ -7,7 +7,7 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from typing import Any, Dict, List, Optional, Tuple, Callable
+from typing import Any, Dict, List, Optional
 from gi.repository import Gtk, GLib
 
 from .statusbar_interface import StatusbarModuleInterface, StatusbarUpdateMode
@@ -75,7 +75,7 @@ class StatusbarModuleManager:
 
             return widget
 
-        except Exception as e:
+        except Exception:
             return None
 
     def destroy_module(self, module_name: str):
@@ -104,7 +104,7 @@ class StatusbarModuleManager:
             widget = self.module_widgets[module_name]
             try:
                 instance.update(widget)
-            except Exception as e:
+            except Exception:
                 pass
 
     def handle_ipc_message(self, message: str) -> bool:
@@ -117,7 +117,7 @@ class StatusbarModuleManager:
                     try:
                         if instance.handle_ipc_message(message, widget):
                             handled = True
-                    except Exception as e:
+                    except Exception:
                         pass
 
         return handled
@@ -195,7 +195,7 @@ class StatusbarModuleManager:
                 module_listeners = instance.setup_event_listeners(self.status_bar)
                 if module_listeners:
                     listeners.extend(module_listeners)
-            except Exception as e:
+            except Exception:
                 pass
 
         self.event_listeners[module_name] = listeners
@@ -206,7 +206,7 @@ class StatusbarModuleManager:
             instance = self.module_instances[module_name]
             try:
                 return instance.handle_click(widget, event)
-            except Exception as e:
+            except Exception:
                 pass
 
         return False  # Event not handled

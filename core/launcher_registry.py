@@ -8,7 +8,7 @@
 # ruff: ignore
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 
 

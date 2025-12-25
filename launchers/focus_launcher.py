@@ -9,14 +9,12 @@
 
 import subprocess
 import os
-import shlex
 from gi.repository import GLib
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from typing import Any, Optional, List, Union
 from utils import send_status_message
-from utils.launcher_utils import LauncherEnhancer
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class FocusHook(LauncherHook):
@@ -128,7 +126,7 @@ class FocusLauncher(LauncherInterface):
             )
         elif action in ["stop", "end"]:
             # Show stop option
-            label_text = f"Stop focus session"
+            label_text = "Stop focus session"
             metadata = "Click to stop current focus session"
             hook_data = f"focus:{action}"
             launcher_core.add_launcher_result(

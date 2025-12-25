@@ -7,7 +7,6 @@
 # pyright: reportMissingImports=false
 # ruff: ignore
 
-from core.config import APPNAME
 import gi
 
 # No CDLL preload needed - handled by LD_PRELOAD in run.sh
@@ -50,8 +49,6 @@ class StatusBar(Gtk.ApplicationWindow):
         # Import other dependencies after module registration
         from utils.utils import (
             HBox,
-            get_battery_status,
-            load_desktop_apps,
         )
         from utils.wm import detect_wm
         from .launcher_window import Launcher

@@ -8,7 +8,6 @@
 # ruff: ignore
 
 import logging
-from typing import Dict, Any, Optional
 
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from utils import apply_styles

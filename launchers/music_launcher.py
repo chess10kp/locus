@@ -13,7 +13,6 @@ import threading
 from typing import Any, Optional, List, Dict, Tuple
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from utils.launcher_utils import LauncherEnhancer
 
 
 class MpdHook(LauncherHook):
@@ -144,7 +143,7 @@ class MpdLauncher(LauncherInterface):
                         full_path = os.path.join(root, f)
                         rel_path = os.path.relpath(full_path, self.music_dir)
                         new_cache.append({"name": f, "path": rel_path})
-        except Exception as e:
+        except Exception:
             pass
 
         self.files_cache = new_cache
@@ -154,7 +153,7 @@ class MpdLauncher(LauncherInterface):
         try:
             result = subprocess.run(["mpc"] + args, capture_output=True, text=True)
             return result.stdout.strip()
-        except Exception as e:
+        except Exception:
             return ""
 
     def get_status(self) -> Dict[str, str]:

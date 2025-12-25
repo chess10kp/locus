@@ -12,7 +12,6 @@ import subprocess
 from typing import Any, Optional, List, Dict
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from utils.launcher_utils import LauncherEnhancer
 
 
 class EmojiHook(LauncherHook):

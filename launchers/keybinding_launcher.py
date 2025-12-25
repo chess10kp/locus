@@ -66,7 +66,7 @@ class KeybindingLauncher(LauncherInterface):
             if self.bindings is None or current_mtime != self.config_mtime:
                 self.bindings = parser.parse()
                 self.config_mtime = current_mtime
-        except Exception as e:
+        except Exception:
             # If parsing fails, clear bindings to avoid stale data
             self.bindings = {"": []}
 

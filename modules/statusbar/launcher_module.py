@@ -6,7 +6,6 @@
 # pyright: reportUnknownVariableType=false
 # pyright: reportMissingImports=false
 # ruff: ignore
-from launchers.lock_launcher import apply_styles
 
 from typing import Tuple, Optional
 from gi.repository import Gtk

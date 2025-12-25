@@ -34,7 +34,7 @@ def auto_register_modules():
     for module in modules:
         try:
             statusbar_registry.register(module)
-        except Exception as e:
+        except Exception:
             pass
 
 

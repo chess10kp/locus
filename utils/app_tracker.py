@@ -13,7 +13,6 @@ Tracks app usage and provides frequency-based ranking.
 """
 
 import json
-import os
 from pathlib import Path
 from typing import Dict, Optional
 from datetime import datetime

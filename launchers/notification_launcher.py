@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any, Optional, List, Dict, Tuple
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from utils.notification_utils import format_timestamp, truncate_text
+from utils.notification_utils import truncate_text
 
 
 class NotificationHook(LauncherHook):
@@ -172,7 +172,7 @@ class NotificationLauncher(LauncherInterface):
                 text="No notifications",
                 subtitle="Clear to close"
                 if filter_type == "all"
-                else f"Try '>notifications' to see all",
+                else "Try '>notifications' to see all",
                 index=None,
             )
         else:

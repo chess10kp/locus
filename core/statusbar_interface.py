@@ -8,7 +8,7 @@
 # ruff: ignore
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 from enum import Enum
 from gi.repository import Gtk
 

@@ -13,7 +13,6 @@ from utils import sanitize_expr, evaluate_calculator
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from typing import Any, Optional
-from utils.launcher_utils import LauncherEnhancer
 
 
 class CalcHook(LauncherHook):

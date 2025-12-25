@@ -196,7 +196,7 @@
 
   
 
-* TODO frecency + recency based sorting
+* DONE frecency + recency based sorting
   :PROPERTIES:
   :ID: task-20251223144744
   :TITLE: frecency + recency based sorting
@@ -250,7 +250,7 @@
 
   
 
-* TODO sway keybinding launcher
+* DONE sway keybinding launcher
   :PROPERTIES:
   :ID: task-20251223150326
   :TITLE: sway keybinding launcher
@@ -259,7 +259,7 @@
 
   
 
-* TODO qualculate for calclations instead of ccustom calc  launcher
+* DONE qualculate for calclations instead of ccustom calc  launcher
   :PROPERTIES:
   :ID: task-20251223150346
   :TITLE: qualculate for calclations instead of ccustom calc  launcher
@@ -295,7 +295,7 @@
 
   
 
-* TODO notification daemon
+* DONE notification daemon
   :PROPERTIES:
   :ID: task-20251223153614
   :TITLE: notification daemon
@@ -331,7 +331,7 @@
 
   
 
-* TODO [#A] scrollwm binding mode
+* DONE [#A] scrollwm binding mode
   :PROPERTIES:
   :ID: task-20251223175747
   :TITLE: scrollwm binding mode
@@ -358,7 +358,7 @@
 
   
 
-* TODO test out llm launcher
+* DONE test out llm launcher
   :PROPERTIES:
   :ID: task-20251223181421
   :TITLE: test out llm launcher
@@ -502,7 +502,7 @@
 
   
 
-* TODO AUR ssearch ::wq:
+* DONE AUR ssearch :wq:
   :PROPERTIES:
   :ID: task-20251224170928
   :TITLE: AUR ssearch

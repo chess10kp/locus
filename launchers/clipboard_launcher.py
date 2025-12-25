@@ -16,7 +16,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
-from utils.launcher_utils import LauncherEnhancer
 
 
 class ClipboardHistoryStore:
