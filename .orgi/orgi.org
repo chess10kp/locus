@@ -16,7 +16,7 @@
 
   
 
-* TODO image view launcher
+* DONE image view launcher
   :PROPERTIES:
   :ID: task-20251222113430
   :TITLE: image view launcher
@@ -25,7 +25,7 @@
 
   
 
-* TODO clipboard launcher
+* DONE clipboard launcher
   :PROPERTIES:
   :ID: task-20251222113441
   :TITLE: clipboard launcher
@@ -241,7 +241,7 @@
 
   
 
-* TODO configurable keybindings through the config file
+* DONE configurable keybindings through the config file
   :PROPERTIES:
   :ID: task-20251223150201
   :TITLE: configurable keybindings through the config file
@@ -322,7 +322,7 @@
 
   
 
-* TODO color picker
+* DONE color picker
   :PROPERTIES:
   :ID: task-20251223163557
   :TITLE: color picker
@@ -430,7 +430,7 @@
 
   
 
-* TODO contextual suggestions (app recs based on time or workspaec) :ux:
+* DONE contextual suggestions (app recs based on time or workspaec) :ux:
   :PROPERTIES:
   :ID: task-20251224004743
   :TITLE: contextual suggestions (app recs based on time or workspaec)
@@ -480,6 +480,69 @@
   :ID: task-20251224022224
   :TITLE: vol and brightness are broken again
   :CREATED: <2025-12-24 Wed 02:22>
+  :END:
+
+  
+
+* TODO preview layout
+  :PROPERTIES:
+  :ID: task-20251224170550
+  :TITLE: preview layout
+  :CREATED: <2025-12-24 Wed 17:05>
+  :END:
+
+  
+
+* TODO aniamtions for launcher
+  :PROPERTIES:
+  :ID: task-20251224170700
+  :TITLE: aniamtions for launcher
+  :CREATED: <2025-12-24 Wed 17:07>
+  :END:
+
+  
+
+* TODO AUR ssearch ::wq:
+  :PROPERTIES:
+  :ID: task-20251224170928
+  :TITLE: AUR ssearch
+  :CREATED: <2025-12-24 Wed 17:09>
+  :END:
+
+  
+
+* TODO IPC input is not formatted right
+  :PROPERTIES:
+  :ID: task-20251224182305
+  :TITLE: IPC input is not formatted right
+  :CREATED: <2025-12-24 Wed 18:23>
+  :END:
+
+  
+
+* TODO bluetooth launcher clicking on a button breaks the launcher
+  :PROPERTIES:
+  :ID: task-20251224182409
+  :TITLE: bluetooth launcher clicking on a button breaks the launcher
+  :CREATED: <2025-12-24 Wed 18:24>
+  :END:
+
+  
+
+* TODO music menu has too many options, making song results not showing :ux:
+  :PROPERTIES:
+  :ID: task-20251224182513
+  :TITLE: music menu has too many options, making song results not showing
+  :CREATED: <2025-12-24 Wed 18:25>
+  :END:
+
+  
+
+* TODO music launcher highlights the text once it goes back to mpd mode after selcting something
+  :PROPERTIES:
+  :ID: task-20251224183045
+  :TITLE: music launcher highlights the text once it goes back to mpd mode after selcting something
+  :CREATED: <2025-12-24 Wed 18:30>
   :END:
 
   
