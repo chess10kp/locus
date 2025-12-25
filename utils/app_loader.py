@@ -25,6 +25,7 @@ gi.require_version("Gio", "2.0")
 gi.require_version("GLib", "2.0")
 from gi.repository import Gio, GLib  # pyright: ignore
 from .app_tracker import get_app_tracker
+from .frecency_tracker import get_frecency_tracker
 
 logger = logging.getLogger("AppLoader")
 
@@ -141,6 +142,7 @@ class FastAppLoader:
 
         self._apps_cache: List[Dict] = []
         self._app_tracker = get_app_tracker()
+        self._frecency_tracker = get_frecency_tracker()
         self._loading = False
         self._last_load_time = None
 
@@ -339,30 +341,32 @@ class FastAppLoader:
             return self.load_apps()
         return self._apps_cache
 
-    def search_apps(self, query: str, max_results: int = 50) -> List[Dict]:
+    def search_apps(
+        self, query: str, max_results: int = 50, frecency_boost_factor: float = 0.3
+    ) -> List[Dict]:
         """
-        Search apps with frequency-based ranking.
-        Uses the app tracker for intelligent ranking.
+        Search apps with frecency-based ranking.
+        Uses the frecency tracker for intelligent ranking.
         """
         apps = self.get_apps()
 
-        if not query:
-            # Return top apps by frequency if no query
-            frequency_weights = {}
-            for app in apps:
-                weight = self._app_tracker.get_frequency_weight(app["name"])
-                frequency_weights[app["name"]] = weight
+        # Get frecency weights for all apps (normalized 0-1)
+        frecency_weights = {}
+        for app in apps:
+            weight = self._frecency_tracker.get_normalized_weight(app["name"])
+            frecency_weights[app["name"]] = weight
 
-            # Sort by frequency weight
+        if not query:
+            # Return top apps by frecency if no query
             sorted_apps = sorted(
-                apps, key=lambda x: frequency_weights.get(x["name"], 1.0), reverse=True
+                apps, key=lambda x: frecency_weights.get(x["name"], 0.0), reverse=True
             )
             return sorted_apps[:max_results]
 
         # Use fuzzy search for query-based searches
         from utils.fuzzy_search import filter_apps_with_fuzzy
 
-        # Get frequency weights for all apps
+        # Get frequency weights for all apps (for backward compatibility)
         frequency_weights = {}
         for app in apps:
             weight = self._app_tracker.get_frequency_weight(app["name"])
@@ -372,12 +376,15 @@ class FastAppLoader:
             query=query,
             apps=apps,
             frequency_weights=frequency_weights,
+            frecency_weights=frecency_weights,
             max_results=max_results,
+            frecency_boost_factor=frecency_boost_factor,
         )
 
     def track_app_launch(self, app_name: str):
-        """Track an app launch for frequency ranking."""
+        """Track an app launch for frequency and frecency ranking."""
         self._app_tracker.increment_app_start(app_name)
+        self._frecency_tracker.increment(app_name)
 
     def get_stats(self) -> dict:
         """Get statistics about the app loader."""
@@ -389,7 +396,8 @@ class FastAppLoader:
             "cache_file": str(self.cache_file),
             "cache_valid": self.is_cache_valid(),
             "loading": self._loading,
-            "tracker_stats": self._app_tracker.get_stats(),
+            "frequency_tracker_stats": self._app_tracker.get_stats(),
+            "frecency_tracker_stats": self._frecency_tracker.get_stats(),
         }
 
 

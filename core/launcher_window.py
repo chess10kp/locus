@@ -17,6 +17,7 @@ from gi.repository import Gtk, GLib, Gdk, Gio, Gtk4LayerShell as GtkLayerShell
 from utils import apply_styles
 from utils.app_loader import get_app_loader
 from utils.app_tracker import get_app_tracker
+from utils.frecency_tracker import get_frecency_tracker
 
 from .config import METADATA, LOCK_PASSWORD, LAUNCHER_CONFIG
 from .search_models import ResultType
@@ -58,6 +59,7 @@ class Launcher(Gtk.ApplicationWindow):
         # Use the new optimized app loading system
         self._app_loader = get_app_loader()
         self._app_tracker = get_app_tracker()
+        self._frecency_tracker = get_frecency_tracker()
         self.METADATA = METADATA
         self.parse_time = parse_time
 
@@ -442,11 +444,12 @@ class Launcher(Gtk.ApplicationWindow):
         """Launch an application by its desktop file."""
         try:
             desktop_file_path = app["file"]
-            # Track app launch for frequency ranking
+            # Track app launch for frequency and frecency ranking
             app_name = app.get("name", "")
             app_exec = app.get("exec", "")
             if app_name:
                 self._app_tracker.increment_app_start(app_name)
+                self._frecency_tracker.increment(app_name)
 
             # Use the new improved launcher logic with fallback support
             success = AppLauncher.launch_by_desktop_file(

@@ -134,6 +134,19 @@ LAUNCHER_CONFIG = {
         "use_file_type_icons": True,  # Use file type icons for files
         "async_loading": True,  # Load icons asynchronously for better performance
     },
+    # Frecency Configuration
+    "frecency": {
+        "enabled": True,
+        "recency_multipliers": {
+            "hour": 4.0,  # < 1 hour ago
+            "day": 2.0,  # < 24 hours ago
+            "week": 1.0,  # < 7 days ago
+            "older": 0.5,  # > 7 days ago
+        },
+        "boost_factor": 0.3,  # Frecency boost factor (0-1)
+        "max_history_items": 500,  # Maximum items to track
+        "prune_age_days": 90,  # Prune items older than this
+    },
     # Behavior
     "behavior": {
         "activate_on_hover": False,  # Activate items on hover (not implemented)

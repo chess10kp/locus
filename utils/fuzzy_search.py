@@ -161,17 +161,21 @@ def filter_apps_with_fuzzy(
     query: str,
     apps: List[Dict[str, Any]],
     frequency_weights: Optional[Dict[str, float]] = None,
+    frecency_weights: Optional[Dict[str, float]] = None,
     max_results: int = 50,
+    frecency_boost_factor: float = 0.3,
 ) -> List[Dict[str, Any]]:
     """
-    Filter apps using RapidFuzz fuzzy search with frequency weighting.
+    Filter apps using RapidFuzz fuzzy search with frequency and frecency weighting.
     Optimized for 10k+ items using process.extract for batch scoring.
 
     Args:
         query: Search query
         apps: List of app dictionaries
         frequency_weights: Dict mapping app names to frequency weights
+        frecency_weights: Dict mapping app names to frecency weights (0-1 normalized)
         max_results: Maximum number of results
+        frecency_boost_factor: Multiplier for frecency boost (default 0.3)
 
     Returns:
         List of filtered and sorted app dictionaries
@@ -186,8 +190,15 @@ def filter_apps_with_fuzzy(
         return cached_results
 
     if not query:
-        # Return top apps by frequency if no query
-        if frequency_weights:
+        # Return top apps by frecency if no query
+        if frecency_weights:
+            sorted_apps = sorted(
+                apps,
+                key=lambda x: frecency_weights.get(x.get("name", ""), 0),
+                reverse=True,
+            )
+        elif frequency_weights:
+            # Fallback to frequency if no frecency weights
             sorted_apps = sorted(
                 apps,
                 key=lambda x: frequency_weights.get(x.get("name", ""), 0),
@@ -213,7 +224,7 @@ def filter_apps_with_fuzzy(
             score_cutoff=25,  # Minimum similarity score (25/100 = 25%)
         )
 
-        # Combine fuzzy scores with frequency weights
+        # Combine fuzzy scores with frequency and frecency weights
         results = []
         for app_name, fuzzy_score, _ in matches:
             # fuzzy_score is 0-100 from RapidFuzz
@@ -227,8 +238,15 @@ def filter_apps_with_fuzzy(
                 if freq_weight > 0:
                     freq_weight = 0.5 + min(freq_weight, 1.0)
 
-            # Combine scores
-            final_score = fuzzy_score_normalized * freq_weight
+            # Get frecency weight (default to 0.0 if no tracking)
+            frecency_weight = 0.0
+            if frecency_weights:
+                frecency_weight = frecency_weights.get(app_name, 0.0)
+
+            # Combine scores: fuzzy * frequency + frecency_boost
+            final_score = fuzzy_score_normalized * freq_weight + (
+                frecency_weight * frecency_boost_factor
+            )
 
             # Add to results
             if app_name in app_dict:

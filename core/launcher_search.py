@@ -35,12 +35,20 @@ class LauncherSearch:
     def get_filtered_apps(self, filter_text):
         """Get filtered apps using the new optimized fuzzy search."""
         max_results = LAUNCHER_CONFIG["search"]["max_results"]
+        frecency_config = LAUNCHER_CONFIG.get("frecency", {})
+        frecency_boost_factor = (
+            frecency_config.get("boost_factor", 0.3)
+            if frecency_config.get("enabled", True)
+            else 0.0
+        )
 
         # Track search performance
         start_time = time.time()
 
         # Use the new optimized app loader with fuzzy search
-        results = self.launcher._app_loader.search_apps(filter_text, max_results)
+        results = self.launcher._app_loader.search_apps(
+            filter_text, max_results, frecency_boost_factor
+        )
 
         # Record performance
         duration_ms = (time.time() - start_time) * 1000
