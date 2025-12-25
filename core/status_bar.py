@@ -62,19 +62,38 @@ class StatusBar(Gtk.ApplicationWindow):
         # Initialize module manager
         self.module_manager = StatusbarModuleManager(self)
 
-        # Notification store disabled for now
-        # # Initialize notification store
-        # from .notification_store import get_notification_store
-        # self.notification_store = get_notification_store()
-        #
-        # # Start D-Bus interceptor if enabled
-        # from core.config import NOTIFICATION_CONFIG
-        # if NOTIFICATION_CONFIG["daemon"]["intercept_dbus"]:
-        #     try:
-        #         from utils.notification_utils import start_notification_interceptor
-        #         start_notification_interceptor(self.notification_store)
-        #     except Exception as e:
-        #         print(f"Error starting notification interceptor: {e}")
+        from .notification_store import get_notification_store
+
+        self.notification_store = get_notification_store()
+
+        from core.config import NOTIFICATION_DAEMON_CONFIG
+
+        if NOTIFICATION_DAEMON_CONFIG["enabled"]:
+            try:
+                from core.notification_daemon import get_notification_daemon
+
+                daemon = get_notification_daemon()
+                daemon.start()
+
+                from core.notification_queue import get_notification_queue
+                from core.notification_store import Notification
+
+                queue = get_notification_queue()
+
+                original_add = self.notification_store.add_notification
+
+                def add_with_banner(notif: Notification):
+                    original_add(notif)
+                    queue.show_notification(notif)
+
+                self.notification_store.add_notification = add_with_banner
+
+                print("Notification daemon started")
+            except Exception as e:
+                import traceback
+
+                print(f"Error starting notification daemon: {e}")
+                traceback.print_exc()
 
         # Styles
         self.label_style = """
@@ -267,32 +286,36 @@ class StatusBar(Gtk.ApplicationWindow):
                             # Handle dmenu with options
                             if self.launcher:
                                 options = data[14:]  # Remove "launcher dmenu:" prefix
-                                dmenu_launcher = self.launcher.launcher_registry.get_launcher_by_trigger("dmenu")
+                                dmenu_launcher = self.launcher.launcher_registry.get_launcher_by_trigger(
+                                    "dmenu"
+                                )
                                 if dmenu_launcher:
                                     dmenu_launcher.set_options(options)
                                     self.launcher.search_entry.set_text(">dmenu")
                                     self.launcher.present()
-                                    self.launcher.on_entry_activate(self.launcher.search_entry)
+                                    self.launcher.on_entry_activate(
+                                        self.launcher.search_entry
+                                    )
                             handled = True
                         elif data.startswith(">") or data.startswith("launcher "):
-                             # Send launcher commands to the launcher
-                             if self.launcher:
-                                 # Extract the command if it starts with "launcher "
-                                 if data.startswith("launcher "):
-                                     command = data[8:]  # Remove "launcher " prefix
-                                     self.launcher.search_entry.set_text(command)
-                                     self.launcher.present()
-                                     self.launcher.on_entry_activate(
-                                         self.launcher.search_entry
-                                     )
-                                 else:
-                                     # Direct command starting with >
-                                     self.launcher.search_entry.set_text(data)
-                                     self.launcher.present()
-                                     self.launcher.on_entry_activate(
-                                         self.launcher.search_entry
-                                     )
-                             handled = True
+                            # Send launcher commands to the launcher
+                            if self.launcher:
+                                # Extract the command if it starts with "launcher "
+                                if data.startswith("launcher "):
+                                    command = data[8:]  # Remove "launcher " prefix
+                                    self.launcher.search_entry.set_text(command)
+                                    self.launcher.present()
+                                    self.launcher.on_entry_activate(
+                                        self.launcher.search_entry
+                                    )
+                                else:
+                                    # Direct command starting with >
+                                    self.launcher.search_entry.set_text(data)
+                                    self.launcher.present()
+                                    self.launcher.on_entry_activate(
+                                        self.launcher.search_entry
+                                    )
+                            handled = True
                         else:
                             # Handle the message through all module managers
                             handled = False
@@ -319,9 +342,24 @@ class StatusBar(Gtk.ApplicationWindow):
 
     def cleanup(self):
         """Clean up resources when the statusbar is destroyed."""
-        # Stop IPC thread first
         if hasattr(self, "ipc_running"):
             self.ipc_running = False
+
+        from core.notification_queue import get_notification_queue
+
+        try:
+            queue = get_notification_queue()
+            queue.cleanup()
+        except Exception:
+            pass
+
+        from core.notification_daemon import get_notification_daemon
+
+        try:
+            daemon = get_notification_daemon()
+            daemon.stop()
+        except Exception:
+            pass
 
         if hasattr(self, "module_manager"):
             self.module_manager.cleanup()
@@ -329,7 +367,6 @@ class StatusBar(Gtk.ApplicationWindow):
         if hasattr(self, "server_socket"):
             self.server_socket.close()
 
-        # Wait for IPC thread to finish (with timeout)
         if hasattr(self, "ipc_thread") and self.ipc_thread.is_alive():
             self.ipc_thread.join(timeout=2.0)
 

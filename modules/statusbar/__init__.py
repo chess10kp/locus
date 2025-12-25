@@ -13,8 +13,7 @@ from .workspaces_module import WorkspacesModule
 from .binding_mode_module import BindingModeModule
 from .emacs_clock_module import EmacsClockModule
 from .custom_message_module import CustomMessageModule
-# Notification module disabled for now
-# from .notification_module import NotificationModule
+from .notification_module import NotificationModule
 
 
 def auto_register_modules():
@@ -29,8 +28,7 @@ def auto_register_modules():
         BindingModeModule(),
         EmacsClockModule(),
         CustomMessageModule(),
-        # Notification module disabled for now
-        # NotificationModule(),
+        NotificationModule(),
     ]
 
     for module in modules:
@@ -53,4 +51,5 @@ __all__ = [
     "BindingModeModule",
     "EmacsClockModule",
     "CustomMessageModule",
+    "NotificationModule",
 ]

@@ -273,9 +273,7 @@ class NotificationStore:
             original_count = len(self.notifications)
             # Only remove by age (max_age_days), not by expire_timeout
             # expire_timeout is for display duration, not storage duration
-            self.notifications = [
-                n for n in self.notifications if n.timestamp > cutoff
-            ]
+            self.notifications = [n for n in self.notifications if n.timestamp > cutoff]
 
             removed = original_count - len(self.notifications)
             if removed > 0:

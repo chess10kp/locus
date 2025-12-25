@@ -30,21 +30,41 @@ FOCUS_MODE_HOOKS = {
 
 NOTIFICATION_CONFIG = {
     "history": {
-        "max_history": 500,  # Maximum notifications to store
-        "max_age_days": 30,  # Auto-delete after 30 days
+        "max_history": 500,
+        "max_age_days": 30,
         "persist_path": "~/.cache/locus/notification_history.json",
     },
     "ui": {
-        "icon": "󰂚",  # Nerd Font icon
+        "icon": "󰂚",
         "show_unread_count": True,
-        "max_display": 50,  # Max notifications to display in menu
+        "max_display": 50,
         "group_by_app": True,
         "timestamp_format": "%H:%M",
     },
     "daemon": {
-        "use_external": True,  # Use mako/dunst for displaying
+        "use_external": False,
         "external_command": "notify-send",
-        "intercept_dbus": True,  # Monitor D-Bus for history
+        "intercept_dbus": False,
+    },
+}
+
+NOTIFICATION_DAEMON_CONFIG = {
+    "enabled": True,
+    "position": "top-right",
+    "max_banners": 5,
+    "banner_gap": 10,
+    "banner_width": 400,
+    "banner_height": 100,
+    "animation_duration": 200,
+    "timeouts": {
+        "low": 3000,
+        "normal": 5000,
+        "critical": -1,
+    },
+    "colors": {
+        "low": "#89b4fa",
+        "normal": "#cba6f7",
+        "critical": "#f38ba8",
     },
 }
 
@@ -191,7 +211,7 @@ def todo_capture():
 BAR_LAYOUT = {
     "left": ["launcher", "workspaces", "binding_mode", "emacs_clock"],
     "middle": [],
-    "right": ["time", "battery", "custom_message"],
+    "right": ["notifications", "time", "battery", "custom_message"],
 }
 
 # Module Configuration Options

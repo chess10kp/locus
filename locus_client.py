@@ -53,6 +53,16 @@ def run_command(cmd: str) -> str:
 def handle_volume(action: str):
     """Handle volume commands."""
     use_pamixer = has_command("pamixer")
+    use_pactl = has_command("pactl")
+
+    if use_pactl:
+        if action == "up":
+            run_command("pactl set-sink-volume @DEFAULT_SINK@ +5%")
+
+        elif action == "down":
+            run_command("pactl set-sink-volume @DEFAULT_SINK@ -5%")
+        elif action == "mute":
+            run_command("pactl set-sink-mute @DEFAULT_SINK@ toggle")
 
     if use_pamixer:
         if action == "up":
