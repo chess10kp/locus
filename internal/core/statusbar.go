@@ -103,13 +103,16 @@ func (sb *StatusBar) Start() error {
 		}
 	}
 
-	layer.InitForWindow(unsafe.Pointer(sb.window.Native()))
-	layer.SetLayer(unsafe.Pointer(sb.window.Native()), layer.LayerTop)
-	layer.SetAnchor(unsafe.Pointer(sb.window.Native()), layer.EdgeLeft, true)
-	layer.SetAnchor(unsafe.Pointer(sb.window.Native()), layer.EdgeRight, true)
-	layer.SetAnchor(unsafe.Pointer(sb.window.Native()), layer.EdgeTop, true)
-	layer.SetExclusiveZone(unsafe.Pointer(sb.window.Native()), height)
-	layer.SetKeyboardMode(unsafe.Pointer(sb.window.Native()), layer.KeyboardModeNone)
+	// Initialize layer shell (no need to realize first)
+	nativePtr := unsafe.Pointer(sb.window.Native())
+	layer.InitForWindow(nativePtr)
+	layer.SetLayer(nativePtr, layer.LayerTop)
+	layer.SetAnchor(nativePtr, layer.EdgeLeft, true)
+	layer.SetAnchor(nativePtr, layer.EdgeRight, true)
+	layer.SetAnchor(nativePtr, layer.EdgeTop, true)
+	layer.AutoExclusiveZoneEnable(nativePtr)
+	layer.SetKeyboardMode(nativePtr, layer.KeyboardModeNone)
+	fmt.Printf("Statusbar: enabled auto-exclusive zone\n")
 
 	sb.window.Connect("destroy", func() {
 		close(sb.stopUpdate)
@@ -120,7 +123,7 @@ func (sb *StatusBar) Start() error {
 
 	sb.running = true
 	sb.stopUpdate = make(chan struct{})
-	go sb.updatePeriodicModules()
+	go sb.updateLoop()
 
 	return nil
 }
@@ -165,10 +168,13 @@ func (sb *StatusBar) updatePeriodicModules() {
 	modules := sb.manager.GetModules()
 	for _, module := range modules {
 		if module.UpdateMode() == statusbar.UpdateModePeriodic {
-			widget := module.CreateWidget()
 			label, ok := sb.widgets[module.Name()]
-			if ok && widget.Value != "" {
-				label.SetText(widget.Value)
+			if ok {
+				widget := &statusbar.Widget{Value: ""}
+				module.Update(widget)
+				if widget.Value != "" {
+					label.SetText(widget.Value)
+				}
 			}
 		}
 	}

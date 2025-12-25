@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/gotk3/gotk3/glib"
 	"github.com/sigma/locus-go/internal/config"
 )
 
@@ -92,20 +93,26 @@ func (s *IPCServer) handleConnection(conn *net.UnixConn) {
 
 func (s *IPCServer) handleMessage(message string) {
 	if message == "launcher" {
-		if err := s.app.PresentLauncher(); err != nil {
-			log.Printf("Failed to present launcher: %v", err)
-		}
+		glib.IdleAdd(func() {
+			if err := s.app.PresentLauncher(); err != nil {
+				log.Printf("Failed to present launcher: %v", err)
+			}
+		})
 	} else if message == "hide" {
-		if err := s.app.HideLauncher(); err != nil {
-			log.Printf("Failed to hide launcher: %v", err)
-		}
+		glib.IdleAdd(func() {
+			if err := s.app.HideLauncher(); err != nil {
+				log.Printf("Failed to hide launcher: %v", err)
+			}
+		})
 	} else if strings.HasPrefix(message, "statusbar:") {
 		// Handle statusbar messages
 		if s.app.statusBar != nil {
 			cmd := strings.TrimPrefix(message, "statusbar:")
-			if err := s.app.statusBar.HandleIPC(cmd); err != nil {
-				log.Printf("Failed to handle statusbar IPC: %v", err)
-			}
+			glib.IdleAdd(func() {
+				if err := s.app.statusBar.HandleIPC(cmd); err != nil {
+					log.Printf("Failed to handle statusbar IPC: %v", err)
+				}
+			})
 		}
 	}
 }

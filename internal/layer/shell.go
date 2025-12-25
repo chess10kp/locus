@@ -32,6 +32,12 @@ func SetExclusiveZone(window unsafe.Pointer, zone int) {
 	C.gtk_layer_set_exclusive_zone((*C.GtkWindow)(window), C.int(zone))
 }
 
+// AutoExclusiveZoneEnable automatically sets the exclusive zone
+// to match the window's size when anchored to edges
+func AutoExclusiveZoneEnable(window unsafe.Pointer) {
+	C.gtk_layer_auto_exclusive_zone_enable((*C.GtkWindow)(window))
+}
+
 // SetMargin sets the margin for a specific edge
 func SetMargin(window unsafe.Pointer, edge Edge, margin int) {
 	C.gtk_layer_set_margin((*C.GtkWindow)(window), C.GtkLayerShellEdge(edge), C.int(margin))

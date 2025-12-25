@@ -123,9 +123,13 @@ func (a *App) Quit() {
 
 // PresentLauncher shows the launcher
 func (a *App) PresentLauncher() error {
+	log.Printf("PresentLauncher called, launcher=%v", a.launcher != nil)
 	if a.launcher != nil {
-		return a.launcher.Show()
+		err := a.launcher.Show()
+		log.Printf("Launcher.Show() returned: %v", err)
+		return err
 	}
+	log.Printf("No launcher available")
 	return nil
 }
 

@@ -279,7 +279,7 @@ var DefaultConfig = Config{
 			PersistPath: "~/.cache/locus/notifications.json",
 		},
 		UI: NotificationUIConfig{
-			Icon:            "󰂚",
+			Icon:            "notifications:",
 			ShowUnreadCount: true,
 			MaxDisplay:      50,
 			GroupByApp:      true,

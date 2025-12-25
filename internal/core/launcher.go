@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"unsafe"
@@ -94,27 +95,33 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 }
 
 func (l *Launcher) setupSignals() {
-	l.searchEntry.Connect("changed", func() {
-		text, _ := l.searchEntry.GetText()
-		l.onSearchChanged(text)
-	})
+	// Temporarily disable changed handler
+	// l.searchEntry.Connect("changed", func() {
+	// 	text, _ := l.searchEntry.GetText()
+	// 	l.onSearchChanged(text)
+	// })
 
-	l.searchEntry.Connect("activate", func() {
-		l.onActivate()
-	})
+	// Temporarily disable activate handler
+	// l.searchEntry.Connect("activate", func() {
+	// 	l.onActivate()
+	// })
 
-	l.searchEntry.Connect("key-press-event", func(event *gdk.Event) bool {
-		keyEvent := gdk.EventKeyNewFromEvent(event)
-		return l.onKeyPress(keyEvent)
-	})
+	// Temporarily disable key-press-event handler
+	// l.searchEntry.Connect("key-press-event", func(event *gdk.Event) bool {
+	// 	keyEvent := gdk.EventKeyNewFromEvent(event)
+	// 	return l.onKeyPress(keyEvent)
+	// })
 
-	l.resultList.Connect("row-activated", func(list *gtk.ListBox, row *gtk.ListBoxRow) {
-		l.onRowActivated(row)
-	})
+	// Temporarily disable row-activated handler
+	// l.resultList.Connect("row-activated", func(list *gtk.ListBox, row *gtk.ListBoxRow) {
+	// 	l.onRowActivated(row)
+	// })
 
-	l.window.Connect("focus-out-event", func() {
-		l.Hide()
-	})
+	// Temporarily disable focus-out-event handler
+	// l.window.Connect("focus-out-event", func(event *gdk.Event) bool {
+	// 	l.Hide()
+	// 	return false
+	// })
 }
 
 func (l *Launcher) onSearchChanged(text string) {
@@ -297,20 +304,26 @@ func (l *Launcher) navigateResult(direction int) {
 }
 
 func (l *Launcher) Show() error {
+	log.Printf("Launcher.Show() called, running=%v", l.running)
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	if !l.running {
+		log.Printf("Launcher not running, starting...")
 		if err := l.Start(); err != nil {
+			log.Printf("Failed to start launcher: %v", err)
 			return err
 		}
+		log.Printf("Launcher started successfully")
 	}
 
+	log.Printf("Calling window.ShowAll() and Present()")
 	l.window.ShowAll()
 	l.window.Present()
 	l.searchEntry.SetText("")
 	l.searchEntry.GrabFocus()
 	l.visible = true
+	log.Printf("Launcher should now be visible")
 
 	return nil
 }
@@ -340,33 +353,46 @@ func (l *Launcher) Toggle() error {
 }
 
 func (l *Launcher) Start() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+	log.Printf("Launcher.Start() - beginning")
 
 	if l.running {
+		log.Printf("Launcher already running")
 		return ErrLauncherAlreadyRunning
 	}
 
+	log.Printf("Setting window size")
 	width := l.config.Launcher.Window.Width
 	height := l.config.Launcher.Window.Height
-	if width > 0 {
-		l.window.SetDefaultSize(width, height)
+	if width <= 0 {
+		width = 600
 	}
+	if height <= 0 {
+		height = 400
+	}
+	l.window.SetDefaultSize(width, height)
 
+	log.Printf("Loading built-in launchers")
 	if err := l.registry.LoadBuiltIn(); err != nil {
+		log.Printf("Failed to load launchers: %v", err)
 		return fmt.Errorf("failed to load launchers: %w", err)
 	}
 
+	log.Printf("Realizing window")
+	// Realize the window before layer shell initialization
+	l.window.Realize()
+
+	log.Printf("Initializing layer shell")
 	layer.InitForWindow(unsafe.Pointer(l.window.Native()))
 	layer.SetLayer(unsafe.Pointer(l.window.Native()), layer.LayerOverlay)
 	layer.SetKeyboardMode(unsafe.Pointer(l.window.Native()), layer.KeyboardModeExclusive)
-	layer.SetExclusiveZone(unsafe.Pointer(l.window.Native()), -1)
+	layer.SetExclusiveZone(unsafe.Pointer(l.window.Native()), 0)
 
 	l.window.Connect("destroy", func() {
 		l.Quit()
 	})
 
 	l.running = true
+	log.Printf("Launcher started successfully - window should be visible now")
 	return nil
 }
 
