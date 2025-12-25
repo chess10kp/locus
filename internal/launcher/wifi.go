@@ -79,7 +79,7 @@ func (l *WifiLauncher) HandlesEnter() bool {
 func (l *WifiLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
 	q := strings.TrimSpace(query)
 
-	if q == "" || q == "toggle" {
+	if q == "" || q == "toggle" || q == "on" {
 		cmd := exec.Command("nmcli", "radio", "wifi", "on")
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 		return cmd.Start() == nil

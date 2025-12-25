@@ -1,84 +1,72 @@
 package layer
 
+/*
+#cgo pkg-config: gtk-layer-shell-0
+#include <gtk-layer-shell.h>
+*/
+import "C"
+import "unsafe"
+
+// InitForWindow initializes a window as a layer shell surface
+func InitForWindow(window unsafe.Pointer) {
+	C.gtk_layer_init_for_window((*C.GtkWindow)(window))
+}
+
+// SetLayer sets the layer for a layer shell surface
+func SetLayer(window unsafe.Pointer, layer Layer) {
+	C.gtk_layer_set_layer((*C.GtkWindow)(window), C.GtkLayerShellLayer(layer))
+}
+
+// SetAnchor sets which edges to anchor the window to
+func SetAnchor(window unsafe.Pointer, edge Edge, anchorTo bool) {
+	var anchor C.gboolean
+	if anchorTo {
+		anchor = 1
+	}
+	C.gtk_layer_set_anchor((*C.GtkWindow)(window), C.GtkLayerShellEdge(edge), anchor)
+}
+
+// SetExclusiveZone sets the exclusive zone for the surface
+// This prevents other windows from occupying the same space
+func SetExclusiveZone(window unsafe.Pointer, zone int) {
+	C.gtk_layer_set_exclusive_zone((*C.GtkWindow)(window), C.int(zone))
+}
+
+// SetMargin sets the margin for a specific edge
+func SetMargin(window unsafe.Pointer, edge Edge, margin int) {
+	C.gtk_layer_set_margin((*C.GtkWindow)(window), C.GtkLayerShellEdge(edge), C.int(margin))
+}
+
+// SetKeyboardMode sets the keyboard interactivity mode
+func SetKeyboardMode(window unsafe.Pointer, mode KeyboardMode) {
+	C.gtk_layer_set_keyboard_mode((*C.GtkWindow)(window), C.GtkLayerShellKeyboardMode(mode))
+}
+
 // Layer represents a layer shell layer
 type Layer int
 
 const (
-	LayerBackground Layer = iota
-	LayerBottom
-	LayerTop
-	LayerOverlay
+	LayerBackground Layer = 0
+	LayerBottom     Layer = 1
+	LayerTop        Layer = 2
+	LayerOverlay    Layer = 3
 )
 
-// Edge represents window edges for anchoring
+// Edge represents a screen edge
 type Edge int
 
 const (
-	EdgeNone   Edge = 0
-	EdgeTop    Edge = 1
-	EdgeBottom Edge = 2
-	EdgeLeft   Edge = 4
-	EdgeRight  Edge = 8
+	EdgeLeft   Edge = 0
+	EdgeRight  Edge = 1
+	EdgeTop    Edge = 2
+	EdgeBottom Edge = 3
 )
 
 // KeyboardMode represents keyboard focus mode
 type KeyboardMode int
 
 const (
-	KeyboardModeNone KeyboardMode = iota
-	KeyboardModeExclusive
-	KeyboardModeOnDemand
+	KeyboardModeNone      KeyboardMode = 0
+	KeyboardModeExclusive KeyboardMode = 1
+	KeyboardModeOnDemand  KeyboardMode = 2
 )
-
-// LayerShellContext holds a layer shell state
-// This is a stub - actual Wayland layer shell integration requires
-// protocol headers and CGO bindings
-type LayerShellContext struct {
-	Initialized bool
-}
-
-// InitLayerShell initializes the layer shell
-// For now, this is a stub. Real implementation requires:
-// - wayland-client library
-// - wlr-layer-shell protocol headers
-func InitLayerShell() *LayerShellContext {
-	return &LayerShellContext{
-		Initialized: true,
-	}
-}
-
-// SetLayer sets the layer for a window
-// This is managed via gotk3 window properties
-func SetLayer(layer Layer) error {
-	return nil
-}
-
-// SetAnchor sets the anchor edges for a window
-// This is managed via gotk3 window properties
-func SetAnchor(edges Edge) error {
-	return nil
-}
-
-// SetMargin sets the margin from edges
-func SetMargin(top, right, bottom, left int) error {
-	return nil
-}
-
-// SetExclusiveZone sets the exclusive zone for a surface
-func SetExclusiveZone(size int) error {
-	return nil
-}
-
-// SetKeyboardMode sets the keyboard interactivity mode
-func SetKeyboardMode(mode KeyboardMode) error {
-	return nil
-}
-
-// Commit commits surface changes
-func Commit() error {
-	return nil
-}
-
-// Cleanup cleans up layer shell resources
-func Cleanup() {
-}

@@ -5,22 +5,26 @@ import (
 	"log"
 
 	"github.com/sigma/locus-go/internal/config"
-	"github.com/sigma/locus-go/internal/core"
 )
+
+type LauncherCallback interface {
+	PresentLauncher() error
+	HideLauncher() error
+}
 
 // ModuleManager manages all status bar modules
 type ModuleManager struct {
-	modules map[string]Module
-	bar     *core.StatusBar
-	config  *config.Config
+	modules          map[string]Module
+	launcherCallback LauncherCallback
+	config           *config.Config
 }
 
 // NewModuleManager creates a new module manager
-func NewModuleManager(bar *core.StatusBar, cfg *config.Config) *ModuleManager {
+func NewModuleManager(callback LauncherCallback, cfg *config.Config) *ModuleManager {
 	return &ModuleManager{
-		modules: make(map[string]Module),
-		bar:     bar,
-		config:  cfg,
+		modules:          make(map[string]Module),
+		launcherCallback: callback,
+		config:           cfg,
 	}
 }
 
@@ -57,7 +61,7 @@ func (m *ModuleManager) GetModule(name string) (Module, bool) {
 func (m *ModuleManager) CreateModule(name string) (Module, error) {
 	switch name {
 	case "launcher":
-		return NewLauncherModule(m.bar), nil
+		return NewLauncherModule(m.launcherCallback), nil
 	case "time":
 		return NewTimeModule(m.config), nil
 	case "battery":
@@ -140,10 +144,15 @@ func (m *ModuleManager) HandleIPCMessage(message string) bool {
 }
 
 // GetWidgets returns widgets for all modules
-func (m *ModuleManager) GetWidgets() map[string]interface{} {
-	widgets := make(map[string]interface{})
+func (m *ModuleManager) GetWidgets() map[string]*Widget {
+	widgets := make(map[string]*Widget)
 	for name, module := range m.modules {
 		widgets[name] = module.CreateWidget()
 	}
 	return widgets
+}
+
+// GetModules returns all registered modules
+func (m *ModuleManager) GetModules() map[string]Module {
+	return m.modules
 }

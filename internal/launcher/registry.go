@@ -3,10 +3,22 @@ package launcher
 import (
 	"fmt"
 	"log"
+	"os/exec"
 	"strings"
+	"syscall"
 
-	"github.com/sigma/locus-go/internal/core"
+	"github.com/sigma/locus-go/internal/config"
 )
+
+type LauncherUI interface {
+	UpdateResults(items []*LauncherItem)
+	HandleCommand(command string)
+}
+
+type LauncherContext struct {
+	Config *config.Config
+	UI     LauncherUI
+}
 
 // LauncherSizeMode represents launcher window size mode
 type LauncherSizeMode int
@@ -18,14 +30,23 @@ const (
 	LauncherSizeModeCustom
 )
 
+// LauncherItem represents a single result item
+type LauncherItem struct {
+	Title    string
+	Subtitle string
+	Icon     string
+	Command  string
+	Launcher Launcher
+}
+
 // Launcher is the interface that all launchers must implement
 type Launcher interface {
 	Name() string
 	CommandTriggers() []string
-	GetSizeMode() (LauncherSizeMode, interface{})
-	Populate(query string, launcherCore *core.Launcher)
+	GetSizeMode() LauncherSizeMode
+	Populate(query string, ctx *LauncherContext) []*LauncherItem
 	HandlesEnter() bool
-	HandleEnter(query string, launcherCore *core.Launcher) bool
+	HandleEnter(query string, ctx *LauncherContext) bool
 	HandlesTab() bool
 	HandleTab(query string) string
 	Cleanup()
@@ -36,14 +57,17 @@ type LauncherRegistry struct {
 	launchers    map[string]Launcher
 	triggerMap   map[string]Launcher
 	customPrefix map[string]string // name -> custom prefix
+	config       *config.Config
+	ctx          *LauncherContext
 }
 
 // NewLauncherRegistry creates a new launcher registry
-func NewLauncherRegistry() *LauncherRegistry {
+func NewLauncherRegistry(cfg *config.Config) *LauncherRegistry {
 	return &LauncherRegistry{
 		launchers:    make(map[string]Launcher),
 		triggerMap:   make(map[string]Launcher),
 		customPrefix: make(map[string]string),
+		config:       cfg,
 	}
 }
 
@@ -177,4 +201,84 @@ func (r *LauncherRegistry) Cleanup() {
 	r.launchers = make(map[string]Launcher)
 	r.triggerMap = make(map[string]Launcher)
 	r.customPrefix = make(map[string]string)
+}
+
+// Search searches for items matching the query
+func (r *LauncherRegistry) Search(query string) ([]*LauncherItem, error) {
+	_, l, q := r.FindLauncherForInput(query)
+
+	if l != nil {
+		return l.Populate(q, r.ctx), nil
+	}
+
+	var items []*LauncherItem
+
+	for _, launcher := range r.launchers {
+		launcherItems := launcher.Populate(query, r.ctx)
+		items = append(items, launcherItems...)
+	}
+
+	return items, nil
+}
+
+// Execute executes a launcher item
+func (r *LauncherRegistry) Execute(item *LauncherItem) error {
+	if item.Launcher != nil {
+		if item.Launcher.HandlesEnter() {
+			if item.Launcher.HandleEnter(item.Command, r.ctx) {
+				return nil
+			}
+		}
+	}
+
+	if item.Command != "" {
+		parts := strings.Fields(item.Command)
+		if len(parts) == 0 {
+			return fmt.Errorf("empty command")
+		}
+
+		cmd := exec.Command(parts[0], parts[1:]...)
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Setsid: true,
+		}
+
+		if err := cmd.Start(); err != nil {
+			return fmt.Errorf("failed to start command: %w", err)
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("no executable command")
+}
+
+// LoadBuiltIn loads built-in launchers
+func (r *LauncherRegistry) LoadBuiltIn() error {
+	r.ctx = &LauncherContext{
+		Config: r.config,
+	}
+
+	launchers := []Launcher{
+		NewShellLauncher(),
+		NewWebLauncher(),
+		NewCalcLauncher(),
+		NewBrightnessLauncher(r.config),
+		NewScreenshotLauncher(r.config),
+		NewLockLauncher(r.config),
+		NewTimerLauncher(r.config),
+		NewKillLauncher(r.config),
+		NewWMFocusLauncher(r.config),
+		NewWallpaperLauncher(r.config),
+		NewClipboardLauncher(r.config),
+		NewWifiLauncher(r.config),
+		NewFileLauncher(r.config),
+	}
+
+	for _, l := range launchers {
+		if err := r.Register(l); err != nil {
+			log.Printf("Failed to register launcher %s: %v", l.Name(), err)
+		}
+	}
+
+	return nil
 }

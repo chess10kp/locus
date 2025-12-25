@@ -2,8 +2,10 @@ package launcher
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/sigma/locus-go/internal/config"
 )
@@ -32,6 +34,7 @@ func (l *FileLauncher) GetSizeMode() LauncherSizeMode {
 
 func (l *FileLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	q := strings.TrimSpace(query)
+
 	if q == "" {
 		homeDir, _ := os.UserHomeDir()
 		searchPaths := []string{
@@ -45,61 +48,57 @@ func (l *FileLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 
 		items := make([]*LauncherItem, 0, len(searchPaths))
 		for _, path := range searchPaths {
-			items = append(items, &LauncherItem{
-				Title:    filepath.Base(path),
-				Subtitle: path,
-				Icon:     "folder",
-				Command:  "xdg-open " + path,
-			})
+			if _, err := os.Stat(path); err == nil {
+				items = append(items, &LauncherItem{
+					Title:    filepath.Base(path),
+					Subtitle: path,
+					Icon:     "folder",
+					Command:  "xdg-open " + path,
+				})
+			}
 		}
 
 		return items
 	}
 
-	var lastResults []*LauncherItem
+	q = strings.ToLower(q)
+	homeDir, _ := os.UserHomeDir()
 
-	if q != "" {
-		q = strings.ToLower(q)
+	cmd := exec.Command("find", homeDir, "-iname", "*"+q+"*", "-type", "f", "-size", "-100M")
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return []*LauncherItem{
+			{
+				Title:    "Search Error",
+				Subtitle: err.Error(),
+				Icon:     "dialog-error",
+				Command:  "",
+			},
+		}
+	}
 
-		homeDir, _ := os.UserHomeDir()
-
-		cmd := exec.Command("find", homeDir)
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return []*LauncherItem{
-				{
-					Title:    "Search Error",
-					Subtitle: err.Error(),
-					Icon:     "dialog-error",
-					Command:  "",
-				},
-			}
+	lines := strings.Split(string(output), "\n")
+	items := make([]*LauncherItem, 0)
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
 		}
 
-		lines := strings.Split(string(output), "\n")
-		items := make([]*LauncherItem, 0)
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
-			}
+		absPath := line
+		filename := filepath.Base(absPath)
 
-			absPath, _ := filepath.Abs(line)
+		items = append(items, &LauncherItem{
+			Title:    filename,
+			Subtitle: absPath,
+			Icon:     l.getFileIcon(filename),
+			Command:  "xdg-open " + absPath,
+		})
 
-			items = append(items, &LauncherItem{
-				Title:    filepath.Base(absPath),
-				Subtitle: absPath,
-				Icon:     l.getFileIcon(filepath.Base(line)),
-				Command:  "xdg-open " + absPath,
-			})
+		if len(items) >= 50 {
+			break
 		}
-
-		if len(items) > 50 {
-			items = items[:50]
-		}
-
-		return items
 	}
 
 	return items
@@ -107,9 +106,8 @@ func (l *FileLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 
 func (l *FileLauncher) getFileIcon(filename string) string {
 	ext := strings.ToLower(filepath.Ext(filename))
-
 	switch ext {
-	case ".png", ".jpg", ".jpeg", ".gif", ".svg":
+	case ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp":
 		return "image-x-generic"
 	case ".pdf":
 		return "application-pdf"
@@ -117,10 +115,8 @@ func (l *FileLauncher) getFileIcon(filename string) string {
 		return "application-x-archive"
 	case ".mp3", ".mp4", ".flac", ".ogg", ".wav":
 		return "audio-x-generic"
-	case ".mp4", ".mkv", ".avi", ".mov":
+	case ".mkv", ".avi", ".mov":
 		return "video-x-generic"
-	case ".txt", ".md", ".py", ".go", ".rs", ".js":
-		return "text-x-generic"
 	default:
 		return "text-x-generic"
 	}
@@ -136,7 +132,12 @@ func (l *FileLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
 		return false
 	}
 
-	cmd := exec.Command("xdg-open", q)
+	absPath, err := filepath.Abs(q)
+	if err != nil {
+		return false
+	}
+
+	cmd := exec.Command("xdg-open", absPath)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	return cmd.Start() == nil
 }

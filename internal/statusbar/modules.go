@@ -1,11 +1,33 @@
 package statusbar
 
 import (
+	"log"
 	"time"
 
+	"github.com/gotk3/gotk3/gtk"
 	"github.com/sigma/locus-go/internal/config"
-	"github.com/sigma/locus-go/internal/core"
 )
+
+// WidgetType represents the type of widget
+type WidgetType string
+
+const (
+	WidgetTypeLabel  WidgetType = "label"
+	WidgetTypeButton WidgetType = "button"
+	WidgetTypeImage  WidgetType = "image"
+	WidgetTypeBox    WidgetType = "box"
+)
+
+// String returns the string representation
+func (w WidgetType) String() string {
+	return string(w)
+}
+
+// Widget represents a status bar widget
+type Widget struct {
+	Type  WidgetType
+	Value string
+}
 
 // UpdateMode represents how a module updates
 type UpdateMode int
@@ -22,12 +44,12 @@ type Module interface {
 	Name() string
 	UpdateMode() UpdateMode
 	UpdateInterval() time.Duration
-	CreateWidget() interface{}
-	Update(widget interface{})
+	CreateWidget() *Widget
+	Update(widget *Widget)
 	Cleanup()
 	GetStyles() string
 	HandlesClicks() bool
-	HandleClick(widget interface{}) bool
+	HandleClick(widget *Widget) bool
 	HandlesIPC() bool
 	HandleIPC(message string) bool
 }
@@ -40,15 +62,15 @@ type SimpleModule struct {
 	styles     string
 }
 
-func (m *SimpleModule) Name() string                        { return m.name }
-func (m *SimpleModule) UpdateMode() UpdateMode              { return m.updateMode }
-func (m *SimpleModule) UpdateInterval() time.Duration       { return m.interval }
-func (m *SimpleModule) GetStyles() string                   { return m.styles }
-func (m *SimpleModule) HandlesClicks() bool                 { return false }
-func (m *SimpleModule) HandleClick(widget interface{}) bool { return false }
-func (m *SimpleModule) HandlesIPC() bool                    { return false }
-func (m *SimpleModule) HandleIPC(message string) bool       { return false }
-func (m *SimpleModule) Cleanup()                            {}
+func (m *SimpleModule) Name() string                    { return m.name }
+func (m *SimpleModule) UpdateMode() UpdateMode          { return m.updateMode }
+func (m *SimpleModule) UpdateInterval() time.Duration   { return m.interval }
+func (m *SimpleModule) GetStyles() string               { return m.styles }
+func (m *SimpleModule) HandlesClicks() bool             { return false }
+func (m *SimpleModule) HandleClick(widget *Widget) bool { return false }
+func (m *SimpleModule) HandlesIPC() bool                { return false }
+func (m *SimpleModule) HandleIPC(message string) bool   { return false }
+func (m *SimpleModule) Cleanup()                        {}
 
 // TimeModule - displays current time
 type TimeModule struct {
@@ -73,23 +95,15 @@ func NewTimeModule(cfg *config.Config) *TimeModule {
 	}
 }
 
-func (m *TimeModule) CreateWidget() interface{} {
-	return &struct {
-		Type  string
-		Value string
-	}{
-		Type:  "label",
+func (m *TimeModule) CreateWidget() *Widget {
+	return &Widget{
+		Type:  WidgetTypeLabel,
 		Value: time.Now().Format(m.format),
 	}
 }
 
-func (m *TimeModule) Update(widget interface{}) {
-	if w, ok := widget.(*struct {
-		Type  string
-		Value string
-	}); ok {
-		w.Value = time.Now().Format(m.format)
-	}
+func (m *TimeModule) Update(widget *Widget) {
+	widget.Value = time.Now().Format(m.format)
 }
 
 // BatteryModule - displays battery status
@@ -108,24 +122,15 @@ func NewBatteryModule() *BatteryModule {
 	}
 }
 
-func (m *BatteryModule) CreateWidget() interface{} {
-	return &struct {
-		Type  string
-		Value string
-	}{
-		Type:  "label",
+func (m *BatteryModule) CreateWidget() *Widget {
+	return &Widget{
+		Type:  WidgetTypeLabel,
 		Value: "100%",
 	}
 }
 
-func (m *BatteryModule) Update(widget interface{}) {
-	// TODO: Read from /sys/class/power_supply/
-	if w, ok := widget.(*struct {
-		Type  string
-		Value string
-	}); ok {
-		w.Value = "100%"
-	}
+func (m *BatteryModule) Update(widget *Widget) {
+	widget.Value = "100%"
 }
 
 // WorkspacesModule - displays workspace indicators
@@ -144,17 +149,14 @@ func NewWorkspacesModule() *WorkspacesModule {
 	}
 }
 
-func (m *WorkspacesModule) CreateWidget() interface{} {
-	return &struct {
-		Type  string
-		Value string
-	}{
-		Type:  "label",
+func (m *WorkspacesModule) CreateWidget() *Widget {
+	return &Widget{
+		Type:  WidgetTypeLabel,
 		Value: "1 2 3 4",
 	}
 }
 
-func (m *WorkspacesModule) Update(widget interface{}) {
+func (m *WorkspacesModule) Update(widget *Widget) {
 	// TODO: Get workspaces from WM client
 }
 
@@ -174,17 +176,14 @@ func NewBindingModeModule() *BindingModeModule {
 	}
 }
 
-func (m *BindingModeModule) CreateWidget() interface{} {
-	return &struct {
-		Type  string
-		Value string
-	}{
-		Type:  "label",
+func (m *BindingModeModule) CreateWidget() *Widget {
+	return &Widget{
+		Type:  WidgetTypeLabel,
 		Value: "",
 	}
 }
 
-func (m *BindingModeModule) Update(widget interface{}) {
+func (m *BindingModeModule) Update(widget *Widget) {
 	// TODO: Get binding mode from WM client
 }
 
@@ -206,24 +205,15 @@ func NewEmacsClockModule(cfg *config.Config) *EmacsClockModule {
 	}
 }
 
-func (m *EmacsClockModule) CreateWidget() interface{} {
-	return &struct {
-		Type  string
-		Value string
-	}{
-		Type:  "label",
+func (m *EmacsClockModule) CreateWidget() *Widget {
+	return &Widget{
+		Type:  WidgetTypeLabel,
 		Value: m.fallbackText,
 	}
 }
 
-func (m *EmacsClockModule) Update(widget interface{}) {
-	// TODO: Query Emacs server
-	if w, ok := widget.(*struct {
-		Type  string
-		Value string
-	}); ok {
-		w.Value = m.fallbackText
-	}
+func (m *EmacsClockModule) Update(widget *Widget) {
+	widget.Value = m.fallbackText
 }
 
 // CustomMessageModule - displays custom messages via IPC
@@ -244,23 +234,15 @@ func NewCustomMessageModule() *CustomMessageModule {
 	}
 }
 
-func (m *CustomMessageModule) CreateWidget() interface{} {
-	return &struct {
-		Type  string
-		Value string
-	}{
-		Type:  "label",
+func (m *CustomMessageModule) CreateWidget() *Widget {
+	return &Widget{
+		Type:  WidgetTypeLabel,
 		Value: m.message,
 	}
 }
 
-func (m *CustomMessageModule) Update(widget interface{}) {
-	if w, ok := widget.(*struct {
-		Type  string
-		Value string
-	}); ok {
-		w.Value = m.message
-	}
+func (m *CustomMessageModule) Update(widget *Widget) {
+	widget.Value = m.message
 }
 
 func (m *CustomMessageModule) HandlesIPC() bool {
@@ -275,7 +257,8 @@ func (m *CustomMessageModule) HandleIPC(message string) bool {
 // NotificationModule - displays notification count
 type NotificationModule struct {
 	SimpleModule
-	count int
+	count  int
+	config *config.Config
 }
 
 func NewNotificationModule(cfg *config.Config) *NotificationModule {
@@ -286,26 +269,24 @@ func NewNotificationModule(cfg *config.Config) *NotificationModule {
 			interval:   0,
 			styles:     "#notification-label { padding: 0 4px; }",
 		},
-		count: 0,
+		count:  0,
+		config: cfg,
 	}
 }
 
-func (m *NotificationModule) CreateWidget() interface{} {
+func (m *NotificationModule) CreateWidget() *Widget {
 	icon := "N"
-	if cfg.Notification.UI.Icon != "" {
-		icon = cfg.Notification.UI.Icon
+	if m.config != nil && m.config.Notification.UI.Icon != "" {
+		icon = m.config.Notification.UI.Icon
 	}
 
-	return &struct {
-		Type  string
-		Value string
-	}{
-		Type:  "label",
+	return &Widget{
+		Type:  WidgetTypeLabel,
 		Value: icon,
 	}
 }
 
-func (m *NotificationModule) Update(widget interface{}) {
+func (m *NotificationModule) Update(widget *Widget) {
 	// Display count or icon
 	// This would be updated by notification store events
 }
@@ -317,10 +298,11 @@ func (m *NotificationModule) SetCount(count int) {
 // LauncherModule - launcher trigger button
 type LauncherModule struct {
 	SimpleModule
-	bar *core.StatusBar
+	callback LauncherCallback
+	button   *gtk.Button
 }
 
-func NewLauncherModule(bar *core.StatusBar) *LauncherModule {
+func NewLauncherModule(callback LauncherCallback) *LauncherModule {
 	return &LauncherModule{
 		SimpleModule: SimpleModule{
 			name:       "launcher",
@@ -328,30 +310,39 @@ func NewLauncherModule(bar *core.StatusBar) *LauncherModule {
 			interval:   0,
 			styles:     "#launcher-module { padding: 0 4px; }",
 		},
-		bar: bar,
+		callback: callback,
+		button:   nil,
 	}
 }
 
-func (m *LauncherModule) CreateWidget() interface{} {
-	return &struct {
-		Type  string
-		Value string
-	}{
-		Type:  "button",
+func (m *LauncherModule) CreateWidget() *Widget {
+	return &Widget{
+		Type:  WidgetTypeButton,
 		Value: "Launcher",
 	}
 }
 
-func (m *LauncherModule) Update(widget interface{}) {}
+func (m *LauncherModule) Update(widget *Widget) {}
 
 func (m *LauncherModule) HandlesClicks() bool {
 	return true
 }
 
-func (m *LauncherModule) HandleClick(widget interface{}) bool {
-	// Trigger launcher presentation
-	if m.bar != nil {
-		// TODO: Call app.PresentLauncher()
+func (m *LauncherModule) HandleClick(widget *Widget) bool {
+	log.Printf("LauncherModule.HandleClick called: widget=%+v", widget)
+	if m.callback != nil {
+		log.Printf("LauncherModule.HandleClick: Calling PresentLauncher")
+		m.callback.PresentLauncher()
+	} else {
+		log.Printf("LauncherModule.HandleClick: callback is nil")
 	}
 	return true
+}
+
+func (m *LauncherModule) GetButton() *gtk.Button {
+	return m.button
+}
+
+func (m *LauncherModule) SetButton(button *gtk.Button) {
+	m.button = button
 }

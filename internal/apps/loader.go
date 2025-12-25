@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -49,15 +50,13 @@ type AppLoader struct {
 
 // NewAppLoader creates a new app loader
 func NewAppLoader(cfg *config.Config) *AppLoader {
-	cacheDir := expandPath(cfg.Cache.CacheDir)
+	cacheDir := expandPath(cfg.Launcher.Cache.CacheDir)
 	if cacheDir == "" || cacheDir == "~/.cache/locus" {
 		home, _ := user.Current()
 		cacheDir = filepath.Join(home.HomeDir, ".cache", "locus")
 	}
 
-	cacheFile := filepath.Join(cacheDir, cfg.Cache.AppsCacheFile)
-
-	cacheFile := filepath.Join(cacheDir, cfg.Cache.AppsCacheFile)
+	cacheFile := filepath.Join(cacheDir, cfg.Launcher.Cache.AppsCacheFile)
 
 	return &AppLoader{
 		apps:       []App{},
@@ -111,7 +110,7 @@ func (l *AppLoader) loadFromCache() bool {
 	age := time.Since(cacheTime)
 
 	// Cache is valid if less than 6 hours old
-	if age.Hours() < float64(l.cfg.Cache.CacheMaxAgeHours) {
+	if age.Hours() < float64(l.cfg.Launcher.Performance.CacheMaxAgeHours) {
 		l.apps = cache.Apps
 		l.cacheValid = true
 		return true

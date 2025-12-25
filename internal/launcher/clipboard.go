@@ -1,7 +1,6 @@
 package launcher
 
 import (
-	"os/exec"
 	"strings"
 
 	"github.com/sigma/locus-go/internal/config"
@@ -42,14 +41,12 @@ func (l *ClipboardLauncher) Populate(query string, ctx *LauncherContext) []*Laun
 		}
 	}
 
-	cmd := exec.Command("sh", "-c", "cliphist list | head -50 | while read -r line; do echo \"$line\"; done | wl-copy -r 1")
-
 	items := []*LauncherItem{
 		{
 			Title:    "Show Clipboard History",
 			Subtitle: "List and select from clipboard history",
 			Icon:     "edit-paste",
-			Command:  cmd.String(),
+			Command:  "cliphist list | head -50 | while read -r line; do echo \"$line\"; done | wl-copy -r 1",
 		},
 	}
 

@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
+	"github.com/gotk3/gotk3/gtk"
 	"github.com/sigma/locus-go/internal/config"
 )
 
@@ -17,6 +17,7 @@ type App struct {
 	sigChan   chan os.Signal
 	statusBar *StatusBar
 	launcher  *Launcher
+	ipc       *IPCServer
 }
 
 // NewApp creates a new application
@@ -51,10 +52,8 @@ func (a *App) runMainLoop() error {
 	// Initialize components
 	a.initialize()
 
-	// Simple event loop
-	for a.running {
-		time.Sleep(100 * time.Millisecond)
-	}
+	// Start GTK main loop
+	gtk.Main()
 
 	return nil
 }
@@ -63,21 +62,34 @@ func (a *App) runMainLoop() error {
 func (a *App) initialize() {
 	log.Println("Initializing components...")
 
+	gtk.Init(nil)
+	SetupStyles()
+
 	// Create status bar
-	sb, err := NewStatusBar(a.config)
+	sb, err := NewStatusBar(a, a.config)
 	if err != nil {
 		log.Printf("Failed to create status bar: %v", err)
 	} else {
 		a.statusBar = sb
-		sb.Show()
+		if err := sb.Start(); err != nil {
+			log.Printf("Failed to start status bar: %v", err)
+		}
 	}
 
 	// Create launcher
-	l, err := NewLauncher(a.config)
+	l, err := NewLauncher(a, a.config)
 	if err != nil {
 		log.Printf("Failed to create launcher: %v", err)
 	} else {
 		a.launcher = l
+	}
+
+	// Start IPC server
+	ipc := NewIPCServer(a, a.config)
+	if err := ipc.Start(); err != nil {
+		log.Printf("Failed to start IPC server: %v", err)
+	} else {
+		a.ipc = ipc
 	}
 
 	log.Println("Initialization complete")
@@ -94,26 +106,36 @@ func (a *App) Quit() {
 
 	// Clean up
 	if a.statusBar != nil {
-		a.statusBar.Cleanup()
+		a.statusBar.Stop()
 	}
 
 	if a.launcher != nil {
-		a.launcher.Cleanup()
+		a.launcher.Stop()
 	}
+
+	if a.ipc != nil {
+		a.ipc.Stop()
+	}
+
+	// Quit GTK main loop
+	gtk.MainQuit()
 }
 
 // PresentLauncher shows the launcher
-func (a *App) PresentLauncher() {
+func (a *App) PresentLauncher() error {
 	if a.launcher != nil {
-		a.launcher.Present()
+		return a.launcher.Show()
 	}
+	return nil
 }
 
 // HideLauncher hides the launcher
-func (a *App) HideLauncher() {
+func (a *App) HideLauncher() error {
 	if a.launcher != nil {
 		a.launcher.Hide()
+		return nil
 	}
+	return nil
 }
 
 // GetConfig returns the application config
