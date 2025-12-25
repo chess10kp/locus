@@ -1,7 +1,7 @@
 """Utility modules for locus functionality."""
 
 from .calculator import sanitize_expr, evaluate_calculator
-from .bookmarks import get_bookmarks, remove_bookmark
+from .bookmarks import get_bookmarks, add_bookmark, remove_bookmark
 from .deps import (
     check_command_exists,
     check_commands_exist,
@@ -60,6 +60,7 @@ __all__ = [
     "sanitize_expr",
     "evaluate_calculator",
     "get_bookmarks",
+    "add_bookmark",
     "remove_bookmark",
     "check_command_exists",
     "check_commands_exist",

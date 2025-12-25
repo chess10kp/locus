@@ -15,6 +15,14 @@ def get_bookmarks():
     return bookmarks
 
 
+def add_bookmark(bookmark):
+    bookmarks = get_bookmarks()
+    if bookmark not in bookmarks:
+        bookmark_file = os.path.expanduser("~/.bookmarks")
+        with open(bookmark_file, "a") as f:
+            f.write(bookmark + "\n")
+
+
 def remove_bookmark(bookmark):
     bookmarks = get_bookmarks()
     if bookmark in bookmarks:

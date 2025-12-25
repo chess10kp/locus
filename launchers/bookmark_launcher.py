@@ -9,7 +9,7 @@
 
 import os
 import subprocess
-from utils import get_bookmarks, remove_bookmark
+from utils import get_bookmarks, add_bookmark, remove_bookmark
 from core.hooks import LauncherHook
 from core.launcher_registry import LauncherInterface, LauncherSizeMode
 from typing import Optional
@@ -72,16 +72,61 @@ class BookmarkHook(LauncherHook):
 
     def on_enter(self, launcher, text):
         """Handle enter key for bookmark operations."""
-        try:
-            env = os.environ.copy()
-            env.pop(
-                "MALLOC_PERTURB_", None
-            )  # Remove malloc perturb for child processes
+        if not text.startswith(">bookmark"):
+            # If it's not a bookmark command, try to open as URL
+            try:
+                env = os.environ.copy()
+                env.pop("MALLOC_PERTURB_", None)
+                subprocess.Popen(["xdg-open", text], start_new_session=True, env=env)
+            except Exception as e:
+                print(f"Failed to open URL: {e}")
+            return False
 
-            # Use xdg-open to open in the default browser
-            subprocess.Popen(["xdg-open", text], start_new_session=True, env=env)
-        except Exception as e:
-            print(f"Failed to open URL: {e}")
+        # Parse bookmark command
+        command = text[len(">bookmark") :].strip()
+        if command.startswith("add "):
+            url = command[4:].strip()
+            if url:
+                add_bookmark(url)
+                launcher.hide()
+                return True
+        elif command.startswith("remove "):
+            url = command[7:].strip()
+            if url:
+                remove_bookmark(url)
+                launcher.hide()
+                return True
+        else:
+            # Check if it's an existing bookmark or a URL to open
+            bookmarks = get_bookmarks()
+            if command in bookmarks:
+                # Open bookmark
+                try:
+                    env = os.environ.copy()
+                    env.pop("MALLOC_PERTURB_", None)
+                    env.pop("LD_PRELOAD", None)
+                    gtk_gdk_keys = [k for k in env if k.startswith(("GTK_", "GDK_"))]
+                    for key in gtk_gdk_keys:
+                        env.pop(key, None)
+                    subprocess.Popen(
+                        ["xdg-open", command], start_new_session=True, env=env
+                    )
+                except Exception as e:
+                    print(f"Failed to open bookmark: {e}")
+                launcher.hide()
+                return True
+            else:
+                # Try to open as URL
+                try:
+                    env = os.environ.copy()
+                    env.pop("MALLOC_PERTURB_", None)
+                    subprocess.Popen(
+                        ["xdg-open", command], start_new_session=True, env=env
+                    )
+                except Exception as e:
+                    print(f"Failed to open URL: {e}")
+                launcher.hide()
+                return True
         return False
 
     def on_tab(self, launcher, text):
