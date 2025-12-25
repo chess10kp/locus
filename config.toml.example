@@ -1,0 +1,30 @@
+app_name = "locus_bar"
+app_id = "com.github.sigma.locus"
+
+[status_bar]
+height = 24
+modules = ["launcher", "time"]
+
+[status_bar.colors]
+background = "#1e1e2e"
+foreground = "#cdd6f4"
+
+[status_bar.module_configs.time]
+format = "%H:%M"
+
+[launcher]
+width = 600
+
+[launcher.window]
+width = 600
+height = 400
+
+[launcher.search]
+max_results = 10
+
+[notification]
+[notification.ui]
+icon = "🔔"
+
+[file_search]
+paths = ["/home"]
