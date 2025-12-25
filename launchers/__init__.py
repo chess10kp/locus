@@ -16,6 +16,7 @@ from .file_launcher import FileLauncher, FileHook
 from .dmenu_launcher import DmenuLauncher, DmenuHook
 from .llm_launcher import LLMLauncher, LLMHook
 from .color_launcher import ColorLauncher, ColorHook
+from .keybinding_launcher import KeybindingLauncher, KeybindingHook
 # Notification launcher disabled for now
 # from .notification_launcher import NotificationLauncher, NotificationHook
 
@@ -65,6 +66,8 @@ __all__ = [
     "LLMHook",
     "ColorLauncher",
     "ColorHook",
+    "KeybindingLauncher",
+    "KeybindingHook",
     # Notification launcher disabled for now
     # "NotificationLauncher",
     # "NotificationHook",
