@@ -20,6 +20,7 @@ class LauncherUI:
 
     def __init__(self, launcher):
         self.launcher = launcher
+        self.factory = None
 
     def setup_list_view_factory(self):
         """Set up the ListItemFactory for the optimized ListView."""
@@ -180,10 +181,11 @@ class LauncherUI:
 
         # Create the signal factory
         factory = Gtk.SignalListItemFactory()
-        factory.connect("setup", setup_callback)
-        factory.connect("bind", bind_callback)
-        factory.connect("unbind", unbind_callback)
+        self.setup_handler_id = factory.connect("setup", setup_callback)
+        self.bind_handler_id = factory.connect("bind", bind_callback)
+        self.unbind_handler_id = factory.connect("unbind", unbind_callback)
 
+        self.factory = factory
         self.launcher.list_view.set_factory(factory)
 
     def setup_wallpaper_factory(self):

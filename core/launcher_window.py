@@ -126,8 +126,12 @@ class Launcher(Gtk.ApplicationWindow):
 
         # Search entry
         self.search_entry = Gtk.Entry()
-        self.search_entry.connect("changed", self.search.on_search_changed)
-        self.search_entry.connect("activate", self.on_entry_activate)
+        self.search_changed_handler_id = self.search_entry.connect(
+            "changed", self.search.on_search_changed
+        )
+        self.search_activate_handler_id = self.search_entry.connect(
+            "activate", self.on_entry_activate
+        )
         self.search_entry.set_halign(Gtk.Align.FILL)
         self.search_entry.set_hexpand(True)
 
@@ -181,12 +185,14 @@ class Launcher(Gtk.ApplicationWindow):
         # Search row with entry and button
         search_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         search_row.append(self.search_entry)
-        submit_button = Gtk.Button(label="Launch")
-        submit_button.connect("clicked", self.on_entry_activate)
-        submit_button.set_name("submit-button")
-        submit_button.add_css_class("submit-button")
-        apply_styles(submit_button, self.submit_style)
-        search_row.append(submit_button)
+        self.submit_button = Gtk.Button(label="Launch")
+        self.submit_handler_id = self.submit_button.connect(
+            "clicked", self.on_entry_activate
+        )
+        self.submit_button.set_name("submit-button")
+        self.submit_button.add_css_class("submit-button")
+        apply_styles(self.submit_button, self.submit_style)
+        search_row.append(self.submit_button)
         vbox.append(search_row)
         # Badges
         badges_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
@@ -241,19 +247,21 @@ class Launcher(Gtk.ApplicationWindow):
         self.set_child(vbox)
 
         # Handle key presses on window
-        controller = Gtk.EventControllerKey()
-        controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-        controller.connect("key-pressed", self.nav.on_key_pressed)
-        self.add_controller(controller)
+        self.controller = Gtk.EventControllerKey()
+        self.controller.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        self.key_handler_id = self.controller.connect(
+            "key-pressed", self.nav.on_key_pressed
+        )
+        self.add_controller(self.controller)
 
         # Grab focus on map
-        self.connect("map", self.on_map)
+        self.map_handler_id = self.connect("map", self.on_map)
 
         # Connect to destroy signal for cleanup
-        self.connect("destroy", self.on_destroy)
+        self.destroy_handler_id = self.connect("destroy", self.on_destroy)
 
         # Clear input field when window is hidden
-        self.connect("hide", self.on_hide)
+        self.hide_handler_id = self.connect("hide", self.on_hide)
 
         # Layer shell setup
         GtkLayerShell.init_for_window(self)
@@ -382,6 +390,7 @@ class Launcher(Gtk.ApplicationWindow):
             from launchers.web_launcher import WebLauncher
             from launchers.color_launcher import ColorLauncher
             from launchers.keybinding_launcher import KeybindingLauncher
+            from launchers.wm_launcher import WMLauncher
             # Notification launcher disabled for now
             # from launchers.notification_launcher import NotificationLauncher
 
@@ -420,6 +429,7 @@ class Launcher(Gtk.ApplicationWindow):
             register_launcher_with_check(GalleryLauncher)
             register_launcher_with_check(ColorLauncher)
             register_launcher_with_check(KeybindingLauncher)
+            register_launcher_with_check(WMLauncher)
 
             # Register builtin handlers
             if logger.isEnabledFor(logging.DEBUG):
@@ -466,6 +476,8 @@ class Launcher(Gtk.ApplicationWindow):
 
     def on_entry_activate(self, entry):
         """Handle Enter key press."""
+        if self.destroying:
+            return
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("on_entry_activate called")
 
@@ -732,6 +744,8 @@ class Launcher(Gtk.ApplicationWindow):
 
     def on_hide(self, widget):
         """Handle window hide event."""
+        if self.destroying:
+            return
         # Cancel any pending timers to prevent lag when hiding
         if self.search_timer:
             GLib.source_remove(self.search_timer)
@@ -763,6 +777,74 @@ class Launcher(Gtk.ApplicationWindow):
     def on_destroy(self, widget):
         """Clean up all resources when the launcher is destroyed."""
         self.destroying = True
+
+        # Disconnect signals to prevent warnings
+        if hasattr(self, "search_changed_handler_id"):
+            try:
+                self.search_entry.disconnect(self.search_changed_handler_id)
+            except:
+                pass
+        if hasattr(self, "search_activate_handler_id"):
+            try:
+                self.search_entry.disconnect(self.search_activate_handler_id)
+            except:
+                pass
+        if hasattr(self, "submit_handler_id"):
+            try:
+                self.submit_button.disconnect(self.submit_handler_id)
+            except:
+                pass
+        if hasattr(self, "key_handler_id"):
+            try:
+                self.controller.disconnect(self.key_handler_id)
+            except:
+                pass
+        if hasattr(self, "map_handler_id"):
+            try:
+                self.disconnect(self.map_handler_id)
+            except:
+                pass
+        if hasattr(self, "destroy_handler_id"):
+            try:
+                self.disconnect(self.destroy_handler_id)
+            except:
+                pass
+        if hasattr(self, "hide_handler_id"):
+            try:
+                self.disconnect(self.hide_handler_id)
+            except:
+                pass
+        if (
+            hasattr(self, "monitor_changed_handler_id")
+            and self.monitor_changed_handler_id
+        ):
+            try:
+                from gi.repository import Gdk
+
+                display = Gdk.Display.get_default()
+                if display:
+                    monitors = display.get_monitors()
+                    monitors.disconnect(self.monitor_changed_handler_id)
+            except:
+                pass
+
+        # Disconnect factory signals
+        if hasattr(self.ui, "factory") and self.ui.factory:
+            try:
+                if hasattr(self.ui, "setup_handler_id"):
+                    self.ui.factory.disconnect(self.ui.setup_handler_id)
+            except:
+                pass
+            try:
+                if hasattr(self.ui, "bind_handler_id"):
+                    self.ui.factory.disconnect(self.ui.bind_handler_id)
+            except:
+                pass
+            try:
+                if hasattr(self.ui, "unbind_handler_id"):
+                    self.ui.factory.disconnect(self.ui.unbind_handler_id)
+            except:
+                pass
 
         # Cancel any pending operations
         if self.search_timer:
@@ -947,7 +1029,7 @@ def show_lock_screen(launcher_instance):
 
     # Handle monitor changes
     def on_monitors_changed(model, position, removed, added):
-        if not launcher_instance.lock_screens:
+        if not launcher_instance.lock_screens or launcher_instance.destroying:
             return
         # Recreate lock screens for new monitor configuration
         unlock_all()  # Destroy existing

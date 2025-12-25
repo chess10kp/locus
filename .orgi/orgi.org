@@ -457,7 +457,7 @@
 
   
 
-* TODO [#B] smarter launcher detection (like bcalc and currency detection) :ux:
+* DONE [#B] smarter launcher detection (like bcalc and currency detection) :ux:
   :PROPERTIES:
   :ID: task-20251224004931
   :TITLE: smarter launcher detection (like bcalc and currency detection)
@@ -538,7 +538,7 @@
 
   
 
-* TODO music launcher highlights the text once it goes back to mpd mode after selcting something
+* DONE music launcher highlights the text once it goes back to mpd mode after selcting something
   :PROPERTIES:
   :ID: task-20251224183045
   :TITLE: music launcher highlights the text once it goes back to mpd mode after selcting something
@@ -547,11 +547,47 @@
 
   
 
-* TODO bookmark add and bookmark remove do not work
+* DONE bookmark add and bookmark remove do not work
   :PROPERTIES:
   :ID: task-20251224212904
   :TITLE: bookmark add and bookmark remove do not work
   :CREATED: <2025-12-24 Wed 21:29>
+  :END:
+
+  
+
+* TODO invert sway keybinds
+  :PROPERTIES:
+  :ID: task-20251224220922
+  :TITLE: invert sway keybinds
+  :CREATED: <2025-12-24 Wed 22:09>
+  :END:
+
+  
+
+* TODO [#A] screenshots + recordings
+  :PROPERTIES:
+  :ID: task-20251224221002
+  :TITLE: screenshots + recordings
+  :CREATED: <2025-12-24 Wed 22:10>
+  :END:
+
+  
+
+* TODO move power managfement to its own launcher
+  :PROPERTIES:
+  :ID: task-20251224221150
+  :TITLE: move power managfement to its own launcher
+  :CREATED: <2025-12-24 Wed 22:11>
+  :END:
+
+  
+
+* TODO timeout for notifications
+  :PROPERTIES:
+  :ID: task-20251224221238
+  :TITLE: timeout for notifications
+  :CREATED: <2025-12-24 Wed 22:12>
   :END:
 
   

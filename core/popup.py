@@ -32,8 +32,13 @@ class Popup(Gtk.ApplicationWindow):
         )
 
         self.entry = Gtk.Entry()
-        self.entry.connect("activate", self.on_entry_activate)
+        self.entry_activate_handler_id = self.entry.connect(
+            "activate", self.on_entry_activate
+        )
         self.set_child(self.entry)
+
+        # Disconnect signal when hidden to prevent issues
+        self.connect("hide", self.on_hide)
 
         GtkLayerShell.init_for_window(self)
         GtkLayerShell.set_layer(self, GtkLayerShell.Layer.TOP)
@@ -69,6 +74,17 @@ class Popup(Gtk.ApplicationWindow):
                 pass
         self.hide()
 
+    def on_hide(self, widget):
+        # Disconnect signal when hidden
+        try:
+            self.entry.disconnect(self.entry_activate_handler_id)
+        except:
+            pass
+
     def show_popup(self):
+        # Reconnect signal each time shown
+        self.entry_activate_handler_id = self.entry.connect(
+            "activate", self.on_entry_activate
+        )
         self.show()
         self.entry.grab_focus()

@@ -36,62 +36,109 @@ This will monitor clipboard changes and store them in cliphist's database.
 - Select an item to copy it to clipboard
 - Each item shows a preview (up to 100 characters) and timestamp
 
-## Adding a New Statusbar Module
+## Statusbar Modules
+
+The Locus statusbar features a modular, plugin-like architecture that makes it easy to add custom modules without modifying core code.
+
+### Overview
+
+The Go implementation provides a flexible module system with:
+- **Type-safe interfaces**: Compile-time guarantees with Go interfaces
+- **Event-driven updates**: Socket and IPC event listeners for real-time updates
+- **Flexible configuration**: TOML-based configuration per module
+- **CSS styling**: Full CSS class support for theming
+- **Multiple update modes**: STATIC, PERIODIC, EVENT_DRIVEN, and ON_DEMAND
+
+### Built-in Modules
+
+- **TimeModule**: Display current time (PERIODIC)
+- **BatteryModule**: Show battery status and percentage (PERIODIC)
+- **WorkspacesModule**: Display workspace indicators from window manager (EVENT_DRIVEN)
+- **LauncherModule**: Button to trigger application launcher (STATIC)
+- **CustomMessageModule**: Display custom messages via IPC (ON_DEMAND)
+
+### Adding New Modules
 
 To add a new module to the statusbar:
 
-1. Create a new Python file in `modules/statusbar/` that implements `StatusbarModuleInterface` from `core/statusbar_interface.py`.
+1. Create a new Go file in `internal/statusbar/modules/`
+2. Implement the `Module` interface from `internal/statusbar/interface.go`
+3. Create a `ModuleFactory` for your module
+4. Auto-register your factory in the `init()` function
+5. Configure your module in the TOML config file
 
-2. Your module class must implement the following abstract methods:
-   - `name`: Return a unique string identifier
-   - `update_mode`: Return the update mode (STATIC, PERIODIC, EVENT_DRIVEN, or ON_DEMAND)
-   - `create_widget()`: Create and return a GTK widget
-   - `update(widget)`: Update the widget's content
-   - `get_size_mode()`: Return size mode and optional custom size
+For detailed documentation on the statusbar module architecture, including step-by-step guides and examples, see [STATUSBAR_ARCHITECTURE.md](docs/STATUSBAR_ARCHITECTURE.md).
 
-3. Optional methods you can override:
-   - `update_interval`: For PERIODIC modules, return interval in seconds
-   - `get_styles()`: Return CSS styles for the module
-   - `handles_clicks()` and `handle_click()`: For click handling
-   - `handles_ipc_messages()` and `handle_ipc_message()`: For IPC message handling
-   - `cleanup()`: Clean up resources when unregistered
+### Quick Example
 
-4. Add your module to `modules/statusbar/__init__.py`:
-   - Import your new module class
-   - Add an instance to the `modules` list in `auto_register_modules()`
-   - Add the class name to the `__all__` list
+```go
+package modules
 
-5. Example module structure:
-
-```python
-from core.statusbar_interface import (
-    StatusbarModuleInterface,
-    StatusbarUpdateMode,
-    StatusbarSizeMode,
+import (
+    "github.com/gotk3/gotk3/gtk"
+    "github.com/sigma/locus-go/internal/statusbar"
 )
 
-class MyModule(StatusbarModuleInterface):
-    @property
-    def name(self) -> str:
-        return "my_module"
+type MyModule struct {
+    *statusbar.BaseModule
+    widget *gtk.Label
+    data   string
+}
 
-    @property
-    def update_mode(self) -> StatusbarUpdateMode:
-        return StatusbarUpdateMode.STATIC
+func NewMyModule() *MyModule {
+    return &MyModule{
+        BaseModule: statusbar.NewBaseModule("my_module", statusbar.UpdateModePeriodic),
+        data:       "Hello World",
+    }
+}
 
-    def create_widget(self) -> Gtk.Widget:
-        label = Gtk.Label()
-        self.update(label)
-        return label
+func (m *MyModule) CreateWidget() (gtk.IWidget, error) {
+    label, _ := gtk.LabelNew(m.data)
+    m.widget = label
+    return label, nil
+}
 
-    def update(self, widget: Gtk.Widget) -> None:
-        widget.set_text("Hello World")
+func (m *MyModule) UpdateWidget(widget gtk.IWidget) error {
+    if label, ok := widget.(*gtk.Label); ok {
+        label.SetText(m.data)
+    }
+    return nil
+}
 
-    def get_size_mode(self):
-        return StatusbarSizeMode.DEFAULT, None
+func init() {
+    registry := statusbar.DefaultRegistry()
+    factory := &MyModuleFactory{}
+    registry.RegisterFactory(factory)
+}
 ```
 
-6. The module will be automatically registered when the application starts.
+### Configuration
+
+Modules are configured in `config.toml`:
+
+```toml
+[status_bar]
+height = 20
+modules = ["time", "battery", "my_module"]
+
+[status_bar.module_configs.time]
+format = "%H:%M:%S"
+interval = 1
+css_classes = ["time-module"]
+
+[status_bar.module_configs.my_module]
+data = "Custom Value"
+interval = 10
+css_classes = ["my-module"]
+```
+
+See [STATUSBAR_ARCHITECTURE.md](docs/STATUSBAR_ARCHITECTURE.md) for comprehensive documentation on:
+- Module interface and lifecycle
+- Event listener system
+- Creating custom modules
+- Event-driven modules
+- Styling and theming
+- Best practices and troubleshooting
 
 # Acknowledgements
 

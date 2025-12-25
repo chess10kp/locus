@@ -28,9 +28,43 @@ type StatusBarConfig struct {
 }
 
 type ModuleConfig struct {
-	Interval int    `toml:"interval"`
-	Format   string `toml:"format"`
-	Enabled  bool   `toml:"enabled"`
+	Interval   int                    `toml:"interval"`
+	Format     string                 `toml:"format"`
+	Enabled    bool                   `toml:"enabled"`
+	CSSClasses []string               `toml:"css_classes"`
+	Styles     string                 `toml:"styles"`
+	Properties map[string]interface{} `toml:"properties"`
+}
+
+// ToMap converts ModuleConfig to map[string]interface{} for use with modules
+func (c *ModuleConfig) ToMap() map[string]interface{} {
+	result := make(map[string]interface{})
+
+	if c.Interval > 0 {
+		result["interval"] = c.Interval
+	}
+
+	if c.Format != "" {
+		result["format"] = c.Format
+	}
+
+	result["enabled"] = c.Enabled
+
+	if len(c.CSSClasses) > 0 {
+		result["css_classes"] = c.CSSClasses
+	}
+
+	if c.Styles != "" {
+		result["styles"] = c.Styles
+	}
+
+	if len(c.Properties) > 0 {
+		for k, v := range c.Properties {
+			result[k] = v
+		}
+	}
+
+	return result
 }
 
 type LauncherConfig struct {

@@ -355,7 +355,6 @@ METADATA.update(
         "web": "Web search",
         "file": "File search",
         "f": "File search",
-        "ai": "AI Chat Assistant",
     }
 )
 

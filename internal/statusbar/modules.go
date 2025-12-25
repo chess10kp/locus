@@ -1,10 +1,8 @@
 package statusbar
 
 import (
-	"log"
 	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/sigma/locus-go/internal/config"
 )
 
@@ -27,31 +25,6 @@ func (w WidgetType) String() string {
 type Widget struct {
 	Type  WidgetType
 	Value string
-}
-
-// UpdateMode represents how a module updates
-type UpdateMode int
-
-const (
-	UpdateModeStatic UpdateMode = iota
-	UpdateModePeriodic
-	UpdateModeEventDriven
-	UpdateModeOnDemand
-)
-
-// Module is the interface that all status bar modules must implement
-type Module interface {
-	Name() string
-	UpdateMode() UpdateMode
-	UpdateInterval() time.Duration
-	CreateWidget() *Widget
-	Update(widget *Widget)
-	Cleanup()
-	GetStyles() string
-	HandlesClicks() bool
-	HandleClick(widget *Widget) bool
-	HandlesIPC() bool
-	HandleIPC(message string) bool
 }
 
 // SimpleModule is a base implementation for simple modules
@@ -293,56 +266,4 @@ func (m *NotificationModule) Update(widget *Widget) {
 
 func (m *NotificationModule) SetCount(count int) {
 	m.count = count
-}
-
-// LauncherModule - launcher trigger button
-type LauncherModule struct {
-	SimpleModule
-	callback LauncherCallback
-	button   *gtk.Button
-}
-
-func NewLauncherModule(callback LauncherCallback) *LauncherModule {
-	return &LauncherModule{
-		SimpleModule: SimpleModule{
-			name:       "launcher",
-			updateMode: UpdateModeStatic,
-			interval:   0,
-			styles:     "#launcher-module { padding: 0 4px; }",
-		},
-		callback: callback,
-		button:   nil,
-	}
-}
-
-func (m *LauncherModule) CreateWidget() *Widget {
-	return &Widget{
-		Type:  WidgetTypeButton,
-		Value: "Launcher",
-	}
-}
-
-func (m *LauncherModule) Update(widget *Widget) {}
-
-func (m *LauncherModule) HandlesClicks() bool {
-	return true
-}
-
-func (m *LauncherModule) HandleClick(widget *Widget) bool {
-	log.Printf("LauncherModule.HandleClick called: widget=%+v", widget)
-	if m.callback != nil {
-		log.Printf("LauncherModule.HandleClick: Calling PresentLauncher")
-		m.callback.PresentLauncher()
-	} else {
-		log.Printf("LauncherModule.HandleClick: callback is nil")
-	}
-	return true
-}
-
-func (m *LauncherModule) GetButton() *gtk.Button {
-	return m.button
-}
-
-func (m *LauncherModule) SetButton(button *gtk.Button) {
-	m.button = button
 }
