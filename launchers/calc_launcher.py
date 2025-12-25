@@ -56,10 +56,25 @@ class CalcLauncher(LauncherInterface):
         Returns:
             Tuple of (available, error_message)
         """
+        import subprocess
         from utils import check_clipboard
 
         if not check_clipboard():
             return False, "clipboard utility (wl-copy or xclip) not found"
+
+        # Check if qalculate is available
+        try:
+            subprocess.run(
+                ["qalc", "--version"], capture_output=True, check=True, timeout=5
+            )
+        except (
+            subprocess.CalledProcessError,
+            FileNotFoundError,
+            subprocess.TimeoutExpired,
+        ):
+            # qalc not available, but we can still use fallback
+            pass
+
         return True, ""
 
     def __init__(self, main_launcher=None):
@@ -105,7 +120,6 @@ class CalcLauncher(LauncherInterface):
                 metadata,
                 index=1,
                 action_data=result,
-                icon_name="accessories-calculator",
             )
             # Scroll to top
             vadj = launcher_core.scrolled.get_vadjustment()

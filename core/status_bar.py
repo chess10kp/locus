@@ -266,7 +266,10 @@ class StatusBar(Gtk.ApplicationWindow):
                         # Special handling for launcher command
                         if data == "launcher":
                             if self.launcher:
-                                self.launcher.present()
+                                try:
+                                    self.launcher.present()
+                                except Exception as e:
+                                    print(f"Error presenting launcher: {e}")
                             handled = True
                         elif data == "launcher:resume":
                             if self.launcher:
@@ -274,7 +277,10 @@ class StatusBar(Gtk.ApplicationWindow):
                                 result = self.launcher.resume_launcher()
                                 # If resume failed (no state), still show the launcher
                                 if not result:
-                                    self.launcher.present()
+                                    try:
+                                        self.launcher.present()
+                                    except Exception as e:
+                                        print(f"Error presenting launcher: {e}")
                             handled = True
                         elif data == "launcher:fresh":
                             if self.launcher:
@@ -292,7 +298,10 @@ class StatusBar(Gtk.ApplicationWindow):
                                 if dmenu_launcher:
                                     dmenu_launcher.set_options(options)
                                     self.launcher.search_entry.set_text(">dmenu")
-                                    self.launcher.present()
+                                    try:
+                                        self.launcher.present()
+                                    except Exception as e:
+                                        print(f"Error presenting launcher: {e}")
                                     self.launcher.on_entry_activate(
                                         self.launcher.search_entry
                                     )
@@ -304,14 +313,20 @@ class StatusBar(Gtk.ApplicationWindow):
                                 if data.startswith("launcher "):
                                     command = data[8:]  # Remove "launcher " prefix
                                     self.launcher.search_entry.set_text(command)
-                                    self.launcher.present()
+                                    try:
+                                        self.launcher.present()
+                                    except Exception as e:
+                                        print(f"Error presenting launcher: {e}")
                                     self.launcher.on_entry_activate(
                                         self.launcher.search_entry
                                     )
                                 else:
                                     # Direct command starting with >
                                     self.launcher.search_entry.set_text(data)
-                                    self.launcher.present()
+                                    try:
+                                        self.launcher.present()
+                                    except Exception as e:
+                                        print(f"Error presenting launcher: {e}")
                                     self.launcher.on_entry_activate(
                                         self.launcher.search_entry
                                     )
@@ -338,7 +353,10 @@ class StatusBar(Gtk.ApplicationWindow):
 
     def on_launcher_clicked(self, button):
         """Handle launcher button click."""
-        self.launcher.present()
+        try:
+            self.launcher.present()
+        except Exception as e:
+            print(f"Error presenting launcher: {e}")
 
     def cleanup(self):
         """Clean up resources when the statusbar is destroyed."""
