@@ -3,7 +3,6 @@ package modules
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -19,12 +18,33 @@ type Workspace struct {
 	Name    string `json:"name"`
 	Focused bool   `json:"focused"`
 	Visible bool   `json:"visible"`
-	Num     int    `json:"num"`
+	Num     int64  `json:"num"`
 	Output  string `json:"output"`
 }
 
 // getWorkspacesFromSway gets workspaces from sway IPC
 func getWorkspacesFromSway() ([]Workspace, error) {
+	// Try using go-sway library first
+	ctx := context.Background()
+	client, err := sway.New(ctx)
+	if err == nil {
+		swayWorkspaces, err := client.GetWorkspaces(ctx)
+		if err == nil {
+			workspaces := make([]Workspace, len(swayWorkspaces))
+			for i, ws := range swayWorkspaces {
+				workspaces[i] = Workspace{
+					Name:    ws.Name,
+					Focused: ws.Focused,
+					Visible: ws.Visible,
+					Num:     ws.Num,
+					Output:  ws.Output,
+				}
+			}
+			return workspaces, nil
+		}
+	}
+
+	// Fallback to swaymsg command
 	env := os.Environ()
 	// Remove LD_PRELOAD to avoid child process issues
 	for i, e := range env {
@@ -55,97 +75,15 @@ type WorkspacesModule struct {
 	widget       *gtk.Label
 	workspaces   []string
 	focusedIndex int
-	swayClient   sway.Client
-	ctx          context.Context
-	cancel       context.CancelFunc
-}
-
-// SwayEventListener handles sway workspace events
-type SwayEventListener struct {
-	client  sway.Client
-	ctx     context.Context
-	cancel  context.CancelFunc
-	handler func(sway.Event)
-	running bool
-}
-
-func NewSwayEventListener() *SwayEventListener {
-	ctx, cancel := context.WithCancel(context.Background())
-	return &SwayEventListener{
-		ctx:     ctx,
-		cancel:  cancel,
-		running: false,
-	}
-}
-
-func (l *SwayEventListener) SetHandler(handler func(sway.Event)) {
-	l.handler = handler
-}
-
-func (l *SwayEventListener) Start(callback func()) error {
-	if l.running {
-		return fmt.Errorf("sway event listener is already running")
-	}
-
-	client, err := sway.New(l.ctx)
-	if err != nil {
-		return fmt.Errorf("failed to connect to sway: %w", err)
-	}
-
-	l.client = client
-
-	recv, err := client.Subscribe(l.ctx, sway.EventTypeWorkspace)
-	if err != nil {
-		return fmt.Errorf("failed to subscribe to workspace events: %w", err)
-	}
-
-	l.running = true
-
-	go func() {
-		defer func() { l.running = false }()
-		for {
-			select {
-			case <-l.ctx.Done():
-				return
-			case event := <-recv:
-				if l.handler != nil {
-					l.handler(event)
-				}
-				if callback != nil {
-					callback()
-				}
-			}
-		}
-	}()
-
-	return nil
-}
-
-func (l *SwayEventListener) Stop() error {
-	l.cancel()
-	l.running = false
-	return nil
-}
-
-func (l *SwayEventListener) Cleanup() {
-	l.Stop()
-}
-
-func (l *SwayEventListener) IsRunning() bool {
-	return l.running
 }
 
 // NewWorkspacesModule creates a new workspaces module
 func NewWorkspacesModule() *WorkspacesModule {
-	ctx, cancel := context.WithCancel(context.Background())
 	return &WorkspacesModule{
-		BaseModule:   statusbar.NewBaseModule("workspaces", statusbar.UpdateModeEventDriven),
+		BaseModule:   statusbar.NewBaseModule("workspaces", statusbar.UpdateModePeriodic),
 		widget:       nil,
 		workspaces:   []string{"1", "2", "3", "4", "5"},
 		focusedIndex: 0,
-		swayClient:   nil,
-		ctx:          ctx,
-		cancel:       cancel,
 	}
 }
 
@@ -188,7 +126,7 @@ func (m *WorkspacesModule) UpdateWidget(widget gtk.IWidget) error {
 		for i, ws := range workspaces {
 			m.workspaces[i] = ws.Name
 			if ws.Focused {
-				m.focusedIndex = i
+				m.focusedIndex = int(ws.Num) - 1 // Assuming workspaces start from 1
 			}
 		}
 	}
@@ -212,67 +150,6 @@ func (m *WorkspacesModule) Initialize(config map[string]interface{}) error {
 	m.SetCSSClasses([]string{"workspaces-module"})
 
 	return nil
-}
-
-// SetupEventListeners sets up sway event listeners
-func (m *WorkspacesModule) SetupEventListeners() ([]statusbar.EventListener, error) {
-	client, err := sway.New(m.ctx)
-	if err != nil {
-		log.Printf("WorkspacesModule: Failed to connect to sway: %v", err)
-		return nil, err
-	}
-
-	m.swayClient = client
-
-	// Subscribe to workspace events
-	recv, err := client.Subscribe(m.ctx, sway.EventTypeWorkspace)
-	if err != nil {
-		log.Printf("WorkspacesModule: Failed to subscribe to workspace events: %v", err)
-		return nil, err
-	}
-
-	// Start listening in a goroutine
-	go func() {
-		for {
-			select {
-			case <-m.ctx.Done():
-				return
-			case event := <-recv:
-				m.handleWorkspaceEvent(event)
-			}
-		}
-	}()
-
-	// Also create a custom event listener for cleanup
-	return []statusbar.EventListener{m}, nil
-}
-
-// handleSocketEvent handles socket events
-func (m *WorkspacesModule) handleSocketEvent(event string) {
-	lines := strings.Split(event, "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "workspace") {
-			m.handleWorkspaceEvent(line)
-		}
-	}
-}
-
-// handleWorkspaceEvent handles a workspace event
-func (m *WorkspacesModule) handleWorkspaceEvent(event string) {
-	if strings.Contains(event, "focused") {
-		parts := strings.Fields(event)
-		for i, part := range parts {
-			if part == "workspace" && i+1 < len(parts) {
-				workspaceNum := parts[i+1]
-				for idx, ws := range m.workspaces {
-					if ws == workspaceNum {
-						m.focusedIndex = idx
-						break
-					}
-				}
-			}
-		}
-	}
 }
 
 // formatWorkspaces formats workspaces for display
@@ -308,15 +185,6 @@ func (m *WorkspacesModule) SetFocusedIndex(index int) {
 	}
 }
 
-// Cleanup cleans up resources
-func (m *WorkspacesModule) Cleanup() error {
-	if m.socketListener != nil {
-		m.socketListener.Cleanup()
-		m.socketListener = nil
-	}
-	return m.BaseModule.Cleanup()
-}
-
 // WorkspacesModuleFactory is a factory for creating WorkspacesModule instances
 type WorkspacesModuleFactory struct{}
 
@@ -337,9 +205,8 @@ func (f *WorkspacesModuleFactory) ModuleName() string {
 // DefaultConfig returns the default configuration
 func (f *WorkspacesModuleFactory) DefaultConfig() map[string]interface{} {
 	return map[string]interface{}{
-		"socket_path": "",
 		"show_labels": true,
-		"interval":    "5s",
+		"interval":    "1s",
 		"css_classes": []string{"workspaces-module"},
 	}
 }

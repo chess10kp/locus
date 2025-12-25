@@ -133,62 +133,6 @@ func (m *WorkspacesModule) Update(widget *Widget) {
 	// TODO: Get workspaces from WM client
 }
 
-// BindingModeModule - displays Sway binding mode
-type BindingModeModule struct {
-	SimpleModule
-}
-
-func NewBindingModeModule() *BindingModeModule {
-	return &BindingModeModule{
-		SimpleModule: SimpleModule{
-			name:       "binding_mode",
-			updateMode: UpdateModeEventDriven,
-			interval:   time.Second,
-			styles:     "#binding-mode-label { padding: 0 4px; }",
-		},
-	}
-}
-
-func (m *BindingModeModule) CreateWidget() *Widget {
-	return &Widget{
-		Type:  WidgetTypeLabel,
-		Value: "",
-	}
-}
-
-func (m *BindingModeModule) Update(widget *Widget) {
-	// TODO: Get binding mode from WM client
-}
-
-// EmacsClockModule - displays Emacs org-mode clock
-type EmacsClockModule struct {
-	SimpleModule
-	fallbackText string
-}
-
-func NewEmacsClockModule(cfg *config.Config) *EmacsClockModule {
-	return &EmacsClockModule{
-		SimpleModule: SimpleModule{
-			name:       "emacs_clock",
-			updateMode: UpdateModePeriodic,
-			interval:   10 * time.Second,
-			styles:     "#emacs-clock-label { padding: 0 4px; }",
-		},
-		fallbackText: "Not clocked in",
-	}
-}
-
-func (m *EmacsClockModule) CreateWidget() *Widget {
-	return &Widget{
-		Type:  WidgetTypeLabel,
-		Value: m.fallbackText,
-	}
-}
-
-func (m *EmacsClockModule) Update(widget *Widget) {
-	widget.Value = m.fallbackText
-}
-
 // CustomMessageModule - displays custom messages via IPC
 type CustomMessageModule struct {
 	SimpleModule
@@ -225,45 +169,4 @@ func (m *CustomMessageModule) HandlesIPC() bool {
 func (m *CustomMessageModule) HandleIPC(message string) bool {
 	m.message = message
 	return true
-}
-
-// NotificationModule - displays notification count
-type NotificationModule struct {
-	SimpleModule
-	count  int
-	config *config.Config
-}
-
-func NewNotificationModule(cfg *config.Config) *NotificationModule {
-	return &NotificationModule{
-		SimpleModule: SimpleModule{
-			name:       "notifications",
-			updateMode: UpdateModeEventDriven,
-			interval:   0,
-			styles:     "#notification-label { padding: 0 4px; }",
-		},
-		count:  0,
-		config: cfg,
-	}
-}
-
-func (m *NotificationModule) CreateWidget() *Widget {
-	icon := "N"
-	if m.config != nil && m.config.Notification.UI.Icon != "" {
-		icon = m.config.Notification.UI.Icon
-	}
-
-	return &Widget{
-		Type:  WidgetTypeLabel,
-		Value: icon,
-	}
-}
-
-func (m *NotificationModule) Update(widget *Widget) {
-	// Display count or icon
-	// This would be updated by notification store events
-}
-
-func (m *NotificationModule) SetCount(count int) {
-	m.count = count
 }
