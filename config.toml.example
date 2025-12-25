@@ -2,7 +2,7 @@ app_name = "locus_bar"
 app_id = "com.github.sigma.locus"
 
 [status_bar]
-height = 24
+height = 40
 modules = ["launcher", "time"]
 
 [status_bar.colors]

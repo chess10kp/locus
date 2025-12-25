@@ -182,7 +182,7 @@ class Launcher(Gtk.ApplicationWindow):
         vbox.set_margin_bottom(12)
         vbox.set_margin_start(12)
         vbox.set_margin_end(12)
-        # Search row with entry and button
+        # Search row with entry and buttons
         search_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         search_row.append(self.search_entry)
         self.submit_button = Gtk.Button(label="Launch")
@@ -193,6 +193,14 @@ class Launcher(Gtk.ApplicationWindow):
         self.submit_button.add_css_class("submit-button")
         apply_styles(self.submit_button, self.submit_style)
         search_row.append(self.submit_button)
+        self.hide_button = Gtk.Button(label="Hide")
+        self.hide_button_handler_id = self.hide_button.connect(
+            "clicked", lambda btn: self.hide()
+        )
+        self.hide_button.set_name("hide-button")
+        self.hide_button.add_css_class("hide-button")
+        apply_styles(self.hide_button, self.submit_style)  # Reuse the same style
+        search_row.append(self.hide_button)
         vbox.append(search_row)
         # Badges
         badges_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
@@ -792,6 +800,11 @@ class Launcher(Gtk.ApplicationWindow):
         if hasattr(self, "submit_handler_id"):
             try:
                 self.submit_button.disconnect(self.submit_handler_id)
+            except:
+                pass
+        if hasattr(self, "hide_button_handler_id"):
+            try:
+                self.hide_button.disconnect(self.hide_button_handler_id)
             except:
                 pass
         if hasattr(self, "key_handler_id"):

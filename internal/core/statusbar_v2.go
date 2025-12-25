@@ -66,14 +66,24 @@ func (sb *StatusBar) Start() error {
 	}
 
 	sb.window.SetTitle(sb.config.AppName)
-	sb.window.SetDecorated(false)
-	sb.window.SetResizable(false)
 	sb.window.SetName("statusbar")
 
 	height := sb.config.StatusBar.Height
 	if height > 0 {
-		sb.window.SetDefaultSize(-1, height)
+		sb.window.SetSizeRequest(-1, height)
+		log.Printf("Setting size request to -1, %d", height)
 	}
+
+	// Initialize layer shell
+	layer.InitForWindow(unsafe.Pointer(sb.window.GObject))
+	layer.SetAnchor(unsafe.Pointer(sb.window.GObject), layer.EdgeLeft, true)
+	layer.SetAnchor(unsafe.Pointer(sb.window.GObject), layer.EdgeRight, true)
+	layer.SetAnchor(unsafe.Pointer(sb.window.GObject), layer.EdgeTop, true)
+	layer.SetMargin(unsafe.Pointer(sb.window.GObject), layer.EdgeTop, 0)
+	layer.SetLayer(unsafe.Pointer(sb.window.GObject), layer.LayerTop)
+	layer.SetExclusiveZone(unsafe.Pointer(sb.window.GObject), height)
+	layer.SetKeyboardMode(unsafe.Pointer(sb.window.GObject), layer.KeyboardModeNone)
+	log.Printf("LayerShell configured")
 
 	if err := sb.loadModules(); err != nil {
 		return fmt.Errorf("failed to load modules: %w", err)
@@ -81,10 +91,6 @@ func (sb *StatusBar) Start() error {
 
 	if err := sb.createWidgets(); err != nil {
 		return fmt.Errorf("failed to create widgets: %w", err)
-	}
-
-	if err := sb.setupLayerShell(); err != nil {
-		return fmt.Errorf("failed to setup layer shell: %w", err)
 	}
 
 	if err := sb.scheduler.Start(); err != nil {
@@ -148,9 +154,11 @@ func (sb *StatusBar) HandleIPC(msg string) error {
 
 func (sb *StatusBar) loadModules() error {
 	modulesConfig := sb.config.StatusBar.Modules
+	log.Printf("Loading modules, config: %v", modulesConfig)
 
 	for _, moduleName := range modulesConfig {
 		moduleConfig := sb.config.StatusBar.ModuleConfigs[moduleName]
+		log.Printf("Loading module '%s' with config: %v", moduleName, moduleConfig)
 
 		var module statusbar.Module
 		var err error
@@ -158,8 +166,13 @@ func (sb *StatusBar) loadModules() error {
 		if moduleName == "launcher" {
 			launcherFactory := statusbarModules.NewLauncherModuleFactory(sb.app)
 			module, err = launcherFactory.CreateModule(moduleConfig.ToMap())
-			if err == nil {
-				sb.registry.RegisterModule(module)
+			if err != nil {
+				log.Printf("Failed to create launcher module: %v", err)
+				continue
+			}
+			if err := sb.registry.RegisterModule(module); err != nil {
+				log.Printf("Failed to register launcher module: %v", err)
+				continue
 			}
 		} else {
 			module, err = sb.registry.CreateModule(moduleName, moduleConfig.ToMap())
@@ -174,7 +187,7 @@ func (sb *StatusBar) loadModules() error {
 			}
 		}
 
-		log.Printf("Loaded module: %s", moduleName)
+		log.Printf("Successfully loaded module: %s", moduleName)
 	}
 
 	return nil
@@ -183,8 +196,10 @@ func (sb *StatusBar) loadModules() error {
 func (sb *StatusBar) createWidgets() error {
 	sb.widgets = make(map[string]gtk.IWidget)
 	modules := sb.registry.ListModules()
+	log.Printf("Creating widgets for %d modules", len(modules))
 
 	for _, moduleName := range modules {
+		log.Printf("Creating widget for module: %s", moduleName)
 		widget, err := sb.registry.CreateWidgetForModule(moduleName)
 		if err != nil {
 			log.Printf("Failed to create widget for module '%s': %v", moduleName, err)
@@ -198,23 +213,8 @@ func (sb *StatusBar) createWidgets() error {
 		sb.widgets[moduleName] = widget
 		sb.container.PackStart(widget, false, false, 0)
 
-		log.Printf("Created widget for module: %s", moduleName)
+		log.Printf("Successfully created widget for module: %s", moduleName)
 	}
-
-	return nil
-}
-
-func (sb *StatusBar) setupLayerShell() error {
-	nativePtr := unsafe.Pointer(sb.window.Native())
-	layer.InitForWindow(nativePtr)
-	layer.SetLayer(nativePtr, layer.LayerTop)
-	layer.SetAnchor(nativePtr, layer.EdgeLeft, true)
-	layer.SetAnchor(nativePtr, layer.EdgeRight, true)
-	layer.SetAnchor(nativePtr, layer.EdgeTop, true)
-	layer.AutoExclusiveZoneEnable(nativePtr)
-	layer.SetKeyboardMode(nativePtr, layer.KeyboardModeNone)
-
-	fmt.Printf("Statusbar: enabled auto-exclusive zone\n")
 
 	return nil
 }

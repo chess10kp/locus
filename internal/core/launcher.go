@@ -25,6 +25,7 @@ type Launcher struct {
 	window       *gtk.Window
 	searchEntry  *gtk.Entry
 	resultList   *gtk.ListBox
+	hideButton   *gtk.Button
 	registry     *launcher.LauncherRegistry
 	currentInput string
 	currentItems []*launcher.LauncherItem
@@ -60,7 +61,23 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	searchEntry.SetPlaceholderText("Search or type a command...")
 	searchEntry.SetName("launcher-entry")
-	box.PackStart(searchEntry, false, false, 0)
+
+	// Create horizontal box for search entry and buttons
+	hbox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 5)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create hbox: %w", err)
+	}
+	hbox.PackStart(searchEntry, true, true, 0)
+
+	// Create hide button
+	hideButton, err := gtk.ButtonNewWithLabel("Hide")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create hide button: %w", err)
+	}
+	hideButton.SetName("hide-button")
+	hbox.PackStart(hideButton, false, false, 0)
+
+	box.PackStart(hbox, false, false, 0)
 
 	scrolledWindow, err := gtk.ScrolledWindowNew(nil, nil)
 	if err != nil {
@@ -86,10 +103,16 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		window:      window,
 		searchEntry: searchEntry,
 		resultList:  resultList,
+		hideButton:  hideButton,
 		registry:    registry,
 	}
 
 	l.setupSignals()
+
+	// Connect hide button
+	hideButton.Connect("clicked", func() {
+		l.Hide()
+	})
 
 	return l, nil
 }

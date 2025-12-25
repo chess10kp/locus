@@ -208,7 +208,7 @@ var DefaultConfig = Config{
 	CacheDir:   "~/.cache/locus",
 	ConfigDir:  "~/.config/locus",
 	StatusBar: StatusBarConfig{
-		Height: 20,
+		Height: 40,
 		Modules: []string{
 			"launcher",
 			"workspaces",

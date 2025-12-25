@@ -94,7 +94,7 @@ def on_activate(app: Gtk.Application):
 
         status_win.set_size_request(geometry.width, BAR_HEIGHT)
 
-        GtkLayerShell.auto_exclusive_zone_enable(status_win)
+        GtkLayerShell.set_exclusive_zone(status_win, BAR_HEIGHT)
 
         status_win.present()
         status_bars.append(status_win)
@@ -127,7 +127,7 @@ def on_activate(app: Gtk.Application):
                 GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.RIGHT, 0)
                 GtkLayerShell.set_margin(status_win, GtkLayerShell.Edge.TOP, 0)
                 status_win.set_size_request(geometry.width, BAR_HEIGHT)
-                GtkLayerShell.auto_exclusive_zone_enable(status_win)
+                GtkLayerShell.set_exclusive_zone(status_win, BAR_HEIGHT)
                 status_win.present()
                 status_win.queue_resize()
                 status_bars.append(status_win)
