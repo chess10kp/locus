@@ -166,7 +166,10 @@ class StatusBar(Gtk.ApplicationWindow):
 
             widget = self.create_module_widget(module_name)
             if widget:
+                print(f"[DEBUG] Appending widget for {module_name} to box", flush=True)
                 box.append(widget)
+            else:
+                print(f"[DEBUG] No widget created for {module_name}", flush=True)
 
     def create_module_widget(self, name: str) -> Optional[Gtk.Widget]:
         """Create a widget for the given module name using the plugin system."""

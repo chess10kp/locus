@@ -56,33 +56,57 @@ class BindingModeModule(StatusbarModuleInterface):
                     widget.set_text("")
                     widget.set_visible(False)
             else:
+                # Try scrollmsg first for scrollwm
+                try:
+                    result = subprocess.run(
+                        ["scrollmsg", "-t", "get_binding_state"],
+                        capture_output=True,
+                        text=True,
+                        timeout=2,
+                    )
+                    if result.returncode == 0:
+                        import json
+
+                        data = json.loads(result.stdout)
+                        mode = data.get("name")
+                        if mode and mode != "default":
+                            widget.set_text(f"[{mode}]")
+                            widget.set_visible(True)
+                            return
+                        else:
+                            widget.set_text("")
+                            widget.set_visible(False)
+                            return
+                except Exception:
+                    pass  # Continue to sway fallback
+
                 # Fallback to swaymsg
-                result = subprocess.run(
-                    ["swaymsg", "-t", "get_inputs"],
-                    capture_output=True,
-                    text=True,
-                    timeout=2,
-                )
+                try:
+                    result = subprocess.run(
+                        ["swaymsg", "-t", "get_binding_mode"],
+                        capture_output=True,
+                        text=True,
+                        timeout=2,
+                    )
+                    if result.returncode == 0:
+                        import json
 
-                if result.returncode == 0:
-                    # Parse binding mode from swaymsg output
-                    import json
+                        data = json.loads(result.stdout)
+                        mode = data.get("name")
+                        if mode and mode != "default":
+                            widget.set_text(f"[{mode}]")
+                            widget.set_visible(True)
+                            return
+                        else:
+                            widget.set_text("")
+                            widget.set_visible(False)
+                            return
+                except Exception:
+                    pass
 
-                    data = json.loads(result.stdout)
-                    for input_device in data:
-                        if "current_mode" in input_device:
-                            mode = input_device["current_mode"]
-                            if mode and mode != "default":
-                                widget.set_text(f"[{mode}]")
-                                widget.set_visible(True)
-                                return
-
-                    # No non-default mode found
-                    widget.set_text("")
-                    widget.set_visible(False)
-                else:
-                    widget.set_text("")
-                    widget.set_visible(False)
+                # If both fail, hide widget
+                widget.set_text("")
+                widget.set_visible(False)
         except Exception:
             widget.set_text("")
             widget.set_visible(False)

@@ -34,9 +34,8 @@ def auto_register_modules():
     for module in modules:
         try:
             statusbar_registry.register(module)
-            print(f"Registered statusbar module: {module.name}")
         except Exception as e:
-            print(f"Error registering statusbar module {module.name}: {e}")
+            pass
 
 
 # Auto-register on import
