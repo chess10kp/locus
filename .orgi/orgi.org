@@ -546,3 +546,12 @@
   :END:
 
   
+
+* TODO bookmark add and bookmark remove do not work
+  :PROPERTIES:
+  :ID: task-20251224212904
+  :TITLE: bookmark add and bookmark remove do not work
+  :CREATED: <2025-12-24 Wed 21:29>
+  :END:
+
+  

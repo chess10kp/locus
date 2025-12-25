@@ -40,34 +40,41 @@ class BluetoothHook(LauncherHook):
         )
 
         if data_str.startswith("Power:"):
-            bluetooth_toggle_power()
-            launcher.selected_row = None
+            try:
+                bluetooth_toggle_power()
+            except Exception as e:
+                print(f"Error toggling bluetooth power: {e}")
             launcher.populate_apps(">bluetooth")
             return True
         elif data_str.startswith("Scan:"):
-            bluetooth_toggle_scan()
-            launcher.selected_row = None
+            try:
+                bluetooth_toggle_scan()
+            except Exception as e:
+                print(f"Error toggling bluetooth scan: {e}")
             launcher.populate_apps(">bluetooth")
             return True
         elif data_str.startswith("Pairable:"):
-            bluetooth_toggle_pairable()
-            launcher.selected_row = None
+            try:
+                bluetooth_toggle_pairable()
+            except Exception as e:
+                print(f"Error toggling bluetooth pairable: {e}")
             launcher.populate_apps(">bluetooth")
             return True
         elif data_str.startswith("Discoverable:"):
-            bluetooth_toggle_discoverable()
-            launcher.selected_row = None
+            try:
+                bluetooth_toggle_discoverable()
+            except Exception as e:
+                print(f"Error toggling bluetooth discoverable: {e}")
             launcher.populate_apps(">bluetooth")
             return True
-        else:
-            # Device item - Extract mac from (mac)
-            match = re.search(r"\(([^)]+)\)", data_str)
-            if match:
-                mac = match.group(1)
+        elif isinstance(item_data, dict) and "mac" in item_data:
+            mac = item_data["mac"]
+            try:
                 bluetooth_toggle_connection(mac)
-                launcher.selected_row = None
-                launcher.populate_apps(">bluetooth")
-                return True
+            except Exception as e:
+                print(f"Error toggling bluetooth connection for {mac}: {e}")
+            launcher.populate_apps(">bluetooth")
+            return True
 
         return False
 
@@ -148,21 +155,25 @@ class BluetoothLauncher(LauncherInterface):
             "Discoverable: on" if bluetooth_discoverable_on() else "Discoverable: off"
         )
         devices = bluetooth_get_devices()
-        device_items = []
+        results = []
+        # Status items
+        status_items = [power_status, scan_status, pairable_status, discoverable_status]
+        for item in status_items:
+            results.append((item, item))  # (display_text, action_data)
+        # Device items
         for mac, name in devices:
             status = "Connected" if bluetooth_device_connected(mac) else "Disconnected"
-            device_items.append(f"{name}: {status}")
-        all_items = [
-            power_status,
-            scan_status,
-            pairable_status,
-            discoverable_status,
-        ] + device_items
+            display_text = f"{name}: {status}"
+            action_data = {"mac": mac, "name": name, "status": status}
+            results.append((display_text, action_data))
         index = 1
-        for item in all_items:
+        for display_text, action_data in results:
             metadata = launcher_core.METADATA.get("bluetooth", "")
             launcher_core.add_launcher_result(
-                item, metadata, index=index if index <= 9 else None
+                display_text,
+                metadata,
+                index=index if index <= 9 else None,
+                action_data=action_data,
             )
             index += 1
             if index > 9:  # Stop showing hints after 9

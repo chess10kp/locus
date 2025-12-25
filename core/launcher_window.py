@@ -620,6 +620,8 @@ class Launcher(Gtk.ApplicationWindow):
 
     def _on_list_item_clicked(self, button, search_result):
         """Handle clicks on list items in both ListView and GridView."""
+        if not search_result:
+            return
         print(
             f"_on_list_item_clicked: result_type={search_result.result_type.name}, action_data={search_result.action_data}"
         )
@@ -632,7 +634,10 @@ class Launcher(Gtk.ApplicationWindow):
         elif search_result.result_type.name == "LAUNCHER":
             # Handle action_data for launchers (e.g., wallpaper file paths)
             if search_result.action_data:
-                if search_result.action_data.get("type") == "help":
+                if (
+                    isinstance(search_result.action_data, dict)
+                    and search_result.action_data.get("type") == "help"
+                ):
                     # Do nothing for help items
                     return
                 self.hook_registry.execute_select_hooks(self, search_result.action_data)

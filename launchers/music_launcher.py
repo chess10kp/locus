@@ -36,6 +36,7 @@ class MpdHook(LauncherHook):
             elif action == "view_queue":
                 # Set search text to >mpd queue to trigger populate
                 launcher.search_entry.set_text(">mpd queue")
+                launcher.search_entry.select_region(0, 0)
                 launcher.search_entry.set_position(-1)
                 launcher.populate_apps(">mpd queue")
                 launcher.present()
@@ -43,6 +44,7 @@ class MpdHook(LauncherHook):
             elif action == "view_library":
                 # Set search text to >mpd to trigger library view
                 launcher.search_entry.set_text(">mpd")
+                launcher.search_entry.select_region(0, 0)
                 launcher.search_entry.set_position(-1)
                 launcher.populate_apps(">mpd")
                 launcher.present()
@@ -72,6 +74,7 @@ class MpdHook(LauncherHook):
 
             if cmd == "queue":
                 launcher.search_entry.set_text(">mpd queue")
+                launcher.search_entry.select_region(0, 0)
                 launcher.search_entry.set_position(-1)
                 launcher.populate_apps(">mpd queue")
                 launcher.present()
@@ -80,6 +83,7 @@ class MpdHook(LauncherHook):
             if cmd == "" or cmd == "library":
                 # Just refresh/populate library view
                 launcher.search_entry.set_text(">mpd")
+                launcher.search_entry.select_region(0, 0)
                 launcher.search_entry.set_position(-1)
                 launcher.populate_apps(">mpd")
                 launcher.present()
@@ -256,60 +260,15 @@ class MpdLauncher(LauncherInterface):
         header = f"{state_icon} {status['song'] or 'Stopped'}"
         meta = f"Volume: {status.get('volume')}"
 
-        # Toggle Play/Pause button with hint
+        # Only show the play/pause toggle at the top
         self._add_button(
             text=header,
             metadata=meta,
             action="control",
             value="toggle",
             launcher_core=launcher_core,
-            index=1,
+            index=None,
         )
-
-        self._add_button(
-            "Next",
-            "Skip to next song",
-            "control",
-            "next",
-            launcher_core,
-            index=2,
-        )
-
-        self._add_button(
-            "Previous",
-            "Skip to previous song",
-            "control",
-            "prev",
-            launcher_core,
-            index=3,
-        )
-
-        if is_queue_mode:
-            self._add_button(
-                "Clear Queue",
-                "Remove all songs from queue",
-                "control",
-                "clear",
-                launcher_core,
-                index=4,
-            )
-            self._add_button(
-                "View Library",
-                "Switch to file browser",
-                "view_library",
-                "view_library",
-                launcher_core,
-                index=5,
-            )
-        else:
-            self._add_button(
-                "View Queue",
-                "Manage playback queue",
-                "view_queue",
-                "view_queue",
-                launcher_core,
-                index=4,
-            )
 
     def _add_button(self, text, metadata, action, value, launcher_core, index=None):
         item_data = {"type": "mpd_item", "action": action, "value": value}
@@ -326,7 +285,7 @@ class MpdLauncher(LauncherInterface):
             launcher_core.add_launcher_result("Queue is empty", "")
             return
 
-        index = 6  # Start after control buttons (1=toggle, 2=next, 3=prev, 4=clear, 5=view library)
+        index = 1  # Start at 1 since control buttons don't use hints
         for line in lines:
             if not line.strip():
                 continue
@@ -358,17 +317,16 @@ class MpdLauncher(LauncherInterface):
 
             # Filter by search query if provided
             if not query or query.lower() in display_name.lower():
+                hint_index = index if index <= 9 else None
                 self._add_button(
                     text=f"{pos}. {display_name or filename}",
                     metadata="Play song",
                     action="play_position",
                     value=pos,
                     launcher_core=launcher_core,
-                    index=index if index <= 9 else None,  # Only show hints for 3-9
+                    index=hint_index,
                 )
                 index += 1
-                if index > 9:  # Stop showing hints after 9
-                    break
 
     def _populate_library(self, query, launcher_core):
         if self.scanning and not self.files_cache:
@@ -383,9 +341,7 @@ class MpdLauncher(LauncherInterface):
 
         count = 0
         MAX_RESULTS = 50  # Limit results for performance
-        index = (
-            5  # Start after control buttons (1=toggle, 2=next, 3=prev, 4=view queue)
-        )
+        index = 1  # Start at 1 since control buttons don't use hints
 
         for item in self.files_cache:
             if query and query.lower() not in item["name"].lower():
@@ -397,11 +353,9 @@ class MpdLauncher(LauncherInterface):
                 action="play_file",
                 value=item["path"],
                 launcher_core=launcher_core,
-                index=index if index <= 9 else None,  # Only show hints for 3-9
+                index=index if index <= 9 else None,
             )
             index += 1
-            if index > 9:  # Stop showing hints after 9
-                break
 
             count += 1
             if count >= MAX_RESULTS:

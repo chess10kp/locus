@@ -36,9 +36,9 @@ class NotificationBanner(Gtk.ApplicationWindow):
     """Floating notification banner window."""
 
     URGENCY_COLORS = {
-        "low": "#89b4fa",
-        "normal": "#cba6f7",
-        "critical": "#f38ba8",
+        "low": "#50fa7b",
+        "normal": "#f1fa8c",
+        "critical": "#ff5555",
     }
 
     URGENCY_TIMEOUTS = {
@@ -80,7 +80,7 @@ class NotificationBanner(Gtk.ApplicationWindow):
         LayerShell.set_anchor(self, Edge.TOP, True)
         LayerShell.set_anchor(self, Edge.RIGHT, True)
         LayerShell.set_margin(self, Edge.TOP, 40)
-        LayerShell.set_margin(self, Edge.RIGHT, 10)
+        LayerShell.set_margin(self, Edge.RIGHT, -800)  # Start off-screen to the left
 
     def _get_urgency(self) -> str:
         """Get urgency level from notification hints."""
@@ -109,14 +109,16 @@ class NotificationBanner(Gtk.ApplicationWindow):
         main_box.set_margin_top(10)
         main_box.set_margin_bottom(10)
 
-        icon_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        icon_widget = Gtk.Image()
-        icon_widget.set_pixel_size(48)
+        # Only add icon if one is available
+        if self.notification.app_icon:
+            icon_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            icon_widget = Gtk.Image()
+            icon_widget.set_pixel_size(48)
 
-        self._load_icon(icon_widget)
+            self._load_icon(icon_widget)
 
-        icon_box.append(icon_widget)
-        main_box.append(icon_box)
+            icon_box.append(icon_widget)
+            main_box.append(icon_box)
 
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         content_box.set_hexpand(True)
@@ -130,7 +132,7 @@ class NotificationBanner(Gtk.ApplicationWindow):
         title_style = """
             label {
                 font-weight: bold;
-                font-size: 13px;
+                font-size: 16px;
                 color: #f8f8f2;
             }
         """
@@ -145,8 +147,8 @@ class NotificationBanner(Gtk.ApplicationWindow):
 
         body_style = """
             label {
-                font-size: 12px;
-                color: #b8bb26;
+                font-size: 14px;
+                color: #f8f8f2;
             }
         """
         self._apply_style(body_label, body_style)
@@ -161,7 +163,7 @@ class NotificationBanner(Gtk.ApplicationWindow):
 
         app_style = """
             label {
-                font-size: 10px;
+                font-size: 12px;
                 color: #6272a4;
             }
         """
@@ -172,9 +174,8 @@ class NotificationBanner(Gtk.ApplicationWindow):
 
         main_box_style = f"""
             box {{
-                background-color: rgba(28, 27, 34, 0.95);
+                background-color: rgba(14, 20, 25, 0.95);
                 border-left: 3px solid {border_color};
-                border-radius: 4px;
             }}
         """
         self._apply_style(main_box, main_box_style)
@@ -252,31 +253,36 @@ class NotificationBanner(Gtk.ApplicationWindow):
         return False
 
     def _animate_in(self) -> None:
-        """Simple slide-in animation."""
-        self.set_opacity(0)
+        """Slide-in animation from the left."""
+        self.set_opacity(1.0)
+        # Window already positioned off-screen in _setup_layer_shell
 
-        def fade_in():
-            current = self.get_opacity()
-            if current < 1.0:
-                self.set_opacity(min(current + 0.1, 1.0))
+        def slide_in():
+            current_margin = LayerShell.get_margin(self, Edge.RIGHT)
+            if current_margin < 10:  # Target margin is 10
+                # Slide right smoothly
+                new_margin = min(current_margin + 20, 10)
+                LayerShell.set_margin(self, Edge.RIGHT, new_margin)
                 return True
             return False
 
-        GLib.timeout_add(20, fade_in)
+        GLib.timeout_add(16, slide_in)  # ~60fps
 
     def _animate_out(self, callback: Optional[Callable] = None) -> None:
-        """Simple slide-out animation."""
+        """Slide-out animation to the right."""
 
-        def fade_out():
-            current = self.get_opacity()
-            if current > 0:
-                self.set_opacity(max(current - 0.1, 0))
+        def slide_out():
+            current_margin = LayerShell.get_margin(self, Edge.RIGHT)
+            if current_margin > -800:  # Slide out to 800px off-screen to match slide-in
+                # Slide out smoothly
+                new_margin = max(current_margin - 20, -800)
+                LayerShell.set_margin(self, Edge.RIGHT, new_margin)
                 return True
             if callback:
                 callback()
             return False
 
-        GLib.timeout_add(20, fade_out)
+        GLib.timeout_add(16, slide_out)  # ~60fps
 
     def _on_close_clicked(self, button) -> None:
         """Handle close button click."""
