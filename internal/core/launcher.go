@@ -6,32 +6,39 @@ import (
 	"log"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/sigma/locus-go/internal/config"
 	"github.com/sigma/locus-go/internal/launcher"
 	"github.com/sigma/locus-go/internal/layer"
 )
 
+var debugLogger = log.New(log.Writer(), "[LAUNCHER-DEBUG] ", log.LstdFlags|log.Lmicroseconds)
+
 var (
 	ErrLauncherAlreadyRunning = errors.New("launcher is already running")
 )
 
 type Launcher struct {
-	app          *App
-	config       *config.Config
-	window       *gtk.Window
-	searchEntry  *gtk.Entry
-	resultList   *gtk.ListBox
-	hideButton   *gtk.Button
-	registry     *launcher.LauncherRegistry
-	currentInput string
-	currentItems []*launcher.LauncherItem
-	running      bool
-	visible      bool
-	mu           sync.RWMutex
+	app           *App
+	config        *config.Config
+	window        *gtk.Window
+	searchEntry   *gtk.Entry
+	resultList    *gtk.ListBox
+	hideButton    *gtk.Button
+	registry      *launcher.LauncherRegistry
+	currentInput  string
+	currentItems  []*launcher.LauncherItem
+	running       bool
+	visible       bool
+	searchTimer   *time.Timer
+	searchVersion int64 // Track search version to prevent race conditions
+	mu            sync.RWMutex
 }
 
 func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
@@ -41,10 +48,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	}
 
 	window.SetDecorated(false)
-	window.SetModal(true)
 	window.SetSkipTaskbarHint(true)
 	window.SetSkipPagerHint(true)
-	window.SetTypeHint(gdk.WINDOW_TYPE_HINT_DIALOG)
 	window.SetName("launcher-window")
 
 	box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -118,76 +123,145 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 }
 
 func (l *Launcher) setupSignals() {
-	// Temporarily disable changed handler
-	// l.searchEntry.Connect("changed", func() {
-	// 	text, _ := l.searchEntry.GetText()
-	// 	l.onSearchChanged(text)
-	// })
+	l.searchEntry.Connect("changed", func() {
+		text, _ := l.searchEntry.GetText()
+		l.onSearchChanged(text)
+	})
 
-	// Temporarily disable activate handler
-	// l.searchEntry.Connect("activate", func() {
-	// 	l.onActivate()
-	// })
+	l.searchEntry.Connect("activate", func() {
+		l.onActivate()
+	})
 
-	// Temporarily disable key-press-event handler
-	// l.searchEntry.Connect("key-press-event", func(event *gdk.Event) bool {
-	// 	keyEvent := gdk.EventKeyNewFromEvent(event)
-	// 	return l.onKeyPress(keyEvent)
-	// })
+	l.searchEntry.Connect("key-press-event", func(entry *gtk.Entry, event *gdk.Event) bool {
+		keyEvent := gdk.EventKeyNewFromEvent(event)
+		return l.onKeyPress(keyEvent)
+	})
 
-	// Temporarily disable row-activated handler
-	// l.resultList.Connect("row-activated", func(list *gtk.ListBox, row *gtk.ListBoxRow) {
-	// 	l.onRowActivated(row)
-	// })
+	l.resultList.Connect("row-activated", func(list *gtk.ListBox, row *gtk.ListBoxRow) {
+		l.onRowActivated(row)
+	})
 
-	// Temporarily disable focus-out-event handler
-	// l.window.Connect("focus-out-event", func(event *gdk.Event) bool {
-	// 	l.Hide()
-	// 	return false
-	// })
+	l.window.Connect("focus-out-event", func(window *gtk.Window, event *gdk.Event) bool {
+		l.Hide()
+		return false
+	})
 }
 
 func (l *Launcher) onSearchChanged(text string) {
+	searchStart := time.Now()
+	debugLogger.Printf("SEARCH_CHANGED: text='%s' len=%d", text, len(text))
+
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	l.currentInput = text
 
 	if strings.TrimSpace(text) == "" {
+		debugLogger.Printf("SEARCH_CHANGED: empty query, calling updateResults immediately")
+		l.updateResults([]*launcher.LauncherItem{}, 0)
+		debugLogger.Printf("SEARCH_CHANGED: empty query completed in %v", time.Since(searchStart))
 		return
 	}
 
-	items, err := l.registry.Search(text)
-	if err != nil {
-		fmt.Printf("Search error: %v\n", err)
-		return
+	// Increment search version for this request
+	version := atomic.AddInt64(&l.searchVersion, 1)
+	searchVersion := version // Copy for closure
+	debugLogger.Printf("SEARCH_CHANGED: version=%d, scheduled search in %dms", version, l.config.Launcher.Search.DebounceDelay)
+
+	// Cancel previous timer if exists
+	if l.searchTimer != nil {
+		l.searchTimer.Stop()
+		debugLogger.Printf("SEARCH_CHANGED: cancelled previous timer")
 	}
 
-	l.updateResults(items)
+	// Start new timer with configured debounce delay
+	debounceMs := l.config.Launcher.Search.DebounceDelay
+	l.searchTimer = time.AfterFunc(time.Duration(debounceMs)*time.Millisecond, func() {
+		timerFireTime := time.Now()
+		debugLogger.Printf("SEARCH_TIMER: fired for version=%d, query='%s', delay was %v", version, text, timerFireTime.Sub(searchStart))
+
+		// Run search in a goroutine to avoid blocking UI
+		go func(query string, version int64) {
+			searchGoroutineStart := time.Now()
+			debugLogger.Printf("SEARCH_GOROUTINE: started for version=%d, query='%s'", version, query)
+
+			items, err := l.registry.Search(query)
+			if err != nil {
+				debugLogger.Printf("SEARCH_GOROUTINE: error for version=%d: %v", version, err)
+				fmt.Printf("Search error: %v\n", err)
+				return
+			}
+
+			searchCompleted := time.Now()
+			debugLogger.Printf("SEARCH_GOROUTINE: completed for version=%d, found %d items in %v", version, len(items), searchCompleted.Sub(searchGoroutineStart))
+
+			// Update UI in main thread using IdleAdd
+			glib.IdleAdd(func() bool {
+				idleCallbackStart := time.Now()
+				debugLogger.Printf("UI_IDLE: callback started for version=%d", version)
+
+				l.mu.RLock()
+				currentVersion := l.searchVersion
+				l.mu.RUnlock()
+
+				// Skip stale results from older searches
+				if version != currentVersion {
+					debugLogger.Printf("UI_IDLE: skipping stale results for version=%d (current=%d)", version, currentVersion)
+					return false // Don't repeat
+				}
+
+				l.updateResults(items, version)
+
+				debugLogger.Printf("UI_IDLE: completed for version=%d in %v, total search time %v",
+					version, time.Since(idleCallbackStart), time.Since(searchStart))
+				return false // Don't repeat
+			})
+		}(text, searchVersion)
+	})
 }
 
-func (l *Launcher) updateResults(items []*launcher.LauncherItem) {
+func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) {
+	updateStart := time.Now()
+	debugLogger.Printf("UPDATE_RESULTS: started for version=%d, %d items", version, len(items))
+
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	// Double-check version is still current
+	currentVersion := atomic.LoadInt64(&l.searchVersion)
+	if version != currentVersion {
+		debugLogger.Printf("UPDATE_RESULTS: skipping stale update for version=%d (current=%d)", version, currentVersion)
+		return // Skip stale update
+	}
+
 	l.currentItems = items
 
-	l.resultList.GetChildren().Foreach(func(child interface{}) {
+	// Clear existing results
+	clearStart := time.Now()
+	children := l.resultList.GetChildren()
+	childCount := children.Length()
+	children.Foreach(func(child interface{}) {
 		if row, ok := child.(*gtk.ListBoxRow); ok {
 			l.resultList.Remove(row)
 		}
 	})
+	debugLogger.Printf("UPDATE_RESULTS: cleared %d existing children in %v", childCount, time.Since(clearStart))
 
-	for _, item := range items {
+	// Create new result rows
+	renderStart := time.Now()
+	for i, item := range items {
 		row, err := l.createResultRow(item)
 		if err != nil {
+			debugLogger.Printf("UPDATE_RESULTS: failed to create row %d: %v", i, err)
 			fmt.Printf("Failed to create row: %v\n", err)
 			continue
 		}
 		l.resultList.Add(row)
 		row.ShowAll()
 	}
+	debugLogger.Printf("UPDATE_RESULTS: rendered %d new rows in %v", len(items), time.Since(renderStart))
 
+	// Select first row if any
 	if len(items) > 0 {
 		children := l.resultList.GetChildren()
 		if children.Length() > 0 {
@@ -196,6 +270,8 @@ func (l *Launcher) updateResults(items []*launcher.LauncherItem) {
 			}
 		}
 	}
+
+	debugLogger.Printf("UPDATE_RESULTS: completed for version=%d in %v", version, time.Since(updateStart))
 }
 
 func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow, error) {
@@ -355,6 +431,11 @@ func (l *Launcher) Hide() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	if l.searchTimer != nil {
+		l.searchTimer.Stop()
+		l.searchTimer = nil
+	}
+
 	l.window.Hide()
 	l.searchEntry.SetText("")
 	l.currentItems = nil
@@ -399,10 +480,6 @@ func (l *Launcher) Start() error {
 		log.Printf("Failed to load launchers: %v", err)
 		return fmt.Errorf("failed to load launchers: %w", err)
 	}
-
-	log.Printf("Realizing window")
-	// Realize the window before layer shell initialization
-	l.window.Realize()
 
 	log.Printf("Initializing layer shell")
 	layer.InitForWindow(unsafe.Pointer(l.window.Native()))

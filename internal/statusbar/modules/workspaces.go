@@ -126,7 +126,7 @@ func (m *WorkspacesModule) UpdateWidget(widget gtk.IWidget) error {
 		for i, ws := range workspaces {
 			m.workspaces[i] = ws.Name
 			if ws.Focused {
-				m.focusedIndex = int(ws.Num) - 1 // Assuming workspaces start from 1
+				m.focusedIndex = i
 			}
 		}
 	}

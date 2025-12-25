@@ -100,7 +100,7 @@ func (m *NotificationModule) formatNotification() string {
 		}
 		return fmt.Sprintf("%s %d", m.iconFull, m.count)
 	}
-	return m.icon
+	return ""
 }
 
 // SetCount sets the unread notification count

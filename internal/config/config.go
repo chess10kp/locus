@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -20,9 +21,15 @@ type Config struct {
 	FileSearch   FileSearchConfig   `toml:"file_search"`
 }
 
+type StatusBarLayout struct {
+	Left   []string `toml:"left"`
+	Middle []string `toml:"middle"`
+	Right  []string `toml:"right"`
+}
+
 type StatusBarConfig struct {
 	Height        int                     `toml:"height"`
-	Modules       []string                `toml:"modules"`
+	Layout        StatusBarLayout         `toml:"layout"`
 	ModuleConfigs map[string]ModuleConfig `toml:"module_configs"`
 	Colors        ColorsConfig            `toml:"colors"`
 }
@@ -41,7 +48,7 @@ func (c *ModuleConfig) ToMap() map[string]interface{} {
 	result := make(map[string]interface{})
 
 	if c.Interval > 0 {
-		result["interval"] = c.Interval
+		result["interval"] = fmt.Sprintf("%ds", c.Interval)
 	}
 
 	if c.Format != "" {
@@ -209,24 +216,29 @@ var DefaultConfig = Config{
 	ConfigDir:  "~/.config/locus",
 	StatusBar: StatusBarConfig{
 		Height: 40,
-		Modules: []string{
-			"launcher",
-			"workspaces",
-			"binding_mode",
-			"emacs_clock",
-			"notifications",
-			"time",
-			"battery",
-			"custom_message",
+		Layout: StatusBarLayout{
+			Left: []string{
+				"launcher",
+				"workspaces",
+				"binding_mode",
+				"emacs_clock",
+			},
+			Middle: []string{},
+			Right: []string{
+				"notifications",
+				"time",
+				"battery",
+				"custom_message",
+			},
 		},
 		ModuleConfigs: map[string]ModuleConfig{
 			"time": {
-				Interval: 60,
-				Format:   "%H:%M",
+				Interval: 1,
+				Format:   "15:04:05",
 				Enabled:  true,
 			},
 			"battery": {
-				Interval: 60,
+				Interval: 30,
 				Enabled:  true,
 			},
 			"emacs_clock": {

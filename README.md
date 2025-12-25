@@ -140,6 +140,70 @@ See [STATUSBAR_ARCHITECTURE.md](docs/STATUSBAR_ARCHITECTURE.md) for comprehensiv
 - Styling and theming
 - Best practices and troubleshooting
 
+## Spec-Driven Development
+
+This project uses AI-focused spec-driven development where specifications serve as the source of truth for implementation.
+
+### Creating a New Feature
+
+1. **Create spec directory**:
+   ```bash
+   .specify/scripts/create-feature.sh "feature-name" P1
+   ```
+
+2. **Write spec.md**: Define user stories, requirements, and success criteria
+
+3. **Write plan.md**: Detail Go implementation approach, checking constitution compliance
+
+4. **Write tasks.md**: Break down into actionable tasks
+
+5. **Validate spec**:
+   ```bash
+   .specify/scripts/validate-spec.sh .specify/specs/XXX-feature-name
+   ```
+
+6. **Implement**: Follow tasks.md to build the feature
+
+7. **Test**: Ensure >80% test coverage
+
+### Creating a New Launcher
+
+For launchers based on Python implementations:
+
+```bash
+.specify/scripts/create-launcher.sh "launcher-name" "launchers/launcher_name_launcher.py"
+```
+
+This creates a spec directory with:
+- Reference to Python implementation
+- Launcher-specific template
+- Migration notes
+
+### Directory Structure
+
+```
+.specify/
+├── memory/constitution.md        # Project principles
+├── specs/[XXX-feature]/
+│   ├── spec.md                   # User stories & requirements
+│   ├── plan.md                   # Implementation approach
+│   ├── tasks.md                  # Task breakdown
+│   └── reference.md              # Python reference (for launchers)
+├── templates/                    # Spec templates
+└── scripts/                      # Automation tools
+```
+
+### AI-Assisted Development
+
+When using AI tools (like GitHub Copilot, OpenAI, or local LLMs):
+
+1. **Provide the spec.md** as context
+2. **Reference plan.md** for architecture decisions
+3. **Follow constitution principles** for Go best practices
+4. **Use reference.md** when porting from Python
+
+Specs ensure consistency, maintainability, and alignment with project architecture.
+
 # Acknowledgements
 
 - ULauncher for launcher optimizations

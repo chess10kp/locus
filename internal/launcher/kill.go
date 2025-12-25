@@ -1,9 +1,11 @@
 package launcher
 
 import (
+	"context"
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/sigma/locus-go/internal/config"
 )
@@ -30,7 +32,7 @@ func (l *KillLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
-func (l *KillLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
+func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*LauncherItem {
 	q := strings.TrimSpace(query)
 	if q == "" {
 		return []*LauncherItem{
@@ -49,9 +51,29 @@ func (l *KillLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 		}
 	}
 
-	cmd := exec.Command("sh", "-c", "swaymsg -t get_tree | jq -r '.. | select(.focused? and .pid?) | .name'")
-	output, _ := cmd.Output()
-	focusedWindow := strings.TrimSpace(string(output))
+	// Don't run expensive command for short queries
+	if len(q) < 2 {
+		return []*LauncherItem{
+			{
+				Title:    "Kill Window",
+				Subtitle: "Close focused window",
+				Icon:     "window-close-symbolic",
+				Command:  "swaymsg kill",
+			},
+		}
+	}
+
+	// Execute swaymsg command with timeout to prevent hanging
+	cmdCtx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
+	cmd := exec.CommandContext(cmdCtx, "sh", "-c", "swaymsg -t get_tree | jq -r '.. | select(.focused? and .pid?) | .name'")
+	output, err := cmd.Output()
+
+	focusedWindow := "unknown"
+	if err == nil {
+		focusedWindow = strings.TrimSpace(string(output))
+	}
 
 	items := []*LauncherItem{
 		{

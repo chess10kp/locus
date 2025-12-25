@@ -18,7 +18,7 @@ type TimeModule struct {
 func NewTimeModule() *TimeModule {
 	return &TimeModule{
 		BaseModule: statusbar.NewBaseModule("time", statusbar.UpdateModePeriodic),
-		format:     "%H:%M:%S",
+		format:     "15:04:05",
 		widget:     nil,
 	}
 }
@@ -92,7 +92,7 @@ func (f *TimeModuleFactory) ModuleName() string {
 // DefaultConfig returns default configuration
 func (f *TimeModuleFactory) DefaultConfig() map[string]interface{} {
 	return map[string]interface{}{
-		"format":      "%H:%M:%S",
+		"format":      "15:04:05",
 		"interval":    "1s",
 		"css_classes": []string{"time-module"},
 	}

@@ -1,11 +1,13 @@
 package launcher
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/sigma/locus-go/internal/config"
 )
@@ -32,10 +34,10 @@ func (l *FileLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
-func (l *FileLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
+func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*LauncherItem {
 	q := strings.TrimSpace(query)
 
-	if q == "" {
+	if q == "" || len(q) < 3 {
 		homeDir, _ := os.UserHomeDir()
 		searchPaths := []string{
 			filepath.Join(homeDir, "Documents"),
@@ -64,9 +66,25 @@ func (l *FileLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 	q = strings.ToLower(q)
 	homeDir, _ := os.UserHomeDir()
 
-	cmd := exec.Command("find", homeDir, "-iname", "*"+q+"*", "-type", "f", "-size", "-100M")
+	// Execute find command with timeout to prevent hanging
+	cmdCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(cmdCtx, "find", homeDir, "-iname", "*"+q+"*", "-type", "f", "-size", "-100M", "-maxdepth", "4")
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	output, err := cmd.CombinedOutput()
+
+	if cmdCtx.Err() == context.DeadlineExceeded {
+		return []*LauncherItem{
+			{
+				Title:    "Search Timeout",
+				Subtitle: "File search took too long",
+				Icon:     "dialog-warning",
+				Command:  "",
+			},
+		}
+	}
+
 	if err != nil {
 		return []*LauncherItem{
 			{

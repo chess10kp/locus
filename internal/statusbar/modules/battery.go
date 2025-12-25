@@ -122,8 +122,8 @@ func (m *BatteryModule) formatBattery() string {
 
 	if m.showIcon {
 		icon := m.getBatteryIcon()
-		builder.WriteString(icon)
-		if m.showPercentage {
+		if icon != "" {
+			builder.WriteString(icon)
 			builder.WriteString(" ")
 		}
 	}
@@ -132,24 +132,17 @@ func (m *BatteryModule) formatBattery() string {
 		builder.WriteString(fmt.Sprintf("%d%%", m.percentage))
 	}
 
+	if m.isCharging {
+		builder.WriteString(" CHR")
+	}
+
 	return builder.String()
 }
 
 // getBatteryIcon returns battery icon based on status
 func (m *BatteryModule) getBatteryIcon() string {
-	if m.isCharging {
-		return ""
-	}
-
-	if m.percentage >= 75 {
-		return ""
-	} else if m.percentage >= 50 {
-		return ""
-	} else if m.percentage >= 25 {
-		return ""
-	} else {
-		return ""
-	}
+	// Return empty string for clean text-only display
+	return ""
 }
 
 // GetPercentage returns current battery percentage
