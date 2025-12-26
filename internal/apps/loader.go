@@ -69,29 +69,43 @@ func NewAppLoader(cfg *config.Config) *AppLoader {
 
 // LoadApps loads applications from cache or system
 func (l *AppLoader) LoadApps(forceReload bool) ([]App, error) {
+	loadStart := time.Now()
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	fmt.Printf("[APPS-LOADER] LoadApps started (forceReload=%v)\n", forceReload)
+
 	// Try loading from cache first
 	if !forceReload && l.loadFromCache() {
+		totalTime := time.Since(loadStart)
+		fmt.Printf("[APPS-LOADER] LoadApps completed from cache in %v\n", totalTime)
 		return l.apps, nil
 	}
 
+	fmt.Printf("[APPS-LOADER] Loading apps from system directories...\n")
+
 	// Load from system
 	if err := l.loadFromSystem(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load apps from system: %w", err)
 	}
 
 	// Save to cache
-	l.saveToCache()
+	if saveErr := l.saveToCache(); saveErr != nil {
+		fmt.Printf("[APPS-LOADER] Warning: failed to save cache: %v\n", saveErr)
+		// Continue even if cache save fails
+	}
 
+	totalTime := time.Since(loadStart)
+	fmt.Printf("[APPS-LOADER] LoadApps completed from system in %v\n", totalTime)
 	return l.apps, nil
 }
 
 // loadFromCache loads apps from cache file
 func (l *AppLoader) loadFromCache() bool {
+	loadStart := time.Now()
 	data, err := os.ReadFile(l.cacheFile)
 	if err != nil {
+		fmt.Printf("[APPS-CACHE] Cache miss: file not found or unreadable\n")
 		return false
 	}
 
@@ -102,28 +116,35 @@ func (l *AppLoader) loadFromCache() bool {
 	}
 
 	if err := json.Unmarshal(data, &cache); err != nil {
+		fmt.Printf("[APPS-CACHE] Cache miss: failed to unmarshal cache file: %v\n", err)
 		return false
 	}
 
 	// Check cache age
 	cacheTime, _ := time.Parse(time.RFC3339, cache.Timestamp)
 	age := time.Since(cacheTime)
+	maxAgeHours := float64(l.cfg.Launcher.Performance.CacheMaxAgeHours)
 
-	// Cache is valid if less than 6 hours old
-	if age.Hours() < float64(l.cfg.Launcher.Performance.CacheMaxAgeHours) {
+	// Cache is valid if less than max age hours old
+	if age.Hours() < maxAgeHours {
 		l.apps = cache.Apps
 		l.cacheValid = true
+		loadTime := time.Since(loadStart)
+		fmt.Printf("[APPS-CACHE] Cache hit: loaded %d apps from cache in %v (age: %v)\n", len(cache.Apps), loadTime, age)
 		return true
 	}
 
+	fmt.Printf("[APPS-CACHE] Cache miss: cache expired (age: %v, max: %vh)\n", age, maxAgeHours)
 	return false
 }
 
 // saveToCache saves apps to cache file
 func (l *AppLoader) saveToCache() error {
+	saveStart := time.Now()
+
 	// Ensure cache directory exists
 	if err := os.MkdirAll(l.cacheDir, 0755); err != nil {
-		return err
+		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
 	cache := struct {
@@ -138,16 +159,22 @@ func (l *AppLoader) saveToCache() error {
 
 	data, err := json.MarshalIndent(cache, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal cache data: %w", err)
 	}
 
 	// Atomic write
 	tempFile := l.cacheFile + ".tmp"
 	if err := os.WriteFile(tempFile, data, 0644); err != nil {
-		return err
+		return fmt.Errorf("failed to write temp cache file: %w", err)
 	}
 
-	return os.Rename(tempFile, l.cacheFile)
+	if err := os.Rename(tempFile, l.cacheFile); err != nil {
+		return fmt.Errorf("failed to rename temp cache file: %w", err)
+	}
+
+	saveTime := time.Since(saveStart)
+	fmt.Printf("[APPS-CACHE] Cache saved: %d apps in %v\n", len(l.apps), saveTime)
+	return nil
 }
 
 // loadFromSystem loads applications from .desktop files

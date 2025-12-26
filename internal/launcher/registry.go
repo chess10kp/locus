@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -257,6 +258,11 @@ func (r *LauncherRegistry) Search(query string) ([]*LauncherItem, error) {
 		cacheCheckStart := time.Now()
 		if cachedResults, found := r.searchCache.Get(query, r.appsHash); found {
 			log.Printf("[REGISTRY-SEARCH] Cache HIT for query='%s', returned %d items in %v", query, len(cachedResults), time.Since(cacheCheckStart))
+			// Log cache stats periodically (every 10 hits to avoid spam)
+			if atomic.LoadInt64(&r.searchCache.hits)%10 == 0 {
+				stats := r.searchCache.GetStats()
+				log.Printf("[REGISTRY-SEARCH] Cache stats: hits=%d, misses=%d, hit_rate=%.2f%%", stats.Hits, stats.Misses, stats.HitRate*100)
+			}
 			return cachedResults, nil
 		}
 		log.Printf("[REGISTRY-SEARCH] Cache MISS for query='%s' in %v", query, time.Since(cacheCheckStart))

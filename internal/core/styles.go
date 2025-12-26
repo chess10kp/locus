@@ -52,7 +52,9 @@ window {
     background-color: #0e1419;
     color: #ebdbb2;
 }
+`
 
+const defaultLauncherStyles = `
 #launcher-window {
     background-color: #0e1419;
     color: #ebdbb2;
@@ -86,6 +88,23 @@ window {
     background-color: #89b4fa;
     color: #1e1e2e;
 }
+
+#list-row:hover {
+    background-color: #504945;
+}
+
+#hide-button {
+    background-color: #458588;
+    color: #ebdbb2;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin: 8px;
+}
+
+#hide-button:hover {
+    background-color: #83a598;
+}
 `
 
 var globalStyleProvider *gtk.CssProvider
@@ -110,31 +129,58 @@ func SetupStyles() {
 	LoadCustomCSS()
 }
 
+func SetupLauncherStyles() {
+	screen, err := gdk.ScreenGetDefault()
+	if err != nil || screen == nil {
+		log.Printf("Warning: Failed to get default screen for launcher styles: %v", err)
+		return
+	}
+
+	// Load built-in launcher CSS
+	provider, _ := gtk.CssProviderNew()
+	if err := provider.LoadFromData(defaultLauncherStyles); err != nil {
+		log.Printf("Warning: Failed to load default launcher styles: %v", err)
+		return
+	}
+
+	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	log.Printf("Loaded built-in launcher styles")
+}
+
 func LoadCustomCSS() {
 	screen, err := gdk.ScreenGetDefault()
 	if err != nil || screen == nil {
 		return
 	}
 
-	// Fixed path: ~/.config/locus/statusbar.css
 	home := os.Getenv("HOME")
 	if home == "" {
 		return
 	}
-	path := home + "/.config/locus/statusbar.css"
 
-	data, err := os.ReadFile(path)
-	if err != nil {
-		log.Printf("Warning: Failed to load custom CSS from %s: %v", path, err)
-		return
+	// Load launcher CSS
+	launcherPath := home + "/.config/locus/launcher.css"
+	if data, err := os.ReadFile(launcherPath); err == nil {
+		provider, _ := gtk.CssProviderNew()
+		if loadErr := provider.LoadFromData(string(data)); loadErr == nil {
+			gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_USER)
+			log.Printf("Loaded launcher CSS from %s", launcherPath)
+		} else {
+			log.Printf("Warning: Failed to load launcher CSS: %v", loadErr)
+		}
+	} else {
+		log.Printf("Warning: Failed to read launcher CSS from %s: %v", launcherPath, err)
 	}
 
-	provider, _ := gtk.CssProviderNew()
-	if err := provider.LoadFromData(string(data)); err != nil {
-		log.Printf("Warning: Failed to load custom CSS: %v", err)
-		return
+	// Load statusbar CSS (legacy support)
+	statusbarPath := home + "/.config/locus/statusbar.css"
+	if data, err := os.ReadFile(statusbarPath); err == nil {
+		provider, _ := gtk.CssProviderNew()
+		if loadErr := provider.LoadFromData(string(data)); loadErr == nil {
+			gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_USER)
+			log.Printf("Loaded statusbar CSS from %s", statusbarPath)
+		} else {
+			log.Printf("Warning: Failed to load statusbar CSS: %v", loadErr)
+		}
 	}
-
-	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_USER)
-	log.Printf("Loaded custom CSS from %s", path)
 }

@@ -1,0 +1,81 @@
+/* Locus Launcher CSS */
+/* Custom launcher styles can be placed here */
+
+* {
+    font-family: "Iosevka", monospace;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+    padding: 0;
+    transition: opacity 0.2s ease;
+}
+
+label {
+    color: #ebdbb2;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: "Iosevka", monospace;
+    margin: 0;
+    padding: 0;
+    transition: opacity 0.2s ease;
+}
+
+window {
+    background-color: #0e1419;
+    border-bottom: 1px solid #444444;
+}
+
+#main-box, box {
+    background-color: #0e1419;
+}
+
+#launcher-window {
+    background-color: #0e1419;
+    color: #ebdbb2;
+    border-radius: 8px;
+    border: 1px solid #313244;
+}
+
+#launcher-entry {
+    background-color: #181825;
+    color: #ebdbb2;
+    padding: 12px;
+    border: none;
+    border-bottom: 1px solid #313244;
+}
+
+#launcher-entry:focus {
+    border-bottom: 1px solid #89b4fa;
+}
+
+#result-list {
+    background-color: transparent;
+}
+
+#list-row {
+    padding: 8px 12px;
+    border-bottom: 1px solid #313244;
+    min-height: 40px;
+}
+
+#list-row:selected {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+}
+
+#list-row:hover {
+    background-color: #504945;
+}
+
+#hide-button {
+    background-color: #458588;
+    color: #ebdbb2;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    margin: 8px;
+}
+
+#hide-button:hover {
+    background-color: #83a598;
+}

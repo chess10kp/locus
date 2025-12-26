@@ -22,6 +22,19 @@ height = 500
 
 [launcher.search]
 max_results = 10
+debounce_delay = 150
+
+[launcher.performance]
+enable_cache = true
+cache_max_age_hours = 6
+search_cache_size = 100
+enable_background_loading = true
+max_visible_results = 12
+
+[launcher.cache]
+enabled = true
+max_age_hours = 6
+cache_file = "apps.json"
 
 [notification]
 [notification.ui]

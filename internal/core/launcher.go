@@ -25,25 +25,26 @@ var (
 )
 
 type Launcher struct {
-	app            *App
-	config         *config.Config
-	window         *gtk.Window
-	searchEntry    *gtk.Entry
-	resultList     *gtk.ListBox
-	hideButton     *gtk.Button
-	registry       *launcher.LauncherRegistry
-	currentInput   string
-	currentItems   []*launcher.LauncherItem
-	scrolledWindow *gtk.ScrolledWindow
-	running        bool
-	visible        atomic.Bool
-	searchTimer    *time.Timer
-	searchVersion  int64 // Track search version to prevent race conditions
-	mu             sync.RWMutex
-	refreshUIChan  chan launcher.RefreshUIRequest
-	statusChan     chan launcher.StatusRequest
-	ctx            context.Context
-	cancel         context.CancelFunc
+	app             *App
+	config          *config.Config
+	window          *gtk.Window
+	searchEntry     *gtk.Entry
+	resultList      *gtk.ListBox
+	hideButton      *gtk.Button
+	registry        *launcher.LauncherRegistry
+	currentInput    string
+	currentItems    []*launcher.LauncherItem
+	scrolledWindow  *gtk.ScrolledWindow
+	running         bool
+	visible         atomic.Bool
+	searchTimer     *time.Timer
+	searchVersion   int64  // Track search version to prevent race conditions
+	lastSearchQuery string // Track last query to skip duplicates
+	mu              sync.RWMutex
+	refreshUIChan   chan launcher.RefreshUIRequest
+	statusChan      chan launcher.StatusRequest
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
@@ -178,12 +179,35 @@ func (l *Launcher) onSearchChanged(text string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
+	// Skip duplicate queries to prevent redundant searches
+	if text == l.lastSearchQuery {
+		debugLogger.Printf("SEARCH_CHANGED: duplicate query '%s', skipping", text)
+		return
+	}
+	l.lastSearchQuery = text
+
 	l.currentInput = text
 
 	// Increment search version for this request
 	version := atomic.AddInt64(&l.searchVersion, 1)
 	searchVersion := version // Copy for closure
-	debugLogger.Printf("SEARCH_CHANGED: version=%d, scheduled search in %dms", version, l.config.Launcher.Search.DebounceDelay)
+
+	// Calculate adaptive debounce delay
+	baseDelay := l.config.Launcher.Search.DebounceDelay
+	var debounceMs int
+
+	switch {
+	case len(text) == 0:
+		debounceMs = 0 // Immediate for empty
+	case len(text) == 1:
+		debounceMs = 50 // Very fast for single char
+	case len(text) <= 3:
+		debounceMs = 100 // Fast for short queries (user-approved)
+	default:
+		debounceMs = baseDelay // Standard delay (150ms default)
+	}
+
+	debugLogger.Printf("SEARCH_CHANGED: version=%d, len=%d, scheduled search in %dms (adaptive)", version, len(text), debounceMs)
 
 	// Cancel previous timer if exists
 	if l.searchTimer != nil {
@@ -191,14 +215,13 @@ func (l *Launcher) onSearchChanged(text string) {
 		debugLogger.Printf("SEARCH_CHANGED: cancelled previous timer")
 	}
 
-	// Start new timer with configured debounce delay
-	debounceMs := l.config.Launcher.Search.DebounceDelay
+	// Start new timer with adaptive debounce delay
 	l.searchTimer = time.AfterFunc(time.Duration(debounceMs)*time.Millisecond, func() {
 		timerFireTime := time.Now()
 		debugLogger.Printf("SEARCH_TIMER: fired for version=%d, query='%s', delay was %v", version, text, timerFireTime.Sub(searchStart))
 
 		// Run search in a goroutine to avoid blocking UI
-		go func(query string, version int64) {
+		go func(query string, version int64, startTime time.Time) {
 			searchGoroutineStart := time.Now()
 			debugLogger.Printf("SEARCH_GOROUTINE: started for version=%d, query='%s'", version, query)
 
@@ -215,11 +238,10 @@ func (l *Launcher) onSearchChanged(text string) {
 			// Update UI in main thread using IdleAdd
 			glib.IdleAdd(func() bool {
 				idleCallbackStart := time.Now()
-				debugLogger.Printf("UI_IDLE: callback started for version=%d", version)
+				debugLogger.Printf("UI_IDLE: callback started for version=%d with %d items", version, len(items))
 
-				l.mu.RLock()
-				currentVersion := l.searchVersion
-				l.mu.RUnlock()
+				// Get current version atomically to avoid race conditions
+				currentVersion := atomic.LoadInt64(&l.searchVersion)
 
 				// Skip stale results from older searches
 				if version != currentVersion {
@@ -227,13 +249,14 @@ func (l *Launcher) onSearchChanged(text string) {
 					return false // Don't repeat
 				}
 
+				debugLogger.Printf("UI_IDLE: calling updateResults for version=%d", version)
 				l.updateResults(items, version)
 
 				debugLogger.Printf("UI_IDLE: completed for version=%d in %v, total search time %v",
 					version, time.Since(idleCallbackStart), time.Since(searchStart))
 				return false // Don't repeat
 			})
-		}(text, searchVersion)
+		}(text, searchVersion, searchStart)
 	})
 }
 
@@ -243,9 +266,20 @@ func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) 
 	l.mu.Unlock()
 
 	if success {
-		l.resultList.ShowAll()
-		l.resultList.QueueDraw()
-		l.scrolledWindow.QueueDraw()
+		// More aggressive UI refresh - force all widgets to update
+		glib.IdleAdd(func() bool {
+			// Show all widgets and their children
+			l.resultList.ShowAll()
+			// Force the scrolled window to recalculate its size
+			l.scrolledWindow.CheckResize()
+			// Queue redraws on multiple widgets to ensure UI updates
+			l.resultList.QueueDraw()
+			l.scrolledWindow.QueueDraw()
+			l.window.QueueDraw()
+			// Force the main window to process pending updates
+			l.window.CheckResize()
+			return false
+		})
 	}
 }
 
@@ -262,15 +296,22 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 
 	l.currentItems = items
 
-	// Clear existing results
+	// Clear existing results more reliably
 	clearStart := time.Now()
 	children := l.resultList.GetChildren()
 	childCount := children.Length()
-	children.Foreach(func(child interface{}) {
+
+	// Remove all children directly
+	for children.Length() > 0 {
+		child := children.NthData(0)
 		if row, ok := child.(*gtk.ListBoxRow); ok {
 			l.resultList.Remove(row)
 		}
-	})
+		// Process main loop briefly to allow UI updates during batch clearing
+		if childCount%5 == 0 {
+			l.resultList.QueueDraw()
+		}
+	}
 	debugLogger.Printf("UPDATE_RESULTS: cleared %d existing children in %v", childCount, time.Since(clearStart))
 
 	// Create new result rows
@@ -283,6 +324,8 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 			continue
 		}
 		l.resultList.Add(row)
+		// Ensure the row is visible
+		row.Show()
 	}
 	debugLogger.Printf("UPDATE_RESULTS: rendered %d new rows in %v", len(items), time.Since(renderStart))
 
