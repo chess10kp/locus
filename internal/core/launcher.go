@@ -35,7 +35,7 @@ type Launcher struct {
 	currentInput  string
 	currentItems  []*launcher.LauncherItem
 	running       bool
-	visible       bool
+	visible       atomic.Bool
 	searchTimer   *time.Timer
 	searchVersion int64 // Track search version to prevent race conditions
 	mu            sync.RWMutex
@@ -158,7 +158,7 @@ func (l *Launcher) onSearchChanged(text string) {
 
 	if strings.TrimSpace(text) == "" {
 		debugLogger.Printf("SEARCH_CHANGED: empty query, calling updateResults immediately")
-		l.updateResults([]*launcher.LauncherItem{}, 0)
+		l.updateResultsUnsafe([]*launcher.LauncherItem{}, 0)
 		debugLogger.Printf("SEARCH_CHANGED: empty query completed in %v", time.Since(searchStart))
 		return
 	}
@@ -221,11 +221,14 @@ func (l *Launcher) onSearchChanged(text string) {
 }
 
 func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) {
-	updateStart := time.Now()
-	debugLogger.Printf("UPDATE_RESULTS: started for version=%d, %d items", version, len(items))
-
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.updateResultsUnsafe(items, version)
+}
+
+func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version int64) {
+	updateStart := time.Now()
+	debugLogger.Printf("UPDATE_RESULTS: started for version=%d, %d items", version, len(items))
 
 	// Double-check version is still current
 	currentVersion := atomic.LoadInt64(&l.searchVersion)
@@ -404,48 +407,54 @@ func (l *Launcher) navigateResult(direction int) {
 
 func (l *Launcher) Show() error {
 	log.Printf("Launcher.Show() called, running=%v", l.running)
-	l.mu.Lock()
-	defer l.mu.Unlock()
 
+	// Acquire lock only for internal state changes
+	l.mu.Lock()
 	if !l.running {
 		log.Printf("Launcher not running, starting...")
 		if err := l.Start(); err != nil {
+			l.mu.Unlock()
 			log.Printf("Failed to start launcher: %v", err)
 			return err
 		}
 		log.Printf("Launcher started successfully")
 	}
+	l.mu.Unlock()
 
+	// GTK calls happen without holding lock
 	log.Printf("Calling window.ShowAll() and Present()")
 	l.window.ShowAll()
 	l.window.Present()
 	l.searchEntry.SetText("")
 	l.searchEntry.GrabFocus()
-	l.visible = true
-	log.Printf("Launcher should now be visible")
 
+	// Update visibility flag atomically
+	l.visible.Store(true)
+
+	log.Printf("Launcher should now be visible")
 	return nil
 }
 
 func (l *Launcher) Hide() {
+	// Acquire lock only for internal state changes
 	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	if l.searchTimer != nil {
 		l.searchTimer.Stop()
 		l.searchTimer = nil
 	}
+	l.currentItems = nil
+	l.mu.Unlock()
 
+	// GTK calls happen without holding lock
 	l.window.Hide()
 	l.searchEntry.SetText("")
-	l.currentItems = nil
-	l.visible = false
+
+	// Update visibility flag atomically
+	l.visible.Store(false)
 }
 
 func (l *Launcher) Toggle() error {
-	l.mu.RLock()
-	visible := l.visible
-	l.mu.RUnlock()
+	visible := l.visible.Load()
 
 	if visible {
 		l.Hide()
@@ -525,7 +534,5 @@ func (l *Launcher) IsRunning() bool {
 }
 
 func (l *Launcher) IsVisible() bool {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-	return l.visible
+	return l.visible.Load()
 }
