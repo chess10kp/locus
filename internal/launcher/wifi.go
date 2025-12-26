@@ -1,9 +1,7 @@
 package launcher
 
 import (
-	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/sigma/locus-go/internal/config"
 )
@@ -36,76 +34,48 @@ func (l *WifiLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 	if q == "" {
 		return []*LauncherItem{
 			{
-				Title:    "WiFi Toggle",
-				Subtitle: "Enable/disable WiFi",
-				Icon:     "network-wireless-symbolic",
-				Command:  "nmcli radio wifi on",
+				Title:      "WiFi Toggle",
+				Subtitle:   "Enable/disable WiFi",
+				Icon:       "network-wireless-symbolic",
+				ActionData: NewShellAction("nmcli radio wifi on"),
 			},
 			{
-				Title:    "WiFi Scan",
-				Subtitle: "Scan for networks",
-				Icon:     "network-wireless-symbolic",
-				Command:  "nmcli device wifi scan",
+				Title:      "WiFi Scan",
+				Subtitle:   "Scan for networks",
+				Icon:       "network-wireless-symbolic",
+				ActionData: NewShellAction("nmcli device wifi scan"),
 			},
 			{
-				Title:    "WiFi Status",
-				Subtitle: "Show current connection",
-				Icon:     "network-wireless-symbolic",
-				Command:  "nmcli device wifi show",
+				Title:      "WiFi Status",
+				Subtitle:   "Show current connection",
+				Icon:       "network-wireless-symbolic",
+				ActionData: NewShellAction("nmcli device wifi show"),
 			},
 		}
 	}
 
 	return []*LauncherItem{
 		{
-			Title:    "Toggle WiFi",
-			Subtitle: "Enable/disable WiFi",
-			Icon:     "network-wireless-symbolic",
-			Command:  "nmcli radio wifi on",
+			Title:      "Toggle WiFi",
+			Subtitle:   "Enable/disable WiFi",
+			Icon:       "network-wireless-symbolic",
+			ActionData: NewShellAction("nmcli radio wifi on"),
 		},
 		{
-			Title:    "WiFi Status",
-			Subtitle: "Show current connection",
-			Icon:     "network-wireless-symbolic",
-			Command:  "nmcli device wifi show",
+			Title:      "WiFi Status",
+			Subtitle:   "Show current connection",
+			Icon:       "network-wireless-symbolic",
+			ActionData: NewShellAction("nmcli device wifi show"),
 		},
 	}
 }
 
-func (l *WifiLauncher) HandlesEnter() bool {
-	return true
+func (l *WifiLauncher) GetHooks() []Hook {
+	return []Hook{}
 }
 
-func (l *WifiLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	q := strings.TrimSpace(query)
-
-	if q == "" || q == "toggle" || q == "on" {
-		cmd := exec.Command("nmcli", "radio", "wifi", "on")
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-		return cmd.Start() == nil
-	}
-
-	if q == "off" {
-		cmd := exec.Command("nmcli", "radio", "wifi", "off")
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-		return cmd.Start() == nil
-	}
-
-	if q == "scan" {
-		cmd := exec.Command("nmcli", "device", "wifi", "scan")
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-		return cmd.Start() == nil
-	}
-
-	return false
-}
-
-func (l *WifiLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *WifiLauncher) HandleTab(query string) string {
-	return query
+func (l *WifiLauncher) Rebuild(ctx *LauncherContext) error {
+	return nil
 }
 
 func (l *WifiLauncher) Cleanup() {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -173,13 +172,6 @@ func (l *Launcher) onSearchChanged(text string) {
 	defer l.mu.Unlock()
 
 	l.currentInput = text
-
-	if strings.TrimSpace(text) == "" {
-		debugLogger.Printf("SEARCH_CHANGED: empty query, calling updateResults immediately")
-		l.updateResultsUnsafe([]*launcher.LauncherItem{}, 0)
-		debugLogger.Printf("SEARCH_CHANGED: empty query completed in %v", time.Since(searchStart))
-		return
-	}
 
 	// Increment search version for this request
 	version := atomic.AddInt64(&l.searchVersion, 1)
@@ -358,10 +350,17 @@ func (l *Launcher) onActivate() {
 		return
 	}
 
-	// Fall back to executing selected item
+	// Fall back to executing selected item, or first item if none selected
 	selected := l.resultList.GetSelectedRow()
 	if selected != nil {
 		l.onRowActivated(selected)
+	} else if len(l.currentItems) > 0 {
+		item := l.currentItems[0]
+		hookCtx := l.createHookContext(item)
+		result := l.registry.GetHookRegistry().ExecuteSelectHooks(l.ctx, hookCtx, item.ActionData)
+		if result.Handled {
+			l.Hide()
+		}
 	}
 }
 

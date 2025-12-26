@@ -6,10 +6,13 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"unsafe"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/sigma/locus-go/internal/config"
 	"github.com/sigma/locus-go/internal/layer"
@@ -24,8 +27,9 @@ var (
 type StatusBar struct {
 	app         *App
 	config      *config.Config
-	window      *gtk.Window
-	container   *gtk.Box
+	windows     map[int]*gtk.Window // Map: monitor index -> window
+	containers  map[int]*gtk.Box    // Map: monitor index -> container
+	screen      *gdk.Screen         // GDK screen for monitor tracking
 	registry    *statusbar.ModuleRegistry
 	scheduler   *statusbar.UpdateScheduler
 	widgets     map[string]gtk.IWidget
@@ -38,28 +42,23 @@ type StatusBar struct {
 }
 
 func NewStatusBar(app *App, cfg *config.Config) (*StatusBar, error) {
-	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	// Get default screen for monitor tracking
+	screen, err := gdk.ScreenGetDefault()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create window: %w", err)
+		return nil, fmt.Errorf("failed to get default screen: %w", err)
 	}
-
-	container, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create container: %w", err)
-	}
-
-	window.Add(container)
 
 	registry := statusbar.DefaultRegistry()
 	scheduler := statusbar.NewUpdateScheduler(registry)
 
 	return &StatusBar{
-		app:       app,
-		config:    cfg,
-		window:    window,
-		container: container,
-		registry:  registry,
-		scheduler: scheduler,
+		app:        app,
+		config:     cfg,
+		windows:    make(map[int]*gtk.Window),
+		containers: make(map[int]*gtk.Box),
+		screen:     screen,
+		registry:   registry,
+		scheduler:  scheduler,
 	}, nil
 }
 
@@ -71,25 +70,13 @@ func (sb *StatusBar) Start() error {
 		return ErrStatusBarAlreadyRunning
 	}
 
-	sb.window.SetTitle(sb.config.AppName)
-	sb.window.SetName("statusbar")
+	// Set up monitor change signal handler
+	sb.screen.Connect("monitors-changed", sb.onMonitorsChanged)
 
-	height := sb.config.StatusBar.Height
-	if height > 0 {
-		sb.window.SetSizeRequest(-1, height)
-		log.Printf("Setting size request to -1, %d", height)
+	// Create statusbar windows for all current monitors
+	if err := sb.createStatusBarsForAllMonitors(); err != nil {
+		return fmt.Errorf("failed to create statusbar windows: %w", err)
 	}
-
-	// Initialize layer shell
-	layer.InitForWindow(unsafe.Pointer(sb.window.GObject))
-	layer.SetAnchor(unsafe.Pointer(sb.window.GObject), layer.EdgeLeft, true)
-	layer.SetAnchor(unsafe.Pointer(sb.window.GObject), layer.EdgeRight, true)
-	layer.SetAnchor(unsafe.Pointer(sb.window.GObject), layer.EdgeTop, true)
-	layer.SetMargin(unsafe.Pointer(sb.window.GObject), layer.EdgeTop, 0)
-	layer.SetLayer(unsafe.Pointer(sb.window.GObject), layer.LayerTop)
-	layer.SetExclusiveZone(unsafe.Pointer(sb.window.GObject), height)
-	layer.SetKeyboardMode(unsafe.Pointer(sb.window.GObject), layer.KeyboardModeNone)
-	log.Printf("LayerShell configured")
 
 	if err := sb.loadModules(); err != nil {
 		return fmt.Errorf("failed to load modules: %w", err)
@@ -109,19 +96,117 @@ func (sb *StatusBar) Start() error {
 		// Don't fail the entire startup for IPC server issues
 	}
 
-	sb.window.Connect("destroy", func() {
-		close(sb.stopUpdate)
-		sb.Quit()
-	})
-
-	sb.window.ShowAll()
+	// Show all statusbar windows
+	for _, window := range sb.windows {
+		window.ShowAll()
+	}
 
 	sb.running = true
 	sb.stopUpdate = make(chan struct{})
 
-	log.Printf("Status bar started successfully")
+	log.Printf("Status bar started successfully on %d monitors", len(sb.windows))
 
 	return nil
+}
+
+// createStatusBarsForAllMonitors creates statusbar windows for all current monitors
+func (sb *StatusBar) createStatusBarsForAllMonitors() error {
+	// Destroy existing windows if any
+	sb.destroyAllStatusBars()
+
+	// Get monitor count using xrandr
+	cmd := exec.Command("sh", "-c", "xrandr --listmonitors 2>/dev/null | grep Monitors: | awk '{print $2}' || echo 1")
+	output, err := cmd.Output()
+	monitorCount := 1 // default
+	if err != nil {
+		log.Printf("Warning: failed to get monitor count, assuming 1: %v", err)
+	} else {
+		countStr := strings.TrimSpace(string(output))
+		if count, err := strconv.Atoi(countStr); err == nil && count > 0 {
+			monitorCount = count
+		}
+	}
+
+	if monitorCount == 0 {
+		return fmt.Errorf("no monitors available")
+	}
+
+	height := sb.config.StatusBar.Height
+
+	// Create statusbar for each monitor
+	for i := 0; i < monitorCount; i++ {
+		window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+		if err != nil {
+			return fmt.Errorf("failed to create window for monitor %d: %w", i, err)
+		}
+
+		container, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+		if err != nil {
+			return fmt.Errorf("failed to create container for monitor %d: %w", i, err)
+		}
+
+		window.Add(container)
+		window.SetTitle(sb.config.AppName)
+		window.SetName("statusbar")
+
+		if height > 0 {
+			window.SetSizeRequest(-1, height)
+		}
+
+		// Initialize layer shell for this monitor
+		layer.InitForWindow(unsafe.Pointer(window.GObject))
+		layer.SetAnchor(unsafe.Pointer(window.GObject), layer.EdgeLeft, true)
+		layer.SetAnchor(unsafe.Pointer(window.GObject), layer.EdgeRight, true)
+		layer.SetAnchor(unsafe.Pointer(window.GObject), layer.EdgeTop, true)
+		layer.SetMargin(unsafe.Pointer(window.GObject), layer.EdgeTop, 0)
+		layer.SetLayer(unsafe.Pointer(window.GObject), layer.LayerTop)
+		layer.SetExclusiveZone(unsafe.Pointer(window.GObject), height)
+		layer.SetKeyboardMode(unsafe.Pointer(window.GObject), layer.KeyboardModeNone)
+
+		// Connect destroy signal to quit
+		window.Connect("destroy", func() {
+			close(sb.stopUpdate)
+			sb.Quit()
+		})
+
+		sb.windows[i] = window
+		sb.containers[i] = container
+	}
+
+	log.Printf("Created statusbar windows for %d monitors", monitorCount)
+	return nil
+}
+
+// destroyAllStatusBars destroys all statusbar windows
+func (sb *StatusBar) destroyAllStatusBars() {
+	for _, window := range sb.windows {
+		if window != nil {
+			window.Destroy()
+		}
+	}
+	sb.windows = make(map[int]*gtk.Window)
+	sb.containers = make(map[int]*gtk.Box)
+}
+
+// onMonitorsChanged handles monitor configuration changes
+func (sb *StatusBar) onMonitorsChanged() {
+	log.Printf("Monitors changed, recreating statusbar windows")
+	// Recreate all statusbars from scratch as requested
+	if err := sb.createStatusBarsForAllMonitors(); err != nil {
+		log.Printf("Failed to recreate statusbar windows: %v", err)
+		return
+	}
+
+	// Recreate widgets for all monitors
+	if err := sb.createWidgets(); err != nil {
+		log.Printf("Failed to recreate widgets: %v", err)
+		return
+	}
+
+	// Show all windows
+	for _, window := range sb.windows {
+		window.ShowAll()
+	}
 }
 
 func (sb *StatusBar) Stop() error {
@@ -135,7 +220,13 @@ func (sb *StatusBar) Stop() error {
 	sb.scheduler.Stop()
 	sb.registry.CleanupAll()
 	sb.stopIPCServer()
-	sb.window.Close()
+
+	// Close all windows
+	for _, window := range sb.windows {
+		if window != nil {
+			window.Close()
+		}
+	}
 
 	sb.running = false
 
@@ -210,6 +301,17 @@ func (sb *StatusBar) loadModules() error {
 func (sb *StatusBar) createWidgets() error {
 	sb.widgets = make(map[string]gtk.IWidget)
 
+	// Create widget tree for each monitor's container
+	for monitorIndex, container := range sb.containers {
+		if err := sb.createWidgetsForContainer(container, monitorIndex); err != nil {
+			return fmt.Errorf("failed to create widgets for monitor %d: %w", monitorIndex, err)
+		}
+	}
+
+	return nil
+}
+
+func (sb *StatusBar) createWidgetsForContainer(container *gtk.Box, monitorIndex int) error {
 	// Create section containers
 	leftBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	if err != nil {
@@ -255,11 +357,11 @@ func (sb *StatusBar) createWidgets() error {
 	}
 
 	// Assemble main container
-	sb.container.PackStart(leftBox, false, false, 0)
-	sb.container.PackStart(leftSpacer, false, false, 0)
-	sb.container.PackStart(middleBox, false, false, 0)
-	sb.container.PackStart(rightSpacer, false, false, 0)
-	sb.container.PackStart(rightBox, false, false, 0)
+	container.PackStart(leftBox, false, false, 0)
+	container.PackStart(leftSpacer, false, false, 0)
+	container.PackStart(middleBox, false, false, 0)
+	container.PackStart(rightSpacer, false, false, 0)
+	container.PackStart(rightBox, false, false, 0)
 
 	return nil
 }

@@ -422,7 +422,7 @@ func (r *HookRegistry) ExecuteSelectHooksAsync(ctx *HookContext, data ActionData
 
 	if len(asyncHooks) == 0 {
 		// Fall back to synchronous execution
-		return r.ExecuteSelectHooks(ctx, data)
+		return r.ExecuteSelectHooks(context.Background(), ctx, data)
 	}
 
 	// Execute async hooks using the executor pool

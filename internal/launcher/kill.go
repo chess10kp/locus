@@ -4,7 +4,6 @@ import (
 	"context"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/sigma/locus-go/internal/config"
@@ -37,16 +36,16 @@ func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 	if q == "" {
 		return []*LauncherItem{
 			{
-				Title:    "Kill Window",
-				Subtitle: "Close focused window",
-				Icon:     "window-close-symbolic",
-				Command:  "swaymsg kill",
+				Title:      "Kill Window",
+				Subtitle:   "Close focused window",
+				Icon:       "window-close-symbolic",
+				ActionData: NewShellAction("swaymsg kill"),
 			},
 			{
-				Title:    "Kill All Windows",
-				Subtitle: "Close all windows on current workspace",
-				Icon:     "window-close-symbolic",
-				Command:  "swaymsg '[workspace focused] kill'",
+				Title:      "Kill All Windows",
+				Subtitle:   "Close all windows on current workspace",
+				Icon:       "window-close-symbolic",
+				ActionData: NewShellAction("swaymsg '[workspace focused] kill'"),
 			},
 		}
 	}
@@ -55,10 +54,10 @@ func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 	if len(q) < 2 {
 		return []*LauncherItem{
 			{
-				Title:    "Kill Window",
-				Subtitle: "Close focused window",
-				Icon:     "window-close-symbolic",
-				Command:  "swaymsg kill",
+				Title:      "Kill Window",
+				Subtitle:   "Close focused window",
+				Icon:       "window-close-symbolic",
+				ActionData: NewShellAction("swaymsg kill"),
 			},
 		}
 	}
@@ -77,51 +76,41 @@ func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 
 	items := []*LauncherItem{
 		{
-			Title:    "Kill Focused: " + focusedWindow,
-			Subtitle: "Close focused window",
-			Icon:     "window-close-symbolic",
-			Command:  "swaymsg kill",
+			Title:      "Kill Focused: " + focusedWindow,
+			Subtitle:   "Close focused window",
+			Icon:       "window-close-symbolic",
+			ActionData: NewShellAction("swaymsg kill"),
 		},
 	}
 
 	if strings.HasPrefix(q, "by-name ") {
 		name := strings.TrimPrefix(q, "by-name ")
 		items = append(items, &LauncherItem{
-			Title:    "Kill by name: " + name,
-			Subtitle: "Kill all windows matching name",
-			Icon:     "window-close-symbolic",
-			Command:  "swaymsg '[title=\"" + name + "\"] kill'",
+			Title:      "Kill by name: " + name,
+			Subtitle:   "Kill all windows matching name",
+			Icon:       "window-close-symbolic",
+			ActionData: NewShellAction("swaymsg '[title=\"" + name + "\"] kill'"),
 		})
 	}
 
 	if strings.HasPrefix(q, "all") {
 		items = append(items, &LauncherItem{
-			Title:    "Kill All Windows",
-			Subtitle: "Close all windows on current workspace",
-			Icon:     "window-close-symbolic",
-			Command:  "swaymsg '[workspace focused] kill'",
+			Title:      "Kill All Windows",
+			Subtitle:   "Close all windows on current workspace",
+			Icon:       "window-close-symbolic",
+			ActionData: NewShellAction("swaymsg '[workspace focused] kill'"),
 		})
 	}
 
 	return items
 }
 
-func (l *KillLauncher) HandlesEnter() bool {
-	return true
+func (l *KillLauncher) GetHooks() []Hook {
+	return []Hook{}
 }
 
-func (l *KillLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	cmd := exec.Command("sh", "-c", "swaymsg kill")
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	return cmd.Start() == nil
-}
-
-func (l *KillLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *KillLauncher) HandleTab(query string) string {
-	return query
+func (l *KillLauncher) Rebuild(ctx *LauncherContext) error {
+	return nil
 }
 
 func (l *KillLauncher) Cleanup() {

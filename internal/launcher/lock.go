@@ -1,9 +1,6 @@
 package launcher
 
 import (
-	"os/exec"
-	"syscall"
-
 	"github.com/sigma/locus-go/internal/config"
 )
 
@@ -32,30 +29,20 @@ func (l *LockLauncher) GetSizeMode() LauncherSizeMode {
 func (l *LockLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	return []*LauncherItem{
 		{
-			Title:    "Lock Screen",
-			Subtitle: "Lock the screen immediately",
-			Icon:     "system-lock-screen-symbolic",
-			Command:  "swaylock -f -c 000000",
+			Title:      "Lock Screen",
+			Subtitle:   "Lock the screen immediately",
+			Icon:       "system-lock-screen-symbolic",
+			ActionData: NewShellAction("swaylock -f -c 000000"),
 		},
 	}
 }
 
-func (l *LockLauncher) HandlesEnter() bool {
-	return true
+func (l *LockLauncher) GetHooks() []Hook {
+	return []Hook{}
 }
 
-func (l *LockLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	cmd := exec.Command("sh", "-c", "swaylock -f -c 000000")
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	return cmd.Start() == nil
-}
-
-func (l *LockLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *LockLauncher) HandleTab(query string) string {
-	return query
+func (l *LockLauncher) Rebuild(ctx *LauncherContext) error {
+	return nil
 }
 
 func (l *LockLauncher) Cleanup() {
