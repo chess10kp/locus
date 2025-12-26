@@ -100,8 +100,8 @@ func (l *AppLauncher) fuzzySearch(query string, maxResults int) []*LauncherItem 
 	matches := fuzzy.Find(query, appNames)
 	log.Printf("[APP-LAUNCHER] Fuzzy find completed in %v, found %d raw matches", time.Since(findStart), len(matches))
 
-	// Filter by minimum score threshold (25% like Python implementation)
-	minScore := 25 // 25% of max score (100)
+	// Filter by minimum score threshold - use low threshold for better UX
+	minScore := 0 // Set to 0 to accept all matches, fuzzy library has its own ranking
 	filteredMatches := make([]fuzzy.Match, 0)
 
 	for _, match := range matches {
@@ -152,12 +152,10 @@ func (l *AppLauncher) appToItem(app apps.App) *LauncherItem {
 		icon = l.config.Launcher.Icons.FallbackIcon
 	}
 
-	// Build subtitle from description and keywords
+	// Build subtitle from description only, trimmed to first 10 characters
 	subtitle := app.Description
-	if subtitle == "" && app.Keywords != "" {
-		subtitle = fmt.Sprintf("Keywords: %s", app.Keywords)
-	} else if subtitle != "" && app.Keywords != "" {
-		subtitle = fmt.Sprintf("%s (%s)", subtitle, app.Keywords)
+	if len(subtitle) > 10 {
+		subtitle = subtitle[:10] + "..."
 	}
 
 	return &LauncherItem{

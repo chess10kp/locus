@@ -16,23 +16,24 @@ func TestLauncherRegistration(t *testing.T) {
 	}
 
 	launchers := registry.GetAllLaunchers()
-	if len(launchers) < 8 {
-		t.Errorf("Expected at least 8 launchers, got %d", len(launchers))
+	if len(launchers) < 13 {
+		t.Errorf("Expected at least 13 launchers, got %d", len(launchers))
 	}
 
 	launcherNames := make(map[string]bool)
 	for _, l := range launchers {
 		launcherNames[l.Name()] = true
 
-		if len(l.CommandTriggers()) == 0 {
+		// Skip checking command triggers for the apps launcher (it's the default)
+		if l.Name() != "apps" && len(l.CommandTriggers()) == 0 {
 			t.Errorf("Launcher %s has no command triggers", l.Name())
 		}
 	}
 
 	expectedLaunchers := []string{
-		"shell", "web", "calc", "brightness",
+		"apps", "shell", "web", "calc", "brightness",
 		"screenshot", "lock", "timer", "kill",
-		"focus", "wallpaper",
+		"focus", "wallpaper", "clipboard", "wifi", "file",
 	}
 
 	for _, name := range expectedLaunchers {

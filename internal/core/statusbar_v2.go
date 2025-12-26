@@ -329,19 +329,17 @@ func (sb *StatusBar) createWidgetsForContainer(container *gtk.Box, monitorIndex 
 	}
 
 	// Create spacers for centering middle section
-	leftSpacer, err := gtk.LabelNew("")
+	leftSpacer, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create left spacer: %w", err)
 	}
 	leftSpacer.SetHExpand(true)
-	leftSpacer.SetHAlign(gtk.ALIGN_FILL)
 
-	rightSpacer, err := gtk.LabelNew("")
+	rightSpacer, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create right spacer: %w", err)
 	}
 	rightSpacer.SetHExpand(true)
-	rightSpacer.SetHAlign(gtk.ALIGN_FILL)
 
 	// Build sections
 	if err := sb.constructSection(sb.config.StatusBar.Layout.Left, leftBox); err != nil {

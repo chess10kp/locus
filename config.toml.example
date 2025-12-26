@@ -18,7 +18,7 @@ width = 600
 
 [launcher.window]
 width = 600
-height = 400
+height = 500
 
 [launcher.search]
 max_results = 10

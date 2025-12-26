@@ -76,16 +76,13 @@ window {
     background-color: transparent;
 }
 
-.list-row {
-    padding: 12px;
+#list-row {
+    padding: 8px 12px;
     border-bottom: 1px solid #313244;
+    min-height: 40px;
 }
 
-.list-row:hover {
-    background-color: #313244;
-}
-
-.list-row:selected {
+#list-row:selected {
     background-color: #89b4fa;
     color: #1e1e2e;
 }

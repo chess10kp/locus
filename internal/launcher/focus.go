@@ -1,9 +1,7 @@
 package launcher
 
 import (
-	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/sigma/locus-go/internal/config"
 )
@@ -33,28 +31,28 @@ func (l *WMFocusLauncher) GetSizeMode() LauncherSizeMode {
 func (l *WMFocusLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	items := []*LauncherItem{
 		{
-			Title:    "Focus Left",
-			Subtitle: "Focus window to the left",
-			Icon:     "go-next-symbolic-rtl",
-			Command:  "swaymsg focus left",
+			Title:      "Focus Left",
+			Subtitle:   "Focus window to the left",
+			Icon:       "go-next-symbolic-rtl",
+			ActionData: NewShellAction("swaymsg focus left"),
 		},
 		{
-			Title:    "Focus Right",
-			Subtitle: "Focus window to the right",
-			Icon:     "go-next-symbolic",
-			Command:  "swaymsg focus right",
+			Title:      "Focus Right",
+			Subtitle:   "Focus window to the right",
+			Icon:       "go-next-symbolic",
+			ActionData: NewShellAction("swaymsg focus right"),
 		},
 		{
-			Title:    "Focus Up",
-			Subtitle: "Focus window above",
-			Icon:     "go-up-symbolic",
-			Command:  "swaymsg focus up",
+			Title:      "Focus Up",
+			Subtitle:   "Focus window above",
+			Icon:       "go-up-symbolic",
+			ActionData: NewShellAction("swaymsg focus up"),
 		},
 		{
-			Title:    "Focus Down",
-			Subtitle: "Focus window below",
-			Icon:     "go-down-symbolic",
-			Command:  "swaymsg focus down",
+			Title:      "Focus Down",
+			Subtitle:   "Focus window below",
+			Icon:       "go-down-symbolic",
+			ActionData: NewShellAction("swaymsg focus down"),
 		},
 	}
 
@@ -75,22 +73,12 @@ func (l *WMFocusLauncher) Populate(query string, ctx *LauncherContext) []*Launch
 	return items
 }
 
-func (l *WMFocusLauncher) HandlesEnter() bool {
-	return true
+func (l *WMFocusLauncher) GetHooks() []Hook {
+	return []Hook{}
 }
 
-func (l *WMFocusLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	cmd := exec.Command("swaymsg", "focus", query)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	return cmd.Start() == nil
-}
-
-func (l *WMFocusLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *WMFocusLauncher) HandleTab(query string) string {
-	return query
+func (l *WMFocusLauncher) Rebuild(ctx *LauncherContext) error {
+	return nil
 }
 
 func (l *WMFocusLauncher) Cleanup() {

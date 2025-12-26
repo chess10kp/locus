@@ -52,10 +52,10 @@ func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 		for _, path := range searchPaths {
 			if _, err := os.Stat(path); err == nil {
 				items = append(items, &LauncherItem{
-					Title:    filepath.Base(path),
-					Subtitle: path,
-					Icon:     "folder",
-					Command:  "xdg-open " + path,
+					Title:      filepath.Base(path),
+					Subtitle:   path,
+					Icon:       "folder",
+					ActionData: NewShellAction("xdg-open " + path),
 				})
 			}
 		}
@@ -77,10 +77,10 @@ func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 	if cmdCtx.Err() == context.DeadlineExceeded {
 		return []*LauncherItem{
 			{
-				Title:    "Search Timeout",
-				Subtitle: "File search took too long",
-				Icon:     "dialog-warning",
-				Command:  "",
+				Title:      "Search Timeout",
+				Subtitle:   "File search took too long",
+				Icon:       "dialog-warning",
+				ActionData: NewShellAction(""),
 			},
 		}
 	}
@@ -88,10 +88,10 @@ func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 	if err != nil {
 		return []*LauncherItem{
 			{
-				Title:    "Search Error",
-				Subtitle: err.Error(),
-				Icon:     "dialog-error",
-				Command:  "",
+				Title:      "Search Error",
+				Subtitle:   err.Error(),
+				Icon:       "dialog-error",
+				ActionData: NewShellAction(""),
 			},
 		}
 	}
@@ -108,10 +108,10 @@ func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 		filename := filepath.Base(absPath)
 
 		items = append(items, &LauncherItem{
-			Title:    filename,
-			Subtitle: absPath,
-			Icon:     l.getFileIcon(filename),
-			Command:  "xdg-open " + absPath,
+			Title:      filename,
+			Subtitle:   absPath,
+			Icon:       l.getFileIcon(filename),
+			ActionData: NewShellAction("xdg-open " + absPath),
 		})
 
 		if len(items) >= 50 {
@@ -140,32 +140,12 @@ func (l *FileLauncher) getFileIcon(filename string) string {
 	}
 }
 
-func (l *FileLauncher) HandlesEnter() bool {
-	return true
+func (l *FileLauncher) GetHooks() []Hook {
+	return []Hook{}
 }
 
-func (l *FileLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	q := strings.TrimSpace(query)
-	if q == "" {
-		return false
-	}
-
-	absPath, err := filepath.Abs(q)
-	if err != nil {
-		return false
-	}
-
-	cmd := exec.Command("xdg-open", absPath)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	return cmd.Start() == nil
-}
-
-func (l *FileLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *FileLauncher) HandleTab(query string) string {
-	return query
+func (l *FileLauncher) Rebuild(ctx *LauncherContext) error {
+	return nil
 }
 
 func (l *FileLauncher) Cleanup() {

@@ -33,40 +33,32 @@ func (l *ClipboardLauncher) Populate(query string, ctx *LauncherContext) []*Laun
 	if q == "" {
 		return []*LauncherItem{
 			{
-				Title:    "Clear Clipboard",
-				Subtitle: "Clear all clipboard history",
-				Icon:     "edit-clear-all",
-				Command:  "wl-copy --clear",
+				Title:      "Clear Clipboard",
+				Subtitle:   "Clear all clipboard history",
+				Icon:       "edit-clear-all",
+				ActionData: NewShellAction("wl-copy --clear"),
 			},
 		}
 	}
 
 	items := []*LauncherItem{
 		{
-			Title:    "Show Clipboard History",
-			Subtitle: "List and select from clipboard history",
-			Icon:     "edit-paste",
-			Command:  "cliphist list | head -50 | while read -r line; do echo \"$line\"; done | wl-copy -r 1",
+			Title:      "Show Clipboard History",
+			Subtitle:   "List and select from clipboard history",
+			Icon:       "edit-paste",
+			ActionData: NewShellAction("cliphist list | head -50 | while read -r line; do echo \"$line\"; done | wl-copy -r 1"),
 		},
 	}
 
 	return items
 }
 
-func (l *ClipboardLauncher) HandlesEnter() bool {
-	return true
+func (l *ClipboardLauncher) GetHooks() []Hook {
+	return []Hook{}
 }
 
-func (l *ClipboardLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	return true
-}
-
-func (l *ClipboardLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *ClipboardLauncher) HandleTab(query string) string {
-	return query
+func (l *ClipboardLauncher) Rebuild(ctx *LauncherContext) error {
+	return nil
 }
 
 func (l *ClipboardLauncher) Cleanup() {

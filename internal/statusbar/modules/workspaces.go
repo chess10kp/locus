@@ -75,6 +75,7 @@ type WorkspacesModule struct {
 	widget       *gtk.Label
 	workspaces   []string
 	focusedIndex int
+	showLabels   bool
 }
 
 // NewWorkspacesModule creates a new workspaces module
@@ -84,6 +85,7 @@ func NewWorkspacesModule() *WorkspacesModule {
 		widget:       nil,
 		workspaces:   []string{"1", "2", "3", "4", "5"},
 		focusedIndex: 0,
+		showLabels:   true, // default to showing labels
 	}
 }
 
@@ -95,6 +97,11 @@ func (m *WorkspacesModule) CreateWidget() (gtk.IWidget, error) {
 	}
 
 	m.widget = label
+
+	// Set widget name based on configuration
+	if !m.showLabels {
+		label.SetName("workspaces-icons")
+	}
 
 	helper := &statusbar.WidgetHelper{}
 	if err := helper.ApplyStylesToWidget(label, m.GetStyles(), m.GetCSSClasses()); err != nil {
@@ -143,8 +150,8 @@ func (m *WorkspacesModule) Initialize(config map[string]interface{}) error {
 		return err
 	}
 
-	if showLabels, ok := config["show_labels"].(bool); ok && !showLabels {
-		m.widget.SetName("workspaces-icons")
+	if showLabels, ok := config["show_labels"].(bool); ok {
+		m.showLabels = showLabels
 	}
 
 	m.SetCSSClasses([]string{"workspaces-module"})

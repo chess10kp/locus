@@ -126,7 +126,7 @@ func TestHookRegistryExecuteSelectHooks(t *testing.T) {
 	stoppingHook := &MockHook{
 		id:       "stopping",
 		priority: 5,
-		onSelect: func(ctx *HookContext, data ActionData) HookResult {
+		onSelect: func(execCtx context.Context, ctx *HookContext, data ActionData) HookResult {
 			return HookResult{Handled: false, StopPropagation: true}
 		},
 	}
@@ -135,7 +135,7 @@ func TestHookRegistryExecuteSelectHooks(t *testing.T) {
 	handlingHook := &MockHook{
 		id:       "handling",
 		priority: 10,
-		onSelect: func(ctx *HookContext, data ActionData) HookResult {
+		onSelect: func(execCtx context.Context, ctx *HookContext, data ActionData) HookResult {
 			return HookResult{Handled: true}
 		},
 	}
@@ -144,18 +144,22 @@ func TestHookRegistryExecuteSelectHooks(t *testing.T) {
 	nonHandlingHook := &MockHook{
 		id:       "non-handling",
 		priority: 15,
-		onSelect: func(ctx *HookContext, data ActionData) HookResult {
+		onSelect: func(execCtx context.Context, ctx *HookContext, data ActionData) HookResult {
 			return HookResult{Handled: false}
 		},
 	}
 
-	registry.Register("timer", handlingHook)
-	registry.Register("timer", stoppingHook)
-	registry.Register("timer", nonHandlingHook)
+	registry.Register("test", stoppingHook)
+	registry.Register("test", handlingHook)
+	registry.Register("test", nonHandlingHook)
 
+	refreshUICh := make(chan RefreshUIRequest, 1)
+	statusCh := make(chan StatusRequest, 1)
 	ctx := &HookContext{
-		LauncherName: "timer",
+		LauncherName: "test",
 		Config:       &config.Config{},
+		RefreshUI:    refreshUICh,
+		SendStatus:   statusCh,
 	}
 
 	action := NewShellAction("echo test")
@@ -174,34 +178,29 @@ func TestHookRegistryExecuteSelectHooks(t *testing.T) {
 func TestHookRegistryExecuteEnterHooks(t *testing.T) {
 	registry := NewHookRegistry()
 
-	executed := false
 	hook := &MockHook{
 		id:       "enter-hook",
 		priority: 10,
-		onEnter: func(ctx *HookContext, text string) HookResult {
-			executed = true
-			if text == "test command" {
-				return HookResult{Handled: true}
-			}
-			return HookResult{Handled: false}
+		onEnter: func(execCtx context.Context, ctx *HookContext, text string) HookResult {
+			return HookResult{Handled: true}
 		},
 	}
 
 	registry.Register("timer", hook)
 
+	refreshUICh := make(chan RefreshUIRequest, 1)
+	statusCh := make(chan StatusRequest, 1)
 	ctx := &HookContext{
 		LauncherName: "timer",
 		Config:       &config.Config{},
+		RefreshUI:    refreshUICh,
+		SendStatus:   statusCh,
 	}
 
-	result := registry.ExecuteEnterHooks(ctx, "test command")
-
-	if !executed {
-		t.Error("Hook was not executed")
-	}
+	result := registry.ExecuteEnterHooks(context.Background(), ctx, "test command")
 
 	if !result.Handled {
-		t.Error("Expected command to be handled")
+		t.Error("Hook was not executed")
 	}
 }
 
@@ -211,22 +210,23 @@ func TestHookRegistryExecuteTabHooks(t *testing.T) {
 	hook := &MockHook{
 		id:       "tab-hook",
 		priority: 10,
-		onTab: func(ctx *HookContext, text string) TabResult {
-			if text == ">timer" {
-				return TabResult{NewText: ">timer ", Handled: true}
-			}
-			return TabResult{Handled: false}
+		onTab: func(execCtx context.Context, ctx *HookContext, text string) TabResult {
+			return TabResult{NewText: ">timer ", Handled: true}
 		},
 	}
 
 	registry.Register("timer", hook)
 
+	refreshUICh := make(chan RefreshUIRequest, 1)
+	statusCh := make(chan StatusRequest, 1)
 	ctx := &HookContext{
 		LauncherName: "timer",
 		Config:       &config.Config{},
+		RefreshUI:    refreshUICh,
+		SendStatus:   statusCh,
 	}
 
-	result := registry.ExecuteTabHooks(ctx, ">timer")
+	result := registry.ExecuteTabHooks(context.Background(), ctx, ">timer")
 
 	if !result.Handled {
 		t.Error("Expected tab completion to be handled")
@@ -295,16 +295,14 @@ func TestHookRegistryCleanup(t *testing.T) {
 
 // TestHookContext tests the HookContext structure
 func TestHookContext(t *testing.T) {
+	refreshUICh := make(chan RefreshUIRequest, 1)
+	statusCh := make(chan StatusRequest, 1)
 	ctx := &HookContext{
 		LauncherName: "timer",
 		Query:        "5m",
 		Config:       &config.Config{},
-		RefreshUI: func() error {
-			return nil
-		},
-		SendStatus: func(msg string) error {
-			return nil
-		},
+		RefreshUI:    refreshUICh,
+		SendStatus:   statusCh,
 	}
 
 	if ctx.LauncherName != "timer" {

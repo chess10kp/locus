@@ -1,10 +1,13 @@
 package launcher
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -374,6 +377,13 @@ func (r *LauncherRegistry) ExecuteWithActionData(launcherName string, data Actio
 		}
 		return r.executeShellCommand(shellAction.Command)
 
+	case "desktop":
+		desktopAction, ok := data.(*DesktopAction)
+		if !ok {
+			return fmt.Errorf("invalid desktop action type")
+		}
+		return r.executeDesktopAction(desktopAction.File)
+
 	case "clipboard":
 		clipboardAction, ok := data.(*ClipboardAction)
 		if !ok {
@@ -440,6 +450,106 @@ func (r *LauncherRegistry) executeShellCommand(command string) error {
 	return nil
 }
 
+// executeDesktopAction launches a desktop application
+func (r *LauncherRegistry) executeDesktopAction(filePath string) error {
+	if filePath == "" {
+		return fmt.Errorf("empty desktop file path")
+	}
+
+	// Parse the desktop file to get the Exec command
+	execCmd, err := r.parseDesktopExec(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to parse desktop file: %w", err)
+	}
+
+	if execCmd == "" {
+		return fmt.Errorf("no Exec command in desktop file")
+	}
+
+	// Strip field codes like %f, %u, etc. (similar to Python implementation)
+	execCmd = r.stripFieldCodes(execCmd)
+
+	// Split the command
+	parts := strings.Fields(execCmd)
+	if len(parts) == 0 {
+		return fmt.Errorf("empty exec command")
+	}
+
+	// Use systemd-run if available (like Python implementation)
+	var cmd *exec.Cmd
+	if r.isSystemdRunAvailable() {
+		// systemd-run --user --scope --quiet <command>
+		args := append([]string{"--user", "--scope", "--quiet"}, parts...)
+		cmd = exec.Command("systemd-run", args...)
+	} else {
+		cmd = exec.Command(parts[0], parts[1:]...)
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Setsid: true,
+		}
+	}
+
+	// Sanitize environment (remove LD_PRELOAD like Python)
+	cmd.Env = r.sanitizeEnvironment()
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start desktop application: %w", err)
+	}
+
+	return nil
+}
+
+// parseDesktopExec parses the Exec field from a desktop file
+func (r *LauncherRegistry) parseDesktopExec(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "Exec=") {
+			return strings.TrimPrefix(line, "Exec="), nil
+		}
+	}
+
+	return "", fmt.Errorf("Exec field not found")
+}
+
+// stripFieldCodes removes desktop entry field codes like %f, %u, etc.
+func (r *LauncherRegistry) stripFieldCodes(cmd string) string {
+	// Remove field codes using regex (similar to Python's re.sub)
+	re := regexp.MustCompile(`%[uUfFdDnNickvm]`)
+	return strings.TrimSpace(re.ReplaceAllString(cmd, ""))
+}
+
+// isSystemdRunAvailable checks if systemd-run is available
+func (r *LauncherRegistry) isSystemdRunAvailable() bool {
+	_, err := exec.LookPath("systemd-run")
+	return err == nil
+}
+
+// sanitizeEnvironment removes problematic environment variables
+func (r *LauncherRegistry) sanitizeEnvironment() []string {
+	env := os.Environ()
+	var sanitized []string
+
+	for _, e := range env {
+		if strings.HasPrefix(e, "LD_PRELOAD=") {
+			// Skip LD_PRELOAD (like Python implementation)
+			continue
+		}
+		if strings.HasPrefix(e, "GDK_BACKEND=") && strings.Contains(e, "wayland") {
+			// Don't force GDK_BACKEND if it's wayland (like Python)
+			continue
+		}
+		sanitized = append(sanitized, e)
+	}
+
+	return sanitized
+}
+
 // executeClipboardAction handles clipboard operations
 func (r *LauncherRegistry) executeClipboardAction(action *ClipboardAction) error {
 	// TODO: Implement clipboard operations
@@ -495,16 +605,15 @@ func (r *LauncherRegistry) LoadBuiltIn() error {
 		NewWebLauncher(),
 		NewCalcLauncher(),
 		NewTimerLauncher(r.config),
-		// TODO: Add other launchers after implementing GetHooks/Rebuild
-		// NewBrightnessLauncher(r.config),
-		// NewScreenshotLauncher(r.config),
-		// NewLockLauncher(r.config),
-		// NewKillLauncher(r.config),
-		// NewWMFocusLauncher(r.config),
-		// NewWallpaperLauncher(r.config),
-		// NewClipboardLauncher(r.config),
-		// NewWifiLauncher(r.config),
-		// NewFileLauncher(r.config),
+		NewBrightnessLauncher(r.config),
+		NewScreenshotLauncher(r.config),
+		NewLockLauncher(r.config),
+		NewKillLauncher(r.config),
+		NewWMFocusLauncher(r.config),
+		NewWallpaperLauncher(r.config),
+		NewClipboardLauncher(r.config),
+		NewWifiLauncher(r.config),
+		NewFileLauncher(r.config),
 	}
 
 	for _, l := range launchers {

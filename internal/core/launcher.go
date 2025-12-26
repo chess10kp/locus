@@ -25,24 +25,25 @@ var (
 )
 
 type Launcher struct {
-	app           *App
-	config        *config.Config
-	window        *gtk.Window
-	searchEntry   *gtk.Entry
-	resultList    *gtk.ListBox
-	hideButton    *gtk.Button
-	registry      *launcher.LauncherRegistry
-	currentInput  string
-	currentItems  []*launcher.LauncherItem
-	running       bool
-	visible       atomic.Bool
-	searchTimer   *time.Timer
-	searchVersion int64 // Track search version to prevent race conditions
-	mu            sync.RWMutex
-	refreshUIChan chan launcher.RefreshUIRequest
-	statusChan    chan launcher.StatusRequest
-	ctx           context.Context
-	cancel        context.CancelFunc
+	app            *App
+	config         *config.Config
+	window         *gtk.Window
+	searchEntry    *gtk.Entry
+	resultList     *gtk.ListBox
+	hideButton     *gtk.Button
+	registry       *launcher.LauncherRegistry
+	currentInput   string
+	currentItems   []*launcher.LauncherItem
+	scrolledWindow *gtk.ScrolledWindow
+	running        bool
+	visible        atomic.Bool
+	searchTimer    *time.Timer
+	searchVersion  int64 // Track search version to prevent race conditions
+	mu             sync.RWMutex
+	refreshUIChan  chan launcher.RefreshUIRequest
+	statusChan     chan launcher.StatusRequest
+	ctx            context.Context
+	cancel         context.CancelFunc
 }
 
 func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
@@ -94,6 +95,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	}
 
 	scrolledWindow.SetPolicy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+	scrolledWindow.SetVExpand(true)
+	scrolledWindow.SetMinContentHeight(5 * 44) // Minimum height for 5 results
 	box.PackStart(scrolledWindow, true, true, 0)
 
 	resultList, err := gtk.ListBoxNew()
@@ -102,7 +105,9 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	}
 
 	resultList.SetName("result-list")
+	resultList.SetVExpand(true)
 	scrolledWindow.Add(resultList)
+	scrolledWindow.ShowAll()
 
 	registry := launcher.NewLauncherRegistry(cfg)
 
@@ -112,17 +117,18 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	l := &Launcher{
-		app:           app,
-		config:        cfg,
-		window:        window,
-		searchEntry:   searchEntry,
-		resultList:    resultList,
-		hideButton:    hideButton,
-		registry:      registry,
-		refreshUIChan: refreshUIChan,
-		statusChan:    statusChan,
-		ctx:           ctx,
-		cancel:        cancel,
+		app:            app,
+		config:         cfg,
+		window:         window,
+		searchEntry:    searchEntry,
+		resultList:     resultList,
+		hideButton:     hideButton,
+		scrolledWindow: scrolledWindow,
+		registry:       registry,
+		refreshUIChan:  refreshUIChan,
+		statusChan:     statusChan,
+		ctx:            ctx,
+		cancel:         cancel,
 	}
 
 	// Start goroutines to handle channel requests
@@ -167,6 +173,7 @@ func (l *Launcher) setupSignals() {
 func (l *Launcher) onSearchChanged(text string) {
 	searchStart := time.Now()
 	debugLogger.Printf("SEARCH_CHANGED: text='%s' len=%d", text, len(text))
+	fmt.Printf("[SEARCH] Input changed to: '%s' (len=%d)\n", text, len(text))
 
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -232,11 +239,17 @@ func (l *Launcher) onSearchChanged(text string) {
 
 func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) {
 	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.updateResultsUnsafe(items, version)
+	success := l.updateResultsUnsafe(items, version)
+	l.mu.Unlock()
+
+	if success {
+		l.resultList.ShowAll()
+		l.resultList.QueueDraw()
+		l.scrolledWindow.QueueDraw()
+	}
 }
 
-func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version int64) {
+func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version int64) bool {
 	updateStart := time.Now()
 	debugLogger.Printf("UPDATE_RESULTS: started for version=%d, %d items", version, len(items))
 
@@ -244,7 +257,7 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 	currentVersion := atomic.LoadInt64(&l.searchVersion)
 	if version != currentVersion {
 		debugLogger.Printf("UPDATE_RESULTS: skipping stale update for version=%d (current=%d)", version, currentVersion)
-		return // Skip stale update
+		return false // Skip stale update
 	}
 
 	l.currentItems = items
@@ -270,7 +283,6 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 			continue
 		}
 		l.resultList.Add(row)
-		row.ShowAll()
 	}
 	debugLogger.Printf("UPDATE_RESULTS: rendered %d new rows in %v", len(items), time.Since(renderStart))
 
@@ -285,6 +297,7 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 	}
 
 	debugLogger.Printf("UPDATE_RESULTS: completed for version=%d in %v", version, time.Since(updateStart))
+	return true
 }
 
 func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow, error) {
@@ -320,7 +333,9 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 		return nil, err
 	}
 
-	label.SetHAlign(gtk.ALIGN_START)
+	if label != nil {
+		label.SetHAlign(gtk.ALIGN_START)
+	}
 	box.PackStart(label, true, true, 0)
 
 	if item.Subtitle != "" {
@@ -329,12 +344,15 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 			return nil, err
 		}
 
-		subLabel.SetHAlign(gtk.ALIGN_START)
-		subLabel.SetMarginStart(16)
+		if subLabel != nil {
+			subLabel.SetHAlign(gtk.ALIGN_START)
+			subLabel.SetMarginStart(16)
+		}
 		box.PackStart(subLabel, true, true, 0)
 	}
 
 	row.Add(box)
+	row.Show()
 	return row, nil
 }
 
@@ -617,7 +635,16 @@ func (l *Launcher) Start() error {
 		width = 600
 	}
 	if height <= 0 {
-		height = 400
+		// Calculate minimum height to show at least 5 results
+		// Each result row is approximately: 8px (margin top) + 16px (font) + 8px (margin bottom) + 12px (padding) = 44px
+		// Plus search entry height (~50px) and some padding
+		minHeightForResults := 5 * 44                                   // 5 rows × ~44px each
+		searchEntryHeight := 50                                         // Approximate search entry height
+		extraPadding := 20                                              // Extra padding
+		height = minHeightForResults + searchEntryHeight + extraPadding // ~290px minimum
+		if height < 500 {
+			height = 500 // Default to 500px if calculated height is smaller
+		}
 	}
 	l.window.SetDefaultSize(width, height)
 
@@ -631,6 +658,8 @@ func (l *Launcher) Start() error {
 	layer.InitForWindow(unsafe.Pointer(l.window.Native()))
 	layer.SetLayer(unsafe.Pointer(l.window.Native()), layer.LayerOverlay)
 	layer.SetKeyboardMode(unsafe.Pointer(l.window.Native()), layer.KeyboardModeExclusive)
+	layer.SetAnchor(unsafe.Pointer(l.window.Native()), layer.EdgeTop, true)
+	layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, 40)
 	layer.SetExclusiveZone(unsafe.Pointer(l.window.Native()), 0)
 
 	l.window.Connect("destroy", func() {

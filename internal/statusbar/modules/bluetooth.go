@@ -286,7 +286,7 @@ func (m *BluetoothModule) updateDeviceMenu() {
 			}
 
 			label, err := gtk.LabelNew(fmt.Sprintf("%s %s", statusIcon, device.Name))
-			if err == nil {
+			if err == nil && label != nil {
 				label.SetHAlign(gtk.ALIGN_START)
 				label.SetHExpand(true)
 				deviceBox.PackStart(label, true, true, 0)
