@@ -500,6 +500,14 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 		}
 
 		if loadErr == nil && pixbuf != nil {
+			// Ensure pixbuf is exactly the right size
+			if pixbuf.GetWidth() != iconSize || pixbuf.GetHeight() != iconSize {
+				// Scale to exact size if needed
+				scaled, scaleErr := pixbuf.ScaleSimple(iconSize, iconSize, gdk.INTERP_BILINEAR)
+				if scaleErr == nil && scaled != nil {
+					pixbuf = scaled
+				}
+			}
 			icon.SetFromPixbuf(pixbuf)
 		} else {
 			// Create a blank icon at the custom size to ensure consistency
