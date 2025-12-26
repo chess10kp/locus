@@ -47,6 +47,7 @@ type Launcher struct {
 	resultList     *gtk.ListBox
 	hideButton     *gtk.Button
 	registry       *launcher.LauncherRegistry
+	iconCache      *launcher.IconCache
 	currentInput   string
 	currentItems   []*launcher.LauncherItem
 	scrolledWindow *gtk.ScrolledWindow
@@ -128,6 +129,14 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	registry := launcher.NewLauncherRegistry(cfg)
 
+	// Create icon cache
+	iconCache, err := launcher.NewIconCache(cfg)
+	if err != nil {
+		log.Printf("Failed to create icon cache: %v", err)
+		// Continue without cache - icons will use default GTK sizes
+		iconCache = nil
+	}
+
 	// Create channels for hook context
 	refreshUIChan := make(chan launcher.RefreshUIRequest, 1)
 	statusChan := make(chan launcher.StatusRequest, 10) // Buffer for multiple status messages
@@ -142,6 +151,7 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		hideButton:     hideButton,
 		scrolledWindow: scrolledWindow,
 		registry:       registry,
+		iconCache:      iconCache,
 		refreshUIChan:  refreshUIChan,
 		statusChan:     statusChan,
 		ctx:            ctx,
@@ -458,7 +468,53 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 			return nil, err
 		}
 
-		icon.SetFromIconName(item.Icon, gtk.ICON_SIZE_LARGE_TOOLBAR)
+		// Always use consistent icon size
+		iconSize := l.config.Launcher.Icons.IconSize
+		if iconSize <= 0 {
+			iconSize = 32 // Default consistent size
+		}
+
+		var pixbuf *gdk.Pixbuf
+		var loadErr error
+
+		if l.iconCache != nil {
+			// Use cache if available (includes fallback handling)
+			pixbuf, loadErr = l.iconCache.GetIcon(item.Icon, iconSize)
+		} else {
+			// Load directly from theme at custom size with fallback
+			theme, themeErr := gtk.IconThemeGetDefault()
+			if themeErr == nil {
+				// Try the requested icon first
+				pixbuf, loadErr = theme.LoadIcon(item.Icon, iconSize, gtk.ICON_LOOKUP_USE_BUILTIN)
+				if loadErr != nil || pixbuf == nil {
+					// Try fallback icon
+					fallback := l.config.Launcher.Icons.FallbackIcon
+					if fallback == "" {
+						fallback = "image-missing"
+					}
+					if item.Icon != fallback {
+						pixbuf, loadErr = theme.LoadIcon(fallback, iconSize, gtk.ICON_LOOKUP_USE_BUILTIN)
+					}
+				}
+			}
+		}
+
+		if loadErr == nil && pixbuf != nil {
+			icon.SetFromPixbuf(pixbuf)
+		} else {
+			// Create a blank icon at the custom size to ensure consistency
+			// This ensures all icons have the same dimensions even when loading fails
+			pixbuf, loadErr = gdk.PixbufNew(gdk.COLORSPACE_RGB, true, 8, iconSize, iconSize)
+			if loadErr == nil && pixbuf != nil {
+				// Fill with transparent background
+				pixbuf.Fill(0x00000000) // RGBA: transparent
+				icon.SetFromPixbuf(pixbuf)
+			} else {
+				// Ultimate fallback
+				icon.SetFromIconName(item.Icon, gtk.ICON_SIZE_LARGE_TOOLBAR)
+			}
+		}
+
 		box.PackStart(icon, false, false, 0)
 		icon.Show()
 	}
@@ -827,6 +883,9 @@ func (l *Launcher) Stop() error {
 	close(l.statusChan)
 
 	l.registry.Cleanup()
+	if l.iconCache != nil {
+		l.iconCache.Clear()
+	}
 	l.window.Close()
 
 	l.running = false

@@ -36,6 +36,13 @@ func cleanup() {
 }
 
 func main() {
+	// Set up logging to file
+	logFile, err := os.OpenFile("locus.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		log.SetOutput(logFile)
+		defer logFile.Close()
+	}
+
 	// Ensure single instance
 	if err := ensureSingleInstance(); err != nil {
 		log.Fatalf("Failed to ensure single instance: %v", err)
