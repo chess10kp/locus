@@ -316,20 +316,17 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 	children := l.resultList.GetChildren()
 	childCount := children.Length()
 
-	// Collect all rows first, then remove them to avoid iteration issues
-	var rowsToRemove []*gtk.ListBoxRow
-	for i := uint(0); i < childCount; i++ {
-		if child := children.NthData(i); child != nil {
+	// Remove all children by iterating backwards to avoid index issues
+	for i := int(childCount) - 1; i >= 0; i-- {
+		if child := children.NthData(uint(i)); child != nil {
 			if row, ok := child.(*gtk.ListBoxRow); ok {
-				rowsToRemove = append(rowsToRemove, row)
+				l.resultList.Remove(row)
 			}
 		}
 	}
 
-	// Remove all collected rows
-	for _, row := range rowsToRemove {
-		l.resultList.Remove(row)
-	}
+	// Force the listbox to process the removals
+	l.resultList.QueueDraw()
 	debugLogger.Printf("UPDATE_RESULTS: cleared %d existing children in %v", childCount, time.Since(clearStart))
 
 	// Create new result rows
