@@ -3,7 +3,7 @@ app_id = "com.github.sigma.locus"
 
 [status_bar]
 height = 40
-modules = ["launcher", "time"]
+modules = ["launcher", "time", "bluetooth", "volume", "cpu", "memory", "disk", "wifi", "network", "brightness", "keyboard", "music", "weather"]
 
 [status_bar.colors]
 background = "#1e1e2e"
@@ -28,3 +28,87 @@ icon = "🔔"
 
 [file_search]
 paths = ["/home"]
+
+[status_bar.module_configs.bluetooth]
+show_icon = true
+interval = "30s"
+css_classes = ["bluetooth-module", "bluetooth-button"]
+
+[status_bar.module_configs.volume]
+volume_cmd = "pamixer --get-volume"
+mute_cmd = "pamixer --get-mute"
+show_icon = true
+interval = "10s"
+css_classes = ["volume-module"]
+
+[status_bar.module_configs.cpu]
+command = "mpstat 1 1 | awk 'NR==4 {print 100 - $NF}'"
+show_icon = true
+show_cores = false
+interval = "10s"
+css_classes = ["cpu-module"]
+
+[status_bar.module_configs.memory]
+command = "free -b"
+show_icon = true
+show_details = true
+interval = "10s"
+css_classes = ["memory-module"]
+
+[status_bar.module_configs.disk]
+command = "df -h"
+show_icon = true
+show_details = true
+mounts = ["/", "/home"]
+interval = "30s"
+css_classes = ["disk-module"]
+
+[status_bar.module_configs.wifi]
+command = "nmcli -t -f active,ssid,signal dev wifi"
+interface = "wlan0"
+show_icon = true
+show_signal = true
+interval = "15s"
+css_classes = ["wifi-module"]
+
+[status_bar.module_configs.network]
+command = "nmcli -t -f TYPE con show --active"
+show_icon = true
+show_ethernet = true
+show_vpn = true
+interval = "20s"
+css_classes = ["network-module"]
+
+[status_bar.module_configs.brightness]
+command = "brightnessctl -m"
+device = ""
+show_icon = true
+interval = "5s"
+css_classes = ["brightness-module"]
+
+[status_bar.module_configs.keyboard]
+layout_cmd = "setxkbmap -query | grep layout | awk '{print toupper($2)}'"
+locks_cmd = "xset q | grep LED | awk '{print $10}'"
+show_icon = true
+show_layout = true
+show_locks = true
+interval = "5s"
+css_classes = ["keyboard-module"]
+
+[status_bar.module_configs.music]
+host = "localhost"
+port = 6600
+show_icon = true
+show_status = true
+max_length = 30
+interval = "5s"
+css_classes = ["music-module"]
+
+[status_bar.module_configs.weather]
+service = "wttr.in"
+location = ""
+format = "%c+%t+%C"
+show_icon = true
+show_details = true
+interval = "900s"
+css_classes = ["weather-module"]

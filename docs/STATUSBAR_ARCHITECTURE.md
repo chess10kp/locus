@@ -232,6 +232,90 @@ css_classes = ["battery-module"]
 socket_path = "/tmp/sway-ipc.sock"
 show_labels = true
 css_classes = ["workspaces-module"]
+
+[status_bar.module_configs.bluetooth]
+show_icon = true
+interval = "30s"
+css_classes = ["bluetooth-module", "bluetooth-button"]
+
+[status_bar.module_configs.volume]
+volume_cmd = "pamixer --get-volume"
+mute_cmd = "pamixer --get-mute"
+show_icon = true
+interval = "10s"
+css_classes = ["volume-module"]
+
+[status_bar.module_configs.cpu]
+command = "mpstat 1 1 | awk 'NR==4 {print 100 - $NF}'"
+show_icon = true
+show_cores = false
+interval = "10s"
+css_classes = ["cpu-module"]
+
+[status_bar.module_configs.memory]
+command = "free -b"
+show_icon = true
+show_details = true
+interval = "10s"
+css_classes = ["memory-module"]
+
+[status_bar.module_configs.disk]
+command = "df -h"
+show_icon = true
+show_details = true
+mounts = ["/", "/home"]
+interval = "30s"
+css_classes = ["disk-module"]
+
+[status_bar.module_configs.wifi]
+command = "nmcli -t -f active,ssid,signal dev wifi"
+interface = "wlan0"
+show_icon = true
+show_signal = true
+interval = "15s"
+css_classes = ["wifi-module"]
+
+[status_bar.module_configs.network]
+command = "nmcli -t -f TYPE con show --active"
+show_icon = true
+show_ethernet = true
+show_vpn = true
+interval = "20s"
+css_classes = ["network-module"]
+
+[status_bar.module_configs.brightness]
+command = "brightnessctl -m"
+device = ""
+show_icon = true
+interval = "5s"
+css_classes = ["brightness-module"]
+
+[status_bar.module_configs.keyboard]
+layout_cmd = "setxkbmap -query | grep layout | awk '{print toupper($2)}'"
+locks_cmd = "xset q | grep LED | awk '{print $10}'"
+show_icon = true
+show_layout = true
+show_locks = true
+interval = "5s"
+css_classes = ["keyboard-module"]
+
+[status_bar.module_configs.music]
+host = "localhost"
+port = 6600
+show_icon = true
+show_status = true
+max_length = 30
+interval = "5s"
+css_classes = ["music-module"]
+
+[status_bar.module_configs.weather]
+service = "wttr.in"
+location = ""
+format = "%c+%t+%C"
+show_icon = true
+show_details = true
+interval = "900s"
+css_classes = ["weather-module"]
 ```
 
 ## Built-in Modules
@@ -265,6 +349,73 @@ css_classes = ["workspaces-module"]
 - **Update Mode**: ON_DEMAND
 - **Config**: `message`, `timeout`, `css_classes`
 - **Example**: Display custom messages via IPC
+
+### BluetoothModule (`modules/bluetooth.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `show_icon`, `interval`, `css_classes`
+- **Example**: Display bluetooth status with device menu on click
+- **Features**: Click to show popover menu with power toggle and device connection controls
+
+### VolumeModule (`modules/volume.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `volume_cmd`, `mute_cmd`, `show_icon`, `interval`, `css_classes`
+- **Example**: Display current volume level with aesthetic icons
+
+### CpuModule (`modules/cpu.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `command`, `show_icon`, `show_cores`, `interval`, `css_classes`
+- **Example**: Display CPU usage percentage with usage-based icons
+
+### MemoryModule (`modules/memory.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `command`, `show_icon`, `show_details`, `interval`, `css_classes`
+- **Example**: Display RAM usage with detailed or summary view
+
+### DiskModule (`modules/disk.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `command`, `show_icon`, `show_details`, `mounts`, `interval`, `css_classes`
+- **Example**: Display disk usage for specified mount points
+
+### WifiModule (`modules/wifi.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `command`, `interface`, `show_icon`, `show_signal`, `interval`, `css_classes`
+- **Example**: Display WiFi connection status with signal strength bars
+
+### NetworkModule (`modules/network.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `command`, `show_icon`, `show_ethernet`, `show_vpn`, `interval`, `css_classes`
+- **Example**: Display overall network connectivity (WiFi/Ethernet/VPN)
+
+### BrightnessModule (`modules/brightness.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `command`, `device`, `show_icon`, `interval`, `css_classes`
+- **Example**: Display screen brightness level with day/night icons
+
+### KeyboardModule (`modules/keyboard.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `layout_cmd`, `locks_cmd`, `show_icon`, `show_layout`, `show_locks`, `interval`, `css_classes`
+- **Example**: Display keyboard layout and lock states
+
+### MusicModule (`modules/music.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `host`, `port`, `show_icon`, `show_status`, `max_length`, `interval`, `css_classes`
+- **Example**: Display MPD playback status with song information
+
+### WeatherModule (`modules/weather.go`)
+
+- **Update Mode**: PERIODIC
+- **Config**: `service`, `location`, `format`, `show_icon`, `show_details`, `interval`, `css_classes`
+- **Example**: Display current weather conditions from wttr.in
 
 ## Widget Helper
 
