@@ -191,8 +191,21 @@ func (l *Launcher) setupSignals() {
 
 func (l *Launcher) onSearchChanged(text string) {
 	searchStart := time.Now()
-	debugLogger.Printf("SEARCH_CHANGED: text='%s' len=%d", text, len(text))
+	visible := l.visible.Load()
+	debugLogger.Printf("SEARCH_CHANGED: text='%s' len=%d visible=%v", text, len(text), visible)
 	fmt.Printf("[SEARCH] Input changed to: '%s' (len=%d)\n", text, len(text))
+
+	// Add debug info about current state
+	currentItems := 0
+	if l.currentItems != nil {
+		currentItems = len(l.currentItems)
+	}
+	children := l.resultList.GetChildren()
+	childCount := 0
+	if children != nil {
+		childCount = int(children.Length())
+	}
+	debugLogger.Printf("SEARCH_CHANGED: current state - currentItems=%d, children=%d", currentItems, childCount)
 
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -240,6 +253,13 @@ func (l *Launcher) onSearchChanged(text string) {
 
 		// Run search in a goroutine to avoid blocking UI
 		go func(query string, version int64, startTime time.Time) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[SEARCH-PANIC] Recovered from panic: %v", r)
+					debugLogger.Printf("SEARCH_PANIC: Recovered from panic in search goroutine: %v", r)
+				}
+			}()
+
 			searchGoroutineStart := time.Now()
 			debugLogger.Printf("SEARCH_GOROUTINE: started for version=%d, query='%s'", version, query)
 
@@ -291,30 +311,34 @@ func (l *Launcher) onSearchChanged(text string) {
 }
 
 func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) {
-	// Check version BEFORE acquiring lock to prevent stale updates
-	currentVersion := atomic.LoadInt64(&l.searchVersion)
-	if version != currentVersion {
-		debugLogger.Printf("UPDATE_RESULTS: skipping stale update for version=%d (current=%d)", version, currentVersion)
+	// Check if widgets are still valid
+	if l.resultList == nil || l.window == nil {
+		debugLogger.Printf("UPDATE_RESULTS: widgets are nil, skipping update")
+		return
+	}
+
+	// Check if launcher is visible - only update UI when visible
+	visible := l.visible.Load()
+	debugLogger.Printf("UPDATE_RESULTS: visible flag = %v", visible)
+	if !visible {
+		debugLogger.Printf("UPDATE_RESULTS: launcher not visible, skipping update")
 		return
 	}
 
 	l.mu.Lock()
-	success := l.updateResultsUnsafe(items, version)
-	l.mu.Unlock()
-
-	if success {
-		// Optimized UI refresh - single comprehensive update
-		glib.IdleAdd(func() bool {
-			// Single show all call handles all widget visibility
-			l.resultList.ShowAll()
-			return false
-		})
-	}
+	defer l.mu.Unlock()
+	l.updateResultsUnsafe(items, version)
 }
 
 func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version int64) bool {
 	updateStart := time.Now()
 	debugLogger.Printf("UPDATE_RESULTS: started for version=%d, %d items", version, len(items))
+
+	// Check if resultList is still valid
+	if l.resultList == nil {
+		debugLogger.Printf("UPDATE_RESULTS: resultList is nil, returning false")
+		return false
+	}
 
 	// Double-check version is still current
 	currentVersion := atomic.LoadInt64(&l.searchVersion)
@@ -325,51 +349,98 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 
 	l.currentItems = items
 
-	// Clear existing results more reliably
+	// Clear existing results
 	clearStart := time.Now()
-	children := l.resultList.GetChildren()
-	childCount := children.Length()
 
-	// Remove all children by iterating backwards to avoid index issues
-	for i := int(childCount) - 1; i >= 0; i-- {
-		if child := children.NthData(uint(i)); child != nil {
-			if row, ok := child.(*gtk.ListBoxRow); ok {
-				l.resultList.Remove(row)
+	// Get list container and remove all rows
+	children := l.resultList.GetChildren()
+	var childCount int
+	if children != nil {
+		childCount = int(children.Length())
+	}
+	debugLogger.Printf("UPDATE_RESULTS: before clear: %d children", childCount)
+
+	// Remove all rows by iterating over children
+	removedCount := 0
+	if childCount > 0 {
+		// Collect rows to remove first to avoid issues with iterating while modifying
+		rowsToRemove := make([]*gtk.ListBoxRow, 0, childCount)
+		for i := 0; i < childCount; i++ {
+			if child := children.NthData(uint(i)); child != nil {
+				if row, ok := child.(*gtk.ListBoxRow); ok {
+					rowsToRemove = append(rowsToRemove, row)
+				}
 			}
+		}
+
+		// Now remove all collected rows
+		for _, row := range rowsToRemove {
+			l.resultList.Remove(row)
+			removedCount++
 		}
 	}
 
-	// Force the listbox to process the removals
-	l.resultList.QueueDraw()
-	debugLogger.Printf("UPDATE_RESULTS: cleared %d existing children in %v", childCount, time.Since(clearStart))
+	debugLogger.Printf("UPDATE_RESULTS: removed %d rows in %v", removedCount, time.Since(clearStart))
+
+	// Verify clear
+	childrenAfterClear := l.resultList.GetChildren()
+	afterCount := 0
+	if childrenAfterClear != nil {
+		afterCount = int(childrenAfterClear.Length())
+	}
+	debugLogger.Printf("UPDATE_RESULTS: after clear: %d children remaining", afterCount)
 
 	// Create new result rows
 	renderStart := time.Now()
+	successCount := 0
+	if len(items) > 0 {
+		debugLogger.Printf("UPDATE_RESULTS: first item title: '%s'", items[0].Title)
+	}
 	for i, item := range items {
 		row, err := l.createResultRow(item)
 		if err != nil {
-			debugLogger.Printf("UPDATE_RESULTS: failed to create row %d: %v", i, err)
+			debugLogger.Printf("UPDATE_RESULTS: failed to create row %d for item '%s': %v", i, item.Title, err)
 			fmt.Printf("Failed to create row: %v\n", err)
 			continue
 		}
 		l.resultList.Add(row)
-		// Ensure the row is visible
-		row.Show()
+		successCount++
+		debugLogger.Printf("UPDATE_RESULTS: added row %d: '%s'", i, item.Title)
 	}
-	debugLogger.Printf("UPDATE_RESULTS: rendered %d new rows in %v", len(items), time.Since(renderStart))
+
+	childrenAfterAdd := l.resultList.GetChildren()
+	addChildCount := 0
+	if childrenAfterAdd != nil {
+		addChildCount = int(childrenAfterAdd.Length())
+	}
+	debugLogger.Printf("UPDATE_RESULTS: after add: %d children (rendered %d/%d rows in %v)", addChildCount, successCount, len(items), time.Since(renderStart))
+
+	// Make sure the scrolled window is visible
+	if l.scrolledWindow != nil {
+		l.scrolledWindow.ShowAll()
+	}
+
+	// Show all widgets in the list
+	l.resultList.ShowAll()
+
+	// Force the listbox to redraw
+	l.resultList.QueueDraw()
+
+	debugLogger.Printf("UPDATE_RESULTS: ShowAll and QueueDraw completed")
 
 	// Select first row if any
 	if len(items) > 0 {
 		children := l.resultList.GetChildren()
-		if children.Length() > 0 {
-			if row, ok := children.NthData(0).(*gtk.ListBoxRow); ok {
-				l.resultList.SelectRow(row)
+		if children != nil && children.Length() > 0 {
+			if child := children.NthData(0); child != nil {
+				if row, ok := child.(*gtk.ListBoxRow); ok {
+					l.resultList.SelectRow(row)
+				}
 			}
 		}
 	}
 
 	debugLogger.Printf("UPDATE_RESULTS: completed for version=%d in %v", version, time.Since(updateStart))
-	l.logMemoryStats("UPDATE_RESULTS")
 	return true
 }
 
@@ -377,6 +448,10 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 	row, err := gtk.ListBoxRowNew()
 	if err != nil {
 		return nil, err
+	}
+
+	if row == nil {
+		return nil, fmt.Errorf("failed to create listbox row")
 	}
 
 	row.SetName("list-row")
@@ -399,6 +474,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 
 		icon.SetFromIconName(item.Icon, gtk.ICON_SIZE_LARGE_TOOLBAR)
 		box.PackStart(icon, false, false, 0)
+		icon.Show()
 	}
 
 	label, err := gtk.LabelNew(item.Title)
@@ -406,9 +482,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 		return nil, err
 	}
 
-	if label != nil {
-		label.SetHAlign(gtk.ALIGN_START)
-	}
+	label.SetHAlign(gtk.ALIGN_START)
 	box.PackStart(label, true, true, 0)
 
 	if item.Subtitle != "" {
@@ -417,15 +491,13 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 			return nil, err
 		}
 
-		if subLabel != nil {
-			subLabel.SetHAlign(gtk.ALIGN_START)
-			subLabel.SetMarginStart(16)
-		}
+		subLabel.SetHAlign(gtk.ALIGN_START)
+		subLabel.SetMarginStart(16)
 		box.PackStart(subLabel, true, true, 0)
 	}
 
 	row.Add(box)
-	row.Show()
+	row.ShowAll()
 	return row, nil
 }
 
@@ -624,7 +696,6 @@ func (l *Launcher) navigateResult(direction int) {
 }
 
 func (l *Launcher) Show() error {
-	l.logMemoryStats("SHOW")
 	log.Printf("Launcher.Show() called, running=%v", l.running)
 
 	// Acquire lock only for internal state changes
@@ -641,22 +712,24 @@ func (l *Launcher) Show() error {
 	l.mu.Unlock()
 
 	// GTK calls happen without holding lock
-	log.Printf("Calling window.ShowAll() and Present()")
+	debugLogger.Printf("SHOW: calling window.ShowAll()")
 	l.window.ShowAll()
+	debugLogger.Printf("SHOW: calling window.Present()")
 	l.window.Present()
+	debugLogger.Printf("SHOW: setting search entry text to empty")
 	l.searchEntry.SetText("")
+	debugLogger.Printf("SHOW: grabbing focus")
 	l.searchEntry.GrabFocus()
 
 	// Update visibility flag atomically
+	debugLogger.Printf("SHOW: setting visible flag to true")
 	l.visible.Store(true)
+	debugLogger.Printf("SHOW: Show() complete")
 
-	log.Printf("Launcher should now be visible")
 	return nil
 }
 
 func (l *Launcher) Hide() {
-	l.logMemoryStats("HIDE")
-
 	// Acquire lock only for internal state changes
 	l.mu.Lock()
 	l.stopAndDrainSearchTimer()

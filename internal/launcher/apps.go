@@ -3,7 +3,6 @@ package launcher
 import (
 	"fmt"
 	"log"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -128,64 +127,16 @@ func (l *AppLauncher) fuzzySearch(query string, maxResults int) []*LauncherItem 
 	matches := fuzzy.Find(query, l.appNames)
 	log.Printf("[APP-LAUNCHER] Fuzzy find completed in %v, found %d raw matches", time.Since(findStart), len(matches))
 
-	// Adaptive score threshold based on query length
-	minScore := 0
-	if len(query) == 1 {
-		minScore = 60 // Stricter for single character
-	} else if len(query) == 2 {
-		minScore = 40
-	} else {
-		minScore = 20
-	}
-
-	// Early cutoff - only consider top results
-	maxConsider := maxResults * 2
-	if len(matches) > maxConsider {
-		matches = matches[:maxConsider]
-	}
-
-	// Filter by minimum score threshold
-	queryLower := strings.ToLower(query)
-	filteredMatches := make([]fuzzy.Match, 0, len(matches))
-
-	for _, match := range matches {
-		if match.Score >= minScore {
-			filteredMatches = append(filteredMatches, match)
-		}
-	}
-
-	log.Printf("[APP-LAUNCHER] After score filtering (>= %d): %d matches", minScore, len(filteredMatches))
-
-	// Sort matches: prioritize exact prefix matches, then by fuzzy score
-	sortStart := time.Now()
-	sort.Slice(filteredMatches, func(i, j int) bool {
-		match1 := filteredMatches[i]
-		match2 := filteredMatches[j]
-
-		// Pre-compute lowercase comparison
-		match1StartsWith := strings.HasPrefix(strings.ToLower(match1.Str), queryLower)
-		match2StartsWith := strings.HasPrefix(strings.ToLower(match2.Str), queryLower)
-
-		// Prioritize exact prefix matches
-		if match1StartsWith != match2StartsWith {
-			return match1StartsWith
-		}
-
-		return match1.Score > match2.Score
-	})
-	log.Printf("[APP-LAUNCHER] Sorting completed in %v", time.Since(sortStart))
-
-	// Convert matches to LauncherItems (limit to maxResults)
-	items := make([]*LauncherItem, 0, min(len(filteredMatches), maxResults))
-
-	for i := 0; i < len(filteredMatches) && i < maxResults; i++ {
-		match := filteredMatches[i]
+	// TEMP: Just return top N matches without filtering to test if UI works
+	items := make([]*LauncherItem, 0, min(len(matches), maxResults))
+	for i := 0; i < len(matches) && i < maxResults; i++ {
+		match := matches[i]
 		if app, ok := l.nameToApp[match.Str]; ok {
 			items = append(items, l.appToItem(app))
 		}
 	}
 
-	log.Printf("[APP-LAUNCHER] Fuzzy search completed in %v, returning %d items", time.Since(fuzzyStart), len(items))
+	log.Printf("[APP-LAUNCHER] Fuzzy search completed in %v, returning %d items (TEMP: no filtering)", time.Since(fuzzyStart), len(items))
 	return items
 }
 

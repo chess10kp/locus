@@ -69,31 +69,40 @@ func (ic *IconCache) GetIcon(name string, size int) (*gdk.Pixbuf, error) {
 
 	// Try cache first
 	ic.mu.RLock()
-	if pixbuf, ok := ic.cache.Get(key); ok {
-		ic.mu.RUnlock()
+	pixbuf, hit := ic.cache.Get(key)
+	ic.mu.RUnlock()
+
+	if hit && pixbuf != nil {
 		log.Printf("[ICON-CACHE] HIT: %s", key)
 		return pixbuf, nil
 	}
-	ic.mu.RUnlock()
 
 	// Cache miss - load icon
 	ic.mu.Lock()
 	defer ic.mu.Unlock()
 
 	// Double-check after acquiring write lock
-	if pixbuf, ok := ic.cache.Get(key); ok {
+	if pixbuf, ok := ic.cache.Get(key); ok && pixbuf != nil {
 		log.Printf("[ICON-CACHE] DOUBLE-CHECK HIT: %s", key)
 		return pixbuf, nil
 	}
 
 	log.Printf("[ICON-CACHE] MISS: %s", key)
 
-	// Load from theme
+	// Load from theme - check if icon exists first
+	hasIcon := ic.theme.HasIcon(name)
+	if !hasIcon {
+		log.Printf("[ICON-CACHE] Icon '%s' not found in theme, returning nil", name)
+		return nil, fmt.Errorf("icon '%s' not found in theme", name)
+	}
+
 	pixbuf, err := ic.theme.LoadIcon(name, size, gtk.ICON_LOOKUP_USE_BUILTIN)
 	if err != nil || pixbuf == nil {
-		// Try fallback icon
+		// Try fallback icon if not already trying fallback
 		if name != ic.fallback {
-			log.Printf("[ICON-CACHE] Failed to load '%s', trying fallback '%s': %v", name, ic.fallback, err)
+			log.Printf("[ICON-CACHE] Failed to load '%s' (%v), trying fallback '%s'", name, err, ic.fallback)
+			ic.mu.Unlock()
+			defer ic.mu.Lock()
 			return ic.GetIcon(ic.fallback, size)
 		}
 		log.Printf("[ICON-CACHE] Failed to load fallback icon '%s': %v", ic.fallback, err)
