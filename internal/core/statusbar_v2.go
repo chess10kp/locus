@@ -13,6 +13,7 @@ import (
 	"unsafe"
 
 	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/sigma/locus-go/internal/config"
 	"github.com/sigma/locus-go/internal/layer"
@@ -524,7 +525,10 @@ func (sb *StatusBar) handleIPCMessage(message string) bool {
 	switch {
 	case message == "launcher":
 		// Show launcher
-		sb.app.PresentLauncher()
+		glib.IdleAdd(func() bool {
+			sb.app.PresentLauncher()
+			return false
+		})
 		return true
 
 	case strings.HasPrefix(message, "launcher:"):
@@ -533,30 +537,45 @@ func (sb *StatusBar) handleIPCMessage(message string) bool {
 		switch cmd {
 		case "resume":
 			// TODO: Implement resume functionality when launcher supports state
-			sb.app.PresentLauncher()
+			glib.IdleAdd(func() bool {
+				sb.app.PresentLauncher()
+				return false
+			})
 			return true
 		case "fresh":
 			// TODO: Implement fresh start when launcher supports clearing state
-			sb.app.PresentLauncher()
+			glib.IdleAdd(func() bool {
+				sb.app.PresentLauncher()
+				return false
+			})
 			return true
 		}
 
 	case strings.HasPrefix(message, "launcher dmenu:"):
 		// Handle dmenu with options - for now just show launcher
 		// TODO: Implement dmenu options when launcher supports it
-		sb.app.PresentLauncher()
+		glib.IdleAdd(func() bool {
+			sb.app.PresentLauncher()
+			return false
+		})
 		return true
 
 	case strings.HasPrefix(message, ">") || strings.HasPrefix(message, "launcher "):
 		// Handle launcher commands - for now just show launcher
 		// TODO: Implement direct command input when launcher supports it
-		sb.app.PresentLauncher()
+		glib.IdleAdd(func() bool {
+			sb.app.PresentLauncher()
+			return false
+		})
 		return true
 
 	case strings.HasPrefix(message, "status:"):
 		// Handle status messages
 		statusMsg := strings.TrimPrefix(message, "status:")
-		sb.sendStatusMessage(statusMsg)
+		glib.IdleAdd(func() bool {
+			sb.sendStatusMessage(statusMsg)
+			return false
+		})
 		return true
 
 	default:
