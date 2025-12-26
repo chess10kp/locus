@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -39,6 +40,10 @@ type Launcher struct {
 	searchTimer   *time.Timer
 	searchVersion int64 // Track search version to prevent race conditions
 	mu            sync.RWMutex
+	refreshUIChan chan launcher.RefreshUIRequest
+	statusChan    chan launcher.StatusRequest
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
@@ -102,15 +107,28 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	registry := launcher.NewLauncherRegistry(cfg)
 
+	// Create channels for hook context
+	refreshUIChan := make(chan launcher.RefreshUIRequest, 1)
+	statusChan := make(chan launcher.StatusRequest, 10) // Buffer for multiple status messages
+	ctx, cancel := context.WithCancel(context.Background())
+
 	l := &Launcher{
-		app:         app,
-		config:      cfg,
-		window:      window,
-		searchEntry: searchEntry,
-		resultList:  resultList,
-		hideButton:  hideButton,
-		registry:    registry,
+		app:           app,
+		config:        cfg,
+		window:        window,
+		searchEntry:   searchEntry,
+		resultList:    resultList,
+		hideButton:    hideButton,
+		registry:      registry,
+		refreshUIChan: refreshUIChan,
+		statusChan:    statusChan,
+		ctx:           ctx,
+		cancel:        cancel,
 	}
+
+	// Start goroutines to handle channel requests
+	go l.handleRefreshUIRequests(ctx, refreshUIChan)
+	go l.handleStatusRequests(ctx, statusChan)
 
 	l.setupSignals()
 
@@ -170,7 +188,7 @@ func (l *Launcher) onSearchChanged(text string) {
 
 	// Cancel previous timer if exists
 	if l.searchTimer != nil {
-		l.searchTimer.Stop()
+		l.stopAndDrainSearchTimer()
 		debugLogger.Printf("SEARCH_CHANGED: cancelled previous timer")
 	}
 
@@ -329,8 +347,19 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 }
 
 func (l *Launcher) onActivate() {
-	selected := l.resultList.GetSelectedRow()
+	text, _ := l.searchEntry.GetText()
 
+	// Execute enter hooks first
+	hookCtx := l.createHookContext(nil)
+	result := l.registry.GetHookRegistry().ExecuteEnterHooks(l.ctx, hookCtx, text)
+
+	if result.Handled {
+		l.Hide()
+		return
+	}
+
+	// Fall back to executing selected item
+	selected := l.resultList.GetSelectedRow()
 	if selected != nil {
 		l.onRowActivated(selected)
 	}
@@ -346,6 +375,16 @@ func (l *Launcher) onRowActivated(row *gtk.ListBoxRow) {
 	item := l.currentItems[index]
 	l.mu.RUnlock()
 
+	// Execute hooks first
+	hookCtx := l.createHookContext(item)
+	result := l.registry.GetHookRegistry().ExecuteSelectHooks(l.ctx, hookCtx, item.ActionData)
+
+	if result.Handled {
+		l.Hide()
+		return
+	}
+
+	// Fall back to default execution
 	if err := l.registry.Execute(item); err != nil {
 		fmt.Printf("Failed to execute item: %v\n", err)
 	}
@@ -366,9 +405,98 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 	case gdk.KEY_Up, gdk.KEY_k:
 		l.navigateResult(-1)
 		return true
+	case gdk.KEY_Tab:
+		return l.onTabPressed()
 	}
 
 	return false
+}
+
+func (l *Launcher) onTabPressed() bool {
+	text, _ := l.searchEntry.GetText()
+	hookCtx := l.createHookContext(nil)
+	result := l.registry.GetHookRegistry().ExecuteTabHooks(l.ctx, hookCtx, text)
+
+	if result.Handled {
+		l.searchEntry.SetText(result.NewText)
+		return true
+	}
+
+	return false
+}
+
+func (l *Launcher) createHookContext(item *launcher.LauncherItem) *launcher.HookContext {
+	launcherName := ""
+	if item != nil && item.Launcher != nil {
+		launcherName = item.Launcher.Name()
+	}
+
+	return &launcher.HookContext{
+		LauncherName: launcherName,
+		Query:        l.currentInput,
+		SelectedItem: item,
+		Config:       l.config,
+		RefreshUI:    l.refreshUIChan,
+		SendStatus:   l.statusChan,
+	}
+}
+
+func (l *Launcher) refreshResults() error {
+	// Trigger a new search with the current input
+	text, _ := l.searchEntry.GetText()
+	l.onSearchChanged(text)
+	return nil
+}
+
+func (l *Launcher) refreshResultsSync() error {
+	return l.refreshResults()
+}
+
+func (l *Launcher) sendStatusMessageSync(msg string) error {
+	return l.sendStatusMessage(msg)
+}
+
+func (l *Launcher) sendStatusMessage(msg string) error {
+	// Send status message via IPC
+	if l.app != nil && l.app.statusBar != nil {
+		// TODO: Implement status message sending
+		return nil
+	}
+	return nil
+}
+
+func (l *Launcher) handleRefreshUIRequests(ctx context.Context, ch <-chan launcher.RefreshUIRequest) {
+	for {
+		select {
+		case req := <-ch:
+			glib.IdleAdd(func() {
+				err := l.refreshResults()
+				select {
+				case req.Response <- err:
+				default:
+				}
+			})
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (l *Launcher) handleStatusRequests(ctx context.Context, ch <-chan launcher.StatusRequest) {
+	for {
+		select {
+		case req := <-ch:
+			glib.IdleAdd(func() {
+				err := l.sendStatusMessage(req.Message)
+				select {
+				case req.Response <- err:
+				default:
+				}
+			})
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (l *Launcher) navigateResult(direction int) {
@@ -438,10 +566,7 @@ func (l *Launcher) Show() error {
 func (l *Launcher) Hide() {
 	// Acquire lock only for internal state changes
 	l.mu.Lock()
-	if l.searchTimer != nil {
-		l.searchTimer.Stop()
-		l.searchTimer = nil
-	}
+	l.stopAndDrainSearchTimer()
 	l.currentItems = nil
 	l.mu.Unlock()
 
@@ -451,6 +576,19 @@ func (l *Launcher) Hide() {
 
 	// Update visibility flag atomically
 	l.visible.Store(false)
+}
+
+func (l *Launcher) stopAndDrainSearchTimer() {
+	if l.searchTimer != nil {
+		if !l.searchTimer.Stop() {
+			// Timer already fired, drain the channel to prevent leaks
+			select {
+			case <-l.searchTimer.C:
+			default:
+			}
+		}
+		l.searchTimer = nil
+	}
 }
 
 func (l *Launcher) Toggle() error {
@@ -512,6 +650,11 @@ func (l *Launcher) Stop() error {
 	if !l.running {
 		return nil
 	}
+
+	// Cancel context and close channels
+	l.cancel()
+	close(l.refreshUIChan)
+	close(l.statusChan)
 
 	l.registry.Cleanup()
 	l.window.Close()

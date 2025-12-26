@@ -2,9 +2,7 @@ package launcher
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/sigma/locus-go/internal/config"
 )
@@ -36,44 +34,22 @@ func (l *ShellLauncher) Populate(query string, ctx *LauncherContext) []*Launcher
 
 	return []*LauncherItem{
 		{
-			Title:    fmt.Sprintf("Run: %s", query),
-			Subtitle: "Execute in shell",
-			Icon:     "utilities-terminal",
-			Command:  query,
-			Launcher: l,
+			Title:      fmt.Sprintf("Run: %s", query),
+			Subtitle:   "Execute in shell",
+			Icon:       "utilities-terminal",
+			ActionData: NewShellAction(query),
+			Launcher:   l,
 		},
 	}
 }
 
-func (l *ShellLauncher) HandlesEnter() bool {
-	return true
+func (l *ShellLauncher) GetHooks() []Hook {
+	return []Hook{} // Shell launcher doesn't need custom hooks
 }
 
-func (l *ShellLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	if strings.TrimSpace(query) == "" {
-		return false
-	}
-
-	parts := strings.Fields(query)
-	cmd := exec.Command(parts[0], parts[1:]...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid: true,
-	}
-
-	if err := cmd.Start(); err != nil {
-		fmt.Printf("Failed to start command: %v\n", err)
-		return false
-	}
-
-	return true
-}
-
-func (l *ShellLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *ShellLauncher) HandleTab(query string) string {
-	return query
+func (l *ShellLauncher) Rebuild(ctx *LauncherContext) error {
+	// Shell launcher doesn't need to rebuild
+	return nil
 }
 
 func (l *ShellLauncher) Cleanup() {
@@ -112,45 +88,22 @@ func (l *WebLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIt
 
 	return []*LauncherItem{
 		{
-			Title:    fmt.Sprintf("Open: %s", query),
-			Subtitle: url,
-			Icon:     "web-browser",
-			Command:  fmt.Sprintf("xdg-open %s", url),
-			Launcher: l,
+			Title:      fmt.Sprintf("Open: %s", query),
+			Subtitle:   url,
+			Icon:       "web-browser",
+			ActionData: NewShellAction(fmt.Sprintf("xdg-open %s", url)),
+			Launcher:   l,
 		},
 	}
 }
 
-func (l *WebLauncher) HandlesEnter() bool {
-	return true
+func (l *WebLauncher) GetHooks() []Hook {
+	return []Hook{} // Web launcher doesn't need custom hooks
 }
 
-func (l *WebLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	url := query
-	if !strings.HasPrefix(strings.ToLower(query), "http://") &&
-		!strings.HasPrefix(strings.ToLower(query), "https://") {
-		url = "https://" + query
-	}
-
-	cmd := exec.Command("xdg-open", url)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid: true,
-	}
-
-	if err := cmd.Start(); err != nil {
-		fmt.Printf("Failed to open URL: %v\n", err)
-		return false
-	}
-
-	return true
-}
-
-func (l *WebLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *WebLauncher) HandleTab(query string) string {
-	return query
+func (l *WebLauncher) Rebuild(ctx *LauncherContext) error {
+	// Web launcher doesn't need to rebuild
+	return nil
 }
 
 func (l *WebLauncher) Cleanup() {
@@ -183,39 +136,22 @@ func (l *CalcLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 
 	return []*LauncherItem{
 		{
-			Title:    fmt.Sprintf("Calculate: %s", query),
-			Subtitle: "Evaluate expression",
-			Icon:     "accessories-calculator",
-			Command:  fmt.Sprintf("qalc %s", query),
-			Launcher: l,
+			Title:      fmt.Sprintf("Calculate: %s", query),
+			Subtitle:   "Evaluate expression",
+			Icon:       "accessories-calculator",
+			ActionData: NewShellAction(fmt.Sprintf("qalc %s", query)),
+			Launcher:   l,
 		},
 	}
 }
 
-func (l *CalcLauncher) HandlesEnter() bool {
-	return true
+func (l *CalcLauncher) GetHooks() []Hook {
+	return []Hook{} // Calc launcher doesn't need custom hooks
 }
 
-func (l *CalcLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	cmd := exec.Command("qalc", query)
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid: true,
-	}
-
-	if err := cmd.Start(); err != nil {
-		fmt.Printf("Failed to calculate: %v\n", err)
-		return false
-	}
-
-	return true
-}
-
-func (l *CalcLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *CalcLauncher) HandleTab(query string) string {
-	return query
+func (l *CalcLauncher) Rebuild(ctx *LauncherContext) error {
+	// Calc launcher doesn't need to rebuild
+	return nil
 }
 
 func (l *CalcLauncher) Cleanup() {

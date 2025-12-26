@@ -1,0 +1,223 @@
+package launcher
+
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+)
+
+// ActionData represents data that can be executed when a launcher item is selected
+type ActionData interface {
+	Type() string
+	ToJSON() ([]byte, error)
+}
+
+// ShellAction executes a shell command
+type ShellAction struct {
+	Command string `json:"command"`
+}
+
+func (a *ShellAction) Type() string {
+	return "shell"
+}
+
+func (a *ShellAction) ToJSON() ([]byte, error) {
+	// Create a map with the type field included
+	data := map[string]interface{}{
+		"type":    a.Type(),
+		"command": a.Command,
+	}
+	return json.Marshal(data)
+}
+
+// ClipboardAction performs clipboard operations
+type ClipboardAction struct {
+	Text   string `json:"text"`
+	Action string `json:"action"` // "copy", "paste", "clear", "history"
+}
+
+func (a *ClipboardAction) Type() string {
+	return "clipboard"
+}
+
+func (a *ClipboardAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":   a.Type(),
+		"text":   a.Text,
+		"action": a.Action,
+	}
+	return json.Marshal(data)
+}
+
+// NotificationAction sends a notification
+type NotificationAction struct {
+	Title string `json:"title"`
+	Body  string `json:"body"`
+}
+
+func (a *NotificationAction) Type() string {
+	return "notification"
+}
+
+func (a *NotificationAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":  a.Type(),
+		"title": a.Title,
+		"body":  a.Body,
+	}
+	return json.Marshal(data)
+}
+
+// StatusMessageAction displays a status message in the status bar
+type StatusMessageAction struct {
+	Message  string        `json:"message"`
+	Duration time.Duration `json:"duration,omitempty"` // 0 = default duration
+}
+
+func (a *StatusMessageAction) Type() string {
+	return "status_message"
+}
+
+func (a *StatusMessageAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":     a.Type(),
+		"message":  a.Message,
+		"duration": a.Duration.String(),
+	}
+	return json.Marshal(data)
+}
+
+// RebuildLauncherAction forces a launcher to refresh its items
+type RebuildLauncherAction struct {
+	LauncherName string `json:"launcher_name"`
+}
+
+func (a *RebuildLauncherAction) Type() string {
+	return "rebuild_launcher"
+}
+
+func (a *RebuildLauncherAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":          a.Type(),
+		"launcher_name": a.LauncherName,
+	}
+	return json.Marshal(data)
+}
+
+// CustomAction allows user-defined action types
+type CustomAction struct {
+	DataType string      `json:"data_type"`
+	Payload  interface{} `json:"payload"`
+}
+
+func (a *CustomAction) Type() string {
+	return a.DataType
+}
+
+func (a *CustomAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":      a.Type(),
+		"data_type": a.DataType,
+		"payload":   a.Payload,
+	}
+	return json.Marshal(data)
+}
+
+// ParseActionData parses JSON data into the appropriate ActionData implementation
+func ParseActionData(data []byte) (ActionData, error) {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal action data: %w", err)
+	}
+
+	actionType, ok := raw["type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("action data missing type field")
+	}
+
+	switch actionType {
+	case "shell":
+		var action ShellAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse shell action: %w", err)
+		}
+		return &action, nil
+
+	case "clipboard":
+		var action ClipboardAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse clipboard action: %w", err)
+		}
+		return &action, nil
+
+	case "notification":
+		var action NotificationAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse notification action: %w", err)
+		}
+		return &action, nil
+
+	case "status_message":
+		var raw map[string]interface{}
+		if err := json.Unmarshal(data, &raw); err != nil {
+			return nil, fmt.Errorf("failed to parse status message action: %w", err)
+		}
+
+		action := &StatusMessageAction{
+			Message: raw["message"].(string),
+		}
+
+		if durationStr, ok := raw["duration"].(string); ok {
+			if duration, err := time.ParseDuration(durationStr); err == nil {
+				action.Duration = duration
+			}
+		}
+
+		return action, nil
+
+	case "rebuild_launcher":
+		var action RebuildLauncherAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse rebuild launcher action: %w", err)
+		}
+		return &action, nil
+
+	default:
+		// Treat as custom action
+		var action CustomAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse custom action: %w", err)
+		}
+		return &action, nil
+	}
+}
+
+// NewShellAction creates a new ShellAction
+func NewShellAction(command string) *ShellAction {
+	return &ShellAction{Command: command}
+}
+
+// NewClipboardAction creates a new ClipboardAction
+func NewClipboardAction(text, action string) *ClipboardAction {
+	return &ClipboardAction{Text: text, Action: action}
+}
+
+// NewNotificationAction creates a new NotificationAction
+func NewNotificationAction(title, body string) *NotificationAction {
+	return &NotificationAction{Title: title, Body: body}
+}
+
+// NewStatusMessageAction creates a new StatusMessageAction
+func NewStatusMessageAction(message string, duration time.Duration) *StatusMessageAction {
+	return &StatusMessageAction{Message: message, Duration: duration}
+}
+
+// NewRebuildLauncherAction creates a new RebuildLauncherAction
+func NewRebuildLauncherAction(launcherName string) *RebuildLauncherAction {
+	return &RebuildLauncherAction{LauncherName: launcherName}
+}
+
+// NewCustomAction creates a new CustomAction
+func NewCustomAction(dataType string, payload interface{}) *CustomAction {
+	return &CustomAction{DataType: dataType, Payload: payload}
+}

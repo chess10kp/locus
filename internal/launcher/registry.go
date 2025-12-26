@@ -1,6 +1,7 @@
 package launcher
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os/exec"
@@ -34,11 +35,11 @@ const (
 
 // LauncherItem represents a single result item
 type LauncherItem struct {
-	Title    string
-	Subtitle string
-	Icon     string
-	Command  string
-	Launcher Launcher
+	Title      string
+	Subtitle   string
+	Icon       string
+	ActionData ActionData
+	Launcher   Launcher
 }
 
 // Launcher is the interface that all launchers must implement
@@ -47,10 +48,8 @@ type Launcher interface {
 	CommandTriggers() []string
 	GetSizeMode() LauncherSizeMode
 	Populate(query string, ctx *LauncherContext) []*LauncherItem
-	HandlesEnter() bool
-	HandleEnter(query string, ctx *LauncherContext) bool
-	HandlesTab() bool
-	HandleTab(query string) string
+	GetHooks() []Hook
+	Rebuild(ctx *LauncherContext) error
 	Cleanup()
 }
 
@@ -63,6 +62,7 @@ type LauncherRegistry struct {
 	ctx          *LauncherContext
 	searchCache  *SearchCache
 	appsHash     string
+	hookRegistry *HookRegistry
 }
 
 // NewLauncherRegistry creates a new launcher registry
@@ -81,6 +81,7 @@ func NewLauncherRegistry(cfg *config.Config) *LauncherRegistry {
 		config:       cfg,
 		searchCache:  cache,
 		appsHash:     "",
+		hookRegistry: NewHookRegistry(),
 	}
 }
 
@@ -356,33 +357,130 @@ func (r *LauncherRegistry) GetCacheStats() *CacheStats {
 
 // Execute executes a launcher item
 func (r *LauncherRegistry) Execute(item *LauncherItem) error {
-	if item.Launcher != nil {
-		if item.Launcher.HandlesEnter() {
-			if item.Launcher.HandleEnter(item.Command, r.ctx) {
-				return nil
-			}
-		}
+	return r.ExecuteWithActionData(item.Launcher.Name(), item.ActionData)
+}
+
+// ExecuteWithActionData executes an action data for a launcher
+func (r *LauncherRegistry) ExecuteWithActionData(launcherName string, data ActionData) error {
+	if data == nil {
+		return fmt.Errorf("no action data provided")
 	}
 
-	if item.Command != "" {
-		parts := strings.Fields(item.Command)
-		if len(parts) == 0 {
-			return fmt.Errorf("empty command")
+	switch data.Type() {
+	case "shell":
+		shellAction, ok := data.(*ShellAction)
+		if !ok {
+			return fmt.Errorf("invalid shell action type")
+		}
+		return r.executeShellCommand(shellAction.Command)
+
+	case "clipboard":
+		clipboardAction, ok := data.(*ClipboardAction)
+		if !ok {
+			return fmt.Errorf("invalid clipboard action type")
+		}
+		return r.executeClipboardAction(clipboardAction)
+
+	case "notification":
+		notificationAction, ok := data.(*NotificationAction)
+		if !ok {
+			return fmt.Errorf("invalid notification action type")
+		}
+		return r.executeNotificationAction(notificationAction)
+
+	case "status_message":
+		statusAction, ok := data.(*StatusMessageAction)
+		if !ok {
+			return fmt.Errorf("invalid status message action type")
+		}
+		return r.executeStatusMessageAction(statusAction)
+
+	case "rebuild_launcher":
+		rebuildAction, ok := data.(*RebuildLauncherAction)
+		if !ok {
+			return fmt.Errorf("invalid rebuild launcher action type")
+		}
+		return r.executeRebuildLauncherAction(rebuildAction)
+
+	default:
+		// Custom action - pass to launcher hooks if available
+		ctx := &HookContext{
+			LauncherName: launcherName,
+			Config:       r.config,
+		}
+		result := r.hookRegistry.ExecuteSelectHooks(context.Background(), ctx, data)
+		if result.Handled {
+			return nil
 		}
 
-		cmd := exec.Command(parts[0], parts[1:]...)
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			Setsid: true,
-		}
+		return fmt.Errorf("unsupported action type: %s", data.Type())
+	}
+}
 
-		if err := cmd.Start(); err != nil {
-			return fmt.Errorf("failed to start command: %w", err)
-		}
-
-		return nil
+// executeShellCommand executes a shell command
+func (r *LauncherRegistry) executeShellCommand(command string) error {
+	if command == "" {
+		return fmt.Errorf("empty command")
 	}
 
-	return fmt.Errorf("no executable command")
+	parts := strings.Fields(command)
+	if len(parts) == 0 {
+		return fmt.Errorf("empty command")
+	}
+
+	cmd := exec.Command(parts[0], parts[1:]...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true,
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start command: %w", err)
+	}
+
+	return nil
+}
+
+// executeClipboardAction handles clipboard operations
+func (r *LauncherRegistry) executeClipboardAction(action *ClipboardAction) error {
+	// TODO: Implement clipboard operations
+	return fmt.Errorf("clipboard actions not yet implemented")
+}
+
+// executeNotificationAction sends a notification
+func (r *LauncherRegistry) executeNotificationAction(action *NotificationAction) error {
+	// TODO: Implement notification sending
+	return fmt.Errorf("notification actions not yet implemented")
+}
+
+// executeStatusMessageAction displays a status message
+func (r *LauncherRegistry) executeStatusMessageAction(action *StatusMessageAction) error {
+	// TODO: Send status message via IPC
+	return fmt.Errorf("status message actions not yet implemented")
+}
+
+// executeRebuildLauncherAction rebuilds a launcher
+func (r *LauncherRegistry) executeRebuildLauncherAction(action *RebuildLauncherAction) error {
+	return r.RefreshLauncher(action.LauncherName)
+}
+
+// RefreshLauncher forces a launcher to refresh its items
+func (r *LauncherRegistry) RefreshLauncher(name string) error {
+	launcher, exists := r.launchers[name]
+	if !exists {
+		return fmt.Errorf("launcher '%s' not found", name)
+	}
+
+	// Call the launcher's Rebuild method if it implements it
+	if rebuildable, ok := launcher.(interface{ Rebuild(*LauncherContext) error }); ok {
+		return rebuildable.Rebuild(r.ctx)
+	}
+
+	return fmt.Errorf("launcher '%s' does not support rebuilding", name)
+}
+
+// GetHookRegistry returns the hook registry
+func (r *LauncherRegistry) GetHookRegistry() *HookRegistry {
+	return r.hookRegistry
 }
 
 // LoadBuiltIn loads built-in launchers
@@ -396,21 +494,30 @@ func (r *LauncherRegistry) LoadBuiltIn() error {
 		NewShellLauncher(),
 		NewWebLauncher(),
 		NewCalcLauncher(),
-		NewBrightnessLauncher(r.config),
-		NewScreenshotLauncher(r.config),
-		NewLockLauncher(r.config),
 		NewTimerLauncher(r.config),
-		NewKillLauncher(r.config),
-		NewWMFocusLauncher(r.config),
-		NewWallpaperLauncher(r.config),
-		NewClipboardLauncher(r.config),
-		NewWifiLauncher(r.config),
-		NewFileLauncher(r.config),
+		// TODO: Add other launchers after implementing GetHooks/Rebuild
+		// NewBrightnessLauncher(r.config),
+		// NewScreenshotLauncher(r.config),
+		// NewLockLauncher(r.config),
+		// NewKillLauncher(r.config),
+		// NewWMFocusLauncher(r.config),
+		// NewWallpaperLauncher(r.config),
+		// NewClipboardLauncher(r.config),
+		// NewWifiLauncher(r.config),
+		// NewFileLauncher(r.config),
 	}
 
 	for _, l := range launchers {
 		if err := r.Register(l); err != nil {
 			log.Printf("Failed to register launcher %s: %v", l.Name(), err)
+		}
+
+		// Register launcher hooks
+		hooks := l.GetHooks()
+		for _, hook := range hooks {
+			if err := r.hookRegistry.Register(l.Name(), hook); err != nil {
+				log.Printf("Failed to register hook for launcher %s: %v", l.Name(), err)
+			}
 		}
 	}
 

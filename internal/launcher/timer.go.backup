@@ -1,0 +1,204 @@
+package launcher
+
+import (
+	"context"
+	"strconv"
+	"strings"
+
+	"github.com/sigma/locus-go/internal/config"
+)
+
+type TimerLauncher struct {
+	config *config.Config
+}
+
+func NewTimerLauncher(cfg *config.Config) *TimerLauncher {
+	return &TimerLauncher{
+		config: cfg,
+	}
+}
+
+func (l *TimerLauncher) Name() string {
+	return "timer"
+}
+
+func (l *TimerLauncher) CommandTriggers() []string {
+	return []string{"timer", "t"}
+}
+
+func (l *TimerLauncher) GetSizeMode() LauncherSizeMode {
+	return LauncherSizeModeDefault
+}
+
+func (l *TimerLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
+	presets := []struct {
+		name  string
+		value string
+		cmd   string
+	}{
+		{"5 minutes", "5m", "sleep 300 && notify-send Timer \"5 minutes are up!\""},
+		{"10 minutes", "10m", "sleep 600 && notify-send Timer \"10 minutes are up!\""},
+		{"15 minutes", "15m", "sleep 900 && notify-send Timer \"15 minutes are up!\""},
+		{"30 minutes", "30m", "sleep 1800 && notify-send Timer \"30 minutes are up!\""},
+		{"1 hour", "1h", "sleep 3600 && notify-send Timer \"1 hour is up!\""},
+		{"2 hours", "2h", "sleep 7200 && notify-send Timer \"2 hours are up!\""},
+	}
+
+	items := make([]*LauncherItem, 0, len(presets))
+	for _, p := range presets {
+		items = append(items, &LauncherItem{
+			Title:      p.name,
+			Subtitle:   "Timer preset",
+			Icon:       "alarm-symbolic",
+			ActionData: NewShellAction(p.cmd),
+		})
+	}
+
+	q := strings.TrimSpace(query)
+	if q != "" {
+		items = append(items, &LauncherItem{
+			Title:      "Custom Timer: " + q,
+			Subtitle:   "Start custom timer",
+			Icon:       "alarm-symbolic",
+			ActionData: NewShellAction(l.parseTimerCommand(q)),
+		})
+	}
+
+	return items
+}
+
+func (l *TimerLauncher) parseTimerCommand(query string) string {
+	parts := strings.Fields(query)
+	if len(parts) == 0 {
+		return ""
+	}
+
+	var seconds int
+	for _, p := range parts {
+		if strings.HasSuffix(p, "m") || strings.HasSuffix(p, "min") {
+			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "m"), "min"))
+			seconds += val * 60
+		} else if strings.HasSuffix(p, "h") || strings.HasSuffix(p, "hr") {
+			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "h"), "hr"))
+			seconds += val * 3600
+		} else if strings.HasSuffix(p, "s") || strings.HasSuffix(p, "sec") {
+			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "s"), "sec"))
+			seconds += val
+		} else {
+			val, _ := strconv.Atoi(p)
+			seconds += val
+		}
+	}
+
+	if seconds <= 0 {
+		seconds = 300
+	}
+
+	return "sleep " + strconv.Itoa(seconds) + " && notify-send Timer \"Time is up!\""
+}
+
+	var seconds int
+	for _, p := range parts {
+		if strings.HasSuffix(p, "m") || strings.HasSuffix(p, "min") {
+			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "m"), "min"))
+			seconds += val * 60
+		} else if strings.HasSuffix(p, "h") || strings.HasSuffix(p, "hr") {
+			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "h"), "hr"))
+			seconds += val * 3600
+		} else if strings.HasSuffix(p, "s") || strings.HasSuffix(p, "sec") {
+			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "s"), "sec"))
+			seconds += val
+		} else {
+			val, _ := strconv.Atoi(p)
+			seconds += val
+		}
+	}
+
+	if seconds <= 0 {
+		seconds = 300
+	}
+
+	return "sleep " + strconv.Itoa(seconds) + " && notify-send Timer \"Time is up!\""
+}
+
+func (l *TimerLauncher) GetHooks() []Hook {
+	return []Hook{&TimerHook{launcher: l}}
+}
+
+func (l *TimerLauncher) Rebuild(ctx *LauncherContext) error {
+	// Timer launcher doesn't need to rebuild - it generates items on demand
+	return nil
+}
+
+func (l *TimerLauncher) Cleanup() {
+}
+
+// TimerHook handles timer-specific interactions
+type TimerHook struct {
+	launcher *TimerLauncher
+}
+
+func (h *TimerHook) ID() string {
+	return "timer-hook"
+}
+
+func (h *TimerHook) Priority() int {
+	return 10
+}
+
+func (h *TimerHook) OnSelect(execCtx context.Context, ctx *HookContext, data ActionData) HookResult {
+	if data.Type() != "shell" {
+		return HookResult{Handled: false}
+	}
+
+	// Check if this is a timer command
+	shellAction, ok := data.(*ShellAction)
+	if !ok {
+		return HookResult{Handled: false}
+	}
+
+	if !strings.HasPrefix(shellAction.Command, "sleep ") {
+		return HookResult{Handled: false}
+	}
+
+	// Extract duration from command for status message
+	parts := strings.Fields(shellAction.Command)
+	if len(parts) >= 2 {
+		duration := parts[1]
+		// Send status message asynchronously
+		select {
+		case ctx.SendStatus <- StatusRequest{Message: "Timer started for " + duration}:
+		default:
+			// Channel full, skip status update
+		}
+	}
+
+	return HookResult{Handled: true}
+}
+
+func (h *TimerHook) OnEnter(execCtx context.Context, ctx *HookContext, text string) HookResult {
+	// Handle direct timer commands like ">timer 5m"
+	if strings.TrimSpace(text) != "" {
+		// Parse and execute timer command
+		cmd := h.launcher.parseTimerCommand(text)
+		if cmd != "" {
+			action := NewShellAction(cmd)
+			result := h.OnSelect(execCtx, ctx, action)
+			return result
+		}
+	}
+
+	return HookResult{Handled: false}
+}
+
+func (h *TimerHook) OnTab(execCtx context.Context, ctx *HookContext, text string) TabResult {
+	if strings.HasPrefix(text, ">timer") && !strings.Contains(text, " ") {
+		return TabResult{NewText: ">timer ", Handled: true}
+	}
+
+	return TabResult{Handled: false}
+}
+
+func (h *TimerHook) Cleanup() {
+	// No cleanup needed
+}

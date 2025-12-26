@@ -108,20 +108,36 @@ func SetupStyles() {
 
 	globalStyleProvider = provider
 	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+	// Load user CSS file
+	LoadCustomCSS()
 }
 
-func LoadCustomCSS(path string) {
+func LoadCustomCSS() {
 	screen, err := gdk.ScreenGetDefault()
 	if err != nil || screen == nil {
 		return
 	}
 
+	// Fixed path: ~/.config/locus/statusbar.css
+	home := os.Getenv("HOME")
+	if home == "" {
+		return
+	}
+	path := home + "/.config/locus/statusbar.css"
+
 	data, err := os.ReadFile(path)
 	if err != nil {
+		log.Printf("Warning: Failed to load custom CSS from %s: %v", path, err)
 		return
 	}
 
 	provider, _ := gtk.CssProviderNew()
-	provider.LoadFromData(string(data))
+	if err := provider.LoadFromData(string(data)); err != nil {
+		log.Printf("Warning: Failed to load custom CSS: %v", err)
+		return
+	}
+
 	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_USER)
+	log.Printf("Loaded custom CSS from %s", path)
 }

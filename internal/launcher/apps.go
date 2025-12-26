@@ -162,11 +162,11 @@ func (l *AppLauncher) appToItem(app apps.App) *LauncherItem {
 	}
 
 	return &LauncherItem{
-		Title:    app.Name,
-		Subtitle: subtitle,
-		Icon:     icon,
-		Command:  app.Exec,
-		Launcher: l,
+		Title:      app.Name,
+		Subtitle:   subtitle,
+		Icon:       icon,
+		ActionData: NewShellAction(app.Exec),
+		Launcher:   l,
 	}
 }
 
@@ -229,6 +229,27 @@ func (l *AppLauncher) GetAppsHash() string {
 	}
 
 	return ComputeAppsHash(l.apps)
+}
+
+func (l *AppLauncher) GetHooks() []Hook {
+	return []Hook{} // App launcher doesn't need custom hooks
+}
+
+func (l *AppLauncher) Rebuild(ctx *LauncherContext) error {
+	// Reload apps from disk
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	apps, err := l.appLoader.LoadApps(true)
+	if err != nil {
+		return fmt.Errorf("failed to reload apps: %w", err)
+	}
+
+	l.apps = apps
+	l.appsLoaded = true
+
+	log.Printf("[APP-LAUNCHER] Rebuilt: loaded %d apps", len(apps))
+	return nil
 }
 
 // Helper function for min

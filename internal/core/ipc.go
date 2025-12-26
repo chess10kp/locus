@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -16,13 +17,18 @@ type IPCServer struct {
 	config  *config.Config
 	server  *net.UnixListener
 	running bool
+	ctx     context.Context
+	cancel  context.CancelFunc
 }
 
 func NewIPCServer(app *App, cfg *config.Config) *IPCServer {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &IPCServer{
 		app:     app,
 		config:  cfg,
 		running: false,
+		ctx:     ctx,
+		cancel:  cancel,
 	}
 }
 
@@ -49,13 +55,23 @@ func (s *IPCServer) Start() error {
 	log.Printf("IPC server listening on %s", socketPath)
 
 	// Start accepting connections
-	go s.acceptConnections()
+	go s.acceptConnections(s.ctx)
 
 	return nil
 }
 
-func (s *IPCServer) acceptConnections() {
-	for s.running {
+func (s *IPCServer) acceptConnections(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		if !s.running {
+			return
+		}
+
 		conn, err := s.server.Accept()
 		if err != nil {
 			if s.running {
@@ -71,24 +87,44 @@ func (s *IPCServer) acceptConnections() {
 			continue
 		}
 
-		go s.handleConnection(unixConn)
+		go s.handleConnection(ctx, unixConn)
 	}
 }
 
-func (s *IPCServer) handleConnection(conn *net.UnixConn) {
+func (s *IPCServer) handleConnection(ctx context.Context, conn *net.UnixConn) {
 	defer conn.Close()
 
-	buf := make([]byte, 1024)
-	n, err := conn.Read(buf)
-	if err != nil {
-		log.Printf("Error reading from connection: %v", err)
-		return
+	type result struct {
+		message string
+		err     error
 	}
 
-	message := strings.TrimSpace(string(buf[:n]))
-	log.Printf("Received IPC message: %s", message)
+	resultCh := make(chan result, 1)
 
-	s.handleMessage(message)
+	// Read message in goroutine with timeout
+	go func() {
+		buf := make([]byte, 1024)
+		n, err := conn.Read(buf)
+		if err != nil {
+			resultCh <- result{err: err}
+			return
+		}
+		message := strings.TrimSpace(string(buf[:n]))
+		resultCh <- result{message: message}
+	}()
+
+	select {
+	case res := <-resultCh:
+		if res.err != nil {
+			log.Printf("Error reading from connection: %v", res.err)
+			return
+		}
+		log.Printf("Received IPC message: %s", res.message)
+		s.handleMessage(res.message)
+	case <-ctx.Done():
+		log.Printf("IPC connection handling cancelled")
+		return
+	}
 }
 
 func (s *IPCServer) handleMessage(message string) {
@@ -114,6 +150,25 @@ func (s *IPCServer) handleMessage(message string) {
 				}
 			})
 		}
+	} else if strings.HasPrefix(message, "status:") {
+		// Handle status messages from hooks/launchers
+		statusMsg := strings.TrimPrefix(message, "status:")
+		glib.IdleAdd(func() {
+			if s.app.statusBar != nil {
+				// TODO: Implement status message display
+				log.Printf("Status message: %s", statusMsg)
+			}
+		})
+	} else if strings.HasPrefix(message, "launcher:refresh:") {
+		// Handle launcher refresh requests
+		launcherName := strings.TrimPrefix(message, "launcher:refresh:")
+		glib.IdleAdd(func() {
+			if s.app.launcher != nil && s.app.launcher.registry != nil {
+				if err := s.app.launcher.registry.RefreshLauncher(launcherName); err != nil {
+					log.Printf("Failed to refresh launcher '%s': %v", launcherName, err)
+				}
+			}
+		})
 	}
 }
 
@@ -123,6 +178,7 @@ func (s *IPCServer) Stop() error {
 	}
 
 	s.running = false
+	s.cancel() // Cancel context to stop all goroutines
 
 	if s.server != nil {
 		s.server.Close()
