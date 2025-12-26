@@ -208,6 +208,42 @@ func (m *MyModule) handleSocketEvent(event string) {
 }
 ```
 
+## Styling
+
+Statusbar styling is controlled through a CSS file located at `~/.config/locus/statusbar.css`. This file uses CSS custom properties (variables) for all colors, allowing easy customization without modifying code.
+
+### CSS Variables
+
+The CSS file defines color variables for global elements and each module:
+
+```css
+:root {
+  /* Global Colors */
+  --background: #1e1e2e;
+  --foreground: #cdd6f4;
+  --border-color: #313244;
+  --accent-color: #89b4fa;
+
+  /* Module-specific Colors */
+  --cpu-normal: #a6e3a1;
+  --cpu-high: #f9e2af;
+  --cpu-critical: #f38ba8;
+  /* ... etc */
+}
+```
+
+### Module Classes
+
+Each module has a base class and conditional state classes for dynamic coloring:
+
+- `.cpu-module` - Base CPU styling
+- `.cpu-high` - Applied when CPU > 50%
+- `.cpu-critical` - Applied when CPU > 80%
+
+### Customizing Colors
+
+Edit `~/.config/locus/statusbar.css` to change colors. The file is loaded at startup with user priority, overriding defaults.
+
 ## Configuration
 
 Modules are configured via the TOML configuration file:
@@ -215,6 +251,7 @@ Modules are configured via the TOML configuration file:
 ```toml
 [status_bar]
 height = 20
+css_file = "~/.config/locus/statusbar.css"
 modules = ["time", "battery", "workspaces", "launcher"]
 
 [status_bar.module_configs.time]

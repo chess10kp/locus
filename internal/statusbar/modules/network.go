@@ -68,6 +68,20 @@ func (m *NetworkModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatNetwork()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("network-ethernet")
+		ctx.RemoveClass("network-wifi")
+		ctx.RemoveClass("network-vpn")
+		if m.hasVpn {
+			ctx.AddClass("network-vpn")
+		} else if m.hasEthernet {
+			ctx.AddClass("network-ethernet")
+		} else if m.hasWifi {
+			ctx.AddClass("network-wifi")
+		}
+	}
+
 	return nil
 }
 

@@ -68,6 +68,14 @@ func (m *BrightnessModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatBrightness()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("brightness-night")
+		if m.percentage < 50 {
+			ctx.AddClass("brightness-night")
+		}
+	}
+
 	return nil
 }
 

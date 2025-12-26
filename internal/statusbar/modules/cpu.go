@@ -66,6 +66,17 @@ func (m *CpuModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatCpu()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("cpu-high")
+		ctx.RemoveClass("cpu-critical")
+		if m.usage >= 80 {
+			ctx.AddClass("cpu-critical")
+		} else if m.usage >= 50 {
+			ctx.AddClass("cpu-high")
+		}
+	}
+
 	return nil
 }
 

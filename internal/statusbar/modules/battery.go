@@ -66,6 +66,17 @@ func (m *BatteryModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatBattery()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("battery-low")
+		ctx.RemoveClass("battery-critical")
+		if m.percentage <= 20 {
+			ctx.AddClass("battery-critical")
+		} else if m.percentage <= 50 {
+			ctx.AddClass("battery-low")
+		}
+	}
+
 	return nil
 }
 

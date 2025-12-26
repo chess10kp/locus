@@ -66,6 +66,14 @@ func (m *VolumeModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatVolume()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("volume-muted")
+		if m.isMuted {
+			ctx.AddClass("volume-muted")
+		}
+	}
+
 	return nil
 }
 

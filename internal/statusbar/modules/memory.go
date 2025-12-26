@@ -68,6 +68,17 @@ func (m *MemoryModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatMemory()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("memory-warning")
+		ctx.RemoveClass("memory-critical")
+		if m.percentage >= 75 {
+			ctx.AddClass("memory-critical")
+		} else if m.percentage >= 50 {
+			ctx.AddClass("memory-warning")
+		}
+	}
+
 	return nil
 }
 

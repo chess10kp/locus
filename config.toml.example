@@ -3,6 +3,7 @@ app_id = "com.github.sigma.locus"
 
 [status_bar]
 height = 40
+css_file = "~/.config/locus/statusbar.css"
 modules = ["launcher", "time", "bluetooth", "volume", "cpu", "memory", "disk", "wifi", "network", "brightness", "keyboard", "music", "weather"]
 
 [status_bar.colors]

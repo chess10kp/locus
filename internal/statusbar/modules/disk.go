@@ -66,6 +66,23 @@ func (m *DiskModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatDisk()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("disk-warning")
+		ctx.RemoveClass("disk-critical")
+		maxUsage := 0.0
+		for _, usage := range m.usages {
+			if usage > maxUsage {
+				maxUsage = usage
+			}
+		}
+		if maxUsage >= 90 {
+			ctx.AddClass("disk-critical")
+		} else if maxUsage >= 75 {
+			ctx.AddClass("disk-warning")
+		}
+	}
+
 	return nil
 }
 

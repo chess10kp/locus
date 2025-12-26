@@ -71,6 +71,18 @@ func (m *KeyboardModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatKeyboard()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("keyboard-caps")
+		ctx.RemoveClass("keyboard-num")
+		if m.capsLock {
+			ctx.AddClass("keyboard-caps")
+		}
+		if m.numLock {
+			ctx.AddClass("keyboard-num")
+		}
+	}
+
 	return nil
 }
 

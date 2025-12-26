@@ -77,6 +77,18 @@ func (m *MusicModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatMusic()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("music-playing")
+		ctx.RemoveClass("music-paused")
+		switch m.playbackStatus {
+		case "playing":
+			ctx.AddClass("music-playing")
+		case "paused":
+			ctx.AddClass("music-paused")
+		}
+	}
+
 	return nil
 }
 

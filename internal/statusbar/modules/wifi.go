@@ -69,6 +69,14 @@ func (m *WifiModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatWifi()
 	label.SetText(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("wifi-connected")
+		if m.isConnected {
+			ctx.AddClass("wifi-connected")
+		}
+	}
+
 	return nil
 }
 

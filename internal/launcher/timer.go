@@ -1,10 +1,9 @@
 package launcher
 
 import (
-	"os/exec"
+	"context"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/sigma/locus-go/internal/config"
 )
@@ -48,20 +47,20 @@ func (l *TimerLauncher) Populate(query string, ctx *LauncherContext) []*Launcher
 	items := make([]*LauncherItem, 0, len(presets))
 	for _, p := range presets {
 		items = append(items, &LauncherItem{
-			Title:    p.name,
-			Subtitle: "Timer preset",
-			Icon:     "alarm-symbolic",
-			Command:  p.cmd,
+			Title:      p.name,
+			Subtitle:   "Timer preset",
+			Icon:       "alarm-symbolic",
+			ActionData: NewShellAction(p.cmd),
 		})
 	}
 
 	q := strings.TrimSpace(query)
 	if q != "" {
 		items = append(items, &LauncherItem{
-			Title:    "Custom Timer: " + q,
-			Subtitle: "Start custom timer",
-			Icon:     "alarm-symbolic",
-			Command:  l.parseTimerCommand(q),
+			Title:      "Custom Timer: " + q,
+			Subtitle:   "Start custom timer",
+			Icon:       "alarm-symbolic",
+			ActionData: NewShellAction(l.parseTimerCommand(q)),
 		})
 	}
 
@@ -98,23 +97,84 @@ func (l *TimerLauncher) parseTimerCommand(query string) string {
 	return "sleep " + strconv.Itoa(seconds) + " && notify-send Timer \"Time is up!\""
 }
 
-func (l *TimerLauncher) HandlesEnter() bool {
-	return true
+func (l *TimerLauncher) GetHooks() []Hook {
+	return []Hook{&TimerHook{launcher: l}}
 }
 
-func (l *TimerLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	cmd := exec.Command("sh", "-c", l.parseTimerCommand(query))
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
-	return cmd.Start() == nil
-}
-
-func (l *TimerLauncher) HandlesTab() bool {
-	return false
-}
-
-func (l *TimerLauncher) HandleTab(query string) string {
-	return query
+func (l *TimerLauncher) Rebuild(ctx *LauncherContext) error {
+	// Timer launcher doesn't need to rebuild - it generates items on demand
+	return nil
 }
 
 func (l *TimerLauncher) Cleanup() {
+}
+
+// TimerHook handles timer-specific interactions
+type TimerHook struct {
+	launcher *TimerLauncher
+}
+
+func (h *TimerHook) ID() string {
+	return "timer-hook"
+}
+
+func (h *TimerHook) Priority() int {
+	return 10
+}
+
+func (h *TimerHook) OnSelect(execCtx context.Context, ctx *HookContext, data ActionData) HookResult {
+	if data.Type() != "shell" {
+		return HookResult{Handled: false}
+	}
+
+	// Check if this is a timer command
+	shellAction, ok := data.(*ShellAction)
+	if !ok {
+		return HookResult{Handled: false}
+	}
+
+	if !strings.HasPrefix(shellAction.Command, "sleep ") {
+		return HookResult{Handled: false}
+	}
+
+	// Extract duration from command for status message
+	parts := strings.Fields(shellAction.Command)
+	if len(parts) >= 2 {
+		duration := parts[1]
+		// Send status message asynchronously
+		select {
+		case ctx.SendStatus <- StatusRequest{Message: "Timer started for " + duration}:
+		default:
+			// Channel full, skip status update
+		}
+	}
+
+	return HookResult{Handled: true}
+}
+
+func (h *TimerHook) OnEnter(execCtx context.Context, ctx *HookContext, text string) HookResult {
+	// Handle direct timer commands like ">timer 5m"
+	if strings.TrimSpace(text) != "" {
+		// Parse and execute timer command
+		cmd := h.launcher.parseTimerCommand(text)
+		if cmd != "" {
+			action := NewShellAction(cmd)
+			result := h.OnSelect(execCtx, ctx, action)
+			return result
+		}
+	}
+
+	return HookResult{Handled: false}
+}
+
+func (h *TimerHook) OnTab(execCtx context.Context, ctx *HookContext, text string) TabResult {
+	if strings.HasPrefix(text, ">timer") && !strings.Contains(text, " ") {
+		return TabResult{NewText: ">timer ", Handled: true}
+	}
+
+	return TabResult{Handled: false}
+}
+
+func (h *TimerHook) Cleanup() {
+	// No cleanup needed
 }

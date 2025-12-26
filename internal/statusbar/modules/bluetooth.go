@@ -98,6 +98,17 @@ func (m *BluetoothModule) UpdateWidget(widget gtk.IWidget) error {
 	formatted := m.formatBluetooth()
 	button.SetLabel(formatted)
 
+	// Update CSS classes for color
+	if ctx, err := button.ToWidget().GetStyleContext(); err == nil {
+		ctx.RemoveClass("bluetooth-connected")
+		for _, device := range m.devices {
+			if device.Connected {
+				ctx.AddClass("bluetooth-connected")
+				break
+			}
+		}
+	}
+
 	return nil
 }
 
