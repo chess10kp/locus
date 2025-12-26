@@ -205,7 +205,7 @@
 
   
 
-* TODO [#A] sway launcher :sway:launcher:
+* DONE [#A] sway launcher :sway:launcher:
   :PROPERTIES:
   :ID: task-20251223144759
   :TITLE: sway launcher
@@ -268,7 +268,7 @@
 
   
 
-* TODO api to configure ctrl and alt keybindings foofor a launcher
+* DONE api to configure ctrl and alt keybindings foofor a launcher
   :PROPERTIES:
   :ID: task-20251223150656
   :TITLE: api to configure ctrl and alt keybindings foofor a launcher
@@ -286,7 +286,7 @@
 
   
 
-* TODO [#A] expose slancher styling through config file
+* DONE [#A] expose slancher styling through config file
   :PROPERTIES:
   :ID: task-20251223151253
   :TITLE: expose slancher styling through config file
@@ -439,7 +439,7 @@
 
   
 
-* TODO [#C] preview panels for images, markdown, metadata
+* DONE [#C] preview panels for images, markdown, metadata
   :PROPERTIES:
   :ID: task-20251224004804
   :TITLE: preview panels for images, markdown, metadata
@@ -484,7 +484,7 @@
 
   
 
-* TODO preview layout
+* DONE preview layout
   :PROPERTIES:
   :ID: task-20251224170550
   :TITLE: preview layout
@@ -493,7 +493,7 @@
 
   
 
-* TODO aniamtions for launcher
+* DONE aniamtions for launcher
   :PROPERTIES:
   :ID: task-20251224170700
   :TITLE: aniamtions for launcher
@@ -511,7 +511,7 @@
 
   
 
-* TODO IPC input is not formatted right
+* DONE IPC input is not formatted right
   :PROPERTIES:
   :ID: task-20251224182305
   :TITLE: IPC input is not formatted right
@@ -520,7 +520,7 @@
 
   
 
-* TODO bluetooth launcher clicking on a button breaks the launcher
+* DONE bluetooth launcher clicking on a button breaks the launcher
   :PROPERTIES:
   :ID: task-20251224182409
   :TITLE: bluetooth launcher clicking on a button breaks the launcher
@@ -529,7 +529,7 @@
 
   
 
-* TODO music menu has too many options, making song results not showing :ux:
+* DONE music menu has too many options, making song results not showing :ux:
   :PROPERTIES:
   :ID: task-20251224182513
   :TITLE: music menu has too many options, making song results not showing
@@ -556,7 +556,7 @@
 
   
 
-* TODO invert sway keybinds
+* DONE invert sway keybinds
   :PROPERTIES:
   :ID: task-20251224220922
   :TITLE: invert sway keybinds
@@ -565,7 +565,7 @@
 
   
 
-* TODO [#A] screenshots + recordings
+* DONE [#A] screenshots + recordings
   :PROPERTIES:
   :ID: task-20251224221002
   :TITLE: screenshots + recordings
@@ -574,7 +574,7 @@
 
   
 
-* TODO move power managfement to its own launcher
+* DONE move power managfement to its own launcher
   :PROPERTIES:
   :ID: task-20251224221150
   :TITLE: move power managfement to its own launcher
@@ -583,11 +583,38 @@
 
   
 
-* TODO timeout for notifications
+* DONE timeout for notifications
   :PROPERTIES:
   :ID: task-20251224221238
   :TITLE: timeout for notifications
   :CREATED: <2025-12-24 Wed 22:12>
+  :END:
+
+  
+
+* TODO alt+<number> should also select the corresponding entry
+  :PROPERTIES:
+  :ID: task-20251226180915
+  :TITLE: alt+<number> should also select the corresponding entry
+  :CREATED: <2025-12-26 Fri 18:09>
+  :END:
+
+  
+
+* TODO display the corresponding alt number as a hint on the right of the entry
+  :PROPERTIES:
+  :ID: task-20251226180945
+  :TITLE: display the corresponding alt number as a hint on the right of the entry
+  :CREATED: <2025-12-26 Fri 18:09>
+  :END:
+
+  
+
+* TODO ctrl+number shold also perform an action that is configurable by the launcher that calls the action
+  :PROPERTIES:
+  :ID: task-20251226181036
+  :TITLE: ctrl+number shold also perform an action that is configurable by the launcher that calls the action
+  :CREATED: <2025-12-26 Fri 18:10>
   :END:
 
   

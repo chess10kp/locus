@@ -71,6 +71,7 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	window.SetDecorated(false)
 	window.SetSkipTaskbarHint(true)
 	window.SetSkipPagerHint(true)
+	window.SetResizable(false)
 	window.SetName("launcher-window")
 
 	box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -152,7 +153,7 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	go l.handleStatusRequests(ctx, statusChan)
 
 	// Setup launcher-specific styles
-	SetupLauncherStyles()
+	SetupLauncherStyles(l.config)
 
 	l.setupSignals()
 

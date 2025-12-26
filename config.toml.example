@@ -36,6 +36,25 @@ enabled = true
 max_age_hours = 6
 cache_file = "apps.json"
 
+[launcher.styling]
+background_color = "#0e1419"
+foreground_color = "#ebdbb2"
+border_color = "#313244"
+accent_color = "#89b4fa"
+entry_background = "#181825"
+entry_border_color = "#313244"
+entry_focus_color = "#89b4fa"
+list_row_background = "#0e1419"
+list_row_selected = "#89b4fa"
+list_row_hover = "#504945"
+button_background = "#458588"
+button_hover = "#83a598"
+border_radius = 8
+border_width = 1
+font_family = "Iosevka, monospace"
+font_size = 16
+font_weight = "bold"
+
 [notification]
 [notification.ui]
 icon = "🔔"

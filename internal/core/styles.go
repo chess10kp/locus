@@ -1,11 +1,13 @@
 package core
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/sigma/locus-go/internal/config"
 )
 
 const defaultStyles = `
@@ -109,6 +111,104 @@ const defaultLauncherStyles = `
 
 var globalStyleProvider *gtk.CssProvider
 
+func generateLauncherCSS(styling *config.StylingConfig) string {
+	return fmt.Sprintf(`
+#launcher-window {
+    background-color: %s;
+    color: %s;
+    border-radius: %dpx;
+    border: %dpx solid %s;
+}
+
+#launcher-entry {
+    background-color: %s;
+    color: %s;
+    padding: 12px;
+    border: none;
+    border-bottom: %dpx solid %s;
+    font-family: %s;
+    font-size: %dpx;
+    font-weight: %s;
+}
+
+#launcher-entry:focus {
+    border-bottom: %dpx solid %s;
+}
+
+#result-list {
+    background-color: transparent;
+}
+
+#list-row {
+    padding: 8px 12px;
+    border-bottom: %dpx solid %s;
+    min-height: 40px;
+    background-color: %s;
+}
+
+#list-row:selected {
+    background-color: %s;
+    color: %s;
+}
+
+#list-row:hover {
+    background-color: %s;
+}
+
+#hide-button {
+    background-color: %s;
+    color: %s;
+    border: none;
+    border-radius: %dpx;
+    padding: 8px 16px;
+    margin: 8px;
+    font-family: %s;
+    font-size: %dpx;
+    font-weight: %s;
+}
+
+#hide-button:hover {
+    background-color: %s;
+}
+`,
+		styling.BackgroundColor,
+		styling.ForegroundColor,
+		styling.BorderRadius,
+		styling.BorderWidth,
+		styling.BorderColor,
+
+		styling.EntryBackground,
+		styling.ForegroundColor,
+
+		styling.BorderWidth,
+		styling.EntryBorderColor,
+		styling.FontFamily,
+		styling.FontSize,
+		styling.FontWeight,
+
+		styling.BorderWidth,
+		styling.EntryFocusColor,
+
+		styling.BorderWidth,
+		styling.BorderColor,
+		styling.ListRowBackground,
+
+		styling.ListRowSelected,
+		styling.BackgroundColor,
+
+		styling.ListRowHover,
+
+		styling.ButtonBackground,
+		styling.ForegroundColor,
+		styling.BorderRadius,
+		styling.FontFamily,
+		styling.FontSize,
+		styling.FontWeight,
+
+		styling.ButtonHover,
+	)
+}
+
 func SetupStyles() {
 	screen, err := gdk.ScreenGetDefault()
 	if err != nil || screen == nil {
@@ -129,22 +229,25 @@ func SetupStyles() {
 	LoadCustomCSS()
 }
 
-func SetupLauncherStyles() {
+func SetupLauncherStyles(cfg *config.Config) {
 	screen, err := gdk.ScreenGetDefault()
 	if err != nil || screen == nil {
 		log.Printf("Warning: Failed to get default screen for launcher styles: %v", err)
 		return
 	}
 
+	// Generate CSS from config
+	launcherCSS := generateLauncherCSS(&cfg.Launcher.Styling)
+
 	// Load built-in launcher CSS
 	provider, _ := gtk.CssProviderNew()
-	if err := provider.LoadFromData(defaultLauncherStyles); err != nil {
-		log.Printf("Warning: Failed to load default launcher styles: %v", err)
+	if err := provider.LoadFromData(launcherCSS); err != nil {
+		log.Printf("Warning: Failed to load launcher styles: %v", err)
 		return
 	}
 
 	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-	log.Printf("Loaded built-in launcher styles")
+	log.Printf("Loaded launcher styles from config")
 }
 
 func LoadCustomCSS() {

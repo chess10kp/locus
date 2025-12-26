@@ -84,6 +84,7 @@ type LauncherConfig struct {
 	Keys        KeysConfig        `toml:"keys"`
 	DesktopApps DesktopAppsConfig `toml:"desktop_apps"`
 	Cache       CacheConfig       `toml:"cache"`
+	Styling     StylingConfig     `toml:"styling"`
 }
 
 type WindowConfig struct {
@@ -157,6 +158,26 @@ type DesktopAppsConfig struct {
 type CacheConfig struct {
 	CacheDir      string `toml:"cache_dir"`
 	AppsCacheFile string `toml:"apps_cache_file"`
+}
+
+type StylingConfig struct {
+	BackgroundColor   string `toml:"background_color"`
+	ForegroundColor   string `toml:"foreground_color"`
+	BorderColor       string `toml:"border_color"`
+	AccentColor       string `toml:"accent_color"`
+	EntryBackground   string `toml:"entry_background"`
+	EntryBorderColor  string `toml:"entry_border_color"`
+	EntryFocusColor   string `toml:"entry_focus_color"`
+	ListRowBackground string `toml:"list_row_background"`
+	ListRowSelected   string `toml:"list_row_selected"`
+	ListRowHover      string `toml:"list_row_hover"`
+	ButtonBackground  string `toml:"button_background"`
+	ButtonHover       string `toml:"button_hover"`
+	BorderRadius      int    `toml:"border_radius"`
+	BorderWidth       int    `toml:"border_width"`
+	FontFamily        string `toml:"font_family"`
+	FontSize          int    `toml:"font_size"`
+	FontWeight        string `toml:"font_weight"`
 }
 
 type NotificationConfig struct {
@@ -316,6 +337,25 @@ var DefaultConfig = Config{
 		Cache: CacheConfig{
 			CacheDir:      "~/.cache/locus",
 			AppsCacheFile: "apps.json",
+		},
+		Styling: StylingConfig{
+			BackgroundColor:   "#0e1419",
+			ForegroundColor:   "#ebdbb2",
+			BorderColor:       "#313244",
+			AccentColor:       "#89b4fa",
+			EntryBackground:   "#181825",
+			EntryBorderColor:  "#313244",
+			EntryFocusColor:   "#89b4fa",
+			ListRowBackground: "#0e1419",
+			ListRowSelected:   "#89b4fa",
+			ListRowHover:      "#504945",
+			ButtonBackground:  "#458588",
+			ButtonHover:       "#83a598",
+			BorderRadius:      8,
+			BorderWidth:       1,
+			FontFamily:        "Iosevka, monospace",
+			FontSize:          16,
+			FontWeight:        "bold",
 		},
 	},
 	Notification: NotificationConfig{

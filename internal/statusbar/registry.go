@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -342,7 +343,16 @@ func (r *ModuleRegistry) UpdateModuleWidget(name string, widget gtk.IWidget) err
 		return fmt.Errorf("module '%s' not found", name)
 	}
 
-	return module.UpdateWidget(widget)
+	// GTK operations must be performed on the main thread
+	// Use a channel to synchronously wait for the result
+	errChan := make(chan error, 1)
+
+	glib.IdleAdd(func() {
+		err := module.UpdateWidget(widget)
+		errChan <- err
+	})
+
+	return <-errChan
 }
 
 // HandleModuleClick handles a click event for a module
