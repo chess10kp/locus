@@ -317,14 +317,6 @@ func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) 
 		return
 	}
 
-	// Check if launcher is visible - only update UI when visible
-	visible := l.visible.Load()
-	debugLogger.Printf("UPDATE_RESULTS: visible flag = %v", visible)
-	if !visible {
-		debugLogger.Printf("UPDATE_RESULTS: launcher not visible, skipping update")
-		return
-	}
-
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.updateResultsUnsafe(items, version)
@@ -352,7 +344,6 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 	// Clear existing results
 	clearStart := time.Now()
 
-	// Get list container and remove all rows
 	children := l.resultList.GetChildren()
 	var childCount int
 	if children != nil {
@@ -360,24 +351,15 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 	}
 	debugLogger.Printf("UPDATE_RESULTS: before clear: %d children", childCount)
 
-	// Remove all rows by iterating over children
+	// Remove all rows by repeatedly removing the first row
 	removedCount := 0
-	if childCount > 0 {
-		// Collect rows to remove first to avoid issues with iterating while modifying
-		rowsToRemove := make([]*gtk.ListBoxRow, 0, childCount)
-		for i := 0; i < childCount; i++ {
-			if child := children.NthData(uint(i)); child != nil {
-				if row, ok := child.(*gtk.ListBoxRow); ok {
-					rowsToRemove = append(rowsToRemove, row)
-				}
-			}
+	for {
+		row := l.resultList.GetRowAtIndex(0)
+		if row == nil {
+			break
 		}
-
-		// Now remove all collected rows
-		for _, row := range rowsToRemove {
-			l.resultList.Remove(row)
-			removedCount++
-		}
+		l.resultList.Remove(row)
+		removedCount++
 	}
 
 	debugLogger.Printf("UPDATE_RESULTS: removed %d rows in %v", removedCount, time.Since(clearStart))
@@ -425,6 +407,9 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 
 	// Force the listbox to redraw
 	l.resultList.QueueDraw()
+	if l.scrolledWindow != nil {
+		l.scrolledWindow.QueueDraw()
+	}
 
 	debugLogger.Printf("UPDATE_RESULTS: ShowAll and QueueDraw completed")
 
@@ -484,6 +469,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 
 	label.SetHAlign(gtk.ALIGN_START)
 	box.PackStart(label, true, true, 0)
+	label.Show()
 
 	if item.Subtitle != "" {
 		subLabel, err := gtk.LabelNew(item.Subtitle)
@@ -494,6 +480,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 		subLabel.SetHAlign(gtk.ALIGN_START)
 		subLabel.SetMarginStart(16)
 		box.PackStart(subLabel, true, true, 0)
+		subLabel.Show()
 	}
 
 	row.Add(box)
