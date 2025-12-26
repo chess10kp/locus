@@ -67,3 +67,7 @@ func (l *WallpaperLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *WallpaperLauncher) Cleanup() {
 }
+
+func (l *WallpaperLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

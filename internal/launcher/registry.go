@@ -46,6 +46,9 @@ type LauncherItem struct {
 	Launcher   Launcher
 }
 
+// CtrlNumberAction is a function that performs an action on a launcher item
+type CtrlNumberAction func(item *LauncherItem) error
+
 // Launcher is the interface that all launchers must implement
 type Launcher interface {
 	Name() string
@@ -55,6 +58,7 @@ type Launcher interface {
 	GetHooks() []Hook
 	Rebuild(ctx *LauncherContext) error
 	Cleanup()
+	GetCtrlNumberAction(number int) (CtrlNumberAction, bool)
 }
 
 // LauncherRegistry manages all launchers

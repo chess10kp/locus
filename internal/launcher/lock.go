@@ -47,3 +47,7 @@ func (l *LockLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *LockLauncher) Cleanup() {
 }
+
+func (l *LockLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

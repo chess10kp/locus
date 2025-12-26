@@ -63,6 +63,10 @@ func (l *ShellLauncher) Rebuild(ctx *LauncherContext) error {
 func (l *ShellLauncher) Cleanup() {
 }
 
+func (l *ShellLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}
+
 type WebLauncher struct {
 	config *config.Config
 }
@@ -125,6 +129,10 @@ func (l *WebLauncher) Rebuild(ctx *LauncherContext) error {
 func (l *WebLauncher) Cleanup() {
 }
 
+func (l *WebLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}
+
 type CalcLauncher struct {
 	config *config.Config
 }
@@ -179,4 +187,8 @@ func (l *CalcLauncher) Rebuild(ctx *LauncherContext) error {
 }
 
 func (l *CalcLauncher) Cleanup() {
+}
+
+func (l *CalcLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
 }

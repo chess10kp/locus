@@ -188,6 +188,10 @@ func (l *AppLauncher) HandleTab(query string) string {
 func (l *AppLauncher) Cleanup() {
 }
 
+func (l *AppLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}
+
 // GetAppsHash returns the hash of currently loaded apps
 func (l *AppLauncher) GetAppsHash() string {
 	l.mu.RLock()

@@ -86,3 +86,7 @@ func (l *BrightnessLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *BrightnessLauncher) Cleanup() {
 }
+
+func (l *BrightnessLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

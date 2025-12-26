@@ -115,3 +115,7 @@ func (l *KillLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *KillLauncher) Cleanup() {
 }
+
+func (l *KillLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

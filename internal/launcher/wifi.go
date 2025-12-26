@@ -80,3 +80,7 @@ func (l *WifiLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *WifiLauncher) Cleanup() {
 }
+
+func (l *WifiLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

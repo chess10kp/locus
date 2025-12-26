@@ -91,3 +91,7 @@ func (l *ScreenshotLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *ScreenshotLauncher) Cleanup() {
 }
+
+func (l *ScreenshotLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

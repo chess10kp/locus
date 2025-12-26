@@ -63,3 +63,7 @@ func (l *ClipboardLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *ClipboardLauncher) Cleanup() {
 }
+
+func (l *ClipboardLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

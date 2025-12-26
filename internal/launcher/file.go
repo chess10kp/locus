@@ -150,3 +150,7 @@ func (l *FileLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *FileLauncher) Cleanup() {
 }
+
+func (l *FileLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

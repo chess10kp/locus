@@ -83,3 +83,7 @@ func (l *WMFocusLauncher) Rebuild(ctx *LauncherContext) error {
 
 func (l *WMFocusLauncher) Cleanup() {
 }
+
+func (l *WMFocusLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

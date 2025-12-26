@@ -592,7 +592,7 @@
 
   
 
-* TODO alt+<number> should also select the corresponding entry
+* DONE alt+<number> should also select the corresponding entry
   :PROPERTIES:
   :ID: task-20251226180915
   :TITLE: alt+<number> should also select the corresponding entry
@@ -601,7 +601,7 @@
 
   
 
-* TODO display the corresponding alt number as a hint on the right of the entry
+* DONE display the corresponding alt number as a hint on the right of the entry
   :PROPERTIES:
   :ID: task-20251226180945
   :TITLE: display the corresponding alt number as a hint on the right of the entry
@@ -610,7 +610,7 @@
 
   
 
-* TODO ctrl+number shold also perform an action that is configurable by the launcher that calls the action
+* DONE ctrl+number shold also perform an action that is configurable by the launcher that calls the action
   :PROPERTIES:
   :ID: task-20251226181036
   :TITLE: ctrl+number shold also perform an action that is configurable by the launcher that calls the action

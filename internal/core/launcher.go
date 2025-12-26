@@ -390,7 +390,7 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 		debugLogger.Printf("UPDATE_RESULTS: first item title: '%s'", items[0].Title)
 	}
 	for i, item := range items {
-		row, err := l.createResultRow(item)
+		row, err := l.createResultRow(item, i)
 		if err != nil {
 			debugLogger.Printf("UPDATE_RESULTS: failed to create row %d for item '%s': %v", i, item.Title, err)
 			fmt.Printf("Failed to create row: %v\n", err)
@@ -440,7 +440,7 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 	return true
 }
 
-func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow, error) {
+func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk.ListBoxRow, error) {
 	row, err := gtk.ListBoxRowNew()
 	if err != nil {
 		return nil, err
@@ -548,6 +548,18 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem) (*gtk.ListBoxRow
 		subLabel.Show()
 	}
 
+	if index < 9 {
+		hintLabel, err := gtk.LabelNew(fmt.Sprintf("Alt+%d", index+1))
+		if err != nil {
+			return nil, err
+		}
+
+		hintLabel.SetHAlign(gtk.ALIGN_END)
+		hintLabel.SetMarginStart(8)
+		box.PackEnd(hintLabel, false, false, 0)
+		hintLabel.Show()
+	}
+
 	row.Add(box)
 	row.ShowAll()
 	return row, nil
@@ -608,6 +620,7 @@ func (l *Launcher) onRowActivated(row *gtk.ListBoxRow) {
 
 func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 	key := event.KeyVal()
+	state := event.State()
 
 	switch key {
 	case gdk.KEY_Escape:
@@ -621,6 +634,90 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 		return true
 	case gdk.KEY_Tab:
 		return l.onTabPressed()
+	}
+
+	// Check for Alt+number (1-9) to directly activate corresponding entry
+	if state&uint(gdk.MOD1_MASK) != 0 {
+		var index int
+		switch key {
+		case gdk.KEY_1:
+			index = 0
+		case gdk.KEY_2:
+			index = 1
+		case gdk.KEY_3:
+			index = 2
+		case gdk.KEY_4:
+			index = 3
+		case gdk.KEY_5:
+			index = 4
+		case gdk.KEY_6:
+			index = 5
+		case gdk.KEY_7:
+			index = 6
+		case gdk.KEY_8:
+			index = 7
+		case gdk.KEY_9:
+			index = 8
+		default:
+			return false
+		}
+
+		l.mu.RLock()
+		if index < len(l.currentItems) {
+			row := l.resultList.GetRowAtIndex(index)
+			if row != nil {
+				l.mu.RUnlock()
+				l.onRowActivated(row)
+				return true
+			}
+		}
+		l.mu.RUnlock()
+	}
+
+	// Check for Ctrl+number (1-9) to execute launcher-specific action on corresponding entry
+	if state&uint(gdk.CONTROL_MASK) != 0 {
+		var number int
+		switch key {
+		case gdk.KEY_1:
+			number = 1
+		case gdk.KEY_2:
+			number = 2
+		case gdk.KEY_3:
+			number = 3
+		case gdk.KEY_4:
+			number = 4
+		case gdk.KEY_5:
+			number = 5
+		case gdk.KEY_6:
+			number = 6
+		case gdk.KEY_7:
+			number = 7
+		case gdk.KEY_8:
+			number = 8
+		case gdk.KEY_9:
+			number = 9
+		default:
+			return false
+		}
+
+		l.mu.RLock()
+		index := number - 1
+		if index < len(l.currentItems) {
+			item := l.currentItems[index]
+			if item.Launcher != nil {
+				action, exists := item.Launcher.GetCtrlNumberAction(number)
+				if exists && action != nil {
+					l.mu.RUnlock()
+					if err := action(item); err != nil {
+						fmt.Printf("Ctrl+%d action failed: %v\n", number, err)
+					} else {
+						l.Hide()
+					}
+					return true
+				}
+			}
+		}
+		l.mu.RUnlock()
 	}
 
 	return false

@@ -109,6 +109,10 @@ func (l *TimerLauncher) Rebuild(ctx *LauncherContext) error {
 func (l *TimerLauncher) Cleanup() {
 }
 
+func (l *TimerLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}
+
 // TimerHook handles timer-specific interactions
 type TimerHook struct {
 	launcher *TimerLauncher
