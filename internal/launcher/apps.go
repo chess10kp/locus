@@ -19,6 +19,10 @@ type AppLauncher struct {
 	apps       []apps.App
 	appsLoaded bool
 	mu         sync.RWMutex
+	// Pre-computed search data for performance
+	appNames    []string
+	nameToApp   map[string]apps.App
+	initialized bool
 }
 
 func NewAppLauncher(cfg *config.Config) *AppLauncher {
@@ -27,6 +31,47 @@ func NewAppLauncher(cfg *config.Config) *AppLauncher {
 		appLoader: apps.NewAppLoader(cfg),
 		apps:      []apps.App{},
 	}
+}
+
+// StartBackgroundLoad starts loading apps in a background goroutine
+func (l *AppLauncher) StartBackgroundLoad() {
+	go func() {
+		log.Printf("[APP-LAUNCHER] Starting background app loading")
+		loadStart := time.Now()
+
+		if _, err := l.appLoader.LoadApps(false); err != nil {
+			log.Printf("[APP-LAUNCHER] Background app load failed: %v", err)
+			return
+		}
+
+		l.mu.Lock()
+		l.apps = l.appLoader.GetApps()
+		l.appsLoaded = true
+
+		// Pre-compute search data for performance
+		l.precomputeSearchData()
+		l.initialized = true
+
+		l.mu.Unlock()
+
+		log.Printf("[APP-LAUNCHER] Background load completed in %v, loaded %d apps", time.Since(loadStart), len(l.apps))
+	}()
+}
+
+// precomputeSearchData creates optimized data structures for fast searching
+func (l *AppLauncher) precomputeSearchData() {
+	start := time.Now()
+
+	// Pre-allocate with correct capacity
+	l.appNames = make([]string, len(l.apps))
+	l.nameToApp = make(map[string]apps.App, len(l.apps))
+
+	for i, app := range l.apps {
+		l.appNames[i] = app.Name
+		l.nameToApp[app.Name] = app
+	}
+
+	log.Printf("[APP-LAUNCHER] Precomputed search data in %v", time.Since(start))
 }
 
 func (l *AppLauncher) Name() string {
@@ -49,18 +94,10 @@ func (l *AppLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIt
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	// Load apps if not already loaded
-	if !l.appsLoaded {
-		loadStart := time.Now()
-		log.Printf("[APP-LAUNCHER] Loading apps for first time")
-		if _, err := l.appLoader.LoadApps(false); err != nil {
-			log.Printf("[APP-LAUNCHER] Failed to load apps: %v", err)
-			fmt.Printf("Failed to load apps: %v\n", err)
-			return []*LauncherItem{}
-		}
-		l.apps = l.appLoader.GetApps()
-		l.appsLoaded = true
-		log.Printf("[APP-LAUNCHER] Loaded %d apps in %v", len(l.apps), time.Since(loadStart))
+	// Return empty results if apps haven't loaded yet (non-blocking)
+	if !l.appsLoaded || !l.initialized {
+		log.Printf("[APP-LAUNCHER] Apps not loaded yet, returning empty results")
+		return []*LauncherItem{}
 	}
 
 	query = strings.TrimSpace(query)
@@ -86,23 +123,30 @@ func (l *AppLauncher) fuzzySearch(query string, maxResults int) []*LauncherItem 
 	fuzzyStart := time.Now()
 	log.Printf("[APP-LAUNCHER] Fuzzy search started for query='%s' against %d apps", query, len(l.apps))
 
-	// Create list of app names for fuzzy matching
-	appNames := make([]string, len(l.apps))
-	nameToApp := make(map[string]apps.App)
-
-	for i, app := range l.apps {
-		appNames[i] = app.Name
-		nameToApp[app.Name] = app
-	}
-
-	// Use fuzzy search with score threshold
+	// Use pre-computed data structures for performance
 	findStart := time.Now()
-	matches := fuzzy.Find(query, appNames)
+	matches := fuzzy.Find(query, l.appNames)
 	log.Printf("[APP-LAUNCHER] Fuzzy find completed in %v, found %d raw matches", time.Since(findStart), len(matches))
 
-	// Filter by minimum score threshold - use low threshold for better UX
-	minScore := 0 // Set to 0 to accept all matches, fuzzy library has its own ranking
-	filteredMatches := make([]fuzzy.Match, 0)
+	// Adaptive score threshold based on query length
+	minScore := 0
+	if len(query) == 1 {
+		minScore = 60 // Stricter for single character
+	} else if len(query) == 2 {
+		minScore = 40
+	} else {
+		minScore = 20
+	}
+
+	// Early cutoff - only consider top results
+	maxConsider := maxResults * 2
+	if len(matches) > maxConsider {
+		matches = matches[:maxConsider]
+	}
+
+	// Filter by minimum score threshold
+	queryLower := strings.ToLower(query)
+	filteredMatches := make([]fuzzy.Match, 0, len(matches))
 
 	for _, match := range matches {
 		if match.Score >= minScore {
@@ -118,16 +162,15 @@ func (l *AppLauncher) fuzzySearch(query string, maxResults int) []*LauncherItem 
 		match1 := filteredMatches[i]
 		match2 := filteredMatches[j]
 
-		// Check if match1 starts with query (exact prefix)
-		match1StartsWith := strings.HasPrefix(strings.ToLower(match1.Str), strings.ToLower(query))
-		match2StartsWith := strings.HasPrefix(strings.ToLower(match2.Str), strings.ToLower(query))
+		// Pre-compute lowercase comparison
+		match1StartsWith := strings.HasPrefix(strings.ToLower(match1.Str), queryLower)
+		match2StartsWith := strings.HasPrefix(strings.ToLower(match2.Str), queryLower)
 
 		// Prioritize exact prefix matches
 		if match1StartsWith != match2StartsWith {
 			return match1StartsWith
 		}
 
-		// Then sort by score (descending)
 		return match1.Score > match2.Score
 	})
 	log.Printf("[APP-LAUNCHER] Sorting completed in %v", time.Since(sortStart))
@@ -137,7 +180,7 @@ func (l *AppLauncher) fuzzySearch(query string, maxResults int) []*LauncherItem 
 
 	for i := 0; i < len(filteredMatches) && i < maxResults; i++ {
 		match := filteredMatches[i]
-		if app, ok := nameToApp[match.Str]; ok {
+		if app, ok := l.nameToApp[match.Str]; ok {
 			items = append(items, l.appToItem(app))
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,6 +20,20 @@ import (
 )
 
 var debugLogger = log.New(log.Writer(), "[LAUNCHER-DEBUG] ", log.LstdFlags|log.Lmicroseconds)
+
+// logMemoryStats provides memory usage information for debugging
+func (l *Launcher) logMemoryStats(context string) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	log.Printf("[MEMORY-%s] Alloc=%d MB, TotalAlloc=%d MB, Sys=%d MB, NumGC=%d",
+		context,
+		m.Alloc/1024/1024,
+		m.TotalAlloc/1024/1024,
+		m.Sys/1024/1024,
+		m.NumGC,
+	)
+}
 
 var (
 	ErrLauncherAlreadyRunning = errors.New("launcher is already running")
@@ -276,23 +291,22 @@ func (l *Launcher) onSearchChanged(text string) {
 }
 
 func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) {
+	// Check version BEFORE acquiring lock to prevent stale updates
+	currentVersion := atomic.LoadInt64(&l.searchVersion)
+	if version != currentVersion {
+		debugLogger.Printf("UPDATE_RESULTS: skipping stale update for version=%d (current=%d)", version, currentVersion)
+		return
+	}
+
 	l.mu.Lock()
 	success := l.updateResultsUnsafe(items, version)
 	l.mu.Unlock()
 
 	if success {
-		// More aggressive UI refresh - force all widgets to update
+		// Optimized UI refresh - single comprehensive update
 		glib.IdleAdd(func() bool {
-			// Show all widgets and their children
+			// Single show all call handles all widget visibility
 			l.resultList.ShowAll()
-			// Force the scrolled window to recalculate its size
-			l.scrolledWindow.CheckResize()
-			// Queue redraws on multiple widgets to ensure UI updates
-			l.resultList.QueueDraw()
-			l.scrolledWindow.QueueDraw()
-			l.window.QueueDraw()
-			// Force the main window to process pending updates
-			l.window.CheckResize()
 			return false
 		})
 	}
@@ -355,6 +369,7 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 	}
 
 	debugLogger.Printf("UPDATE_RESULTS: completed for version=%d in %v", version, time.Since(updateStart))
+	l.logMemoryStats("UPDATE_RESULTS")
 	return true
 }
 
@@ -609,6 +624,7 @@ func (l *Launcher) navigateResult(direction int) {
 }
 
 func (l *Launcher) Show() error {
+	l.logMemoryStats("SHOW")
 	log.Printf("Launcher.Show() called, running=%v", l.running)
 
 	// Acquire lock only for internal state changes
@@ -639,6 +655,8 @@ func (l *Launcher) Show() error {
 }
 
 func (l *Launcher) Hide() {
+	l.logMemoryStats("HIDE")
+
 	// Acquire lock only for internal state changes
 	l.mu.Lock()
 	l.stopAndDrainSearchTimer()
