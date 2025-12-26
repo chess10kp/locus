@@ -4,7 +4,7 @@ app_id = "com.github.sigma.locus"
 [status_bar]
 height = 40
 css_file = "~/.config/locus/statusbar.css"
-modules = ["launcher", "time", "bluetooth", "volume", "cpu", "memory", "disk", "wifi", "network", "brightness", "keyboard", "music", "weather"]
+modules = ["launcher", "time", "bluetooth", "volume", "cpu", "memory", "disk", "wifi", "network", "brightness", "keyboard", "music", "weather", "emacs_clock"]
 
 [status_bar.colors]
 background = "#1e1e2e"
@@ -126,3 +126,8 @@ show_icon = true
 show_details = true
 interval = "900s"
 css_classes = ["weather-module"]
+
+[status_bar.module_configs.emacs_clock]
+fallback_text = ""
+interval = "10s"
+css_classes = ["emacs-clock-module"]

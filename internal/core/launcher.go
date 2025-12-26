@@ -25,26 +25,26 @@ var (
 )
 
 type Launcher struct {
-	app             *App
-	config          *config.Config
-	window          *gtk.Window
-	searchEntry     *gtk.Entry
-	resultList      *gtk.ListBox
-	hideButton      *gtk.Button
-	registry        *launcher.LauncherRegistry
-	currentInput    string
-	currentItems    []*launcher.LauncherItem
-	scrolledWindow  *gtk.ScrolledWindow
-	running         bool
-	visible         atomic.Bool
-	searchTimer     *time.Timer
-	searchVersion   int64  // Track search version to prevent race conditions
-	lastSearchQuery string // Track last query to skip duplicates
-	mu              sync.RWMutex
-	refreshUIChan   chan launcher.RefreshUIRequest
-	statusChan      chan launcher.StatusRequest
-	ctx             context.Context
-	cancel          context.CancelFunc
+	app            *App
+	config         *config.Config
+	window         *gtk.Window
+	searchEntry    *gtk.Entry
+	resultList     *gtk.ListBox
+	hideButton     *gtk.Button
+	registry       *launcher.LauncherRegistry
+	currentInput   string
+	currentItems   []*launcher.LauncherItem
+	scrolledWindow *gtk.ScrolledWindow
+	running        bool
+	visible        atomic.Bool
+	searchTimer    *time.Timer
+	searchVersion  int64 // Track search version to prevent race conditions
+
+	mu            sync.RWMutex
+	refreshUIChan chan launcher.RefreshUIRequest
+	statusChan    chan launcher.StatusRequest
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
@@ -136,6 +136,9 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	go l.handleRefreshUIRequests(ctx, refreshUIChan)
 	go l.handleStatusRequests(ctx, statusChan)
 
+	// Setup launcher-specific styles
+	SetupLauncherStyles()
+
 	l.setupSignals()
 
 	// Connect hide button
@@ -179,13 +182,6 @@ func (l *Launcher) onSearchChanged(text string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	// Skip duplicate queries to prevent redundant searches
-	if text == l.lastSearchQuery {
-		debugLogger.Printf("SEARCH_CHANGED: duplicate query '%s', skipping", text)
-		return
-	}
-	l.lastSearchQuery = text
-
 	l.currentInput = text
 
 	// Increment search version for this request
@@ -220,10 +216,24 @@ func (l *Launcher) onSearchChanged(text string) {
 		timerFireTime := time.Now()
 		debugLogger.Printf("SEARCH_TIMER: fired for version=%d, query='%s', delay was %v", version, text, timerFireTime.Sub(searchStart))
 
+		// Check if this timer callback is still valid before proceeding
+		currentVersion := atomic.LoadInt64(&l.searchVersion)
+		if version != currentVersion {
+			debugLogger.Printf("SEARCH_TIMER: abandoning timer for version=%d, current=%d", version, currentVersion)
+			return
+		}
+
 		// Run search in a goroutine to avoid blocking UI
 		go func(query string, version int64, startTime time.Time) {
 			searchGoroutineStart := time.Now()
 			debugLogger.Printf("SEARCH_GOROUTINE: started for version=%d, query='%s'", version, query)
+
+			// Double-check version before expensive search operation
+			currentVersion = atomic.LoadInt64(&l.searchVersion)
+			if version != currentVersion {
+				debugLogger.Printf("SEARCH_GOROUTINE: abandoning search for version=%d, current=%d", version, currentVersion)
+				return
+			}
 
 			items, err := l.registry.Search(query)
 			if err != nil {
@@ -258,6 +268,11 @@ func (l *Launcher) onSearchChanged(text string) {
 			})
 		}(text, searchVersion, searchStart)
 	})
+
+	// For zero delay (empty string), also trigger immediate update
+	if debounceMs == 0 {
+		debugLogger.Printf("SEARCH_CHANGED: immediate search requested for empty string")
+	}
 }
 
 func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) {
@@ -301,16 +316,19 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 	children := l.resultList.GetChildren()
 	childCount := children.Length()
 
-	// Remove all children directly
-	for children.Length() > 0 {
-		child := children.NthData(0)
-		if row, ok := child.(*gtk.ListBoxRow); ok {
-			l.resultList.Remove(row)
+	// Collect all rows first, then remove them to avoid iteration issues
+	var rowsToRemove []*gtk.ListBoxRow
+	for i := uint(0); i < childCount; i++ {
+		if child := children.NthData(i); child != nil {
+			if row, ok := child.(*gtk.ListBoxRow); ok {
+				rowsToRemove = append(rowsToRemove, row)
+			}
 		}
-		// Process main loop briefly to allow UI updates during batch clearing
-		if childCount%5 == 0 {
-			l.resultList.QueueDraw()
-		}
+	}
+
+	// Remove all collected rows
+	for _, row := range rowsToRemove {
+		l.resultList.Remove(row)
 	}
 	debugLogger.Printf("UPDATE_RESULTS: cleared %d existing children in %v", childCount, time.Since(clearStart))
 
@@ -642,9 +660,14 @@ func (l *Launcher) stopAndDrainSearchTimer() {
 	if l.searchTimer != nil {
 		if !l.searchTimer.Stop() {
 			// Timer already fired, drain the channel to prevent leaks
-			select {
-			case <-l.searchTimer.C:
-			default:
+			// Check if channel is not nil before trying to drain
+			if l.searchTimer.C != nil {
+				select {
+				case <-l.searchTimer.C:
+					debugLogger.Printf("TIMER_DRAIN: successfully drained timer channel")
+				default:
+					debugLogger.Printf("TIMER_DRAIN: timer channel was empty")
+				}
 			}
 		}
 		l.searchTimer = nil
