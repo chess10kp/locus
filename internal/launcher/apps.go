@@ -3,11 +3,9 @@ package launcher
 import (
 	"fmt"
 	"log"
-	"os/exec"
 	"sort"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/sahilm/fuzzy"
@@ -69,11 +67,12 @@ func (l *AppLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIt
 	if query == "" {
 		// Return top apps by name (alphabetical)
 		maxResults := l.config.Launcher.Search.MaxResults
-		if len(l.apps) > maxResults {
-			l.apps = l.apps[:maxResults]
+		topApps := l.apps
+		if len(topApps) > maxResults {
+			topApps = topApps[:maxResults]
 		}
-		log.Printf("[APP-LAUNCHER] Empty query, returning %d top apps", len(l.apps))
-		return l.appsToItems(l.apps)
+		log.Printf("[APP-LAUNCHER] Empty query, returning %d top apps", len(topApps))
+		return l.appsToItems(topApps)
 	}
 
 	// Use fuzzy search
@@ -165,7 +164,7 @@ func (l *AppLauncher) appToItem(app apps.App) *LauncherItem {
 		Title:      app.Name,
 		Subtitle:   subtitle,
 		Icon:       icon,
-		ActionData: NewShellAction(app.Exec),
+		ActionData: NewDesktopAction(app.File),
 		Launcher:   l,
 	}
 }
@@ -179,32 +178,10 @@ func (l *AppLauncher) appsToItems(apps []apps.App) []*LauncherItem {
 }
 
 func (l *AppLauncher) HandlesEnter() bool {
-	return true
+	return false
 }
 
 func (l *AppLauncher) HandleEnter(query string, ctx *LauncherContext) bool {
-	// For app execution, we need to handle field codes like %u, %f, etc.
-	// Most desktop apps don't use these, but we should handle them properly
-
-	// For now, just execute the command directly
-	// TODO: Implement field code replacement if needed
-	if query != "" {
-		parts := strings.Fields(query)
-		if len(parts) == 0 {
-			return false
-		}
-
-		cmd := exec.Command(parts[0], parts[1:]...)
-		cmd.SysProcAttr = &syscall.SysProcAttr{
-			Setsid: true,
-		}
-
-		if err := cmd.Start(); err != nil {
-			fmt.Printf("Failed to execute app: %v\n", err)
-			return false
-		}
-		return true
-	}
 	return false
 }
 

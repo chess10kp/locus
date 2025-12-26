@@ -30,6 +30,23 @@ func (a *ShellAction) ToJSON() ([]byte, error) {
 	return json.Marshal(data)
 }
 
+// DesktopAction launches a desktop application
+type DesktopAction struct {
+	File string `json:"file"`
+}
+
+func (a *DesktopAction) Type() string {
+	return "desktop"
+}
+
+func (a *DesktopAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type": a.Type(),
+		"file": a.File,
+	}
+	return json.Marshal(data)
+}
+
 // ClipboardAction performs clipboard operations
 type ClipboardAction struct {
 	Text   string `json:"text"`
@@ -143,6 +160,13 @@ func ParseActionData(data []byte) (ActionData, error) {
 		}
 		return &action, nil
 
+	case "desktop":
+		var action DesktopAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse desktop action: %w", err)
+		}
+		return &action, nil
+
 	case "clipboard":
 		var action ClipboardAction
 		if err := json.Unmarshal(data, &action); err != nil {
@@ -195,6 +219,11 @@ func ParseActionData(data []byte) (ActionData, error) {
 // NewShellAction creates a new ShellAction
 func NewShellAction(command string) *ShellAction {
 	return &ShellAction{Command: command}
+}
+
+// NewDesktopAction creates a new DesktopAction
+func NewDesktopAction(file string) *DesktopAction {
+	return &DesktopAction{File: file}
 }
 
 // NewClipboardAction creates a new ClipboardAction

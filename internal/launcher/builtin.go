@@ -29,7 +29,15 @@ func (l *ShellLauncher) GetSizeMode() LauncherSizeMode {
 
 func (l *ShellLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	if strings.TrimSpace(query) == "" {
-		return nil
+		return []*LauncherItem{
+			{
+				Title:      "Type a shell command to execute",
+				Subtitle:   "Example: ls -la, cd /home, or any command",
+				Icon:       "utilities-terminal",
+				ActionData: NewShellAction(""),
+				Launcher:   l,
+			},
+		}
 	}
 
 	return []*LauncherItem{
@@ -77,7 +85,15 @@ func (l *WebLauncher) GetSizeMode() LauncherSizeMode {
 
 func (l *WebLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	if strings.TrimSpace(query) == "" {
-		return nil
+		return []*LauncherItem{
+			{
+				Title:      "Type a URL or search query",
+				Subtitle:   "Example: google.com, https://example.com, or search terms",
+				Icon:       "web-browser",
+				ActionData: NewShellAction(""),
+				Launcher:   l,
+			},
+		}
 	}
 
 	url := query
@@ -131,7 +147,15 @@ func (l *CalcLauncher) GetSizeMode() LauncherSizeMode {
 
 func (l *CalcLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	if strings.TrimSpace(query) == "" {
-		return nil
+		return []*LauncherItem{
+			{
+				Title:      "Type a mathematical expression",
+				Subtitle:   "Example: 2+2, sin(3.14), or sqrt(16)",
+				Icon:       "accessories-calculator",
+				ActionData: NewShellAction(""),
+				Launcher:   l,
+			},
+		}
 	}
 
 	return []*LauncherItem{
