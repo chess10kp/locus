@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -179,6 +180,7 @@ func (l *AppLoader) saveToCache() error {
 
 // loadFromSystem loads applications from .desktop files
 func (l *AppLoader) loadFromSystem() error {
+	start := time.Now()
 	var apps []App
 	loadedFiles := make(map[string]bool)
 
@@ -189,6 +191,12 @@ func (l *AppLoader) loadFromSystem() error {
 		"/usr/local/share/applications",
 	}
 
+	var wg sync.WaitGroup
+	appChan := make(chan App, 100)       // Buffered channel for results
+	semaphore := make(chan struct{}, 10) // Limit parallel parsing
+
+	// Collect all .desktop files first
+	var desktopFiles []string
 	for _, searchPath := range searchPaths {
 		if err := filepath.Walk(searchPath, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -210,16 +218,42 @@ func (l *AppLoader) loadFromSystem() error {
 				return nil
 			}
 
-			app, err := l.parseDesktopFile(path)
-			if err == nil && !app.NoDisplay {
-				apps = append(apps, app)
-				loadedFiles[path] = true
-			}
-
+			desktopFiles = append(desktopFiles, path)
+			loadedFiles[path] = true
 			return nil
 		}); err != nil {
 			continue
 		}
+	}
+
+	log.Printf("Found %d .desktop files, parsing in parallel", len(desktopFiles))
+
+	// Parse files in parallel
+	for _, filePath := range desktopFiles {
+		wg.Add(1)
+		go func(fp string) {
+			defer wg.Done()
+
+			// Acquire semaphore to limit concurrent parsing
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			app, err := l.parseDesktopFile(fp)
+			if err == nil && !app.NoDisplay {
+				appChan <- app
+			}
+		}(filePath)
+	}
+
+	// Close channel when all parsing is done
+	go func() {
+		wg.Wait()
+		close(appChan)
+	}()
+
+	// Collect results
+	for app := range appChan {
+		apps = append(apps, app)
 	}
 
 	// Sort apps by name
@@ -230,6 +264,7 @@ func (l *AppLoader) loadFromSystem() error {
 	l.apps = apps
 	l.cacheValid = true
 
+	log.Printf("Loaded %d applications in %v (parallel parsing)", len(apps), time.Since(start))
 	fmt.Printf("Loaded %d applications\n", len(apps))
 
 	return nil

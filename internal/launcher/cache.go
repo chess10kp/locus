@@ -67,15 +67,32 @@ func (c *SearchCache) Get(query, appsHash string) ([]*LauncherItem, bool) {
 	entry, found := c.cache.Get(key)
 
 	if found {
-		// Check if entry is still valid (apps hash matches)
+		// Check if entry is still valid (apps hash matches and TTL not expired)
 		if entry.AppsHash == appsHash {
-			atomic.AddInt64(&c.hits, 1)
-			log.Printf("[SEARCH-CACHE] HIT: key='%s', returning %d cached results", key, len(entry.Results))
-			return entry.Results, true
+			// Adaptive TTL based on search duration
+			var TTL time.Duration
+			if entry.DurationMs < 50 {
+				TTL = 30 * time.Minute // Fast searches cached longer
+			} else if entry.DurationMs < 100 {
+				TTL = 10 * time.Minute // Medium searches
+			} else {
+				TTL = 5 * time.Minute // Slow searches cached shorter
+			}
+
+			if time.Since(entry.Timestamp) < TTL {
+				atomic.AddInt64(&c.hits, 1)
+				log.Printf("[SEARCH-CACHE] HIT: key='%s', returning %d cached results (TTL: %v)", key, len(entry.Results), TTL)
+				return entry.Results, true
+			}
+
+			// Entry expired by TTL - remove it
+			c.cache.Remove(key)
+			log.Printf("[SEARCH-CACHE] EXPIRED BY TTL: removed expired entry for key='%s'", key)
+		} else {
+			// Entry exists but apps hash doesn't match - remove it
+			c.cache.Remove(key)
+			log.Printf("[SEARCH-CACHE] EXPIRED BY HASH: removed stale entry for key='%s'", key)
 		}
-		// Entry exists but apps hash doesn't match - remove it
-		c.cache.Remove(key)
-		log.Printf("[SEARCH-CACHE] EXPIRED: removed stale entry for key='%s'", key)
 	}
 
 	atomic.AddInt64(&c.misses, 1)
@@ -85,15 +102,10 @@ func (c *SearchCache) Get(query, appsHash string) ([]*LauncherItem, bool) {
 
 // Put stores search results in the cache
 func (c *SearchCache) Put(query, appsHash string, results []*LauncherItem, durationMs float64) {
-	// Only cache fast searches (< 100ms) to avoid caching slow queries
-	if durationMs >= 100 {
-		log.Printf("[SEARCH-CACHE] SKIP: not caching slow search (%.2fms >= 100ms) for query='%s'", durationMs, query)
-		return
-	}
-
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Cache all searches now - TTL will handle expiration
 	key := c.makeKey(query, appsHash)
 	entry := &SearchCacheEntry{
 		Results:    results,
@@ -103,8 +115,21 @@ func (c *SearchCache) Put(query, appsHash string, results []*LauncherItem, durat
 		DurationMs: durationMs,
 	}
 
+	// Check if we're approaching cache capacity and should evict low-value entries
+	if c.cache.Len() >= c.maxSize {
+		c.evictLowValueEntries()
+	}
+
 	c.cache.Add(key, entry)
-	log.Printf("[SEARCH-CACHE] STORED: key='%s', %d results, duration=%.2fms", key, len(results), durationMs)
+
+	// Log with adaptive cache message
+	if durationMs < 50 {
+		log.Printf("[SEARCH-CACHE] STORED FAST: key='%s', %d results, duration=%.2fms", key, len(results), durationMs)
+	} else if durationMs < 100 {
+		log.Printf("[SEARCH-CACHE] STORED MEDIUM: key='%s', %d results, duration=%.2fms", key, len(results), durationMs)
+	} else {
+		log.Printf("[SEARCH-CACHE] STORED SLOW: key='%s', %d results, duration=%.2fms", key, len(results), durationMs)
+	}
 }
 
 // Invalidate removes all cached entries
@@ -135,6 +160,35 @@ func (c *SearchCache) GetStats() *CacheStats {
 		Misses:  c.misses,
 		HitRate: hitRate,
 	}
+}
+
+// evictLowValueEntries removes least valuable entries when cache is full
+func (c *SearchCache) evictLowValueEntries() {
+	keys := c.cache.Keys()
+	evictCount := len(keys) / 4 // Evict 25% of cache
+
+	log.Printf("[SEARCH-CACHE] Evicting %d low-value entries from cache of size %d", evictCount, len(keys))
+
+	evicted := 0
+	for _, key := range keys {
+		if evicted >= evictCount {
+			break
+		}
+
+		if entry, found := c.cache.Get(key); found {
+			// Prioritize evicting slow searches and old entries
+			age := time.Since(entry.Timestamp)
+			value := entry.DurationMs // Slow searches have less value
+
+			// If entry is very old (> 30 minutes) or very slow (> 200ms), evict it
+			if age > 30*time.Minute || value > 200 {
+				c.cache.Remove(key)
+				evicted++
+			}
+		}
+	}
+
+	log.Printf("[SEARCH-CACHE] Evicted %d low-value entries", evicted)
 }
 
 // makeKey creates a cache key from query and apps hash

@@ -270,25 +270,25 @@ var DefaultConfig = Config{
 			TargetMargin:  40,
 		},
 		Search: SearchConfig{
-			MaxResults:        20,
+			MaxResults:        10, // Reduced for better performance
 			MaxCommandResults: 10,
-			DebounceDelay:     150,
+			DebounceDelay:     100, // Faster response
 			FuzzySearch:       true,
 			CaseSensitive:     false,
 			ShowHiddenApps:    false,
 		},
 		Performance: PerformanceConfig{
 			EnableCache:             true,
-			CacheMaxAgeHours:        6,
-			SearchCacheSize:         100,
+			CacheMaxAgeHours:        24,  // Longer cache life
+			SearchCacheSize:         200, // Larger cache
 			EnableBackgroundLoading: true,
-			MaxVisibleResults:       12,
+			MaxVisibleResults:       10, // Fewer widgets
 		},
 		Icons: IconsConfig{
 			EnableIcons:  true,
 			IconSize:     32,
 			CacheIcons:   true,
-			CacheSize:    200,
+			CacheSize:    500, // Larger icon cache
 			FallbackIcon: "image-missing",
 		},
 		Behavior: BehaviorConfig{

@@ -322,12 +322,18 @@ func (r *LauncherRegistry) Search(query string) ([]*LauncherItem, error) {
 
 // deduplicateResults removes duplicate results based on title and subtitle
 func (r *LauncherRegistry) deduplicateResults(items []*LauncherItem) []*LauncherItem {
-	seen := make(map[string]bool)
+	// Pre-allocate with capacity to reduce allocations
+	seen := make(map[string]bool, len(items))
 	result := make([]*LauncherItem, 0, len(items))
 
 	for _, item := range items {
-		// Create unique key based on title and subtitle
-		key := item.Title + "|" + item.Subtitle
+		// Use title only as key in most cases - subtitle adds little value
+		// This reduces memory usage and improves performance
+		key := item.Title
+		if item.Subtitle != "" {
+			key += "|" + item.Subtitle
+		}
+
 		if !seen[key] {
 			seen[key] = true
 			result = append(result, item)
@@ -605,8 +611,11 @@ func (r *LauncherRegistry) LoadBuiltIn() error {
 		Config: r.config,
 	}
 
+	appLauncher := NewAppLauncher(r.config)
+	appLauncher.StartBackgroundLoad() // Start background loading
+
 	launchers := []Launcher{
-		NewAppLauncher(r.config), // App launcher first for priority
+		appLauncher, // App launcher first for priority
 		NewShellLauncher(),
 		NewWebLauncher(),
 		NewCalcLauncher(),
