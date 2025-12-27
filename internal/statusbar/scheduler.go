@@ -337,6 +337,7 @@ func (s *UpdateScheduler) HandleIPCMessage(message string) bool {
 
 	// Trigger widget update for ON_DEMAND modules outside of lock
 	if handledModule != "" {
+		log.Printf("[SCHEDULER] IPC message handled by module: %s", handledModule)
 		s.mu.RLock()
 		info, ok := s.updates[handledModule]
 		s.mu.RUnlock()
@@ -347,6 +348,7 @@ func (s *UpdateScheduler) HandleIPCMessage(message string) bool {
 		return true
 	}
 
+	log.Printf("[SCHEDULER] IPC message not handled by any module: %s", message)
 	return false
 }
 

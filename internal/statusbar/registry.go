@@ -378,7 +378,9 @@ func (r *ModuleRegistry) HandleModuleIPC(name string, message string) bool {
 		return false
 	}
 
-	return module.HandleIPC(message)
+	handled := module.HandleIPC(message)
+	log.Printf("[REGISTRY] IPC message to module '%s': handled=%v, message=%s", name, handled, message)
+	return handled
 }
 
 // CleanupAll cleans up all modules and listeners
