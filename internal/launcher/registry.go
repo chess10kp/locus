@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+	"unicode"
 
 	"github.com/chess10kp/locus/internal/apps"
 	"github.com/chess10kp/locus/internal/config"
@@ -458,7 +459,10 @@ func (r *LauncherRegistry) executeShellCommand(command string) error {
 		return fmt.Errorf("empty command")
 	}
 
-	parts := strings.Fields(command)
+	parts, err := r.splitCommand(command)
+	if err != nil {
+		return fmt.Errorf("failed to parse shell command: %w", err)
+	}
 	if len(parts) == 0 {
 		return fmt.Errorf("empty command")
 	}
@@ -481,8 +485,8 @@ func (r *LauncherRegistry) executeDesktopAction(filePath string) error {
 		return fmt.Errorf("empty desktop file path")
 	}
 
-	// Parse the desktop file to get the Exec command
-	execCmd, err := r.parseDesktopExec(filePath)
+	// Parse the desktop file to get the Exec command and Path
+	execCmd, workingDir, err := r.parseDesktopFile(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to parse desktop file: %w", err)
 	}
@@ -494,8 +498,11 @@ func (r *LauncherRegistry) executeDesktopAction(filePath string) error {
 	// Strip field codes like %f, %u, etc. (similar to Python implementation)
 	execCmd = r.stripFieldCodes(execCmd)
 
-	// Split the command
-	parts := strings.Fields(execCmd)
+	// Split the command with proper quote handling (like Python's shlex.split)
+	parts, err := r.splitCommand(execCmd)
+	if err != nil {
+		return fmt.Errorf("failed to parse command: %w", err)
+	}
 	if len(parts) == 0 {
 		return fmt.Errorf("empty exec command")
 	}
@@ -516,6 +523,11 @@ func (r *LauncherRegistry) executeDesktopAction(filePath string) error {
 	// Sanitize environment (remove LD_PRELOAD like Python)
 	cmd.Env = r.sanitizeEnvironment()
 
+	// Set working directory if specified in desktop file
+	if workingDir != "" {
+		cmd.Dir = workingDir
+	}
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start desktop application: %w", err)
 	}
@@ -523,11 +535,11 @@ func (r *LauncherRegistry) executeDesktopAction(filePath string) error {
 	return nil
 }
 
-// parseDesktopExec parses the Exec field from a desktop file
-func (r *LauncherRegistry) parseDesktopExec(filePath string) (string, error) {
+// parseDesktopFile parses the Exec and Path fields from a desktop file
+func (r *LauncherRegistry) parseDesktopFile(filePath string) (execCmd string, workingDir string, err error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer file.Close()
 
@@ -535,11 +547,17 @@ func (r *LauncherRegistry) parseDesktopExec(filePath string) (string, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if strings.HasPrefix(line, "Exec=") {
-			return strings.TrimPrefix(line, "Exec="), nil
+			execCmd = strings.TrimPrefix(line, "Exec=")
+		} else if strings.HasPrefix(line, "Path=") {
+			workingDir = strings.TrimPrefix(line, "Path=")
 		}
 	}
 
-	return "", fmt.Errorf("Exec field not found")
+	if execCmd == "" {
+		return "", "", fmt.Errorf("Exec field not found")
+	}
+
+	return execCmd, workingDir, nil
 }
 
 // stripFieldCodes removes desktop entry field codes like %f, %u, etc.
@@ -547,6 +565,51 @@ func (r *LauncherRegistry) stripFieldCodes(cmd string) string {
 	// Remove field codes using regex (similar to Python's re.sub)
 	re := regexp.MustCompile(`%[uUfFdDnNickvm]`)
 	return strings.TrimSpace(re.ReplaceAllString(cmd, ""))
+}
+
+// splitCommand splits a command string like shlex.split() in Python
+func (r *LauncherRegistry) splitCommand(cmd string) ([]string, error) {
+	var parts []string
+	var current strings.Builder
+	var inQuotes bool
+	var escapeNext bool
+
+	for i, char := range cmd {
+		switch {
+		case escapeNext:
+			current.WriteRune(char)
+			escapeNext = false
+		case char == '\\':
+			escapeNext = true
+		case char == '"':
+			inQuotes = !inQuotes
+		case char == '\'' && !inQuotes:
+			// Handle single quotes (simple case)
+			inQuotes = !inQuotes
+		case unicode.IsSpace(char) && !inQuotes:
+			if current.Len() > 0 {
+				parts = append(parts, current.String())
+				current.Reset()
+			}
+		default:
+			current.WriteRune(char)
+		}
+
+		// Check for unmatched quotes
+		if i == len(cmd)-1 && inQuotes {
+			return nil, fmt.Errorf("unmatched quotes in command")
+		}
+	}
+
+	if current.Len() > 0 {
+		parts = append(parts, current.String())
+	}
+
+	if escapeNext {
+		return nil, fmt.Errorf("incomplete escape sequence")
+	}
+
+	return parts, nil
 }
 
 // isSystemdRunAvailable checks if systemd-run is available
@@ -565,8 +628,12 @@ func (r *LauncherRegistry) sanitizeEnvironment() []string {
 			// Skip LD_PRELOAD (like Python implementation)
 			continue
 		}
-		if strings.HasPrefix(e, "GDK_BACKEND=") && strings.Contains(e, "wayland") {
-			// Don't force GDK_BACKEND if it's wayland (like Python)
+		if strings.HasPrefix(e, "GDK_BACKEND=") {
+			// Critical fix for Rider: Only keep GDK_BACKEND if it's exactly "wayland"
+			value := strings.TrimPrefix(e, "GDK_BACKEND=")
+			if value == "wayland" {
+				sanitized = append(sanitized, e)
+			}
 			continue
 		}
 		sanitized = append(sanitized, e)

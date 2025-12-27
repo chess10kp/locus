@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -336,6 +338,31 @@ func (l *AppLoader) parseDesktopFile(path string) (App, error) {
 		return App{}, fmt.Errorf("invalid desktop file: missing Name or Exec")
 	}
 
+	// Strip field codes and check if executable exists
+	cleanExec := stripFieldCodes(app.Exec)
+	parts := strings.Fields(cleanExec)
+	if len(parts) > 0 {
+		execPath := parts[0]
+		// Remove quotes if present
+		execPath = strings.Trim(execPath, "\"")
+
+		var exists bool
+		if filepath.IsAbs(execPath) {
+			// For absolute paths, check directly
+			_, err := os.Stat(execPath)
+			exists = err == nil
+		} else {
+			// For relative paths, search PATH
+			_, err := exec.LookPath(execPath)
+			exists = err == nil
+		}
+
+		if !exists {
+			// Executable not found, skip this desktop file
+			return App{}, fmt.Errorf("executable not found: %s", execPath)
+		}
+	}
+
 	return app, nil
 }
 
@@ -389,4 +416,10 @@ func (l *AppLoader) InvalidateCache() {
 	defer l.mu.Unlock()
 
 	l.cacheValid = false
+}
+
+// stripFieldCodes removes desktop entry field codes like %f, %u, etc.
+func stripFieldCodes(cmd string) string {
+	re := regexp.MustCompile(`%[uUfFdDnNickvm]`)
+	return strings.TrimSpace(re.ReplaceAllString(cmd, ""))
 }
