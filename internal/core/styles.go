@@ -95,18 +95,7 @@ const defaultLauncherStyles = `
     background-color: #504945;
 }
 
-#hide-button {
-    background-color: #458588;
-    color: #ebdbb2;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    margin: 8px;
-}
 
-#hide-button:hover {
-    background-color: #83a598;
-}
 `
 
 var globalStyleProvider *gtk.CssProvider
@@ -155,21 +144,7 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
     background-color: %s;
 }
 
-#hide-button {
-    background-color: %s;
-    color: %s;
-    border: none;
-    border-radius: %dpx;
-    padding: 8px 16px;
-    margin: 8px;
-    font-family: %s;
-    font-size: %dpx;
-    font-weight: %s;
-}
 
-#hide-button:hover {
-    background-color: %s;
-}
 `,
 		styling.BackgroundColor,
 		styling.ForegroundColor,
