@@ -473,6 +473,17 @@ func LoadConfig(path string) (*Config, error) {
 	return &cfg, nil
 }
 
+func LoadAndValidateConfig(path string) (*Config, error) {
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
+	}
+	return cfg, nil
+}
+
 func expandPath(path string) string {
 	if len(path) > 0 && path[0] == '~' {
 		usr, err := user.Current()
@@ -497,4 +508,171 @@ func SaveConfig(cfg *Config, path string) error {
 	}
 
 	return os.WriteFile(expandedPath, data, 0644)
+}
+
+func (c *Config) Validate() error {
+	if err := c.validateWindow(); err != nil {
+		return err
+	}
+	if err := c.validateSearch(); err != nil {
+		return err
+	}
+	if err := c.validateStatusBar(); err != nil {
+		return err
+	}
+	if err := c.validateNotification(); err != nil {
+		return err
+	}
+	if err := c.validateIcons(); err != nil {
+		return err
+	}
+	if err := c.validatePerformance(); err != nil {
+		return err
+	}
+	if err := c.validateBehavior(); err != nil {
+		return err
+	}
+	if err := c.validateLockScreen(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Config) validateWindow() error {
+	w := c.Launcher.Window
+	if w.Width < 100 || w.Width > 4000 {
+		return fmt.Errorf("invalid window width: %d (must be 100-4000)", w.Width)
+	}
+	if w.Height < 100 || w.Height > 4000 {
+		return fmt.Errorf("invalid window height: %d (must be 100-4000)", w.Height)
+	}
+	return nil
+}
+
+func (c *Config) validateSearch() error {
+	s := c.Launcher.Search
+	if s.MaxResults < 1 || s.MaxResults > 1000 {
+		return fmt.Errorf("invalid max_results: %d (must be 1-1000)", s.MaxResults)
+	}
+	if s.MaxCommandResults < 1 || s.MaxCommandResults > 1000 {
+		return fmt.Errorf("invalid max_command_results: %d (must be 1-1000)", s.MaxCommandResults)
+	}
+	if s.DebounceDelay < 0 || s.DebounceDelay > 5000 {
+		return fmt.Errorf("invalid debounce_delay: %d (must be 0-5000ms)", s.DebounceDelay)
+	}
+	return nil
+}
+
+func (c *Config) validateStatusBar() error {
+	if c.StatusBar.Height < 10 || c.StatusBar.Height > 100 {
+		return fmt.Errorf("invalid statusbar height: %d (must be 10-100px)", c.StatusBar.Height)
+	}
+	return nil
+}
+
+func (c *Config) validateNotification() error {
+	d := c.Notification.Daemon
+	if d.MaxBanners < 1 || d.MaxBanners > 20 {
+		return fmt.Errorf("invalid max_banners: %d (must be 1-20)", d.MaxBanners)
+	}
+	if d.BannerGap < 0 || d.BannerGap > 50 {
+		return fmt.Errorf("invalid banner_gap: %d (must be 0-50px)", d.BannerGap)
+	}
+	if d.BannerWidth < 100 || d.BannerWidth > 2000 {
+		return fmt.Errorf("invalid banner_width: %d (must be 100-2000)", d.BannerWidth)
+	}
+	if d.BannerHeight < 50 || d.BannerHeight > 500 {
+		return fmt.Errorf("invalid banner_height: %d (must be 50-500)", d.BannerHeight)
+	}
+	if d.AnimationDuration < 0 || d.AnimationDuration > 2000 {
+		return fmt.Errorf("invalid animation_duration: %d (must be 0-2000ms)", d.AnimationDuration)
+	}
+	if d.Position != "" {
+		validPositions := map[string]bool{
+			"top-left": true, "top-center": true, "top-right": true,
+			"bottom-left": true, "bottom-center": true, "bottom-right": true,
+		}
+		if !validPositions[d.Position] {
+			return fmt.Errorf("invalid daemon position: %s (must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right)", d.Position)
+		}
+	}
+
+	h := c.Notification.History
+	if h.MaxHistory < 0 || h.MaxHistory > 10000 {
+		return fmt.Errorf("invalid max_history: %d (must be 0-10000)", h.MaxHistory)
+	}
+	if h.MaxAgeDays < 1 || h.MaxAgeDays > 365 {
+		return fmt.Errorf("invalid max_age_days: %d (must be 1-365)", h.MaxAgeDays)
+	}
+
+	t := c.Notification.Timeouts
+	if t.Low < 0 || t.Low > 60000 {
+		return fmt.Errorf("invalid low timeout: %d (must be 0-60000ms)", t.Low)
+	}
+	if t.Normal < 0 || t.Normal > 60000 {
+		return fmt.Errorf("invalid normal timeout: %d (must be 0-60000ms)", t.Normal)
+	}
+	if t.Critical < -1 || t.Critical > 60000 {
+		return fmt.Errorf("invalid critical timeout: %d (must be -1 for no timeout, or 0-60000ms)", t.Critical)
+	}
+
+	return nil
+}
+
+func (c *Config) validateIcons() error {
+	i := c.Launcher.Icons
+	if i.IconSize < 16 || i.IconSize > 256 {
+		return fmt.Errorf("invalid icon_size: %d (must be 16-256)", i.IconSize)
+	}
+	if i.CacheSize < 10 || i.CacheSize > 10000 {
+		return fmt.Errorf("invalid cache_size: %d (must be 10-10000)", i.CacheSize)
+	}
+	return nil
+}
+
+func (c *Config) validatePerformance() error {
+	p := c.Launcher.Performance
+	if p.CacheMaxAgeHours < 1 || p.CacheMaxAgeHours > 168 {
+		return fmt.Errorf("invalid cache_max_age_hours: %d (must be 1-168 hours)", p.CacheMaxAgeHours)
+	}
+	if p.SearchCacheSize < 10 || p.SearchCacheSize > 10000 {
+		return fmt.Errorf("invalid search_cache_size: %d (must be 10-10000)", p.SearchCacheSize)
+	}
+	if p.MaxVisibleResults < 1 || p.MaxVisibleResults > 100 {
+		return fmt.Errorf("invalid max_visible_results: %d (must be 1-100)", p.MaxVisibleResults)
+	}
+	return nil
+}
+
+func (c *Config) validateBehavior() error {
+	b := c.Launcher.Behavior
+	if b.MaxRecentApps < 0 || b.MaxRecentApps > 50 {
+		return fmt.Errorf("invalid max_recent_apps: %d (must be 0-50)", b.MaxRecentApps)
+	}
+	if b.DesktopLauncherFastPath && b.MaxRecentApps == 0 {
+		return fmt.Errorf("desktop_launcher_fast_path requires max_recent_apps > 0")
+	}
+	return nil
+}
+
+func (c *Config) validateLockScreen() error {
+	ls := c.LockScreen
+	if ls.MaxAttempts < 1 || ls.MaxAttempts > 10 {
+		return fmt.Errorf("invalid max_attempts: %d (must be 1-10)", ls.MaxAttempts)
+	}
+	if ls.Enabled && ls.Password == "" && ls.PasswordHash == "" {
+		return fmt.Errorf("lockscreen enabled but no password or password_hash provided")
+	}
+	return nil
+}
+
+func ValidateConfig(path string) error {
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		return fmt.Errorf("failed to load config: %w", err)
+	}
+	if err := cfg.Validate(); err != nil {
+		return fmt.Errorf("config validation failed: %w", err)
+	}
+	return nil
 }
