@@ -2,14 +2,23 @@ package launcher
 
 import (
 	"context"
-	"strconv"
+	"fmt"
+	"net"
+	"os"
+	"os/exec"
+	"regexp"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/sigma/locus-go/internal/config"
 )
 
 type TimerLauncher struct {
-	config *config.Config
+	config      *config.Config
+	timerActive bool
+	timerMutex  sync.Mutex
+	cancelFunc  context.CancelFunc
 }
 
 func NewTimerLauncher(cfg *config.Config) *TimerLauncher {
@@ -23,7 +32,10 @@ func (l *TimerLauncher) Name() string {
 }
 
 func (l *TimerLauncher) CommandTriggers() []string {
-	return []string{"timer", "t"}
+	if prefixes, ok := l.config.Launcher.LauncherPrefixes["timer"]; ok && prefixes != "" {
+		return []string{prefixes}
+	}
+	return []string{"%"}
 }
 
 func (l *TimerLauncher) GetSizeMode() LauncherSizeMode {
@@ -31,154 +43,231 @@ func (l *TimerLauncher) GetSizeMode() LauncherSizeMode {
 }
 
 func (l *TimerLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
-	presets := []struct {
-		name  string
-		value string
-		cmd   string
-	}{
-		{"5 minutes", "5m", "sleep 300 && notify-send Timer \"5 minutes are up!\""},
-		{"10 minutes", "10m", "sleep 600 && notify-send Timer \"10 minutes are up!\""},
-		{"15 minutes", "15m", "sleep 900 && notify-send Timer \"15 minutes are up!\""},
-		{"30 minutes", "30m", "sleep 1800 && notify-send Timer \"30 minutes are up!\""},
-		{"1 hour", "1h", "sleep 3600 && notify-send Timer \"1 hour is up!\""},
-		{"2 hours", "2h", "sleep 7200 && notify-send Timer \"2 hours are up!\""},
-	}
+	items := []*LauncherItem{}
 
-	items := make([]*LauncherItem, 0, len(presets))
-	for _, p := range presets {
-		items = append(items, &LauncherItem{
-			Title:      p.name,
-			Subtitle:   "Timer preset",
-			Icon:       "alarm-symbolic",
-			ActionData: NewShellAction(p.cmd),
-		})
-	}
+	timeStr := strings.TrimSpace(query)
 
-	q := strings.TrimSpace(query)
-	if q != "" {
+	if timeStr == "" {
 		items = append(items, &LauncherItem{
-			Title:      "Custom Timer: " + q,
-			Subtitle:   "Start custom timer",
-			Icon:       "alarm-symbolic",
-			ActionData: NewShellAction(l.parseTimerCommand(q)),
+			Title:    "Usage: %5m",
+			Subtitle: "Enter time duration (e.g., 5m, 1h, 30s)",
+			Icon:     "clock",
+			Launcher: l,
 		})
+	} else {
+		seconds := l.parseTime(timeStr)
+		if seconds != nil && *seconds > 0 {
+			displayTime := l.formatDuration(time.Duration(*seconds) * time.Second)
+			items = append(items, &LauncherItem{
+				Title:      fmt.Sprintf("Set timer for %s", timeStr),
+				Subtitle:   fmt.Sprintf("Duration: %s", displayTime),
+				Icon:       "clock",
+				ActionData: NewTimerAction("start", timeStr),
+				Launcher:   l,
+			})
+		} else {
+			items = append(items, &LauncherItem{
+				Title:    "Invalid time format",
+				Subtitle: "Use format like 5m, 1h, 30s",
+				Icon:     "dialog-error",
+				Launcher: l,
+			})
+		}
 	}
 
 	return items
 }
 
-func (l *TimerLauncher) parseTimerCommand(query string) string {
-	parts := strings.Fields(query)
-	if len(parts) == 0 {
-		return ""
+func (l *TimerLauncher) parseTime(timeStr string) *int {
+	re := regexp.MustCompile(`^(\d+)([hms])$`)
+	match := re.FindStringSubmatch(timeStr)
+	if match == nil {
+		return nil
 	}
+
+	num := 0
+	fmt.Sscanf(match[1], "%d", &num)
+	unit := match[2]
 
 	var seconds int
-	for _, p := range parts {
-		if strings.HasSuffix(p, "m") || strings.HasSuffix(p, "min") {
-			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "m"), "min"))
-			seconds += val * 60
-		} else if strings.HasSuffix(p, "h") || strings.HasSuffix(p, "hr") {
-			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "h"), "hr"))
-			seconds += val * 3600
-		} else if strings.HasSuffix(p, "s") || strings.HasSuffix(p, "sec") {
-			val, _ := strconv.Atoi(strings.TrimSuffix(strings.TrimSuffix(p, "s"), "sec"))
-			seconds += val
-		} else {
-			val, _ := strconv.Atoi(p)
-			seconds += val
+	switch unit {
+	case "h":
+		seconds = num * 3600
+	case "m":
+		seconds = num * 60
+	case "s":
+		seconds = num
+	default:
+		return nil
+	}
+
+	return &seconds
+}
+
+func (l *TimerLauncher) formatDuration(d time.Duration) string {
+	hours := int(d.Hours())
+	minutes := int(d.Minutes()) % 60
+	seconds := int(d.Seconds()) % 60
+
+	if hours > 0 {
+		return fmt.Sprintf("%dh %dm %ds", hours, minutes, seconds)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%dm %ds", minutes, seconds)
+	}
+	return fmt.Sprintf("%ds", seconds)
+}
+
+func (l *TimerLauncher) startTimer(timeStr string) error {
+	seconds := l.parseTime(timeStr)
+	if seconds == nil || *seconds <= 0 {
+		return fmt.Errorf("invalid time format: %s", timeStr)
+	}
+
+	l.timerMutex.Lock()
+	defer l.timerMutex.Unlock()
+
+	if l.timerActive {
+		l.cancelFunc()
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	l.cancelFunc = cancel
+	l.timerActive = true
+
+	initialDisplay := l.formatDuration(time.Duration(*seconds) * time.Second)
+	l.sendIPCMessage(fmt.Sprintf("timer:%s", initialDisplay))
+
+	go l.runTimer(ctx, *seconds)
+
+	cmd := exec.Command("notify-send", "-a", "Timer", fmt.Sprintf("Timer set for %s", timeStr))
+	cmd.Env = os.Environ()
+	_ = cmd.Run()
+
+	return nil
+}
+
+func (l *TimerLauncher) runTimer(ctx context.Context, totalSeconds int) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	remaining := totalSeconds
+
+	for {
+		select {
+		case <-ctx.Done():
+			l.sendIPCMessage("timer:clear")
+			l.timerMutex.Lock()
+			l.timerActive = false
+			l.timerMutex.Unlock()
+			return
+		case <-ticker.C:
+			remaining--
+			if remaining <= 0 {
+				l.timerComplete(totalSeconds)
+				l.sendIPCMessage("timer:clear")
+				l.timerMutex.Lock()
+				l.timerActive = false
+				l.timerMutex.Unlock()
+				return
+			}
+			display := l.formatDuration(time.Duration(remaining) * time.Second)
+			l.sendIPCMessage(fmt.Sprintf("timer:%s", display))
 		}
 	}
+}
 
-	if seconds <= 0 {
-		seconds = 300
+func (l *TimerLauncher) timerComplete(totalSeconds int) {
+	cmd := exec.Command("notify-send", "-a", "Timer", "-t", "3000", "Timer complete")
+	cmd.Env = os.Environ()
+	_ = cmd.Run()
+
+	soundPath := "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
+	cmd = exec.Command("mpv", "--no-video", soundPath)
+	cmd.Env = os.Environ()
+	_ = cmd.Start()
+}
+
+func (l *TimerLauncher) sendIPCMessage(message string) {
+	socketPath := l.config.SocketPath
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		return
 	}
+	defer conn.Close()
 
-	return "sleep " + strconv.Itoa(seconds) + " && notify-send Timer \"Time is up!\""
+	fullMessage := fmt.Sprintf("statusbar:%s", message)
+	_, _ = conn.Write([]byte(fullMessage))
 }
 
 func (l *TimerLauncher) GetHooks() []Hook {
-	return []Hook{&TimerHook{launcher: l}}
+	return []Hook{NewTimerHook(l)}
 }
 
 func (l *TimerLauncher) Rebuild(ctx *LauncherContext) error {
-	// Timer launcher doesn't need to rebuild - it generates items on demand
 	return nil
 }
 
 func (l *TimerLauncher) Cleanup() {
+	l.timerMutex.Lock()
+	if l.timerActive && l.cancelFunc != nil {
+		l.cancelFunc()
+		l.timerActive = false
+	}
+	l.timerMutex.Unlock()
 }
 
 func (l *TimerLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
 	return nil, false
 }
 
-// TimerHook handles timer-specific interactions
 type TimerHook struct {
 	launcher *TimerLauncher
 }
 
+func NewTimerHook(launcher *TimerLauncher) *TimerHook {
+	return &TimerHook{launcher: launcher}
+}
+
+func (h *TimerHook) getTrigger() string {
+	triggers := h.launcher.CommandTriggers()
+	if len(triggers) > 0 {
+		return triggers[0]
+	}
+	return "%"
+}
+
 func (h *TimerHook) ID() string {
-	return "timer-hook"
+	return "timer_hook"
 }
 
 func (h *TimerHook) Priority() int {
-	return 10
+	return 100
 }
 
 func (h *TimerHook) OnSelect(execCtx context.Context, ctx *HookContext, data ActionData) HookResult {
-	if data.Type() != "shell" {
-		return HookResult{Handled: false}
-	}
-
-	// Check if this is a timer command
-	shellAction, ok := data.(*ShellAction)
-	if !ok {
-		return HookResult{Handled: false}
-	}
-
-	if !strings.HasPrefix(shellAction.Command, "sleep ") {
-		return HookResult{Handled: false}
-	}
-
-	// Extract duration from command for status message
-	parts := strings.Fields(shellAction.Command)
-	if len(parts) >= 2 {
-		duration := parts[1]
-		// Send status message asynchronously
-		select {
-		case ctx.SendStatus <- StatusRequest{Message: "Timer started for " + duration}:
-		default:
-			// Channel full, skip status update
+	if timerAction, ok := data.(*TimerAction); ok {
+		if timerAction.Action == "start" {
+			_ = h.launcher.startTimer(timerAction.Value)
+			return HookResult{Handled: true}
 		}
 	}
-
-	return HookResult{Handled: true}
+	return HookResult{Handled: false}
 }
 
 func (h *TimerHook) OnEnter(execCtx context.Context, ctx *HookContext, text string) HookResult {
-	// Handle direct timer commands like ">timer 5m"
-	if strings.TrimSpace(text) != "" {
-		// Parse and execute timer command
-		cmd := h.launcher.parseTimerCommand(text)
-		if cmd != "" {
-			action := NewShellAction(cmd)
-			result := h.OnSelect(execCtx, ctx, action)
-			return result
+	trigger := h.getTrigger()
+	if strings.HasPrefix(text, trigger) {
+		timeStr := strings.TrimSpace(text[len(trigger):])
+		if timeStr != "" {
+			_ = h.launcher.startTimer(timeStr)
+			return HookResult{Handled: true}
 		}
 	}
-
 	return HookResult{Handled: false}
 }
 
 func (h *TimerHook) OnTab(execCtx context.Context, ctx *HookContext, text string) TabResult {
-	if strings.HasPrefix(text, ">timer") && !strings.Contains(text, " ") {
-		return TabResult{NewText: ">timer ", Handled: true}
-	}
-
 	return TabResult{Handled: false}
 }
 
-func (h *TimerHook) Cleanup() {
-	// No cleanup needed
-}
+func (h *TimerHook) Cleanup() {}

@@ -561,13 +561,21 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 		icon.Show()
 	}
 
+	// Create a vertical box for title and subtitle
+	textBox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 2)
+	if err != nil {
+		return nil, err
+	}
+	textBox.SetHAlign(gtk.ALIGN_START)
+	box.PackStart(textBox, true, true, 0)
+
 	label, err := gtk.LabelNew(item.Title)
 	if err != nil {
 		return nil, err
 	}
 
 	label.SetHAlign(gtk.ALIGN_START)
-	box.PackStart(label, true, true, 0)
+	textBox.PackStart(label, false, false, 0)
 	label.Show()
 
 	if item.Subtitle != "" {
@@ -577,13 +585,13 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 		}
 
 		subLabel.SetHAlign(gtk.ALIGN_START)
-		subLabel.SetMarginStart(16)
-		box.PackStart(subLabel, true, true, 0)
+		textBox.PackStart(subLabel, false, false, 0)
 		subLabel.Show()
 	}
+	textBox.Show()
 
 	if index < 9 {
-		hintLabel, err := gtk.LabelNew(fmt.Sprintf("Alt+%d", index+1))
+		hintLabel, err := gtk.LabelNew(fmt.Sprintf("%d", index+1))
 		if err != nil {
 			return nil, err
 		}
@@ -1022,6 +1030,7 @@ func (l *Launcher) Start() error {
 		}
 	}
 	l.window.SetDefaultSize(width, height)
+	l.window.SetResizable(false)
 
 	log.Printf("Loading built-in launchers")
 	if err := l.registry.LoadBuiltIn(); err != nil {

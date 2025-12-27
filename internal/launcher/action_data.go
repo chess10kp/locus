@@ -213,6 +213,13 @@ func ParseActionData(data []byte) (ActionData, error) {
 		}
 		return &action, nil
 
+	case "timer":
+		var action TimerAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse timer action: %w", err)
+		}
+		return &action, nil
+
 	default:
 		// Treat as custom action
 		var action CustomAction
@@ -280,4 +287,28 @@ func NewMusicAction(action, value string) *MusicAction {
 // NewCustomAction creates a new CustomAction
 func NewCustomAction(dataType string, payload interface{}) *CustomAction {
 	return &CustomAction{DataType: dataType, Payload: payload}
+}
+
+// TimerAction performs timer operations
+type TimerAction struct {
+	Action string `json:"action"`
+	Value  string `json:"value"`
+}
+
+func (a *TimerAction) Type() string {
+	return "timer"
+}
+
+func (a *TimerAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":   a.Type(),
+		"action": a.Action,
+		"value":  a.Value,
+	}
+	return json.Marshal(data)
+}
+
+// NewTimerAction creates a new TimerAction
+func NewTimerAction(action, value string) *TimerAction {
+	return &TimerAction{Action: action, Value: value}
 }

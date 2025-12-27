@@ -75,16 +75,17 @@ func (c *ModuleConfig) ToMap() map[string]interface{} {
 }
 
 type LauncherConfig struct {
-	Window      WindowConfig      `toml:"window"`
-	Animation   AnimationConfig   `toml:"animation"`
-	Search      SearchConfig      `toml:"search"`
-	Performance PerformanceConfig `toml:"performance"`
-	Icons       IconsConfig       `toml:"icons"`
-	Behavior    BehaviorConfig    `toml:"behavior"`
-	Keys        KeysConfig        `toml:"keys"`
-	DesktopApps DesktopAppsConfig `toml:"desktop_apps"`
-	Cache       CacheConfig       `toml:"cache"`
-	Styling     StylingConfig     `toml:"styling"`
+	Window           WindowConfig      `toml:"window"`
+	Animation        AnimationConfig   `toml:"animation"`
+	Search           SearchConfig      `toml:"search"`
+	Performance      PerformanceConfig `toml:"performance"`
+	Icons            IconsConfig       `toml:"icons"`
+	Behavior         BehaviorConfig    `toml:"behavior"`
+	Keys             KeysConfig        `toml:"keys"`
+	DesktopApps      DesktopAppsConfig `toml:"desktop_apps"`
+	Cache            CacheConfig       `toml:"cache"`
+	Styling          StylingConfig     `toml:"styling"`
+	LauncherPrefixes map[string]string `toml:"launcher_prefixes"`
 }
 
 type WindowConfig struct {
@@ -356,6 +357,9 @@ var DefaultConfig = Config{
 			FontFamily:        "Iosevka, monospace",
 			FontSize:          16,
 			FontWeight:        "bold",
+		},
+		LauncherPrefixes: map[string]string{
+			"timer": "%",
 		},
 	},
 	Notification: NotificationConfig{

@@ -157,6 +157,14 @@ func (r *LauncherRegistry) GetLauncher(trigger string) (Launcher, bool) {
 
 // FindLauncherForInput finds a launcher for given input
 func (r *LauncherRegistry) FindLauncherForInput(input string) (trigger string, launcher Launcher, query string) {
+	// Check for % prefix (timer launcher)
+	if strings.HasPrefix(input, "%") {
+		launcher, exists := r.GetLauncher("%")
+		if exists {
+			return "%", launcher, input[1:]
+		}
+	}
+
 	// Check for > prefix
 	if strings.HasPrefix(input, ">") {
 		parts := strings.SplitN(input[1:], " ", 2)

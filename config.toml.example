@@ -4,7 +4,7 @@ app_id = "com.github.sigma.locus"
 [status_bar]
 height = 40
 css_file = "~/.config/locus/statusbar.css"
-modules = ["launcher", "time", "bluetooth", "volume", "cpu", "memory", "disk", "wifi", "network", "brightness", "keyboard", "music", "weather", "emacs_clock"]
+modules = ["launcher", "time", "timer", "bluetooth", "volume", "cpu", "memory", "disk", "wifi", "network", "brightness", "keyboard", "music", "weather", "emacs_clock"]
 
 [status_bar.colors]
 background = "#1e1e2e"
@@ -54,6 +54,9 @@ border_width = 1
 font_family = "Iosevka, monospace"
 font_size = 16
 font_weight = "bold"
+
+[launcher.launcher_prefixes]
+timer = "%"
 
 [notification]
 [notification.ui]
@@ -150,3 +153,6 @@ css_classes = ["weather-module"]
 fallback_text = ""
 interval = "10s"
 css_classes = ["emacs-clock-module"]
+
+[status_bar.module_configs.timer]
+css_classes = ["timer-module"]

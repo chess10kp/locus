@@ -33,7 +33,7 @@ func TestLauncherRegistration(t *testing.T) {
 	expectedLaunchers := []string{
 		"apps", "shell", "web", "calc", "brightness",
 		"screenshot", "lock", "timer", "kill",
-		"focus", "wallpaper", "clipboard", "wifi", "file",
+		"focus", "wallpaper", "clipboard", "wifi", "file", "music",
 	}
 
 	for _, name := range expectedLaunchers {
@@ -53,13 +53,21 @@ func TestLauncherQueryParsing(t *testing.T) {
 		launcher  string
 		wantFound bool
 	}{
-		{">sh ls", "shell", true},
-		{"web:google.com", "web", true},
-		{"calc:2+2", "calc", true},
-		{">brightness up", "brightness", true},
-		{">shot", "screenshot", true},
+		{">music", "music", true},
+		{">m", "music", true},
+		{">wifi", "wifi", true},
+		{">wlan", "wifi", true},
+		{">clipboard", "clipboard", true},
+		{">clip", "clipboard", true},
+		{">history", "clipboard", true},
+		{">wifi", "wifi", true},
+		{">file", "file", true},
+		{">f", "file", true},
+		{">screenshot", "screenshot", true},
+		{">brightness", "brightness", true},
+		{">wallpaper", "wallpaper", true},
 		{">lock", "lock", true},
-		{">timer 5m", "timer", true},
+		{"%5m", "timer", true},
 		{">kill", "kill", true},
 		{">focus left", "focus", true},
 		{">wallpaper", "wallpaper", true},

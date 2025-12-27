@@ -75,6 +75,8 @@ func (l *MusicLauncher) Populate(query string, ctx *LauncherContext) []*Launcher
 }
 
 func (l *MusicLauncher) addControls(items *[]*LauncherItem, status map[string]string, query string) {
+	lowerQuery := strings.ToLower(query)
+
 	stateIcon := "⏹" // stopped
 	if status["state"] == "playing" {
 		stateIcon = "⏵"
@@ -87,13 +89,17 @@ func (l *MusicLauncher) addControls(items *[]*LauncherItem, status map[string]st
 		header = fmt.Sprintf("%s Stopped", stateIcon)
 	}
 
-	*items = append(*items, &LauncherItem{
-		Title:      header,
-		Subtitle:   fmt.Sprintf("Volume: %s", status["volume"]),
-		Icon:       "media-playback-start",
-		ActionData: NewMusicAction("toggle", ""),
-		Launcher:   l,
-	})
+	// Add control item if query matches or is empty
+	if query == "" || strings.Contains(strings.ToLower(header), lowerQuery) ||
+		strings.Contains(strings.ToLower(status["volume"]), lowerQuery) {
+		*items = append(*items, &LauncherItem{
+			Title:      header,
+			Subtitle:   fmt.Sprintf("Volume: %s", status["volume"]),
+			Icon:       "media-playback-start",
+			ActionData: NewMusicAction("toggle", ""),
+			Launcher:   l,
+		})
+	}
 
 	// Add other control buttons
 	controls := []struct {
@@ -107,13 +113,17 @@ func (l *MusicLauncher) addControls(items *[]*LauncherItem, status map[string]st
 	}
 
 	for _, ctrl := range controls {
-		*items = append(*items, &LauncherItem{
-			Title:      ctrl.title,
-			Subtitle:   ctrl.subtitle,
-			Icon:       ctrl.icon,
-			ActionData: NewMusicAction(ctrl.action, ""),
-			Launcher:   l,
-		})
+		// Only show control if query matches or is empty
+		if query == "" || strings.Contains(strings.ToLower(ctrl.title), lowerQuery) ||
+			strings.Contains(strings.ToLower(ctrl.subtitle), lowerQuery) {
+			*items = append(*items, &LauncherItem{
+				Title:      ctrl.title,
+				Subtitle:   ctrl.subtitle,
+				Icon:       ctrl.icon,
+				ActionData: NewMusicAction(ctrl.action, ""),
+				Launcher:   l,
+			})
+		}
 	}
 }
 
