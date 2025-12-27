@@ -852,27 +852,51 @@ func (l *Launcher) navigateResult(direction int) {
 		debugLogger.Printf("NAVIGATE_RESULT: calculated nextIndex=%d from current=%d + direction=%d", nextIndex, currentIndex, direction)
 	}
 
-	if row, ok := children.NthData(uint(nextIndex)).(*gtk.ListBoxRow); ok {
-		debugLogger.Printf("NAVIGATE_RESULT: selecting row at index %d", nextIndex)
-		l.resultList.SelectRow(row)
+	// Try to get the row at the calculated index
+	data := children.NthData(uint(nextIndex))
+	debugLogger.Printf("NAVIGATE_RESULT: NthData(%d) returned: %v", nextIndex, data)
 
-		// Force UI update
-		l.resultList.QueueDraw()
-		if l.scrolledWindow != nil {
-			l.scrolledWindow.QueueDraw()
-		}
-		glib.IdleAdd(func() bool {
-			debugLogger.Printf("NAVIGATE_RESULT: idle callback - checking selection")
-			newSelected := l.resultList.GetSelectedRow()
-			if newSelected != nil {
-				debugLogger.Printf("NAVIGATE_RESULT: selection updated to index %d", newSelected.GetIndex())
-			} else {
-				debugLogger.Printf("NAVIGATE_RESULT: no selection after update")
+	if data != nil {
+		debugLogger.Printf("NAVIGATE_RESULT: data type: %T", data)
+		if row, ok := data.(*gtk.ListBoxRow); ok {
+			debugLogger.Printf("NAVIGATE_RESULT: successfully cast to ListBoxRow, selecting row at index %d", nextIndex)
+			l.resultList.SelectRow(row)
+
+			// Force UI update
+			l.resultList.QueueDraw()
+			if l.scrolledWindow != nil {
+				l.scrolledWindow.QueueDraw()
 			}
-			return false
-		})
+			glib.IdleAdd(func() bool {
+				debugLogger.Printf("NAVIGATE_RESULT: idle callback - checking selection")
+				newSelected := l.resultList.GetSelectedRow()
+				if newSelected != nil {
+					debugLogger.Printf("NAVIGATE_RESULT: selection updated to index %d", newSelected.GetIndex())
+				} else {
+					debugLogger.Printf("NAVIGATE_RESULT: no selection after update")
+				}
+				return false
+			})
+		} else {
+			debugLogger.Printf("NAVIGATE_RESULT: failed to cast data to *gtk.ListBoxRow")
+		}
 	} else {
-		debugLogger.Printf("NAVIGATE_RESULT: failed to get row at index %d", nextIndex)
+		debugLogger.Printf("NAVIGATE_RESULT: NthData(%d) returned nil", nextIndex)
+
+		// Try alternative approach: iterate through children
+		debugLogger.Printf("NAVIGATE_RESULT: trying alternative approach - iterating children")
+		i := 0
+		children.Foreach(func(item interface{}) {
+			if i == nextIndex {
+				if row, ok := item.(*gtk.ListBoxRow); ok {
+					debugLogger.Printf("NAVIGATE_RESULT: found row via iteration at index %d", i)
+					l.resultList.SelectRow(row)
+				} else {
+					debugLogger.Printf("NAVIGATE_RESULT: iteration item at index %d is not a ListBoxRow: %T", i, item)
+				}
+			}
+			i++
+		})
 	}
 }
 
