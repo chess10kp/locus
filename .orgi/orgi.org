@@ -645,3 +645,57 @@
   :END:
 
   
+
+* DONE move result metdata to below the name of the entry
+  :PROPERTIES:
+  :ID: task-20251226210627
+  :TITLE: move result metdata to below the name of the entry
+  :CREATED: <2025-12-26 Fri 21:06>
+  :END:
+
+  
+
+* DONE change alt+1 to just 1
+  :PROPERTIES:
+  :ID: task-20251226210643
+  :TITLE: change alt+1 to just 1
+  :CREATED: <2025-12-26 Fri 21:06>
+  :END:
+
+  
+
+* DONE in the music launcher, the buttons next previous clear and view queue should be a regular entry that is filter able, they shold not be stuck to the top of the sreen like it is currently
+  :PROPERTIES:
+  :ID: task-20251226210835
+  :TITLE: in the music launcher, the buttons next previous clear and view queue should be a regular entry that is filter able, they shold not be stuck to the top of the sreen like it is currently
+  :CREATED: <2025-12-26 Fri 21:08>
+  :END:
+
+  
+
+* DONE implement the timer launcher. This is a launcher with the prefix %, and it shold function similarly to the python implementation of the timer launcher. through IPC, communicate with the statusbar to display that informaiotn on the bar. The bar should have a module called timer which indicates where in the statubar the informaiton of the launher should eb displaed. If the timer module is missing, do not pipe the informaiton to the statusbar. Once impementing hte launcehr and the module, add the itmer module toi the statusbar, and the compile and test
+  :PROPERTIES:
+  :ID: task-20251226211143
+  :TITLE: implement the timer launcher. This is a launcher with the prefix %, and it shold function similarly to the python implementation of the timer launcher. through IPC, communicate with the statusbar to display that informaiotn on the bar. The bar should have a module called timer which indicates where in the statubar the informaiton of the launher should eb displaed. If the timer module is missing, do not pipe the informaiton to the statusbar. Once impementing hte launcehr and the module, add the itmer module toi the statusbar, and the compile and test
+  :CREATED: <2025-12-26 Fri 21:11>
+  :END:
+
+  
+
+* DONE the launcher should have a specific window width that does not expand when the contents in side are too large. Just truncate the contents if it doens't fit in the window.
+  :PROPERTIES:
+  :ID: task-20251226211312
+  :TITLE: the launcher should have a specific window width that does not expand when the contents in side are too large. Just truncate the contents if it doens't fit in the window.
+  :CREATED: <2025-12-26 Fri 21:13>
+  :END:
+
+  
+
+* DONE the prefix for timer launcher should be something that is configurable in the config file. lous reads this config file and uses the appropriate prefix for each launcher
+  :PROPERTIES:
+  :ID: task-20251226211856
+  :TITLE: the prefix for timer launcher should be something that is configurable in the config file. lous reads this config file and uses the appropriate prefix for each launcher
+  :CREATED: <2025-12-26 Fri 21:18>
+  :END:
+
+  

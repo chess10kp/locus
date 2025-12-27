@@ -324,13 +324,27 @@ func (s *UpdateScheduler) TriggerManualUpdate(name string) error {
 
 // HandleIPCMessage handles an IPC message and routes it to the appropriate module
 func (s *UpdateScheduler) HandleIPCMessage(message string) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	var handledModule string
 
+	s.mu.RLock()
 	for name := range s.updates {
 		if handled := s.registry.HandleModuleIPC(name, message); handled {
-			return true
+			handledModule = name
+			break
 		}
+	}
+	s.mu.RUnlock()
+
+	// Trigger widget update for ON_DEMAND modules outside of lock
+	if handledModule != "" {
+		s.mu.RLock()
+		info, ok := s.updates[handledModule]
+		s.mu.RUnlock()
+
+		if ok && info.Module.UpdateMode() == UpdateModeOnDemand {
+			_ = s.updateModule(handledModule)
+		}
+		return true
 	}
 
 	return false

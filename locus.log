@@ -2796,3 +2796,1554 @@
 2025/12/26 20:55:51 Warning: Failed to load launcher styles: <data>:3:22'' is not a valid color name
 2025/12/26 20:55:51 IPC server listening on 
 2025/12/26 20:55:51 Initialization complete
+2025/12/26 21:04:26 Locus starting...
+2025/12/26 21:04:26 Initializing components...
+2025/12/26 21:04:26 Loaded launcher CSS from /home/sigma/.config/locus/launcher.css
+2025/12/26 21:04:26 Created statusbar windows for 1 monitors
+2025/12/26 21:04:26 Loading modules, config: [workspaces binding_mode brightness emacs_clock notifications time battery]
+2025/12/26 21:04:26 Loading module 'workspaces' with config: {0  false []  map[]}
+2025/12/26 21:04:26 Registered module instance: workspaces
+2025/12/26 21:04:26 Successfully loaded module: workspaces
+2025/12/26 21:04:26 Loading module 'binding_mode' with config: {0  false []  map[]}
+2025/12/26 21:04:26 Registered module instance: binding_mode
+2025/12/26 21:04:26 Successfully loaded module: binding_mode
+2025/12/26 21:04:26 Loading module 'brightness' with config: {0  false []  map[]}
+2025/12/26 21:04:26 Registered module instance: brightness
+2025/12/26 21:04:26 Successfully loaded module: brightness
+2025/12/26 21:04:26 Loading module 'emacs_clock' with config: {10  true []  map[]}
+2025/12/26 21:04:26 Registered module instance: emacs_clock
+2025/12/26 21:04:26 Successfully loaded module: emacs_clock
+2025/12/26 21:04:26 Loading module 'notifications' with config: {0  false []  map[]}
+2025/12/26 21:04:26 Registered module instance: notifications
+2025/12/26 21:04:26 Successfully loaded module: notifications
+2025/12/26 21:04:26 Loading module 'time' with config: {0  false []  map[]}
+2025/12/26 21:04:26 Registered module instance: time
+2025/12/26 21:04:26 Successfully loaded module: time
+2025/12/26 21:04:26 Loading module 'battery' with config: {0  false []  map[]}
+2025/12/26 21:04:26 Registered module instance: battery
+2025/12/26 21:04:26 Successfully loaded module: battery
+2025/12/26 21:04:26 Creating widget for module: workspaces
+2025/12/26 21:04:26 Scheduled module 'workspaces' with update mode: periodic
+2025/12/26 21:04:26 Successfully created widget for module: workspaces
+2025/12/26 21:04:26 Creating widget for module: binding_mode
+2025/12/26 21:04:26 Scheduled module 'binding_mode' with update mode: periodic
+2025/12/26 21:04:26 Successfully created widget for module: binding_mode
+2025/12/26 21:04:26 Creating widget for module: brightness
+2025/12/26 21:04:26 Scheduled module 'brightness' with update mode: periodic
+2025/12/26 21:04:26 Successfully created widget for module: brightness
+2025/12/26 21:04:26 Creating widget for module: emacs_clock
+2025/12/26 21:04:26 Scheduled module 'emacs_clock' with update mode: periodic
+2025/12/26 21:04:26 Successfully created widget for module: emacs_clock
+2025/12/26 21:04:26 Creating widget for module: notifications
+2025/12/26 21:04:26 Failed to start listeners for module 'notifications': no listeners registered for module 'notifications'
+2025/12/26 21:04:26 Scheduled module 'notifications' with update mode: event-driven
+2025/12/26 21:04:26 Successfully created widget for module: notifications
+2025/12/26 21:04:26 Creating widget for module: time
+2025/12/26 21:04:26 Scheduled module 'time' with update mode: periodic
+2025/12/26 21:04:26 Successfully created widget for module: time
+2025/12/26 21:04:26 Creating widget for module: battery
+2025/12/26 21:04:26 Scheduled module 'battery' with update mode: periodic
+2025/12/26 21:04:26 Successfully created widget for module: battery
+2025/12/26 21:04:26 Update scheduler started
+2025/12/26 21:04:26 IPC server started on /tmp/locus_socket
+2025/12/26 21:04:26 Status bar started successfully on 1 monitors
+2025/12/26 21:04:26 Warning: Failed to load launcher styles: <data>:3:22'' is not a valid color name
+2025/12/26 21:04:26 IPC server listening on 
+2025/12/26 21:04:26 Initialization complete
+2025/12/26 21:04:27 Received IPC message: launcher
+2025/12/26 21:04:27 PresentLauncher called, launcher=true
+2025/12/26 21:04:27 Launcher.Show() called, running=false
+2025/12/26 21:04:27 Launcher not running, starting...
+2025/12/26 21:04:27 Launcher.Start() - beginning
+2025/12/26 21:04:27 Setting window size
+2025/12/26 21:04:27 Loading built-in launchers
+2025/12/26 21:04:27 Registered trigger: > -> shell
+2025/12/26 21:04:27 Registered trigger: sh -> shell
+2025/12/26 21:04:27 Registered trigger: shell -> shell
+2025/12/26 21:04:27 Registered trigger: cmd -> shell
+2025/12/26 21:04:27 Registered trigger: command -> shell
+2025/12/26 21:04:27 Registered trigger: : -> web
+2025/12/26 21:04:27 Registered trigger: web -> web
+2025/12/26 21:04:27 Registered trigger: url -> web
+2025/12/26 21:04:27 Registered trigger: open -> web
+2025/12/26 21:04:27 Registered trigger: = -> calc
+2025/12/26 21:04:27 Registered trigger: calc -> calc
+2025/12/26 21:04:27 Registered trigger: math -> calc
+2025/12/26 21:04:27 [APP-LAUNCHER] Starting background app loading
+2025/12/26 21:04:27 Registered trigger: timer -> timer
+2025/12/26 21:04:27 Registered trigger: t -> timer
+2025/12/26 21:04:27 [HOOK-REGISTRY] Registered hook 'timer-hook' for launcher 'timer'
+2025/12/26 21:04:27 Registered trigger: brightness -> brightness
+2025/12/26 21:04:27 Registered trigger: bright -> brightness
+2025/12/26 21:04:27 Registered trigger: bri -> brightness
+2025/12/26 21:04:27 Registered trigger: screenshot -> screenshot
+2025/12/26 21:04:27 Registered trigger: shot -> screenshot
+2025/12/26 21:04:27 Registered trigger: scr -> screenshot
+2025/12/26 21:04:27 Registered trigger: ss -> screenshot
+2025/12/26 21:04:27 Registered trigger: lock -> lock
+2025/12/26 21:04:27 Registered trigger: screenlock -> lock
+2025/12/26 21:04:27 Registered trigger: lockscreen -> lock
+2025/12/26 21:04:27 Registered trigger: kill -> kill
+2025/12/26 21:04:27 Registered trigger: k -> kill
+2025/12/26 21:04:27 Registered trigger: focus -> focus
+2025/12/26 21:04:27 Registered trigger: f -> focus
+2025/12/26 21:04:27 Registered trigger: wallpaper -> wallpaper
+2025/12/26 21:04:27 Registered trigger: wp -> wallpaper
+2025/12/26 21:04:27 Registered trigger: bg -> wallpaper
+2025/12/26 21:04:27 Registered trigger: clipboard -> clipboard
+2025/12/26 21:04:27 Registered trigger: cb -> clipboard
+2025/12/26 21:04:27 Registered trigger: clip -> clipboard
+2025/12/26 21:04:27 Registered trigger: history -> clipboard
+2025/12/26 21:04:27 Registered trigger: wifi -> wifi
+2025/12/26 21:04:27 Registered trigger: wlan -> wifi
+2025/12/26 21:04:27 Registered trigger: file -> file
+2025/12/26 21:04:27 Registered trigger: f -> file
+2025/12/26 21:04:27 Registered trigger: music -> music
+2025/12/26 21:04:27 Registered trigger: m -> music
+2025/12/26 21:04:27 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 21:04:27 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 21:04:27 Initializing layer shell
+2025/12/26 21:04:27 Launcher started successfully - window should be visible now
+2025/12/26 21:04:27 Launcher started successfully
+2025/12/26 21:04:27 Found 108 .desktop files, parsing in parallel
+2025/12/26 21:04:27 Loaded 86 applications in 1.612441ms (parallel parsing)
+2025/12/26 21:04:27 [APP-LAUNCHER] Precomputed search data in 18.1µs
+2025/12/26 21:04:27 [APP-LAUNCHER] Background load completed in 2.481312ms, loaded 86 apps
+2025/12/26 21:04:27 Launcher.Show() returned: <nil>
+2025/12/26 21:04:27 [REGISTRY-SEARCH] Started for query='f'
+2025/12/26 21:04:27 [SEARCH-CACHE] MISS: key='f:'
+2025/12/26 21:04:27 [REGISTRY-SEARCH] Cache MISS for query='f' in 86.013µs
+2025/12/26 21:04:27 [REGISTRY-SEARCH] Using AppLauncher for general query='f'
+2025/12/26 21:04:27 [APP-LAUNCHER] Populate started for query='f'
+2025/12/26 21:04:27 [APP-LAUNCHER] Fuzzy search started for query='f' against 86 apps
+2025/12/26 21:04:27 [APP-LAUNCHER] Fuzzy find completed in 161.277µs, found 17 raw matches
+2025/12/26 21:04:27 [APP-LAUNCHER] Fuzzy search completed in 192.325µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:04:27 [APP-LAUNCHER] Fuzzy search completed in 204.868µs, returned 10 results
+2025/12/26 21:04:27 [REGISTRY-SEARCH] AppLauncher populate completed in 210.88µs, 10 items
+2025/12/26 21:04:27 [SEARCH-CACHE] STORED FAST: key='f:', 10 results, duration=0.60ms
+2025/12/26 21:04:27 [REGISTRY-SEARCH] Cached results for query='f' (duration=0.60ms)
+2025/12/26 21:04:27 [REGISTRY-SEARCH] Completed general search in 635.379µs, final result count: 10
+2025/12/26 21:04:27 [ICON-CACHE] MISS: foot@32
+2025/12/26 21:04:27 [ICON-CACHE] STORED: foot@32 (cache size: 1)
+2025/12/26 21:04:27 [ICON-CACHE] MISS: firefox@32
+2025/12/26 21:04:27 [ICON-CACHE] STORED: firefox@32 (cache size: 2)
+2025/12/26 21:04:27 [ICON-CACHE] MISS: firewall-config@32
+2025/12/26 21:04:27 [ICON-CACHE] STORED: firewall-config@32 (cache size: 3)
+2025/12/26 21:04:27 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:04:27 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:04:27 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:04:27 [ICON-CACHE] MISS: document-new@32
+2025/12/26 21:04:27 [ICON-CACHE] STORED: document-new@32 (cache size: 4)
+2025/12/26 21:04:27 [ICON-CACHE] MISS: utilities-terminal@32
+2025/12/26 21:04:27 [ICON-CACHE] STORED: utilities-terminal@32 (cache size: 5)
+2025/12/26 21:04:27 [ICON-CACHE] MISS: steam_icon_440@32
+2025/12/26 21:04:27 [ICON-CACHE] STORED: steam_icon_440@32 (cache size: 6)
+2025/12/26 21:04:27 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:04:27 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:04:50 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:04:50 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 21:04:50 [REGISTRY-SEARCH] Cache MISS for query='' in 35.687µs
+2025/12/26 21:04:50 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 21:04:50 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 21:04:50 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 21:04:50 [REGISTRY-SEARCH] AppLauncher populate completed in 45.396µs, 10 items
+2025/12/26 21:04:50 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.19ms
+2025/12/26 21:04:50 [REGISTRY-SEARCH] Cached results for query='' (duration=0.19ms)
+2025/12/26 21:04:50 [REGISTRY-SEARCH] Completed general search in 210.719µs, final result count: 10
+2025/12/26 21:04:50 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:04:50 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:04:50 [ICON-CACHE] MISS: org.xfce.about@32
+2025/12/26 21:04:50 [ICON-CACHE] STORED: org.xfce.about@32 (cache size: 7)
+2025/12/26 21:04:50 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:04:50 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:04:50 [ICON-CACHE] MISS: audacious@32
+2025/12/26 21:04:50 [ICON-CACHE] STORED: audacious@32 (cache size: 8)
+2025/12/26 21:04:50 [ICON-CACHE] MISS: network-wired@32
+2025/12/26 21:04:50 [ICON-CACHE] STORED: network-wired@32 (cache size: 9)
+2025/12/26 21:04:50 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:04:50 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:04:50 [ICON-CACHE] MISS: blender@32
+2025/12/26 21:04:50 [ICON-CACHE] STORED: blender@32 (cache size: 10)
+2025/12/26 21:04:50 [ICON-CACHE] MISS: org.gnome.Boxes@32
+2025/12/26 21:04:50 [ICON-CACHE] STORED: org.gnome.Boxes@32 (cache size: 11)
+2025/12/26 21:04:50 [ICON-CACHE] MISS: btop@32
+2025/12/26 21:04:50 [ICON-CACHE] STORED: btop@32 (cache size: 12)
+2025/12/26 21:04:52 Received IPC message: launcher
+2025/12/26 21:04:52 PresentLauncher called, launcher=true
+2025/12/26 21:04:52 Launcher.Show() called, running=true
+2025/12/26 21:04:52 Launcher.Show() returned: <nil>
+2025/12/26 21:04:52 [REGISTRY-SEARCH] Started for query='>'
+2025/12/26 21:04:52 [SEARCH-CACHE] MISS: key='>:'
+2025/12/26 21:04:52 [REGISTRY-SEARCH] Cache MISS for query='>' in 40.145µs
+2025/12/26 21:04:52 [REGISTRY-SEARCH] Using AppLauncher for general query='>'
+2025/12/26 21:04:52 [APP-LAUNCHER] Populate started for query='>'
+2025/12/26 21:04:52 [APP-LAUNCHER] Fuzzy search started for query='>' against 86 apps
+2025/12/26 21:04:52 [APP-LAUNCHER] Fuzzy find completed in 86.572µs, found 0 raw matches
+2025/12/26 21:04:52 [APP-LAUNCHER] Fuzzy search completed in 98.678µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:04:52 [APP-LAUNCHER] Fuzzy search completed in 108.464µs, returned 0 results
+2025/12/26 21:04:52 [REGISTRY-SEARCH] AppLauncher populate completed in 113.201µs, 0 items
+2025/12/26 21:04:52 [SEARCH-CACHE] STORED FAST: key='>:', 0 results, duration=0.21ms
+2025/12/26 21:04:52 [REGISTRY-SEARCH] Cached results for query='>' (duration=0.21ms)
+2025/12/26 21:04:52 [REGISTRY-SEARCH] Completed general search in 232.864µs, final result count: 0
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Started for query='>m'
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.671152ms, 7 items
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Completed launcher-specific search in 6.764939ms
+2025/12/26 21:04:53 [ICON-CACHE] MISS: media-playback-start@32
+2025/12/26 21:04:53 [ICON-CACHE] STORED: media-playback-start@32 (cache size: 13)
+2025/12/26 21:04:53 [ICON-CACHE] MISS: media-skip-forward@32
+2025/12/26 21:04:53 [ICON-CACHE] STORED: media-skip-forward@32 (cache size: 14)
+2025/12/26 21:04:53 [ICON-CACHE] MISS: media-skip-backward@32
+2025/12/26 21:04:53 [ICON-CACHE] STORED: media-skip-backward@32 (cache size: 15)
+2025/12/26 21:04:53 [ICON-CACHE] MISS: edit-clear-all@32
+2025/12/26 21:04:53 [ICON-CACHE] STORED: edit-clear-all@32 (cache size: 16)
+2025/12/26 21:04:53 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:04:53 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:04:53 [ICON-CACHE] MISS: folder-music@32
+2025/12/26 21:04:53 [ICON-CACHE] STORED: folder-music@32 (cache size: 17)
+2025/12/26 21:04:53 [ICON-CACHE] MISS: view-refresh@32
+2025/12/26 21:04:53 [ICON-CACHE] STORED: view-refresh@32 (cache size: 18)
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Started for query='>mu '
+2025/12/26 21:04:53 [SEARCH-CACHE] MISS: key='>mu :'
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Cache MISS for query='>mu ' in 46.229µs
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Using AppLauncher for general query='>mu '
+2025/12/26 21:04:53 [APP-LAUNCHER] Populate started for query='>mu '
+2025/12/26 21:04:53 [APP-LAUNCHER] Fuzzy search started for query='>mu' against 86 apps
+2025/12/26 21:04:53 [APP-LAUNCHER] Fuzzy find completed in 115.697µs, found 0 raw matches
+2025/12/26 21:04:53 [APP-LAUNCHER] Fuzzy search completed in 131.582µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:04:53 [APP-LAUNCHER] Fuzzy search completed in 144.457µs, returned 0 results
+2025/12/26 21:04:53 [REGISTRY-SEARCH] AppLauncher populate completed in 150.88µs, 0 items
+2025/12/26 21:04:53 [SEARCH-CACHE] STORED FAST: key='>mu :', 0 results, duration=0.28ms
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Cached results for query='>mu ' (duration=0.28ms)
+2025/12/26 21:04:53 [REGISTRY-SEARCH] Completed general search in 311.706µs, final result count: 0
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Started for query='>mu'
+2025/12/26 21:04:54 [SEARCH-CACHE] MISS: key='>mu:'
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Cache MISS for query='>mu' in 311.506µs
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Using AppLauncher for general query='>mu'
+2025/12/26 21:04:54 [APP-LAUNCHER] Populate started for query='>mu'
+2025/12/26 21:04:54 [APP-LAUNCHER] Fuzzy search started for query='>mu' against 86 apps
+2025/12/26 21:04:54 [APP-LAUNCHER] Fuzzy find completed in 136.251µs, found 0 raw matches
+2025/12/26 21:04:54 [APP-LAUNCHER] Fuzzy search completed in 154.811µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:04:54 [APP-LAUNCHER] Fuzzy search completed in 167.795µs, returned 0 results
+2025/12/26 21:04:54 [REGISTRY-SEARCH] AppLauncher populate completed in 174.76µs, 0 items
+2025/12/26 21:04:54 [SEARCH-CACHE] STORED FAST: key='>mu:', 0 results, duration=0.60ms
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Cached results for query='>mu' (duration=0.60ms)
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Completed general search in 639.665µs, final result count: 0
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Started for query='>m'
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.683333ms, 56 items
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Completed launcher-specific search in 6.795945ms
+2025/12/26 21:04:54 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:04:54 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:04:54 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:04:54 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:04:54 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:04:54 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:04:54 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:04:54 [ICON-CACHE] MISS: audio-x-generic@32
+2025/12/26 21:04:54 [ICON-CACHE] STORED: audio-x-generic@32 (cache size: 19)
+2025/12/26 21:04:54 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:04:54 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:04:54 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Started for query='>'
+2025/12/26 21:04:54 [SEARCH-CACHE] HIT: key='>:', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:04:54 [REGISTRY-SEARCH] Cache HIT for query='>', returned 0 items in 36.255µs
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Started for query='>m'
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.614375ms, 56 items
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Completed launcher-specific search in 6.723323ms
+2025/12/26 21:04:55 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:04:55 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:04:55 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:04:55 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:04:55 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:04:55 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:04:55 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:04:55 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:04:55 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:04:55 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:04:55 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Started for query='>mpd '
+2025/12/26 21:04:55 [SEARCH-CACHE] MISS: key='>mpd :'
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Cache MISS for query='>mpd ' in 48.967µs
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Using AppLauncher for general query='>mpd '
+2025/12/26 21:04:55 [APP-LAUNCHER] Populate started for query='>mpd '
+2025/12/26 21:04:55 [APP-LAUNCHER] Fuzzy search started for query='>mpd' against 86 apps
+2025/12/26 21:04:55 [APP-LAUNCHER] Fuzzy find completed in 129.923µs, found 0 raw matches
+2025/12/26 21:04:55 [APP-LAUNCHER] Fuzzy search completed in 149.183µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:04:55 [APP-LAUNCHER] Fuzzy search completed in 163.653µs, returned 0 results
+2025/12/26 21:04:55 [REGISTRY-SEARCH] AppLauncher populate completed in 171.237µs, 0 items
+2025/12/26 21:04:55 [SEARCH-CACHE] STORED FAST: key='>mpd :', 0 results, duration=0.31ms
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Cached results for query='>mpd ' (duration=0.31ms)
+2025/12/26 21:04:55 [REGISTRY-SEARCH] Completed general search in 339.559µs, final result count: 0
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Started for query='>mpd'
+2025/12/26 21:04:56 [SEARCH-CACHE] MISS: key='>mpd:'
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Cache MISS for query='>mpd' in 59.302µs
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Using AppLauncher for general query='>mpd'
+2025/12/26 21:04:56 [APP-LAUNCHER] Populate started for query='>mpd'
+2025/12/26 21:04:56 [APP-LAUNCHER] Fuzzy search started for query='>mpd' against 86 apps
+2025/12/26 21:04:56 [APP-LAUNCHER] Fuzzy find completed in 150.815µs, found 0 raw matches
+2025/12/26 21:04:56 [APP-LAUNCHER] Fuzzy search completed in 170.815µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:04:56 [APP-LAUNCHER] Fuzzy search completed in 186.873µs, returned 0 results
+2025/12/26 21:04:56 [REGISTRY-SEARCH] AppLauncher populate completed in 194.821µs, 0 items
+2025/12/26 21:04:56 [SEARCH-CACHE] STORED FAST: key='>mpd:', 0 results, duration=0.36ms
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Cached results for query='>mpd' (duration=0.36ms)
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Completed general search in 398.919µs, final result count: 0
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Started for query='>mp'
+2025/12/26 21:04:56 [SEARCH-CACHE] MISS: key='>mp:'
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Cache MISS for query='>mp' in 50.358µs
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Using AppLauncher for general query='>mp'
+2025/12/26 21:04:56 [APP-LAUNCHER] Populate started for query='>mp'
+2025/12/26 21:04:56 [APP-LAUNCHER] Fuzzy search started for query='>mp' against 86 apps
+2025/12/26 21:04:56 [APP-LAUNCHER] Fuzzy find completed in 136.508µs, found 0 raw matches
+2025/12/26 21:04:56 [APP-LAUNCHER] Fuzzy search completed in 150.655µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:04:56 [APP-LAUNCHER] Fuzzy search completed in 162.331µs, returned 0 results
+2025/12/26 21:04:56 [REGISTRY-SEARCH] AppLauncher populate completed in 169.594µs, 0 items
+2025/12/26 21:04:56 [SEARCH-CACHE] STORED FAST: key='>mp:', 0 results, duration=0.30ms
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Cached results for query='>mp' (duration=0.30ms)
+2025/12/26 21:04:56 [REGISTRY-SEARCH] Completed general search in 324.754µs, final result count: 0
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Started for query='>mpp'
+2025/12/26 21:04:57 [SEARCH-CACHE] MISS: key='>mpp:'
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Cache MISS for query='>mpp' in 54.792µs
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Using AppLauncher for general query='>mpp'
+2025/12/26 21:04:57 [APP-LAUNCHER] Populate started for query='>mpp'
+2025/12/26 21:04:57 [APP-LAUNCHER] Fuzzy search started for query='>mpp' against 86 apps
+2025/12/26 21:04:57 [APP-LAUNCHER] Fuzzy find completed in 116.901µs, found 0 raw matches
+2025/12/26 21:04:57 [APP-LAUNCHER] Fuzzy search completed in 134.691µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:04:57 [APP-LAUNCHER] Fuzzy search completed in 149.519µs, returned 0 results
+2025/12/26 21:04:57 [REGISTRY-SEARCH] AppLauncher populate completed in 156.131µs, 0 items
+2025/12/26 21:04:57 [SEARCH-CACHE] STORED FAST: key='>mpp:', 0 results, duration=0.34ms
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Cached results for query='>mpp' (duration=0.34ms)
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Completed general search in 382.533µs, final result count: 0
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Started for query='>mppd'
+2025/12/26 21:04:57 [SEARCH-CACHE] MISS: key='>mppd:'
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Cache MISS for query='>mppd' in 24.833µs
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Using AppLauncher for general query='>mppd'
+2025/12/26 21:04:57 [APP-LAUNCHER] Populate started for query='>mppd'
+2025/12/26 21:04:57 [APP-LAUNCHER] Fuzzy search started for query='>mppd' against 86 apps
+2025/12/26 21:04:57 [APP-LAUNCHER] Fuzzy find completed in 69.435µs, found 0 raw matches
+2025/12/26 21:04:57 [APP-LAUNCHER] Fuzzy search completed in 78.031µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:04:57 [APP-LAUNCHER] Fuzzy search completed in 85.009µs, returned 0 results
+2025/12/26 21:04:57 [REGISTRY-SEARCH] AppLauncher populate completed in 88.59µs, 0 items
+2025/12/26 21:04:57 [SEARCH-CACHE] STORED FAST: key='>mppd:', 0 results, duration=0.16ms
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Cached results for query='>mppd' (duration=0.16ms)
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Completed general search in 172.222µs, final result count: 0
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Started for query='>mpp'
+2025/12/26 21:04:57 [SEARCH-CACHE] HIT: key='>mpp:', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Cache HIT for query='>mpp', returned 0 items in 34.99µs
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Started for query='>mp'
+2025/12/26 21:04:57 [SEARCH-CACHE] HIT: key='>mp:', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:04:57 [REGISTRY-SEARCH] Cache HIT for query='>mp', returned 0 items in 54.136µs
+2025/12/26 21:04:58 [REGISTRY-SEARCH] Started for query='>mpd '
+2025/12/26 21:04:58 [SEARCH-CACHE] HIT: key='>mpd :', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:04:58 [REGISTRY-SEARCH] Cache HIT for query='>mpd ', returned 0 items in 90.538µs
+2025/12/26 21:04:59 [REGISTRY-SEARCH] Started for query='>'
+2025/12/26 21:04:59 [SEARCH-CACHE] HIT: key='>:', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:04:59 [REGISTRY-SEARCH] Cache HIT for query='>', returned 0 items in 63.672µs
+2025/12/26 21:04:59 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:04:59 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:04:59 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 38.266µs
+2025/12/26 21:04:59 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:04:59 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:04:59 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:04:59 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:04:59 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:04:59 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:04:59 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:04:59 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:04:59 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:04:59 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:04:59 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:04:59 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:05:00 [SEARCH-CACHE] MISS: key='m:'
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Cache MISS for query='m' in 45.57µs
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Using AppLauncher for general query='m'
+2025/12/26 21:05:00 [APP-LAUNCHER] Populate started for query='m'
+2025/12/26 21:05:00 [APP-LAUNCHER] Fuzzy search started for query='m' against 86 apps
+2025/12/26 21:05:00 [APP-LAUNCHER] Fuzzy find completed in 236.437µs, found 32 raw matches
+2025/12/26 21:05:00 [APP-LAUNCHER] Fuzzy search completed in 274.401µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:05:00 [APP-LAUNCHER] Fuzzy search completed in 289.465µs, returned 10 results
+2025/12/26 21:05:00 [REGISTRY-SEARCH] AppLauncher populate completed in 297.108µs, 10 items
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Deduplication removed 1 duplicates (10 -> 9)
+2025/12/26 21:05:00 [SEARCH-CACHE] STORED FAST: key='m:', 9 results, duration=0.49ms
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Cached results for query='m' (duration=0.49ms)
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Completed general search in 722.546µs, final result count: 9
+2025/12/26 21:05:00 [ICON-CACHE] MISS: org.gnome.Meld@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: org.gnome.Meld@32 (cache size: 20)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: libreoffice-startcenter@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: libreoffice-startcenter@32 (cache size: 21)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: cups@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: cups@32 (cache size: 22)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: emacs@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: emacs@32 (cache size: 23)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: CMakeSetup@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: CMakeSetup@32 (cache size: 24)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: network-wireless-symbolic@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: network-wireless-symbolic@32 (cache size: 25)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: mpv@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: mpv@32 (cache size: 26)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:05:00 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:05:00 [ICON-CACHE] MISS: gvim@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: gvim@32 (cache size: 27)
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Started for query='mp'
+2025/12/26 21:05:00 [SEARCH-CACHE] MISS: key='mp:'
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Cache MISS for query='mp' in 49.196µs
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Using AppLauncher for general query='mp'
+2025/12/26 21:05:00 [APP-LAUNCHER] Populate started for query='mp'
+2025/12/26 21:05:00 [APP-LAUNCHER] Fuzzy search started for query='mp' against 86 apps
+2025/12/26 21:05:00 [APP-LAUNCHER] Fuzzy find completed in 365.238µs, found 6 raw matches
+2025/12/26 21:05:00 [APP-LAUNCHER] Fuzzy search completed in 497.164µs, returning 6 items (TEMP: no filtering)
+2025/12/26 21:05:00 [APP-LAUNCHER] Fuzzy search completed in 512.053µs, returned 6 results
+2025/12/26 21:05:00 [REGISTRY-SEARCH] AppLauncher populate completed in 518.274µs, 6 items
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Deduplication removed 1 duplicates (6 -> 5)
+2025/12/26 21:05:00 [SEARCH-CACHE] STORED FAST: key='mp:', 5 results, duration=0.66ms
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Cached results for query='mp' (duration=0.66ms)
+2025/12/26 21:05:00 [REGISTRY-SEARCH] Completed general search in 690.858µs, final result count: 5
+2025/12/26 21:05:00 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:05:00 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:05:00 [ICON-CACHE] MISS: gimp@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: gimp@32 (cache size: 28)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: nvm-desktop@32
+2025/12/26 21:05:00 [ICON-CACHE] STORED: nvm-desktop@32 (cache size: 29)
+2025/12/26 21:05:00 [ICON-CACHE] MISS: antigravity@32
+2025/12/26 21:05:00 [ICON-CACHE] Icon 'antigravity' not found in theme, returning nil
+2025/12/26 21:05:01 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:05:01 [SEARCH-CACHE] HIT: key='m:', returning 9 cached results (TTL: 30m0s)
+2025/12/26 21:05:01 [REGISTRY-SEARCH] Cache HIT for query='m', returned 9 items in 53.491µs
+2025/12/26 21:05:01 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: libreoffice-startcenter@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: CMakeSetup@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:05:01 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:05:01 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:05:01 [ICON-CACHE] HIT: gvim@32
+2025/12/26 21:05:01 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:05:01 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:05:01 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.423069ms, 56 items
+2025/12/26 21:05:01 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:05:01 [REGISTRY-SEARCH] Completed launcher-specific search in 5.516821ms
+2025/12/26 21:05:01 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:01 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:01 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:01 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:01 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Started for query='m i '
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i'
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Launcher-specific populate completed in 4.721207ms, 56 items
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Completed launcher-specific search in 4.81088ms
+2025/12/26 21:05:07 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:07 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:07 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:07 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Started for query='m i r'
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i r'
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.652338ms, 7 items
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Completed launcher-specific search in 6.73483ms
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Started for query='m i ra'
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ra'
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.832713ms, 7 items
+2025/12/26 21:05:07 [REGISTRY-SEARCH] Completed launcher-specific search in 6.93829ms
+2025/12/26 21:05:07 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:07 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:07 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:07 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:07 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Started for query='m i ran'
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ran'
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.379984ms, 7 items
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Completed launcher-specific search in 6.47714ms
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Started for query='m i ran '
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ran'
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.696517ms, 7 items
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Completed launcher-specific search in 5.79271ms
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:08 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:08 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:08 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Started for query='m i ran so'
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ran so'
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Launcher-specific populate completed in 7.276003ms, 6 items
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Completed launcher-specific search in 7.36406ms
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:08 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:08 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:08 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Started for query='m i ran so '
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ran so'
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Launcher-specific populate completed in 7.332741ms, 6 items
+2025/12/26 21:05:08 [REGISTRY-SEARCH] Completed launcher-specific search in 7.436405ms
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:08 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:08 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:08 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:08 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:09 [REGISTRY-SEARCH] Started for query='m i ran so fa'
+2025/12/26 21:05:09 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ran so fa'
+2025/12/26 21:05:09 [REGISTRY-SEARCH] Launcher-specific populate completed in 7.041898ms, 6 items
+2025/12/26 21:05:09 [REGISTRY-SEARCH] Completed launcher-specific search in 7.1974ms
+2025/12/26 21:05:09 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:09 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:09 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:09 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:09 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:09 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:09 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:09 [REGISTRY-SEARCH] Started for query='m i ran so far'
+2025/12/26 21:05:09 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ran so far'
+2025/12/26 21:05:09 [REGISTRY-SEARCH] Launcher-specific populate completed in 7.402247ms, 6 items
+2025/12/26 21:05:09 [REGISTRY-SEARCH] Completed launcher-specific search in 7.512322ms
+2025/12/26 21:05:09 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:09 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:09 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:09 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:09 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:09 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:09 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:11 [REGISTRY-SEARCH] Started for query='m i ran so '
+2025/12/26 21:05:11 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ran so'
+2025/12/26 21:05:11 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.247954ms, 6 items
+2025/12/26 21:05:11 [REGISTRY-SEARCH] Completed launcher-specific search in 6.366512ms
+2025/12/26 21:05:11 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:11 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:11 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:11 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:11 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:11 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:11 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Started for query='m i ran '
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i ran'
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Launcher-specific populate completed in 7.563041ms, 7 items
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Completed launcher-specific search in 7.660401ms
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:12 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:12 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:12 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Started for query='m i '
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='i'
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.477671ms, 56 items
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Completed launcher-specific search in 6.583561ms
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:12 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:12 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:12 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.423266ms, 56 items
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:05:12 [REGISTRY-SEARCH] Completed launcher-specific search in 6.517714ms
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:12 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:12 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:12 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:16 [HOOK-REGISTRY] Hook 'music_hook' handled OnSelect event
+2025/12/26 21:05:16 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:05:16 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:05:16 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 30.605µs
+2025/12/26 21:05:16 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:05:16 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:05:16 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:05:16 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:05:16 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:05:16 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:05:16 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:16 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:16 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:16 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:05:16 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:05:16 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:05:26 Received IPC message: launcher
+2025/12/26 21:05:26 PresentLauncher called, launcher=true
+2025/12/26 21:05:26 Launcher.Show() called, running=true
+2025/12/26 21:05:26 Launcher.Show() returned: <nil>
+2025/12/26 21:05:27 [REGISTRY-SEARCH] Started for query='>'
+2025/12/26 21:05:27 [SEARCH-CACHE] HIT: key='>:', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:05:27 [REGISTRY-SEARCH] Cache HIT for query='>', returned 0 items in 63.452µs
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:05:28 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 57.11µs
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Cache stats: hits=10, misses=12, hit_rate=45.45%
+2025/12/26 21:05:28 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:05:28 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:05:28 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:05:28 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:05:28 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:05:28 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:05:28 [SEARCH-CACHE] HIT: key='m:', returning 9 cached results (TTL: 30m0s)
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Cache HIT for query='m', returned 9 items in 48.451µs
+2025/12/26 21:05:28 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: libreoffice-startcenter@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: CMakeSetup@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:05:28 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:05:28 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:05:28 [ICON-CACHE] HIT: gvim@32
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Launcher-specific populate completed in 4.695453ms, 56 items
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:05:28 [REGISTRY-SEARCH] Completed launcher-specific search in 4.790341ms
+2025/12/26 21:05:28 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:05:28 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:05:28 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:05:28 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:28 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:05:47 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:05:47 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:05:47 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 63.035µs
+2025/12/26 21:05:47 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:05:47 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:05:47 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:05:47 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:05:47 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:05:47 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:05:47 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:47 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:47 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:05:47 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:05:47 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:05:47 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:07:20 Received IPC message: launcher
+2025/12/26 21:07:20 PresentLauncher called, launcher=true
+2025/12/26 21:07:20 Launcher.Show() called, running=true
+2025/12/26 21:07:20 Launcher.Show() returned: <nil>
+2025/12/26 21:07:21 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:07:21 [SEARCH-CACHE] HIT: key='m:', returning 9 cached results (TTL: 30m0s)
+2025/12/26 21:07:21 [REGISTRY-SEARCH] Cache HIT for query='m', returned 9 items in 236.13µs
+2025/12/26 21:07:21 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: libreoffice-startcenter@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: CMakeSetup@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:07:21 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:07:21 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:07:21 [ICON-CACHE] HIT: gvim@32
+2025/12/26 21:07:21 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:07:21 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:07:21 [REGISTRY-SEARCH] Launcher-specific populate completed in 3.657551ms, 56 items
+2025/12/26 21:07:21 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:21 [REGISTRY-SEARCH] Completed launcher-specific search in 3.747077ms
+2025/12/26 21:07:21 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:21 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:21 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:21 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:21 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:39 [REGISTRY-SEARCH] Started for query='m s'
+2025/12/26 21:07:39 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='s'
+2025/12/26 21:07:39 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.647519ms, 56 items
+2025/12/26 21:07:39 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:39 [REGISTRY-SEARCH] Completed launcher-specific search in 6.753945ms
+2025/12/26 21:07:39 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:39 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:39 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:39 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:39 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:39 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:39 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:39 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:39 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:39 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:39 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:40 [REGISTRY-SEARCH] Started for query='m sea'
+2025/12/26 21:07:40 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='sea'
+2025/12/26 21:07:40 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.867084ms, 9 items
+2025/12/26 21:07:40 [REGISTRY-SEARCH] Completed launcher-specific search in 5.96175ms
+2025/12/26 21:07:40 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:40 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:40 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:40 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:40 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:40 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:40 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:40 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:40 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:40 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:42 [REGISTRY-SEARCH] Started for query='m seagu'
+2025/12/26 21:07:42 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='seagu'
+2025/12/26 21:07:42 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.468202ms, 7 items
+2025/12/26 21:07:42 [REGISTRY-SEARCH] Completed launcher-specific search in 6.573492ms
+2025/12/26 21:07:42 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:42 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:42 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:42 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:42 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:42 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:42 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:42 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:43 [REGISTRY-SEARCH] Started for query='m seagul'
+2025/12/26 21:07:43 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='seagul'
+2025/12/26 21:07:43 [REGISTRY-SEARCH] Launcher-specific populate completed in 7.37333ms, 7 items
+2025/12/26 21:07:43 [REGISTRY-SEARCH] Completed launcher-specific search in 7.493796ms
+2025/12/26 21:07:43 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:43 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:43 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:43 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:43 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:43 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:43 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:43 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:45 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:07:45 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:07:45 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.723297ms, 56 items
+2025/12/26 21:07:45 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:45 [REGISTRY-SEARCH] Completed launcher-specific search in 6.835372ms
+2025/12/26 21:07:45 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:45 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:45 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:45 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:45 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:45 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:45 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:45 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:45 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:45 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:45 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:46 [REGISTRY-SEARCH] Started for query='m em'
+2025/12/26 21:07:46 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='em'
+2025/12/26 21:07:46 [REGISTRY-SEARCH] Launcher-specific populate completed in 7.904389ms, 47 items
+2025/12/26 21:07:46 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:46 [REGISTRY-SEARCH] Completed launcher-specific search in 8.028116ms
+2025/12/26 21:07:46 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:46 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:46 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:46 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:46 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:46 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:46 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:46 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:46 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:46 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:46 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Started for query='m e'
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='e'
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.203327ms, 56 items
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Completed launcher-specific search in 6.291625ms
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:47 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:47 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:47 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Launcher-specific populate completed in 7.075912ms, 56 items
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Completed launcher-specific search in 7.180281ms
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:47 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:47 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:47 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Started for query='m s'
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='s'
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.383941ms, 56 items
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:47 [REGISTRY-SEARCH] Completed launcher-specific search in 5.491914ms
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:47 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:47 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:47 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:47 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Started for query='m sa'
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='sa'
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.246297ms, 34 items
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Completed launcher-specific search in 6.351618ms
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:48 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:48 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:48 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Started for query='m sab'
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='sab'
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.669323ms, 8 items
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Completed launcher-specific search in 6.75023ms
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:48 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:48 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:48 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Started for query='m sabrin'
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='sabrin'
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Launcher-specific populate completed in 6.125792ms, 8 items
+2025/12/26 21:07:48 [REGISTRY-SEARCH] Completed launcher-specific search in 6.198772ms
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:48 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:48 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:48 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:48 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:55 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:07:55 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:07:55 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 86.574µs
+2025/12/26 21:07:55 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:07:55 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:07:55 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:07:55 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:07:55 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:07:55 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:07:55 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:07:55 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:07:55 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:07:55 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:07:55 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:07:55 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:07:59 Received IPC message: launcher
+2025/12/26 21:07:59 PresentLauncher called, launcher=true
+2025/12/26 21:07:59 Launcher.Show() called, running=true
+2025/12/26 21:07:59 Launcher.Show() returned: <nil>
+2025/12/26 21:07:59 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:07:59 [SEARCH-CACHE] HIT: key='m:', returning 9 cached results (TTL: 30m0s)
+2025/12/26 21:07:59 [REGISTRY-SEARCH] Cache HIT for query='m', returned 9 items in 140.198µs
+2025/12/26 21:07:59 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: libreoffice-startcenter@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: CMakeSetup@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:07:59 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:07:59 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:07:59 [ICON-CACHE] HIT: gvim@32
+2025/12/26 21:07:59 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:07:59 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:07:59 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.710051ms, 56 items
+2025/12/26 21:07:59 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:07:59 [REGISTRY-SEARCH] Completed launcher-specific search in 5.802802ms
+2025/12/26 21:07:59 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:07:59 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:07:59 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:07:59 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:07:59 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:08:02 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:08:02 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:08:02 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 27.894µs
+2025/12/26 21:08:02 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:08:02 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:08:02 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:08:02 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:08:02 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:08:02 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:08:02 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:08:02 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:08:02 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:08:02 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:08:02 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:08:02 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:08:55 Received IPC message: launcher
+2025/12/26 21:08:55 PresentLauncher called, launcher=true
+2025/12/26 21:08:55 Launcher.Show() called, running=true
+2025/12/26 21:08:55 Launcher.Show() returned: <nil>
+2025/12/26 21:08:55 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:08:55 [SEARCH-CACHE] HIT: key='m:', returning 9 cached results (TTL: 30m0s)
+2025/12/26 21:08:55 [REGISTRY-SEARCH] Cache HIT for query='m', returned 9 items in 66.345µs
+2025/12/26 21:08:55 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: libreoffice-startcenter@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: CMakeSetup@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:08:55 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:08:55 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:08:55 [ICON-CACHE] HIT: gvim@32
+2025/12/26 21:08:55 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:08:55 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:08:55 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.11164ms, 56 items
+2025/12/26 21:08:55 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:08:55 [REGISTRY-SEARCH] Completed launcher-specific search in 5.193089ms
+2025/12/26 21:08:55 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:08:55 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:08:55 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:08:55 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:08:55 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:08:56 [HOOK-REGISTRY] Hook 'music_hook' handled OnSelect event
+2025/12/26 21:08:56 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:08:56 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:08:56 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 31.666µs
+2025/12/26 21:08:56 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:08:56 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:08:56 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:08:56 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:08:56 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:08:56 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:08:56 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:08:56 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:08:56 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:08:56 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:08:56 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:08:56 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:12:37 Received IPC message: launcher
+2025/12/26 21:12:37 PresentLauncher called, launcher=true
+2025/12/26 21:12:37 Launcher.Show() called, running=true
+2025/12/26 21:12:37 Launcher.Show() returned: <nil>
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Started for query='woe'
+2025/12/26 21:12:38 [SEARCH-CACHE] MISS: key='woe:'
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Cache MISS for query='woe' in 33.542µs
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Using AppLauncher for general query='woe'
+2025/12/26 21:12:38 [APP-LAUNCHER] Populate started for query='woe'
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search started for query='woe' against 86 apps
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy find completed in 96.153µs, found 5 raw matches
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search completed in 117.155µs, returning 5 items (TEMP: no filtering)
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search completed in 130.237µs, returned 5 results
+2025/12/26 21:12:38 [REGISTRY-SEARCH] AppLauncher populate completed in 136.441µs, 5 items
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Deduplication removed 1 duplicates (5 -> 4)
+2025/12/26 21:12:38 [SEARCH-CACHE] STORED FAST: key='woe:', 4 results, duration=0.24ms
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Cached results for query='woe' (duration=0.24ms)
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Completed general search in 264.443µs, final result count: 4
+2025/12/26 21:12:38 [ICON-CACHE] MISS: /home/sigma/.local/zed.app/share/icons/hicolor/512x512/apps/zed.png@32
+2025/12/26 21:12:38 [ICON-CACHE] Icon '/home/sigma/.local/zed.app/share/icons/hicolor/512x512/apps/zed.png' not found in theme, returning nil
+2025/12/26 21:12:38 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:12:38 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:12:38 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:12:38 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:12:38 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Started for query='woeif'
+2025/12/26 21:12:38 [SEARCH-CACHE] MISS: key='woeif:'
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Cache MISS for query='woeif' in 31.725µs
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Using AppLauncher for general query='woeif'
+2025/12/26 21:12:38 [APP-LAUNCHER] Populate started for query='woeif'
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search started for query='woeif' against 86 apps
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy find completed in 77.958µs, found 0 raw matches
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search completed in 88.765µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search completed in 98.921µs, returned 0 results
+2025/12/26 21:12:38 [REGISTRY-SEARCH] AppLauncher populate completed in 103.128µs, 0 items
+2025/12/26 21:12:38 [SEARCH-CACHE] STORED FAST: key='woeif:', 0 results, duration=0.21ms
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Cached results for query='woeif' (duration=0.21ms)
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Completed general search in 229.781µs, final result count: 0
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Started for query='woei'
+2025/12/26 21:12:38 [SEARCH-CACHE] MISS: key='woei:'
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Cache MISS for query='woei' in 35.987µs
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Using AppLauncher for general query='woei'
+2025/12/26 21:12:38 [APP-LAUNCHER] Populate started for query='woei'
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search started for query='woei' against 86 apps
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy find completed in 141.496µs, found 0 raw matches
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search completed in 185.906µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:12:38 [APP-LAUNCHER] Fuzzy search completed in 198.345µs, returned 0 results
+2025/12/26 21:12:38 [REGISTRY-SEARCH] AppLauncher populate completed in 204.507µs, 0 items
+2025/12/26 21:12:38 [SEARCH-CACHE] STORED FAST: key='woei:', 0 results, duration=0.31ms
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Cached results for query='woei' (duration=0.31ms)
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Completed general search in 343.865µs, final result count: 0
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:12:38 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:12:38 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 29.193µs
+2025/12/26 21:12:38 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:12:38 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:12:38 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:12:38 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:12:38 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:12:38 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:12:38 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:12:38 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:12:38 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:12:38 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:12:38 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:12:38 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:21:00 Received IPC message: launcher
+2025/12/26 21:21:00 PresentLauncher called, launcher=true
+2025/12/26 21:21:00 Launcher.Show() called, running=true
+2025/12/26 21:21:00 Launcher.Show() returned: <nil>
+2025/12/26 21:21:00 [REGISTRY-SEARCH] Started for query='>'
+2025/12/26 21:21:00 [SEARCH-CACHE] HIT: key='>:', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:21:00 [REGISTRY-SEARCH] Cache HIT for query='>', returned 0 items in 30.139µs
+2025/12/26 21:21:00 [REGISTRY-SEARCH] Cache stats: hits=20, misses=15, hit_rate=57.14%
+2025/12/26 21:21:01 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:21:01 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:21:01 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 32.836µs
+2025/12/26 21:21:01 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:21:01 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:21:01 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:21:01 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:21:01 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:21:01 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:21:01 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:21:01 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:21:01 [REGISTRY-SEARCH] Launcher-specific populate completed in 4.301286ms, 56 items
+2025/12/26 21:21:01 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:21:01 [REGISTRY-SEARCH] Completed launcher-specific search in 4.36087ms
+2025/12/26 21:21:01 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:21:01 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:21:01 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:21:01 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:01 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:03 [REGISTRY-SEARCH] Started for query='m sab'
+2025/12/26 21:21:03 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='sab'
+2025/12/26 21:21:03 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.725913ms, 8 items
+2025/12/26 21:21:03 [REGISTRY-SEARCH] Completed launcher-specific search in 5.80512ms
+2025/12/26 21:21:03 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:21:03 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:21:03 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:21:03 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:21:03 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:21:03 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:21:03 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:21:03 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:03 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:04 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:21:04 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:21:04 [REGISTRY-SEARCH] Launcher-specific populate completed in 4.35982ms, 56 items
+2025/12/26 21:21:04 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:21:04 [REGISTRY-SEARCH] Completed launcher-specific search in 4.422277ms
+2025/12/26 21:21:04 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:21:04 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:21:04 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:21:04 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:21:04 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:21:04 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:21:04 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:21:04 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:04 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:04 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:04 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:21:07 [HOOK-REGISTRY] Hook 'music_hook' handled OnSelect event
+2025/12/26 21:21:07 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:21:07 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:21:07 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 321.784µs
+2025/12/26 21:21:07 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:21:07 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:21:07 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:21:07 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:21:07 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:21:07 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:21:07 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:21:07 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:21:07 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:21:07 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:21:07 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:21:07 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:31:28 Locus starting...
+2025/12/26 21:31:28 Initializing components...
+2025/12/26 21:31:28 Loaded launcher CSS from /home/sigma/.config/locus/launcher.css
+2025/12/26 21:31:28 Created statusbar windows for 1 monitors
+2025/12/26 21:31:28 Loading modules, config: [workspaces binding_mode brightness emacs_clock notifications time battery]
+2025/12/26 21:31:28 Loading module 'workspaces' with config: {0  false []  map[]}
+2025/12/26 21:31:28 Registered module instance: workspaces
+2025/12/26 21:31:28 Successfully loaded module: workspaces
+2025/12/26 21:31:28 Loading module 'binding_mode' with config: {0  false []  map[]}
+2025/12/26 21:31:28 Registered module instance: binding_mode
+2025/12/26 21:31:28 Successfully loaded module: binding_mode
+2025/12/26 21:31:28 Loading module 'brightness' with config: {0  false []  map[]}
+2025/12/26 21:31:28 Registered module instance: brightness
+2025/12/26 21:31:28 Successfully loaded module: brightness
+2025/12/26 21:31:28 Loading module 'emacs_clock' with config: {10  true []  map[]}
+2025/12/26 21:31:28 Registered module instance: emacs_clock
+2025/12/26 21:31:28 Successfully loaded module: emacs_clock
+2025/12/26 21:31:28 Loading module 'notifications' with config: {0  false []  map[]}
+2025/12/26 21:31:28 Registered module instance: notifications
+2025/12/26 21:31:28 Successfully loaded module: notifications
+2025/12/26 21:31:28 Loading module 'time' with config: {0  false []  map[]}
+2025/12/26 21:31:28 Registered module instance: time
+2025/12/26 21:31:28 Successfully loaded module: time
+2025/12/26 21:31:28 Loading module 'battery' with config: {0  false []  map[]}
+2025/12/26 21:31:28 Registered module instance: battery
+2025/12/26 21:31:28 Successfully loaded module: battery
+2025/12/26 21:31:28 Creating widget for module: workspaces
+2025/12/26 21:31:28 Scheduled module 'workspaces' with update mode: periodic
+2025/12/26 21:31:28 Successfully created widget for module: workspaces
+2025/12/26 21:31:28 Creating widget for module: binding_mode
+2025/12/26 21:31:28 Scheduled module 'binding_mode' with update mode: periodic
+2025/12/26 21:31:28 Successfully created widget for module: binding_mode
+2025/12/26 21:31:28 Creating widget for module: brightness
+2025/12/26 21:31:28 Scheduled module 'brightness' with update mode: periodic
+2025/12/26 21:31:28 Successfully created widget for module: brightness
+2025/12/26 21:31:28 Creating widget for module: emacs_clock
+2025/12/26 21:31:28 Scheduled module 'emacs_clock' with update mode: periodic
+2025/12/26 21:31:28 Successfully created widget for module: emacs_clock
+2025/12/26 21:31:28 Creating widget for module: notifications
+2025/12/26 21:31:28 Failed to start listeners for module 'notifications': no listeners registered for module 'notifications'
+2025/12/26 21:31:28 Scheduled module 'notifications' with update mode: event-driven
+2025/12/26 21:31:28 Successfully created widget for module: notifications
+2025/12/26 21:31:28 Creating widget for module: time
+2025/12/26 21:31:28 Scheduled module 'time' with update mode: periodic
+2025/12/26 21:31:28 Successfully created widget for module: time
+2025/12/26 21:31:28 Creating widget for module: battery
+2025/12/26 21:31:28 Scheduled module 'battery' with update mode: periodic
+2025/12/26 21:31:28 Successfully created widget for module: battery
+2025/12/26 21:31:28 Update scheduler started
+2025/12/26 21:31:28 IPC server started on /tmp/locus_socket
+2025/12/26 21:31:28 Status bar started successfully on 1 monitors
+2025/12/26 21:31:28 Warning: Failed to load launcher styles: <data>:3:22'' is not a valid color name
+2025/12/26 21:31:28 IPC server listening on 
+2025/12/26 21:31:28 Initialization complete
+2025/12/26 21:31:31 Received IPC message: launcher
+2025/12/26 21:31:31 PresentLauncher called, launcher=true
+2025/12/26 21:31:31 Launcher.Show() called, running=false
+2025/12/26 21:31:31 Launcher not running, starting...
+2025/12/26 21:31:31 Launcher.Start() - beginning
+2025/12/26 21:31:31 Setting window size
+2025/12/26 21:31:31 Loading built-in launchers
+2025/12/26 21:31:31 Registered trigger: > -> shell
+2025/12/26 21:31:31 Registered trigger: sh -> shell
+2025/12/26 21:31:31 Registered trigger: shell -> shell
+2025/12/26 21:31:31 Registered trigger: cmd -> shell
+2025/12/26 21:31:31 Registered trigger: command -> shell
+2025/12/26 21:31:31 Registered trigger: : -> web
+2025/12/26 21:31:31 Registered trigger: web -> web
+2025/12/26 21:31:31 Registered trigger: url -> web
+2025/12/26 21:31:31 Registered trigger: open -> web
+2025/12/26 21:31:31 Registered trigger: = -> calc
+2025/12/26 21:31:31 Registered trigger: calc -> calc
+2025/12/26 21:31:31 Registered trigger: math -> calc
+2025/12/26 21:31:31 Registered trigger: % -> timer
+2025/12/26 21:31:31 [HOOK-REGISTRY] Registered hook 'timer_hook' for launcher 'timer'
+2025/12/26 21:31:31 Registered trigger: brightness -> brightness
+2025/12/26 21:31:31 Registered trigger: bright -> brightness
+2025/12/26 21:31:31 Registered trigger: bri -> brightness
+2025/12/26 21:31:31 Registered trigger: screenshot -> screenshot
+2025/12/26 21:31:31 Registered trigger: shot -> screenshot
+2025/12/26 21:31:31 Registered trigger: scr -> screenshot
+2025/12/26 21:31:31 Registered trigger: ss -> screenshot
+2025/12/26 21:31:31 Registered trigger: lock -> lock
+2025/12/26 21:31:31 [APP-LAUNCHER] Starting background app loading
+2025/12/26 21:31:31 Registered trigger: screenlock -> lock
+2025/12/26 21:31:31 Registered trigger: lockscreen -> lock
+2025/12/26 21:31:31 Registered trigger: kill -> kill
+2025/12/26 21:31:31 Registered trigger: k -> kill
+2025/12/26 21:31:31 Registered trigger: focus -> focus
+2025/12/26 21:31:31 Registered trigger: f -> focus
+2025/12/26 21:31:31 Registered trigger: wallpaper -> wallpaper
+2025/12/26 21:31:31 Registered trigger: wp -> wallpaper
+2025/12/26 21:31:31 Registered trigger: bg -> wallpaper
+2025/12/26 21:31:31 Registered trigger: clipboard -> clipboard
+2025/12/26 21:31:31 Registered trigger: cb -> clipboard
+2025/12/26 21:31:31 Registered trigger: clip -> clipboard
+2025/12/26 21:31:31 Registered trigger: history -> clipboard
+2025/12/26 21:31:31 Registered trigger: wifi -> wifi
+2025/12/26 21:31:31 Registered trigger: wlan -> wifi
+2025/12/26 21:31:31 Registered trigger: file -> file
+2025/12/26 21:31:31 Registered trigger: f -> file
+2025/12/26 21:31:31 Registered trigger: music -> music
+2025/12/26 21:31:31 Registered trigger: m -> music
+2025/12/26 21:31:31 Found 108 .desktop files, parsing in parallel
+2025/12/26 21:31:31 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 21:31:31 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 21:31:31 Initializing layer shell
+2025/12/26 21:31:31 Launcher started successfully - window should be visible now
+2025/12/26 21:31:31 Launcher started successfully
+2025/12/26 21:31:31 Loaded 86 applications in 2.676117ms (parallel parsing)
+2025/12/26 21:31:31 [APP-LAUNCHER] Precomputed search data in 7.293µs
+2025/12/26 21:31:31 [APP-LAUNCHER] Background load completed in 3.192146ms, loaded 86 apps
+2025/12/26 21:31:31 Launcher.Show() returned: <nil>
+2025/12/26 21:31:31 [REGISTRY-SEARCH] Started for query='>'
+2025/12/26 21:31:31 [SEARCH-CACHE] MISS: key='>:'
+2025/12/26 21:31:31 [REGISTRY-SEARCH] Cache MISS for query='>' in 23.955µs
+2025/12/26 21:31:31 [REGISTRY-SEARCH] Using AppLauncher for general query='>'
+2025/12/26 21:31:31 [APP-LAUNCHER] Populate started for query='>'
+2025/12/26 21:31:31 [APP-LAUNCHER] Fuzzy search started for query='>' against 86 apps
+2025/12/26 21:31:31 [APP-LAUNCHER] Fuzzy find completed in 58.374µs, found 0 raw matches
+2025/12/26 21:31:31 [APP-LAUNCHER] Fuzzy search completed in 66.538µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:31:31 [APP-LAUNCHER] Fuzzy search completed in 73.298µs, returned 0 results
+2025/12/26 21:31:31 [REGISTRY-SEARCH] AppLauncher populate completed in 76.736µs, 0 items
+2025/12/26 21:31:31 [SEARCH-CACHE] STORED FAST: key='>:', 0 results, duration=0.16ms
+2025/12/26 21:31:31 [REGISTRY-SEARCH] Cached results for query='>' (duration=0.16ms)
+2025/12/26 21:31:31 [REGISTRY-SEARCH] Completed general search in 188.797µs, final result count: 0
+2025/12/26 21:31:32 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:31:32 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 21:31:32 [REGISTRY-SEARCH] Cache MISS for query='' in 12.057µs
+2025/12/26 21:31:32 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 21:31:32 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 21:31:32 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 21:31:32 [REGISTRY-SEARCH] AppLauncher populate completed in 6.287µs, 10 items
+2025/12/26 21:31:32 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.04ms
+2025/12/26 21:31:32 [REGISTRY-SEARCH] Cached results for query='' (duration=0.04ms)
+2025/12/26 21:31:32 [REGISTRY-SEARCH] Completed general search in 48.321µs, final result count: 10
+2025/12/26 21:31:32 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:31:32 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:31:32 [ICON-CACHE] MISS: org.xfce.about@32
+2025/12/26 21:31:32 [ICON-CACHE] STORED: org.xfce.about@32 (cache size: 1)
+2025/12/26 21:31:32 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:31:32 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:31:32 [ICON-CACHE] MISS: audacious@32
+2025/12/26 21:31:32 [ICON-CACHE] STORED: audacious@32 (cache size: 2)
+2025/12/26 21:31:32 [ICON-CACHE] MISS: network-wired@32
+2025/12/26 21:31:32 [ICON-CACHE] STORED: network-wired@32 (cache size: 3)
+2025/12/26 21:31:32 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:31:32 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:31:32 [ICON-CACHE] MISS: blender@32
+2025/12/26 21:31:32 [ICON-CACHE] STORED: blender@32 (cache size: 4)
+2025/12/26 21:31:32 [ICON-CACHE] MISS: org.gnome.Boxes@32
+2025/12/26 21:31:32 [ICON-CACHE] STORED: org.gnome.Boxes@32 (cache size: 5)
+2025/12/26 21:31:32 [ICON-CACHE] MISS: btop@32
+2025/12/26 21:31:32 [ICON-CACHE] STORED: btop@32 (cache size: 6)
+2025/12/26 21:31:33 [REGISTRY-SEARCH] Started for query='%'
+2025/12/26 21:31:33 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=''
+2025/12/26 21:31:33 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.779µs, 1 items
+2025/12/26 21:31:33 [REGISTRY-SEARCH] Completed launcher-specific search in 224.025µs
+2025/12/26 21:31:33 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:31:33 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:31:35 [REGISTRY-SEARCH] Started for query='%10'
+2025/12/26 21:31:35 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10'
+2025/12/26 21:31:35 [REGISTRY-SEARCH] Launcher-specific populate completed in 244.259µs, 1 items
+2025/12/26 21:31:35 [REGISTRY-SEARCH] Completed launcher-specific search in 335.217µs
+2025/12/26 21:31:35 [ICON-CACHE] MISS: dialog-error@32
+2025/12/26 21:31:35 [ICON-CACHE] STORED: dialog-error@32 (cache size: 7)
+2025/12/26 21:31:36 [REGISTRY-SEARCH] Started for query='%10m'
+2025/12/26 21:31:36 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10m'
+2025/12/26 21:31:36 [REGISTRY-SEARCH] Launcher-specific populate completed in 191.92µs, 1 items
+2025/12/26 21:31:36 [REGISTRY-SEARCH] Completed launcher-specific search in 282.541µs
+2025/12/26 21:31:36 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:31:36 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:31:42 [HOOK-REGISTRY] Hook 'timer_hook' handled OnSelect event
+2025/12/26 21:31:42 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:31:42 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:31:42 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 74.676µs
+2025/12/26 21:31:42 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:31:42 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:31:42 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:31:42 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:31:42 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:31:42 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:31:42 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:31:42 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:31:42 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:31:42 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:31:42 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:31:42 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:31:56 Received IPC message: launcher
+2025/12/26 21:31:56 PresentLauncher called, launcher=true
+2025/12/26 21:31:56 Launcher.Show() called, running=true
+2025/12/26 21:31:56 Launcher.Show() returned: <nil>
+2025/12/26 21:31:57 [REGISTRY-SEARCH] Started for query='n'
+2025/12/26 21:31:57 [SEARCH-CACHE] MISS: key='n:'
+2025/12/26 21:31:57 [REGISTRY-SEARCH] Cache MISS for query='n' in 30.443µs
+2025/12/26 21:31:57 [REGISTRY-SEARCH] Using AppLauncher for general query='n'
+2025/12/26 21:31:57 [APP-LAUNCHER] Populate started for query='n'
+2025/12/26 21:31:57 [APP-LAUNCHER] Fuzzy search started for query='n' against 86 apps
+2025/12/26 21:31:57 [APP-LAUNCHER] Fuzzy find completed in 134.155µs, found 48 raw matches
+2025/12/26 21:31:57 [APP-LAUNCHER] Fuzzy search completed in 153.896µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:31:57 [APP-LAUNCHER] Fuzzy search completed in 163.519µs, returned 10 results
+2025/12/26 21:31:57 [REGISTRY-SEARCH] AppLauncher populate completed in 167.329µs, 10 items
+2025/12/26 21:31:57 [SEARCH-CACHE] STORED FAST: key='n:', 10 results, duration=0.26ms
+2025/12/26 21:31:57 [REGISTRY-SEARCH] Cached results for query='n' (duration=0.26ms)
+2025/12/26 21:31:57 [REGISTRY-SEARCH] Completed general search in 276.194µs, final result count: 10
+2025/12/26 21:31:57 [ICON-CACHE] MISS: network-wireless-symbolic@32
+2025/12/26 21:31:57 [ICON-CACHE] STORED: network-wireless-symbolic@32 (cache size: 8)
+2025/12/26 21:31:57 [ICON-CACHE] MISS: nvim@32
+2025/12/26 21:31:57 [ICON-CACHE] STORED: nvim@32 (cache size: 9)
+2025/12/26 21:31:57 [ICON-CACHE] MISS: nvm-desktop@32
+2025/12/26 21:31:57 [ICON-CACHE] STORED: nvm-desktop@32 (cache size: 10)
+2025/12/26 21:31:57 [ICON-CACHE] MISS: document-new@32
+2025/12/26 21:31:57 [ICON-CACHE] STORED: document-new@32 (cache size: 11)
+2025/12/26 21:31:57 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:31:57 [ICON-CACHE] MISS: sway@32
+2025/12/26 21:31:57 [ICON-CACHE] Icon 'sway' not found in theme, returning nil
+2025/12/26 21:31:57 [ICON-CACHE] MISS: emacs@32
+2025/12/26 21:31:57 [ICON-CACHE] STORED: emacs@32 (cache size: 12)
+2025/12/26 21:31:57 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:31:57 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:31:57 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:31:58 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:31:58 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:31:58 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 48.308µs
+2025/12/26 21:31:58 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:31:58 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:31:58 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:31:58 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:31:58 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:31:58 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:31:58 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:31:58 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:31:58 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:31:58 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:31:58 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:31:58 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Started for query='f'
+2025/12/26 21:32:10 [SEARCH-CACHE] MISS: key='f:'
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Cache MISS for query='f' in 55.605µs
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Using AppLauncher for general query='f'
+2025/12/26 21:32:10 [APP-LAUNCHER] Populate started for query='f'
+2025/12/26 21:32:10 [APP-LAUNCHER] Fuzzy search started for query='f' against 86 apps
+2025/12/26 21:32:10 [APP-LAUNCHER] Fuzzy find completed in 179µs, found 17 raw matches
+2025/12/26 21:32:10 [APP-LAUNCHER] Fuzzy search completed in 258.713µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:32:10 [APP-LAUNCHER] Fuzzy search completed in 281.14µs, returned 10 results
+2025/12/26 21:32:10 [REGISTRY-SEARCH] AppLauncher populate completed in 289.704µs, 10 items
+2025/12/26 21:32:10 [SEARCH-CACHE] STORED FAST: key='f:', 10 results, duration=0.47ms
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Cached results for query='f' (duration=0.47ms)
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Completed general search in 503.701µs, final result count: 10
+2025/12/26 21:32:10 [ICON-CACHE] MISS: foot@32
+2025/12/26 21:32:10 [ICON-CACHE] STORED: foot@32 (cache size: 13)
+2025/12/26 21:32:10 [ICON-CACHE] MISS: firefox@32
+2025/12/26 21:32:10 [ICON-CACHE] STORED: firefox@32 (cache size: 14)
+2025/12/26 21:32:10 [ICON-CACHE] MISS: firewall-config@32
+2025/12/26 21:32:10 [ICON-CACHE] STORED: firewall-config@32 (cache size: 15)
+2025/12/26 21:32:10 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:32:10 [ICON-CACHE] MISS: utilities-terminal@32
+2025/12/26 21:32:10 [ICON-CACHE] STORED: utilities-terminal@32 (cache size: 16)
+2025/12/26 21:32:10 [ICON-CACHE] MISS: steam_icon_440@32
+2025/12/26 21:32:10 [ICON-CACHE] STORED: steam_icon_440@32 (cache size: 17)
+2025/12/26 21:32:10 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:32:10 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Started for query='fo'
+2025/12/26 21:32:10 [SEARCH-CACHE] MISS: key='fo:'
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Cache MISS for query='fo' in 49.685µs
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Using AppLauncher for general query='fo'
+2025/12/26 21:32:10 [APP-LAUNCHER] Populate started for query='fo'
+2025/12/26 21:32:10 [APP-LAUNCHER] Fuzzy search started for query='fo' against 86 apps
+2025/12/26 21:32:10 [APP-LAUNCHER] Fuzzy find completed in 152.94µs, found 10 raw matches
+2025/12/26 21:32:10 [APP-LAUNCHER] Fuzzy search completed in 185.778µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:32:10 [APP-LAUNCHER] Fuzzy search completed in 202.154µs, returned 10 results
+2025/12/26 21:32:10 [REGISTRY-SEARCH] AppLauncher populate completed in 209.923µs, 10 items
+2025/12/26 21:32:10 [SEARCH-CACHE] STORED FAST: key='fo:', 10 results, duration=0.36ms
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Cached results for query='fo' (duration=0.36ms)
+2025/12/26 21:32:10 [REGISTRY-SEARCH] Completed general search in 391.492µs, final result count: 10
+2025/12/26 21:32:10 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: firefox@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:32:10 [ICON-CACHE] HIT: steam_icon_440@32
+2025/12/26 21:32:10 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:32:10 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:32:10 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:32:10 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:32:10 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:11 [REGISTRY-SEARCH] Started for query='f'
+2025/12/26 21:32:11 [SEARCH-CACHE] HIT: key='f:', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:32:11 [REGISTRY-SEARCH] Cache HIT for query='f', returned 10 items in 55.347µs
+2025/12/26 21:32:11 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: firefox@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: firewall-config@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: utilities-terminal@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: steam_icon_440@32
+2025/12/26 21:32:11 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:32:11 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:32:11 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:32:11 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:32:11 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 52.214µs
+2025/12/26 21:32:11 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:32:11 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:32:11 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:32:11 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:32:11 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:32:11 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:32:11 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:32:37 Received IPC message: launcher
+2025/12/26 21:32:37 PresentLauncher called, launcher=true
+2025/12/26 21:32:37 Launcher.Show() called, running=true
+2025/12/26 21:32:37 Launcher.Show() returned: <nil>
+2025/12/26 21:32:37 [REGISTRY-SEARCH] Started for query='>'
+2025/12/26 21:32:37 [SEARCH-CACHE] HIT: key='>:', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:32:37 [REGISTRY-SEARCH] Cache HIT for query='>', returned 0 items in 29.057µs
+2025/12/26 21:32:38 [REGISTRY-SEARCH] Started for query='>timer '
+2025/12/26 21:32:38 [SEARCH-CACHE] MISS: key='>timer :'
+2025/12/26 21:32:38 [REGISTRY-SEARCH] Cache MISS for query='>timer ' in 46.146µs
+2025/12/26 21:32:38 [REGISTRY-SEARCH] Using AppLauncher for general query='>timer '
+2025/12/26 21:32:38 [APP-LAUNCHER] Populate started for query='>timer '
+2025/12/26 21:32:38 [APP-LAUNCHER] Fuzzy search started for query='>timer' against 86 apps
+2025/12/26 21:32:38 [APP-LAUNCHER] Fuzzy find completed in 172.958µs, found 0 raw matches
+2025/12/26 21:32:38 [APP-LAUNCHER] Fuzzy search completed in 412.533µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:32:38 [APP-LAUNCHER] Fuzzy search completed in 451.273µs, returned 0 results
+2025/12/26 21:32:38 [REGISTRY-SEARCH] AppLauncher populate completed in 460.576µs, 0 items
+2025/12/26 21:32:38 [SEARCH-CACHE] STORED FAST: key='>timer :', 0 results, duration=0.59ms
+2025/12/26 21:32:38 [REGISTRY-SEARCH] Cached results for query='>timer ' (duration=0.59ms)
+2025/12/26 21:32:38 [REGISTRY-SEARCH] Completed general search in 622.564µs, final result count: 0
+2025/12/26 21:32:39 [REGISTRY-SEARCH] Started for query='>'
+2025/12/26 21:32:39 [SEARCH-CACHE] HIT: key='>:', returning 0 cached results (TTL: 30m0s)
+2025/12/26 21:32:39 [REGISTRY-SEARCH] Cache HIT for query='>', returned 0 items in 49.766µs
+2025/12/26 21:32:39 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:32:39 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:32:39 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 48.334µs
+2025/12/26 21:32:39 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:32:39 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:32:39 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:32:39 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:32:39 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:32:39 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:32:39 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:39 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:39 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:39 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:32:39 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:32:39 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:32:40 [REGISTRY-SEARCH] Started for query='%$'
+2025/12/26 21:32:40 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='$'
+2025/12/26 21:32:40 [REGISTRY-SEARCH] Launcher-specific populate completed in 112.68µs, 1 items
+2025/12/26 21:32:40 [REGISTRY-SEARCH] Completed launcher-specific search in 176.844µs
+2025/12/26 21:32:40 [ICON-CACHE] HIT: dialog-error@32
+2025/12/26 21:32:40 [REGISTRY-SEARCH] Started for query='%'
+2025/12/26 21:32:40 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=''
+2025/12/26 21:32:40 [REGISTRY-SEARCH] Launcher-specific populate completed in 3.558µs, 1 items
+2025/12/26 21:32:40 [REGISTRY-SEARCH] Completed launcher-specific search in 109.472µs
+2025/12/26 21:32:40 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:32:40 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:32:41 [REGISTRY-SEARCH] Started for query='%1'
+2025/12/26 21:32:41 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='1'
+2025/12/26 21:32:41 [REGISTRY-SEARCH] Launcher-specific populate completed in 132.177µs, 1 items
+2025/12/26 21:32:41 [REGISTRY-SEARCH] Completed launcher-specific search in 189.796µs
+2025/12/26 21:32:41 [ICON-CACHE] HIT: dialog-error@32
+2025/12/26 21:32:42 [REGISTRY-SEARCH] Started for query='%'
+2025/12/26 21:32:42 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=''
+2025/12/26 21:32:42 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.56µs, 1 items
+2025/12/26 21:32:42 [REGISTRY-SEARCH] Completed launcher-specific search in 8.534434ms
+2025/12/26 21:32:42 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:32:42 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:32:43 [REGISTRY-SEARCH] Started for query='%5'
+2025/12/26 21:32:43 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='5'
+2025/12/26 21:32:43 [REGISTRY-SEARCH] Launcher-specific populate completed in 192.466µs, 1 items
+2025/12/26 21:32:43 [REGISTRY-SEARCH] Completed launcher-specific search in 245.124µs
+2025/12/26 21:32:43 [ICON-CACHE] HIT: dialog-error@32
+2025/12/26 21:32:43 [REGISTRY-SEARCH] Started for query='%5s'
+2025/12/26 21:32:43 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='5s'
+2025/12/26 21:32:43 [REGISTRY-SEARCH] Launcher-specific populate completed in 218.455µs, 1 items
+2025/12/26 21:32:43 [REGISTRY-SEARCH] Completed launcher-specific search in 297.248µs
+2025/12/26 21:32:43 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:32:43 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:32:44 [HOOK-REGISTRY] Hook 'timer_hook' handled OnSelect event
+2025/12/26 21:32:44 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:32:44 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:32:44 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 16.774µs
+2025/12/26 21:32:44 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:32:44 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:32:44 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:32:44 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:32:44 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:32:44 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:32:44 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:44 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:44 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:32:44 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:32:44 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:32:44 [ICON-CACHE] HIT: btop@32
