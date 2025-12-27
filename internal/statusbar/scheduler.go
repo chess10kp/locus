@@ -327,7 +327,9 @@ func (s *UpdateScheduler) HandleIPCMessage(message string) bool {
 	var handledModule string
 
 	s.mu.RLock()
+	log.Printf("[SCHEDULER] Checking modules in updates map: %d modules", len(s.updates))
 	for name := range s.updates {
+		log.Printf("[SCHEDULER] Checking module '%s' for IPC handling", name)
 		if handled := s.registry.HandleModuleIPC(name, message); handled {
 			handledModule = name
 			break

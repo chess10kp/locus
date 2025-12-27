@@ -11235,3 +11235,825 @@
 2025/12/26 22:37:08 Loaded launcher styles from config
 2025/12/26 22:37:08 IPC server listening on /tmp/locus_socket
 2025/12/26 22:37:08 Initialization complete
+2025/12/26 22:41:52 Received IPC message: launcher
+2025/12/26 22:41:52 PresentLauncher called, launcher=true
+2025/12/26 22:41:52 Launcher.Show() called, running=false
+2025/12/26 22:41:52 Launcher not running, starting...
+2025/12/26 22:41:52 Launcher.Start() - beginning
+2025/12/26 22:41:52 Setting window size
+2025/12/26 22:41:52 Loading built-in launchers
+2025/12/26 22:41:52 Registered trigger: > -> shell
+2025/12/26 22:41:52 Registered trigger: sh -> shell
+2025/12/26 22:41:52 Registered trigger: shell -> shell
+2025/12/26 22:41:52 Registered trigger: cmd -> shell
+2025/12/26 22:41:52 Registered trigger: command -> shell
+2025/12/26 22:41:52 [APP-LAUNCHER] Starting background app loading
+2025/12/26 22:41:52 Registered trigger: : -> web
+2025/12/26 22:41:52 Registered trigger: web -> web
+2025/12/26 22:41:52 Registered trigger: url -> web
+2025/12/26 22:41:52 Registered trigger: open -> web
+2025/12/26 22:41:52 Registered trigger: = -> calc
+2025/12/26 22:41:52 Registered trigger: calc -> calc
+2025/12/26 22:41:52 Registered trigger: math -> calc
+2025/12/26 22:41:52 Registered trigger: % -> timer
+2025/12/26 22:41:52 [HOOK-REGISTRY] Registered hook 'timer_hook' for launcher 'timer'
+2025/12/26 22:41:52 Registered trigger: brightness -> brightness
+2025/12/26 22:41:52 Registered trigger: bright -> brightness
+2025/12/26 22:41:52 Registered trigger: bri -> brightness
+2025/12/26 22:41:52 Registered trigger: screenshot -> screenshot
+2025/12/26 22:41:52 Registered trigger: shot -> screenshot
+2025/12/26 22:41:52 Registered trigger: scr -> screenshot
+2025/12/26 22:41:52 Registered trigger: ss -> screenshot
+2025/12/26 22:41:52 Registered trigger: lock -> lock
+2025/12/26 22:41:52 Registered trigger: screenlock -> lock
+2025/12/26 22:41:52 Registered trigger: lockscreen -> lock
+2025/12/26 22:41:52 Registered trigger: kill -> kill
+2025/12/26 22:41:52 Registered trigger: k -> kill
+2025/12/26 22:41:52 Registered trigger: focus -> focus
+2025/12/26 22:41:52 Registered trigger: f -> focus
+2025/12/26 22:41:52 Registered trigger: wallpaper -> wallpaper
+2025/12/26 22:41:52 Registered trigger: wp -> wallpaper
+2025/12/26 22:41:52 Registered trigger: bg -> wallpaper
+2025/12/26 22:41:52 Registered trigger: clipboard -> clipboard
+2025/12/26 22:41:52 Registered trigger: cb -> clipboard
+2025/12/26 22:41:52 Registered trigger: clip -> clipboard
+2025/12/26 22:41:52 Registered trigger: history -> clipboard
+2025/12/26 22:41:52 Registered trigger: wifi -> wifi
+2025/12/26 22:41:52 Registered trigger: wlan -> wifi
+2025/12/26 22:41:52 Registered trigger: file -> file
+2025/12/26 22:41:52 Registered trigger: f -> file
+2025/12/26 22:41:52 Registered trigger: music -> music
+2025/12/26 22:41:52 Registered trigger: m -> music
+2025/12/26 22:41:52 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 22:41:52 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 22:41:52 Initializing layer shell
+2025/12/26 22:41:52 Launcher started successfully - window should be visible now
+2025/12/26 22:41:52 Launcher started successfully
+2025/12/26 22:41:52 [APP-LAUNCHER] Precomputed search data in 11.386µs
+2025/12/26 22:41:52 [APP-LAUNCHER] Background load completed in 683.234µs, loaded 86 apps
+2025/12/26 22:41:52 Launcher.Show() returned: <nil>
+2025/12/26 22:41:52 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 22:41:52 [SEARCH-CACHE] MISS: key='m:'
+2025/12/26 22:41:52 [REGISTRY-SEARCH] Cache MISS for query='m' in 26.012µs
+2025/12/26 22:41:52 [REGISTRY-SEARCH] Using AppLauncher for general query='m'
+2025/12/26 22:41:52 [APP-LAUNCHER] Populate started for query='m'
+2025/12/26 22:41:52 [APP-LAUNCHER] Fuzzy search started for query='m' against 86 apps
+2025/12/26 22:41:52 [APP-LAUNCHER] Fuzzy find completed in 85.886µs, found 32 raw matches
+2025/12/26 22:41:52 [APP-LAUNCHER] Fuzzy search completed in 104.618µs, returning 10 items (TEMP: no filtering)
+2025/12/26 22:41:52 [APP-LAUNCHER] Fuzzy search completed in 113.556µs, returned 10 results
+2025/12/26 22:41:52 [REGISTRY-SEARCH] AppLauncher populate completed in 117.728µs, 10 items
+2025/12/26 22:41:52 [REGISTRY-SEARCH] Deduplication removed 1 duplicates (10 -> 9)
+2025/12/26 22:41:52 [SEARCH-CACHE] STORED FAST: key='m:', 9 results, duration=0.20ms
+2025/12/26 22:41:52 [REGISTRY-SEARCH] Cached results for query='m' (duration=0.20ms)
+2025/12/26 22:41:52 [REGISTRY-SEARCH] Completed general search in 219.089µs, final result count: 9
+2025/12/26 22:41:52 [ICON-CACHE] MISS: org.gnome.Meld@32
+2025/12/26 22:41:52 [ICON-CACHE] STORED: org.gnome.Meld@32 (cache size: 1)
+2025/12/26 22:41:52 [ICON-CACHE] MISS: libreoffice-startcenter@32
+2025/12/26 22:41:52 [ICON-CACHE] STORED: libreoffice-startcenter@32 (cache size: 2)
+2025/12/26 22:41:52 [ICON-CACHE] MISS: cups@32
+2025/12/26 22:41:52 [ICON-CACHE] STORED: cups@32 (cache size: 3)
+2025/12/26 22:41:52 [ICON-CACHE] MISS: emacs@32
+2025/12/26 22:41:52 [ICON-CACHE] STORED: emacs@32 (cache size: 4)
+2025/12/26 22:41:52 [ICON-CACHE] MISS: CMakeSetup@32
+2025/12/26 22:41:52 [ICON-CACHE] STORED: CMakeSetup@32 (cache size: 5)
+2025/12/26 22:41:52 [ICON-CACHE] MISS: network-wireless-symbolic@32
+2025/12/26 22:41:52 [ICON-CACHE] STORED: network-wireless-symbolic@32 (cache size: 6)
+2025/12/26 22:41:52 [ICON-CACHE] MISS: mpv@32
+2025/12/26 22:41:52 [ICON-CACHE] STORED: mpv@32 (cache size: 7)
+2025/12/26 22:41:52 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 22:41:52 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 22:41:52 [ICON-CACHE] MISS: gvim@32
+2025/12/26 22:41:52 [ICON-CACHE] STORED: gvim@32 (cache size: 8)
+2025/12/26 22:41:53 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 22:41:53 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 22:41:53 [REGISTRY-SEARCH] Launcher-specific populate completed in 4.82964ms, 56 items
+2025/12/26 22:41:53 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 22:41:53 [REGISTRY-SEARCH] Completed launcher-specific search in 4.925991ms
+2025/12/26 22:41:53 [ICON-CACHE] MISS: media-playback-start@32
+2025/12/26 22:41:53 [ICON-CACHE] STORED: media-playback-start@32 (cache size: 9)
+2025/12/26 22:41:53 [ICON-CACHE] MISS: media-skip-forward@32
+2025/12/26 22:41:53 [ICON-CACHE] STORED: media-skip-forward@32 (cache size: 10)
+2025/12/26 22:41:53 [ICON-CACHE] MISS: media-skip-backward@32
+2025/12/26 22:41:53 [ICON-CACHE] STORED: media-skip-backward@32 (cache size: 11)
+2025/12/26 22:41:53 [ICON-CACHE] MISS: edit-clear-all@32
+2025/12/26 22:41:53 [ICON-CACHE] STORED: edit-clear-all@32 (cache size: 12)
+2025/12/26 22:41:53 [ICON-CACHE] MISS: view-list@32
+2025/12/26 22:41:53 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 22:41:53 [ICON-CACHE] MISS: folder-music@32
+2025/12/26 22:41:53 [ICON-CACHE] STORED: folder-music@32 (cache size: 13)
+2025/12/26 22:41:53 [ICON-CACHE] MISS: audio-x-generic@32
+2025/12/26 22:41:53 [ICON-CACHE] STORED: audio-x-generic@32 (cache size: 14)
+2025/12/26 22:41:53 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:41:53 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:41:53 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Started for query='m clear'
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='clear'
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.752561ms, 1 items
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Completed launcher-specific search in 5.829349ms
+2025/12/26 22:41:54 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 22:41:54 [HOOK-REGISTRY] Hook 'music_hook' handled OnSelect event
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 22:41:54 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Cache MISS for query='' in 14.782µs
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 22:41:54 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 22:41:54 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 22:41:54 [REGISTRY-SEARCH] AppLauncher populate completed in 6.518µs, 10 items
+2025/12/26 22:41:54 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.05ms
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Cached results for query='' (duration=0.05ms)
+2025/12/26 22:41:54 [REGISTRY-SEARCH] Completed general search in 54.772µs, final result count: 10
+2025/12/26 22:41:54 [ICON-CACHE] MISS: abiword@32
+2025/12/26 22:41:54 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 22:41:54 [ICON-CACHE] MISS: org.xfce.about@32
+2025/12/26 22:41:54 [ICON-CACHE] STORED: org.xfce.about@32 (cache size: 15)
+2025/12/26 22:41:54 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 22:41:54 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 22:41:54 [ICON-CACHE] MISS: audacious@32
+2025/12/26 22:41:54 [ICON-CACHE] STORED: audacious@32 (cache size: 16)
+2025/12/26 22:41:54 [ICON-CACHE] MISS: network-wired@32
+2025/12/26 22:41:54 [ICON-CACHE] STORED: network-wired@32 (cache size: 17)
+2025/12/26 22:41:54 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:41:54 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:41:54 [ICON-CACHE] MISS: blender@32
+2025/12/26 22:41:54 [ICON-CACHE] STORED: blender@32 (cache size: 18)
+2025/12/26 22:41:54 [ICON-CACHE] MISS: org.gnome.Boxes@32
+2025/12/26 22:41:54 [ICON-CACHE] STORED: org.gnome.Boxes@32 (cache size: 19)
+2025/12/26 22:41:54 [ICON-CACHE] MISS: btop@32
+2025/12/26 22:41:54 [ICON-CACHE] STORED: btop@32 (cache size: 20)
+2025/12/26 22:42:59 Received IPC message: launcher
+2025/12/26 22:42:59 PresentLauncher called, launcher=true
+2025/12/26 22:42:59 Launcher.Show() called, running=true
+2025/12/26 22:42:59 Launcher.Show() returned: <nil>
+2025/12/26 22:43:00 [REGISTRY-SEARCH] Started for query='woeif'
+2025/12/26 22:43:00 [SEARCH-CACHE] MISS: key='woeif:'
+2025/12/26 22:43:00 [REGISTRY-SEARCH] Cache MISS for query='woeif' in 46.433µs
+2025/12/26 22:43:00 [REGISTRY-SEARCH] Using AppLauncher for general query='woeif'
+2025/12/26 22:43:00 [APP-LAUNCHER] Populate started for query='woeif'
+2025/12/26 22:43:00 [APP-LAUNCHER] Fuzzy search started for query='woeif' against 86 apps
+2025/12/26 22:43:00 [APP-LAUNCHER] Fuzzy find completed in 79.155µs, found 0 raw matches
+2025/12/26 22:43:00 [APP-LAUNCHER] Fuzzy search completed in 86.84µs, returning 0 items (TEMP: no filtering)
+2025/12/26 22:43:00 [APP-LAUNCHER] Fuzzy search completed in 94.011µs, returned 0 results
+2025/12/26 22:43:00 [REGISTRY-SEARCH] AppLauncher populate completed in 97.594µs, 0 items
+2025/12/26 22:43:00 [SEARCH-CACHE] STORED FAST: key='woeif:', 0 results, duration=0.19ms
+2025/12/26 22:43:00 [REGISTRY-SEARCH] Cached results for query='woeif' (duration=0.19ms)
+2025/12/26 22:43:00 [REGISTRY-SEARCH] Completed general search in 206.266µs, final result count: 0
+2025/12/26 22:43:00 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 22:43:00 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 22:43:00 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 42.779µs
+2025/12/26 22:43:00 [ICON-CACHE] MISS: abiword@32
+2025/12/26 22:43:00 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 22:43:00 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 22:43:00 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 22:43:00 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 22:43:00 [ICON-CACHE] HIT: audacious@32
+2025/12/26 22:43:00 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:43:00 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:43:00 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:43:00 [ICON-CACHE] HIT: blender@32
+2025/12/26 22:43:00 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 22:43:00 [ICON-CACHE] HIT: btop@32
+2025/12/26 22:43:35 Failed to load config: toml: cannot decode TOML string into struct field config.StatusBarLayout.Right of type []string
+2025/12/26 22:43:35 Locus starting...
+2025/12/26 22:43:35 Initializing components...
+2025/12/26 22:43:35 Loaded launcher CSS from /home/sigma/.config/locus/launcher.css
+2025/12/26 22:43:35 Failed to start notification manager: failed to start IPC bridge: failed to listen on socket ~/.cache/locus/notifications.json.sock: listen unix ~/.cache/locus/notifications.json.sock: bind: no such file or directory
+2025/12/26 22:43:35 Created statusbar windows for 1 monitors
+2025/12/26 22:43:35 Loading modules, config: [launcher workspaces binding_mode emacs_clock notifications time battery custom_message]
+2025/12/26 22:43:35 Loading module 'launcher' with config: {0  false []  map[]}
+2025/12/26 22:43:35 Registered module instance: launcher
+2025/12/26 22:43:35 Successfully loaded module: launcher
+2025/12/26 22:43:35 Loading module 'workspaces' with config: {0  false []  map[]}
+2025/12/26 22:43:35 Registered module instance: workspaces
+2025/12/26 22:43:35 Successfully loaded module: workspaces
+2025/12/26 22:43:35 Loading module 'binding_mode' with config: {0  false []  map[]}
+2025/12/26 22:43:35 Registered module instance: binding_mode
+2025/12/26 22:43:35 Successfully loaded module: binding_mode
+2025/12/26 22:43:35 Loading module 'emacs_clock' with config: {10  true []  map[]}
+2025/12/26 22:43:35 Registered module instance: emacs_clock
+2025/12/26 22:43:35 Successfully loaded module: emacs_clock
+2025/12/26 22:43:35 Loading module 'notifications' with config: {0  false []  map[]}
+2025/12/26 22:43:35 Registered module instance: notifications
+2025/12/26 22:43:35 Successfully loaded module: notifications
+2025/12/26 22:43:35 Loading module 'time' with config: {1 15:04:05 true []  map[]}
+2025/12/26 22:43:35 Registered module instance: time
+2025/12/26 22:43:35 Successfully loaded module: time
+2025/12/26 22:43:35 Loading module 'battery' with config: {30  true []  map[]}
+2025/12/26 22:43:35 Registered module instance: battery
+2025/12/26 22:43:35 Successfully loaded module: battery
+2025/12/26 22:43:35 Loading module 'custom_message' with config: {0  false []  map[]}
+2025/12/26 22:43:35 Registered module instance: custom_message
+2025/12/26 22:43:35 Successfully loaded module: custom_message
+2025/12/26 22:43:35 Creating widget for module: launcher
+2025/12/26 22:43:35 Scheduled module 'launcher' with update mode: static
+2025/12/26 22:43:35 Successfully created widget for module: launcher
+2025/12/26 22:43:35 Creating widget for module: workspaces
+2025/12/26 22:43:35 Scheduled module 'workspaces' with update mode: periodic
+2025/12/26 22:43:35 Successfully created widget for module: workspaces
+2025/12/26 22:43:35 Creating widget for module: binding_mode
+2025/12/26 22:43:35 Scheduled module 'binding_mode' with update mode: periodic
+2025/12/26 22:43:35 Successfully created widget for module: binding_mode
+2025/12/26 22:43:35 Creating widget for module: emacs_clock
+2025/12/26 22:43:35 Scheduled module 'emacs_clock' with update mode: periodic
+2025/12/26 22:43:35 Successfully created widget for module: emacs_clock
+2025/12/26 22:43:35 Creating widget for module: notifications
+2025/12/26 22:43:35 Scheduled module 'notifications' with update mode: periodic
+2025/12/26 22:43:35 Successfully created widget for module: notifications
+2025/12/26 22:43:35 Creating widget for module: time
+2025/12/26 22:43:35 Scheduled module 'time' with update mode: periodic
+2025/12/26 22:43:35 Successfully created widget for module: time
+2025/12/26 22:43:35 Creating widget for module: battery
+2025/12/26 22:43:35 Scheduled module 'battery' with update mode: periodic
+2025/12/26 22:43:35 Successfully created widget for module: battery
+2025/12/26 22:43:35 Creating widget for module: custom_message
+2025/12/26 22:43:35 Scheduled module 'custom_message' with update mode: on-demand
+2025/12/26 22:43:35 Successfully created widget for module: custom_message
+2025/12/26 22:43:35 Update scheduler started
+2025/12/26 22:43:35 IPC server started on /tmp/locus_socket
+2025/12/26 22:43:35 Status bar started successfully on 1 monitors
+2025/12/26 22:43:35 Loaded launcher styles from config
+2025/12/26 22:43:35 IPC server listening on /tmp/locus_socket
+2025/12/26 22:43:35 Initialization complete
+2025/12/26 22:43:36 Received IPC message: launcher
+2025/12/26 22:43:36 PresentLauncher called, launcher=true
+2025/12/26 22:43:36 Launcher.Show() called, running=false
+2025/12/26 22:43:36 Launcher not running, starting...
+2025/12/26 22:43:36 Launcher.Start() - beginning
+2025/12/26 22:43:36 Setting window size
+2025/12/26 22:43:36 Loading built-in launchers
+2025/12/26 22:43:36 Registered trigger: > -> shell
+2025/12/26 22:43:36 Registered trigger: sh -> shell
+2025/12/26 22:43:36 Registered trigger: shell -> shell
+2025/12/26 22:43:36 Registered trigger: cmd -> shell
+2025/12/26 22:43:36 Registered trigger: command -> shell
+2025/12/26 22:43:36 Registered trigger: : -> web
+2025/12/26 22:43:36 Registered trigger: web -> web
+2025/12/26 22:43:36 Registered trigger: url -> web
+2025/12/26 22:43:36 Registered trigger: open -> web
+2025/12/26 22:43:36 Registered trigger: = -> calc
+2025/12/26 22:43:36 Registered trigger: calc -> calc
+2025/12/26 22:43:36 Registered trigger: math -> calc
+2025/12/26 22:43:36 Registered trigger: % -> timer
+2025/12/26 22:43:36 [HOOK-REGISTRY] Registered hook 'timer_hook' for launcher 'timer'
+2025/12/26 22:43:36 Registered trigger: brightness -> brightness
+2025/12/26 22:43:36 [APP-LAUNCHER] Starting background app loading
+2025/12/26 22:43:36 Registered trigger: bright -> brightness
+2025/12/26 22:43:36 Registered trigger: bri -> brightness
+2025/12/26 22:43:36 Registered trigger: screenshot -> screenshot
+2025/12/26 22:43:36 Registered trigger: shot -> screenshot
+2025/12/26 22:43:36 Registered trigger: scr -> screenshot
+2025/12/26 22:43:36 Registered trigger: ss -> screenshot
+2025/12/26 22:43:36 Registered trigger: lock -> lock
+2025/12/26 22:43:36 Registered trigger: screenlock -> lock
+2025/12/26 22:43:36 Registered trigger: lockscreen -> lock
+2025/12/26 22:43:36 Registered trigger: kill -> kill
+2025/12/26 22:43:36 Registered trigger: k -> kill
+2025/12/26 22:43:36 Registered trigger: focus -> focus
+2025/12/26 22:43:36 Registered trigger: f -> focus
+2025/12/26 22:43:36 Registered trigger: wallpaper -> wallpaper
+2025/12/26 22:43:36 Registered trigger: wp -> wallpaper
+2025/12/26 22:43:36 Registered trigger: bg -> wallpaper
+2025/12/26 22:43:36 Registered trigger: clipboard -> clipboard
+2025/12/26 22:43:36 Registered trigger: cb -> clipboard
+2025/12/26 22:43:36 Registered trigger: clip -> clipboard
+2025/12/26 22:43:36 Registered trigger: history -> clipboard
+2025/12/26 22:43:36 Registered trigger: wifi -> wifi
+2025/12/26 22:43:36 Registered trigger: wlan -> wifi
+2025/12/26 22:43:36 Registered trigger: file -> file
+2025/12/26 22:43:36 Registered trigger: f -> file
+2025/12/26 22:43:36 Registered trigger: music -> music
+2025/12/26 22:43:36 Registered trigger: m -> music
+2025/12/26 22:43:36 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 22:43:36 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 22:43:36 Initializing layer shell
+2025/12/26 22:43:36 Launcher started successfully - window should be visible now
+2025/12/26 22:43:36 Launcher started successfully
+2025/12/26 22:43:36 [APP-LAUNCHER] Precomputed search data in 13.686µs
+2025/12/26 22:43:36 [APP-LAUNCHER] Background load completed in 802.156µs, loaded 86 apps
+2025/12/26 22:43:36 Launcher.Show() returned: <nil>
+2025/12/26 22:43:36 [REGISTRY-SEARCH] Started for query='%'
+2025/12/26 22:43:36 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=''
+2025/12/26 22:43:36 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.712µs, 1 items
+2025/12/26 22:43:36 [REGISTRY-SEARCH] Completed launcher-specific search in 89.063µs
+2025/12/26 22:43:36 [ICON-CACHE] MISS: clock@32
+2025/12/26 22:43:36 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 22:43:37 [REGISTRY-SEARCH] Started for query='%t'
+2025/12/26 22:43:37 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='t'
+2025/12/26 22:43:37 [REGISTRY-SEARCH] Launcher-specific populate completed in 108.735µs, 1 items
+2025/12/26 22:43:37 [REGISTRY-SEARCH] Completed launcher-specific search in 176.902µs
+2025/12/26 22:43:37 [ICON-CACHE] MISS: dialog-error@32
+2025/12/26 22:43:37 [ICON-CACHE] STORED: dialog-error@32 (cache size: 1)
+2025/12/26 22:43:37 [REGISTRY-SEARCH] Started for query='%'
+2025/12/26 22:43:37 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=''
+2025/12/26 22:43:37 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.206µs, 1 items
+2025/12/26 22:43:37 [REGISTRY-SEARCH] Completed launcher-specific search in 84.57µs
+2025/12/26 22:43:37 [ICON-CACHE] MISS: clock@32
+2025/12/26 22:43:37 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 22:43:38 [REGISTRY-SEARCH] Started for query='%20'
+2025/12/26 22:43:38 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='20'
+2025/12/26 22:43:38 [REGISTRY-SEARCH] Launcher-specific populate completed in 167.129µs, 1 items
+2025/12/26 22:43:38 [REGISTRY-SEARCH] Completed launcher-specific search in 240.956µs
+2025/12/26 22:43:38 [ICON-CACHE] HIT: dialog-error@32
+2025/12/26 22:43:38 [REGISTRY-SEARCH] Started for query='%20sa'
+2025/12/26 22:43:38 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='20sa'
+2025/12/26 22:43:38 [REGISTRY-SEARCH] Launcher-specific populate completed in 43.81µs, 1 items
+2025/12/26 22:43:38 [REGISTRY-SEARCH] Completed launcher-specific search in 7.174375ms
+2025/12/26 22:43:38 [ICON-CACHE] HIT: dialog-error@32
+2025/12/26 22:43:39 [REGISTRY-SEARCH] Started for query='%20s'
+2025/12/26 22:43:39 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='20s'
+2025/12/26 22:43:39 [REGISTRY-SEARCH] Launcher-specific populate completed in 139.076µs, 1 items
+2025/12/26 22:43:39 [REGISTRY-SEARCH] Completed launcher-specific search in 201.881µs
+2025/12/26 22:43:39 [ICON-CACHE] MISS: clock@32
+2025/12/26 22:43:39 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 22:43:40 Received IPC message: statusbar:timer:20s
+2025/12/26 22:43:40 [HOOK-REGISTRY] Hook 'timer_hook' handled OnSelect event
+2025/12/26 22:43:40 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 22:43:40 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 22:43:40 [REGISTRY-SEARCH] Cache MISS for query='' in 21.57µs
+2025/12/26 22:43:40 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 22:43:40 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 22:43:40 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 22:43:40 [STATUSBAR] Received IPC message: timer:20s
+2025/12/26 22:43:40 [REGISTRY-SEARCH] AppLauncher populate completed in 6.29µs, 10 items
+2025/12/26 22:43:40 [REGISTRY] IPC message to module 'battery': handled=false, message=timer:20s
+2025/12/26 22:43:40 CustomMessageModule received IPC: timer:20s
+2025/12/26 22:43:40 [REGISTRY] IPC message to module 'custom_message': handled=true, message=timer:20s
+2025/12/26 22:43:40 [SCHEDULER] IPC message handled by module: custom_message
+2025/12/26 22:43:40 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.05ms
+2025/12/26 22:43:40 [REGISTRY-SEARCH] Cached results for query='' (duration=0.05ms)
+2025/12/26 22:43:40 [REGISTRY-SEARCH] Completed general search in 57.267µs, final result count: 10
+2025/12/26 22:43:41 Received IPC message: statusbar:timer:19s
+2025/12/26 22:43:42 Received IPC message: statusbar:timer:18s
+2025/12/26 22:43:43 Received IPC message: statusbar:timer:17s
+2025/12/26 22:43:44 Received IPC message: statusbar:timer:16s
+2025/12/26 22:43:45 Received IPC message: statusbar:timer:15s
+2025/12/26 22:43:46 Received IPC message: statusbar:timer:14s
+2025/12/26 22:43:47 Received IPC message: statusbar:timer:13s
+2025/12/26 22:43:48 Received IPC message: statusbar:timer:12s
+2025/12/26 22:43:49 Received IPC message: statusbar:timer:11s
+2025/12/26 22:43:50 Received IPC message: statusbar:timer:10s
+2025/12/26 22:43:51 Received IPC message: statusbar:timer:9s
+2025/12/26 22:43:52 Received IPC message: statusbar:timer:8s
+2025/12/26 22:43:53 Received IPC message: statusbar:timer:7s
+2025/12/26 22:43:54 Received IPC message: statusbar:timer:6s
+2025/12/26 22:43:55 Received IPC message: statusbar:timer:5s
+2025/12/26 22:43:56 Received IPC message: statusbar:timer:4s
+2025/12/26 22:43:57 Received IPC message: statusbar:timer:3s
+2025/12/26 22:43:58 Received IPC message: statusbar:timer:2s
+2025/12/26 22:43:59 Received IPC message: statusbar:timer:1s
+2025/12/26 22:44:00 Received IPC message: statusbar:timer:clear
+2025/12/26 22:47:10 Received IPC message: launcher
+2025/12/26 22:47:12 Received IPC message: launcher
+2025/12/26 22:47:12 Received IPC message: launcher
+2025/12/26 22:47:12 Received IPC message: launcher
+2025/12/26 22:47:12 Received IPC message: launcher
+2025/12/26 22:47:13 Received IPC message: launcher
+2025/12/26 22:47:14 Received IPC message: launcher
+2025/12/26 22:47:18 Received IPC message: launcher
+2025/12/26 22:47:22 Received IPC message: launcher
+2025/12/26 22:47:23 Received IPC message: launcher
+2025/12/26 22:47:24 Received IPC message: launcher
+2025/12/26 22:47:25 Received IPC message: launcher
+2025/12/26 22:47:25 Received IPC message: launcher
+2025/12/26 22:47:25 Received IPC message: launcher
+2025/12/26 22:47:25 Received IPC message: launcher
+2025/12/26 22:47:28 Failed to load config: toml: cannot decode TOML string into struct field config.StatusBarLayout.Right of type []string
+2025/12/26 22:47:28 Locus starting...
+2025/12/26 22:47:28 Initializing components...
+2025/12/26 22:47:28 Loaded launcher CSS from /home/sigma/.config/locus/launcher.css
+2025/12/26 22:47:28 Failed to start notification manager: failed to start IPC bridge: failed to listen on socket ~/.cache/locus/notifications.json.sock: listen unix ~/.cache/locus/notifications.json.sock: bind: no such file or directory
+2025/12/26 22:47:28 Created statusbar windows for 1 monitors
+2025/12/26 22:47:28 Loading modules, config: [launcher workspaces binding_mode emacs_clock notifications time battery custom_message]
+2025/12/26 22:47:28 Loading module 'launcher' with config: {0  false []  map[]}
+2025/12/26 22:47:28 Registered module instance: launcher
+2025/12/26 22:47:28 Successfully loaded module: launcher
+2025/12/26 22:47:28 Loading module 'workspaces' with config: {0  false []  map[]}
+2025/12/26 22:47:28 Registered module instance: workspaces
+2025/12/26 22:47:28 Successfully loaded module: workspaces
+2025/12/26 22:47:28 Loading module 'binding_mode' with config: {0  false []  map[]}
+2025/12/26 22:47:28 Registered module instance: binding_mode
+2025/12/26 22:47:28 Successfully loaded module: binding_mode
+2025/12/26 22:47:28 Loading module 'emacs_clock' with config: {10  true []  map[]}
+2025/12/26 22:47:28 Registered module instance: emacs_clock
+2025/12/26 22:47:28 Successfully loaded module: emacs_clock
+2025/12/26 22:47:28 Loading module 'notifications' with config: {0  false []  map[]}
+2025/12/26 22:47:28 Registered module instance: notifications
+2025/12/26 22:47:28 Successfully loaded module: notifications
+2025/12/26 22:47:28 Loading module 'time' with config: {1 15:04:05 true []  map[]}
+2025/12/26 22:47:28 Registered module instance: time
+2025/12/26 22:47:28 Successfully loaded module: time
+2025/12/26 22:47:28 Loading module 'battery' with config: {30  true []  map[]}
+2025/12/26 22:47:28 Registered module instance: battery
+2025/12/26 22:47:28 Successfully loaded module: battery
+2025/12/26 22:47:28 Loading module 'custom_message' with config: {0  false []  map[]}
+2025/12/26 22:47:28 Registered module instance: custom_message
+2025/12/26 22:47:28 Successfully loaded module: custom_message
+2025/12/26 22:47:28 Creating widget for module: launcher
+2025/12/26 22:47:28 Scheduled module 'launcher' with update mode: static
+2025/12/26 22:47:28 Successfully created widget for module: launcher
+2025/12/26 22:47:28 Creating widget for module: workspaces
+2025/12/26 22:47:28 Scheduled module 'workspaces' with update mode: periodic
+2025/12/26 22:47:28 Successfully created widget for module: workspaces
+2025/12/26 22:47:28 Creating widget for module: binding_mode
+2025/12/26 22:47:28 Scheduled module 'binding_mode' with update mode: periodic
+2025/12/26 22:47:28 Successfully created widget for module: binding_mode
+2025/12/26 22:47:28 Creating widget for module: emacs_clock
+2025/12/26 22:47:28 Scheduled module 'emacs_clock' with update mode: periodic
+2025/12/26 22:47:28 Successfully created widget for module: emacs_clock
+2025/12/26 22:47:28 Creating widget for module: notifications
+2025/12/26 22:47:28 Scheduled module 'notifications' with update mode: periodic
+2025/12/26 22:47:28 Successfully created widget for module: notifications
+2025/12/26 22:47:28 Creating widget for module: time
+2025/12/26 22:47:28 Scheduled module 'time' with update mode: periodic
+2025/12/26 22:47:28 Successfully created widget for module: time
+2025/12/26 22:47:28 Creating widget for module: battery
+2025/12/26 22:47:28 Scheduled module 'battery' with update mode: periodic
+2025/12/26 22:47:28 Successfully created widget for module: battery
+2025/12/26 22:47:28 Creating widget for module: custom_message
+2025/12/26 22:47:28 Scheduled module 'custom_message' with update mode: on-demand
+2025/12/26 22:47:28 Successfully created widget for module: custom_message
+2025/12/26 22:47:28 Update scheduler started
+2025/12/26 22:47:28 IPC server started on /tmp/locus_socket
+2025/12/26 22:47:28 Status bar started successfully on 1 monitors
+2025/12/26 22:47:28 Loaded launcher styles from config
+2025/12/26 22:47:28 IPC server listening on /tmp/locus_socket
+2025/12/26 22:47:28 Initialization complete
+2025/12/26 22:47:29 Received IPC message: launcher
+2025/12/26 22:47:29 PresentLauncher called, launcher=true
+2025/12/26 22:47:29 Launcher.Show() called, running=false
+2025/12/26 22:47:29 Launcher not running, starting...
+2025/12/26 22:47:29 Launcher.Start() - beginning
+2025/12/26 22:47:29 Setting window size
+2025/12/26 22:47:29 Loading built-in launchers
+2025/12/26 22:47:29 Registered trigger: > -> shell
+2025/12/26 22:47:29 Registered trigger: sh -> shell
+2025/12/26 22:47:29 Registered trigger: shell -> shell
+2025/12/26 22:47:29 Registered trigger: cmd -> shell
+2025/12/26 22:47:29 Registered trigger: command -> shell
+2025/12/26 22:47:29 Registered trigger: : -> web
+2025/12/26 22:47:29 Registered trigger: web -> web
+2025/12/26 22:47:29 Registered trigger: url -> web
+2025/12/26 22:47:29 [APP-LAUNCHER] Starting background app loading
+2025/12/26 22:47:29 Registered trigger: open -> web
+2025/12/26 22:47:29 Registered trigger: = -> calc
+2025/12/26 22:47:29 Registered trigger: calc -> calc
+2025/12/26 22:47:29 Registered trigger: math -> calc
+2025/12/26 22:47:29 Registered trigger: % -> timer
+2025/12/26 22:47:29 [HOOK-REGISTRY] Registered hook 'timer_hook' for launcher 'timer'
+2025/12/26 22:47:29 Registered trigger: brightness -> brightness
+2025/12/26 22:47:29 Registered trigger: bright -> brightness
+2025/12/26 22:47:29 Registered trigger: bri -> brightness
+2025/12/26 22:47:29 Registered trigger: screenshot -> screenshot
+2025/12/26 22:47:29 Registered trigger: shot -> screenshot
+2025/12/26 22:47:29 Registered trigger: scr -> screenshot
+2025/12/26 22:47:29 Registered trigger: ss -> screenshot
+2025/12/26 22:47:29 Registered trigger: lock -> lock
+2025/12/26 22:47:29 Registered trigger: screenlock -> lock
+2025/12/26 22:47:29 Registered trigger: lockscreen -> lock
+2025/12/26 22:47:29 Registered trigger: kill -> kill
+2025/12/26 22:47:29 Registered trigger: k -> kill
+2025/12/26 22:47:29 Registered trigger: focus -> focus
+2025/12/26 22:47:29 Registered trigger: f -> focus
+2025/12/26 22:47:29 Registered trigger: wallpaper -> wallpaper
+2025/12/26 22:47:29 Registered trigger: wp -> wallpaper
+2025/12/26 22:47:29 Registered trigger: bg -> wallpaper
+2025/12/26 22:47:29 Registered trigger: clipboard -> clipboard
+2025/12/26 22:47:29 Registered trigger: cb -> clipboard
+2025/12/26 22:47:29 Registered trigger: clip -> clipboard
+2025/12/26 22:47:29 Registered trigger: history -> clipboard
+2025/12/26 22:47:29 Registered trigger: wifi -> wifi
+2025/12/26 22:47:29 Registered trigger: wlan -> wifi
+2025/12/26 22:47:29 Registered trigger: file -> file
+2025/12/26 22:47:29 Registered trigger: f -> file
+2025/12/26 22:47:29 Registered trigger: music -> music
+2025/12/26 22:47:29 Registered trigger: m -> music
+2025/12/26 22:47:29 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 22:47:29 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 22:47:29 Initializing layer shell
+2025/12/26 22:47:29 Launcher started successfully - window should be visible now
+2025/12/26 22:47:29 Launcher started successfully
+2025/12/26 22:47:29 [APP-LAUNCHER] Precomputed search data in 8.248µs
+2025/12/26 22:47:29 [APP-LAUNCHER] Background load completed in 769.753µs, loaded 86 apps
+2025/12/26 22:47:29 Launcher.Show() returned: <nil>
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.190524ms, 7 items
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Completed launcher-specific search in 5.271747ms
+2025/12/26 22:47:30 [ICON-CACHE] MISS: media-playback-start@32
+2025/12/26 22:47:30 [ICON-CACHE] STORED: media-playback-start@32 (cache size: 1)
+2025/12/26 22:47:30 [ICON-CACHE] MISS: media-skip-forward@32
+2025/12/26 22:47:30 [ICON-CACHE] STORED: media-skip-forward@32 (cache size: 2)
+2025/12/26 22:47:30 [ICON-CACHE] MISS: media-skip-backward@32
+2025/12/26 22:47:30 [ICON-CACHE] STORED: media-skip-backward@32 (cache size: 3)
+2025/12/26 22:47:30 [ICON-CACHE] MISS: edit-clear-all@32
+2025/12/26 22:47:30 [ICON-CACHE] STORED: edit-clear-all@32 (cache size: 4)
+2025/12/26 22:47:30 [ICON-CACHE] MISS: view-list@32
+2025/12/26 22:47:30 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 22:47:30 [ICON-CACHE] MISS: folder-music@32
+2025/12/26 22:47:30 [ICON-CACHE] STORED: folder-music@32 (cache size: 5)
+2025/12/26 22:47:30 [ICON-CACHE] MISS: view-refresh@32
+2025/12/26 22:47:30 [ICON-CACHE] STORED: view-refresh@32 (cache size: 6)
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Started for query='m g'
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='g'
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Launcher-specific populate completed in 4.855641ms, 53 items
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 22:47:30 [REGISTRY-SEARCH] Completed launcher-specific search in 4.935068ms
+2025/12/26 22:47:30 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 22:47:30 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 22:47:30 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 22:47:30 [ICON-CACHE] MISS: audio-x-generic@32
+2025/12/26 22:47:30 [ICON-CACHE] STORED: audio-x-generic@32 (cache size: 7)
+2025/12/26 22:47:30 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:30 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:30 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:30 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:30 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:30 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Started for query='m great'
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='great'
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Launcher-specific populate completed in 4.417974ms, 4 items
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Completed launcher-specific search in 4.482623ms
+2025/12/26 22:47:31 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:31 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:31 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:31 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 22:47:31 [HOOK-REGISTRY] Hook 'music_hook' handled OnSelect event
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 22:47:31 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Cache MISS for query='' in 47.903µs
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 22:47:31 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 22:47:31 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 22:47:31 [REGISTRY-SEARCH] AppLauncher populate completed in 11.203µs, 10 items
+2025/12/26 22:47:31 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.14ms
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Cached results for query='' (duration=0.14ms)
+2025/12/26 22:47:31 [REGISTRY-SEARCH] Completed general search in 156.033µs, final result count: 10
+2025/12/26 22:47:31 [ICON-CACHE] MISS: abiword@32
+2025/12/26 22:47:31 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 22:47:31 [ICON-CACHE] MISS: org.xfce.about@32
+2025/12/26 22:47:31 [ICON-CACHE] STORED: org.xfce.about@32 (cache size: 8)
+2025/12/26 22:47:31 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 22:47:31 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 22:47:31 [ICON-CACHE] MISS: audacious@32
+2025/12/26 22:47:31 [ICON-CACHE] STORED: audacious@32 (cache size: 9)
+2025/12/26 22:47:31 [ICON-CACHE] MISS: network-wired@32
+2025/12/26 22:47:31 [ICON-CACHE] STORED: network-wired@32 (cache size: 10)
+2025/12/26 22:47:31 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:47:31 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:47:31 [ICON-CACHE] MISS: blender@32
+2025/12/26 22:47:31 [ICON-CACHE] STORED: blender@32 (cache size: 11)
+2025/12/26 22:47:31 [ICON-CACHE] MISS: org.gnome.Boxes@32
+2025/12/26 22:47:31 [ICON-CACHE] STORED: org.gnome.Boxes@32 (cache size: 12)
+2025/12/26 22:47:31 [ICON-CACHE] MISS: btop@32
+2025/12/26 22:47:31 [ICON-CACHE] STORED: btop@32 (cache size: 13)
+2025/12/26 22:48:38 Failed to load config: toml: cannot decode TOML string into struct field config.StatusBarLayout.Right of type []string
+2025/12/26 22:48:38 Locus starting...
+2025/12/26 22:48:38 Initializing components...
+2025/12/26 22:48:38 Loaded launcher CSS from /home/sigma/.config/locus/launcher.css
+2025/12/26 22:48:38 Failed to start notification manager: failed to start IPC bridge: failed to listen on socket ~/.cache/locus/notifications.json.sock: listen unix ~/.cache/locus/notifications.json.sock: bind: no such file or directory
+2025/12/26 22:48:38 Created statusbar windows for 1 monitors
+2025/12/26 22:48:38 Loading modules, config: [launcher workspaces binding_mode emacs_clock notifications time battery custom_message]
+2025/12/26 22:48:38 Loading module 'launcher' with config: {0  false []  map[]}
+2025/12/26 22:48:38 Registered module instance: launcher
+2025/12/26 22:48:38 Successfully loaded module: launcher
+2025/12/26 22:48:38 Loading module 'workspaces' with config: {0  false []  map[]}
+2025/12/26 22:48:38 Registered module instance: workspaces
+2025/12/26 22:48:38 Successfully loaded module: workspaces
+2025/12/26 22:48:38 Loading module 'binding_mode' with config: {0  false []  map[]}
+2025/12/26 22:48:38 Registered module instance: binding_mode
+2025/12/26 22:48:38 Successfully loaded module: binding_mode
+2025/12/26 22:48:38 Loading module 'emacs_clock' with config: {10  true []  map[]}
+2025/12/26 22:48:38 Registered module instance: emacs_clock
+2025/12/26 22:48:38 Successfully loaded module: emacs_clock
+2025/12/26 22:48:38 Loading module 'notifications' with config: {0  false []  map[]}
+2025/12/26 22:48:38 Registered module instance: notifications
+2025/12/26 22:48:38 Successfully loaded module: notifications
+2025/12/26 22:48:38 Loading module 'time' with config: {1 15:04:05 true []  map[]}
+2025/12/26 22:48:38 Registered module instance: time
+2025/12/26 22:48:38 Successfully loaded module: time
+2025/12/26 22:48:38 Loading module 'battery' with config: {30  true []  map[]}
+2025/12/26 22:48:38 Registered module instance: battery
+2025/12/26 22:48:38 Successfully loaded module: battery
+2025/12/26 22:48:38 Loading module 'custom_message' with config: {0  false []  map[]}
+2025/12/26 22:48:38 Registered module instance: custom_message
+2025/12/26 22:48:38 Successfully loaded module: custom_message
+2025/12/26 22:48:38 Creating widget for module: launcher
+2025/12/26 22:48:38 Scheduled module 'launcher' with update mode: static
+2025/12/26 22:48:38 Successfully created widget for module: launcher
+2025/12/26 22:48:38 Creating widget for module: workspaces
+2025/12/26 22:48:38 Scheduled module 'workspaces' with update mode: periodic
+2025/12/26 22:48:38 Successfully created widget for module: workspaces
+2025/12/26 22:48:38 Creating widget for module: binding_mode
+2025/12/26 22:48:38 Scheduled module 'binding_mode' with update mode: periodic
+2025/12/26 22:48:38 Successfully created widget for module: binding_mode
+2025/12/26 22:48:38 Creating widget for module: emacs_clock
+2025/12/26 22:48:38 Scheduled module 'emacs_clock' with update mode: periodic
+2025/12/26 22:48:38 Successfully created widget for module: emacs_clock
+2025/12/26 22:48:38 Creating widget for module: notifications
+2025/12/26 22:48:38 Scheduled module 'notifications' with update mode: periodic
+2025/12/26 22:48:38 Successfully created widget for module: notifications
+2025/12/26 22:48:38 Creating widget for module: time
+2025/12/26 22:48:38 Scheduled module 'time' with update mode: periodic
+2025/12/26 22:48:38 Successfully created widget for module: time
+2025/12/26 22:48:38 Creating widget for module: battery
+2025/12/26 22:48:38 Scheduled module 'battery' with update mode: periodic
+2025/12/26 22:48:38 Successfully created widget for module: battery
+2025/12/26 22:48:38 Creating widget for module: custom_message
+2025/12/26 22:48:38 Scheduled module 'custom_message' with update mode: on-demand
+2025/12/26 22:48:38 Successfully created widget for module: custom_message
+2025/12/26 22:48:38 Update scheduler started
+2025/12/26 22:48:38 IPC server started on /tmp/locus_socket
+2025/12/26 22:48:38 Status bar started successfully on 1 monitors
+2025/12/26 22:48:38 Loaded launcher styles from config
+2025/12/26 22:48:38 IPC server listening on /tmp/locus_socket
+2025/12/26 22:48:38 Initialization complete
+2025/12/26 22:48:42 Received IPC message: launcher
+2025/12/26 22:48:42 PresentLauncher called, launcher=true
+2025/12/26 22:48:42 Launcher.Show() called, running=false
+2025/12/26 22:48:42 Launcher not running, starting...
+2025/12/26 22:48:42 Launcher.Start() - beginning
+2025/12/26 22:48:42 Setting window size
+2025/12/26 22:48:42 Loading built-in launchers
+2025/12/26 22:48:42 Registered trigger: > -> shell
+2025/12/26 22:48:42 Registered trigger: sh -> shell
+2025/12/26 22:48:42 Registered trigger: shell -> shell
+2025/12/26 22:48:42 Registered trigger: cmd -> shell
+2025/12/26 22:48:42 Registered trigger: command -> shell
+2025/12/26 22:48:42 Registered trigger: : -> web
+2025/12/26 22:48:42 Registered trigger: web -> web
+2025/12/26 22:48:42 Registered trigger: url -> web
+2025/12/26 22:48:42 Registered trigger: open -> web
+2025/12/26 22:48:42 Registered trigger: = -> calc
+2025/12/26 22:48:42 Registered trigger: calc -> calc
+2025/12/26 22:48:42 Registered trigger: math -> calc
+2025/12/26 22:48:42 Registered trigger: % -> timer
+2025/12/26 22:48:42 [HOOK-REGISTRY] Registered hook 'timer_hook' for launcher 'timer'
+2025/12/26 22:48:42 Registered trigger: brightness -> brightness
+2025/12/26 22:48:42 Registered trigger: bright -> brightness
+2025/12/26 22:48:42 Registered trigger: bri -> brightness
+2025/12/26 22:48:42 Registered trigger: screenshot -> screenshot
+2025/12/26 22:48:42 Registered trigger: shot -> screenshot
+2025/12/26 22:48:42 Registered trigger: scr -> screenshot
+2025/12/26 22:48:42 Registered trigger: ss -> screenshot
+2025/12/26 22:48:42 [APP-LAUNCHER] Starting background app loading
+2025/12/26 22:48:42 Registered trigger: lock -> lock
+2025/12/26 22:48:42 Registered trigger: screenlock -> lock
+2025/12/26 22:48:42 Registered trigger: lockscreen -> lock
+2025/12/26 22:48:42 Registered trigger: kill -> kill
+2025/12/26 22:48:42 Registered trigger: k -> kill
+2025/12/26 22:48:42 Registered trigger: focus -> focus
+2025/12/26 22:48:42 Registered trigger: f -> focus
+2025/12/26 22:48:42 Registered trigger: wallpaper -> wallpaper
+2025/12/26 22:48:42 Registered trigger: wp -> wallpaper
+2025/12/26 22:48:42 Registered trigger: bg -> wallpaper
+2025/12/26 22:48:42 Registered trigger: clipboard -> clipboard
+2025/12/26 22:48:42 Registered trigger: cb -> clipboard
+2025/12/26 22:48:42 Registered trigger: clip -> clipboard
+2025/12/26 22:48:42 Registered trigger: history -> clipboard
+2025/12/26 22:48:42 Registered trigger: wifi -> wifi
+2025/12/26 22:48:42 Registered trigger: wlan -> wifi
+2025/12/26 22:48:42 Registered trigger: file -> file
+2025/12/26 22:48:42 Registered trigger: f -> file
+2025/12/26 22:48:42 Registered trigger: music -> music
+2025/12/26 22:48:42 Registered trigger: m -> music
+2025/12/26 22:48:42 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 22:48:42 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 22:48:42 Initializing layer shell
+2025/12/26 22:48:42 Launcher started successfully - window should be visible now
+2025/12/26 22:48:42 Launcher started successfully
+2025/12/26 22:48:42 [APP-LAUNCHER] Precomputed search data in 370.679µs
+2025/12/26 22:48:42 [APP-LAUNCHER] Background load completed in 1.166286ms, loaded 86 apps
+2025/12/26 22:48:42 Launcher.Show() returned: <nil>
+2025/12/26 22:48:42 [REGISTRY-SEARCH] Started for query='l'
+2025/12/26 22:48:42 [SEARCH-CACHE] MISS: key='l:'
+2025/12/26 22:48:42 [REGISTRY-SEARCH] Cache MISS for query='l' in 26.143µs
+2025/12/26 22:48:42 [REGISTRY-SEARCH] Using AppLauncher for general query='l'
+2025/12/26 22:48:42 [APP-LAUNCHER] Populate started for query='l'
+2025/12/26 22:48:42 [APP-LAUNCHER] Fuzzy search started for query='l' against 86 apps
+2025/12/26 22:48:42 [APP-LAUNCHER] Fuzzy find completed in 94.255µs, found 24 raw matches
+2025/12/26 22:48:42 [APP-LAUNCHER] Fuzzy search completed in 115.191µs, returning 10 items (TEMP: no filtering)
+2025/12/26 22:48:42 [APP-LAUNCHER] Fuzzy search completed in 125.456µs, returned 10 results
+2025/12/26 22:48:42 [REGISTRY-SEARCH] AppLauncher populate completed in 130.001µs, 10 items
+2025/12/26 22:48:42 [SEARCH-CACHE] STORED FAST: key='l:', 10 results, duration=0.21ms
+2025/12/26 22:48:42 [REGISTRY-SEARCH] Cached results for query='l' (duration=0.21ms)
+2025/12/26 22:48:42 [REGISTRY-SEARCH] Completed general search in 225.864µs, final result count: 10
+2025/12/26 22:48:42 [ICON-CACHE] MISS: utilities-terminal@32
+2025/12/26 22:48:42 [ICON-CACHE] STORED: utilities-terminal@32 (cache size: 1)
+2025/12/26 22:48:42 [ICON-CACHE] MISS: libreoffice@32
+2025/12/26 22:48:42 [ICON-CACHE] Icon 'libreoffice' not found in theme, returning nil
+2025/12/26 22:48:42 [ICON-CACHE] MISS: blender@32
+2025/12/26 22:48:42 [ICON-CACHE] STORED: blender@32 (cache size: 2)
+2025/12/26 22:48:42 [ICON-CACHE] MISS: org.gnome.Meld@32
+2025/12/26 22:48:42 [ICON-CACHE] STORED: org.gnome.Meld@32 (cache size: 3)
+2025/12/26 22:48:42 [ICON-CACHE] MISS: chrome-kinpkbniadkppecjaginbegiljofpcfc-Default@32
+2025/12/26 22:48:42 [ICON-CACHE] STORED: chrome-kinpkbniadkppecjaginbegiljofpcfc-Default@32 (cache size: 4)
+2025/12/26 22:48:42 [ICON-CACHE] MISS: hwloc@32
+2025/12/26 22:48:42 [ICON-CACHE] Icon 'hwloc' not found in theme, returning nil
+2025/12/26 22:48:42 [ICON-CACHE] MISS: org.xfce.thunar@32
+2025/12/26 22:48:42 [ICON-CACHE] STORED: org.xfce.thunar@32 (cache size: 5)
+2025/12/26 22:48:42 [ICON-CACHE] MISS: firewall-config@32
+2025/12/26 22:48:42 [ICON-CACHE] STORED: firewall-config@32 (cache size: 6)
+2025/12/26 22:48:42 [ICON-CACHE] MISS: org.pulseaudio.pavucontrol@32
+2025/12/26 22:48:42 [ICON-CACHE] STORED: org.pulseaudio.pavucontrol@32 (cache size: 7)
+2025/12/26 22:48:42 [ICON-CACHE] MISS: document-new@32
+2025/12/26 22:48:42 [ICON-CACHE] STORED: document-new@32 (cache size: 8)
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Started for query='laun'
+2025/12/26 22:48:43 [SEARCH-CACHE] MISS: key='laun:'
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Cache MISS for query='laun' in 36.599µs
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Using AppLauncher for general query='laun'
+2025/12/26 22:48:43 [APP-LAUNCHER] Populate started for query='laun'
+2025/12/26 22:48:43 [APP-LAUNCHER] Fuzzy search started for query='laun' against 86 apps
+2025/12/26 22:48:43 [APP-LAUNCHER] Fuzzy find completed in 100.309µs, found 1 raw matches
+2025/12/26 22:48:43 [APP-LAUNCHER] Fuzzy search completed in 112.859µs, returning 1 items (TEMP: no filtering)
+2025/12/26 22:48:43 [APP-LAUNCHER] Fuzzy search completed in 121.233µs, returned 1 results
+2025/12/26 22:48:43 [REGISTRY-SEARCH] AppLauncher populate completed in 125.388µs, 1 items
+2025/12/26 22:48:43 [SEARCH-CACHE] STORED FAST: key='laun:', 1 results, duration=0.22ms
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Cached results for query='laun' (duration=0.22ms)
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Completed general search in 241.688µs, final result count: 1
+2025/12/26 22:48:43 [ICON-CACHE] MISS: /home/sigma/.local/share/JetBrains/Toolbox/apps/intellij-idea-community-edition/bin/idea.svg@32
+2025/12/26 22:48:43 [ICON-CACHE] Icon '/home/sigma/.local/share/JetBrains/Toolbox/apps/intellij-idea-community-edition/bin/idea.svg' not found in theme, returning nil
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 22:48:43 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Cache MISS for query='' in 37.983µs
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 22:48:43 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 22:48:43 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 22:48:43 [REGISTRY-SEARCH] AppLauncher populate completed in 19.165µs, 10 items
+2025/12/26 22:48:43 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.14ms
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Cached results for query='' (duration=0.14ms)
+2025/12/26 22:48:43 [REGISTRY-SEARCH] Completed general search in 164.924µs, final result count: 10
+2025/12/26 22:48:43 [ICON-CACHE] MISS: abiword@32
+2025/12/26 22:48:43 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 22:48:43 [ICON-CACHE] MISS: org.xfce.about@32
+2025/12/26 22:48:43 [ICON-CACHE] STORED: org.xfce.about@32 (cache size: 9)
+2025/12/26 22:48:43 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 22:48:43 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 22:48:43 [ICON-CACHE] MISS: audacious@32
+2025/12/26 22:48:43 [ICON-CACHE] STORED: audacious@32 (cache size: 10)
+2025/12/26 22:48:43 [ICON-CACHE] MISS: network-wired@32
+2025/12/26 22:48:43 [ICON-CACHE] STORED: network-wired@32 (cache size: 11)
+2025/12/26 22:48:43 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:48:43 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 22:48:43 [ICON-CACHE] HIT: blender@32
+2025/12/26 22:48:43 [ICON-CACHE] MISS: org.gnome.Boxes@32
+2025/12/26 22:48:43 [ICON-CACHE] STORED: org.gnome.Boxes@32 (cache size: 12)
+2025/12/26 22:48:43 [ICON-CACHE] MISS: btop@32
+2025/12/26 22:48:43 [ICON-CACHE] STORED: btop@32 (cache size: 13)
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Started for query='l'
+2025/12/26 22:48:44 [SEARCH-CACHE] HIT: key='l:', returning 10 cached results (TTL: 30m0s)
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Cache HIT for query='l', returned 10 items in 27.671µs
+2025/12/26 22:48:44 [ICON-CACHE] HIT: utilities-terminal@32
+2025/12/26 22:48:44 [ICON-CACHE] MISS: libreoffice@32
+2025/12/26 22:48:44 [ICON-CACHE] Icon 'libreoffice' not found in theme, returning nil
+2025/12/26 22:48:44 [ICON-CACHE] HIT: blender@32
+2025/12/26 22:48:44 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 22:48:44 [ICON-CACHE] HIT: chrome-kinpkbniadkppecjaginbegiljofpcfc-Default@32
+2025/12/26 22:48:44 [ICON-CACHE] MISS: hwloc@32
+2025/12/26 22:48:44 [ICON-CACHE] Icon 'hwloc' not found in theme, returning nil
+2025/12/26 22:48:44 [ICON-CACHE] HIT: org.xfce.thunar@32
+2025/12/26 22:48:44 [ICON-CACHE] HIT: firewall-config@32
+2025/12/26 22:48:44 [ICON-CACHE] HIT: org.pulseaudio.pavucontrol@32
+2025/12/26 22:48:44 [ICON-CACHE] HIT: document-new@32
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Started for query='lo'
+2025/12/26 22:48:44 [SEARCH-CACHE] MISS: key='lo:'
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Cache MISS for query='lo' in 29.84µs
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Using AppLauncher for general query='lo'
+2025/12/26 22:48:44 [APP-LAUNCHER] Populate started for query='lo'
+2025/12/26 22:48:44 [APP-LAUNCHER] Fuzzy search started for query='lo' against 86 apps
+2025/12/26 22:48:44 [APP-LAUNCHER] Fuzzy find completed in 91.566µs, found 7 raw matches
+2025/12/26 22:48:44 [APP-LAUNCHER] Fuzzy search completed in 109.548µs, returning 7 items (TEMP: no filtering)
+2025/12/26 22:48:44 [APP-LAUNCHER] Fuzzy search completed in 119.522µs, returned 7 results
+2025/12/26 22:48:44 [REGISTRY-SEARCH] AppLauncher populate completed in 124.2µs, 7 items
+2025/12/26 22:48:44 [SEARCH-CACHE] STORED FAST: key='lo:', 7 results, duration=0.21ms
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Cached results for query='lo' (duration=0.21ms)
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Completed general search in 227.263µs, final result count: 7
+2025/12/26 22:48:44 [ICON-CACHE] MISS: libreoffice@32
+2025/12/26 22:48:44 [ICON-CACHE] Icon 'libreoffice' not found in theme, returning nil
+2025/12/26 22:48:44 [ICON-CACHE] MISS: hwloc@32
+2025/12/26 22:48:44 [ICON-CACHE] Icon 'hwloc' not found in theme, returning nil
+2025/12/26 22:48:44 [ICON-CACHE] HIT: org.pulseaudio.pavucontrol@32
+2025/12/26 22:48:44 [ICON-CACHE] MISS: /home/sigma/.local/share/JetBrains/Toolbox/bin/toolbox.svg@32
+2025/12/26 22:48:44 [ICON-CACHE] Icon '/home/sigma/.local/share/JetBrains/Toolbox/bin/toolbox.svg' not found in theme, returning nil
+2025/12/26 22:48:44 [ICON-CACHE] MISS: qvidcap@32
+2025/12/26 22:48:44 [ICON-CACHE] STORED: qvidcap@32 (cache size: 14)
+2025/12/26 22:48:44 [ICON-CACHE] MISS: gimp@32
+2025/12/26 22:48:44 [ICON-CACHE] STORED: gimp@32 (cache size: 15)
+2025/12/26 22:48:44 [ICON-CACHE] MISS: /home/sigma/.local/share/JetBrains/Toolbox/apps/intellij-idea-community-edition/bin/idea.svg@32
+2025/12/26 22:48:44 [ICON-CACHE] Icon '/home/sigma/.local/share/JetBrains/Toolbox/apps/intellij-idea-community-edition/bin/idea.svg' not found in theme, returning nil
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Started for query='loc'
+2025/12/26 22:48:44 [SEARCH-CACHE] MISS: key='loc:'
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Cache MISS for query='loc' in 29.987µs
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Using AppLauncher for general query='loc'
+2025/12/26 22:48:44 [APP-LAUNCHER] Populate started for query='loc'
+2025/12/26 22:48:44 [APP-LAUNCHER] Fuzzy search started for query='loc' against 86 apps
+2025/12/26 22:48:44 [APP-LAUNCHER] Fuzzy find completed in 241.963µs, found 3 raw matches
+2025/12/26 22:48:44 [APP-LAUNCHER] Fuzzy search completed in 304.094µs, returning 3 items (TEMP: no filtering)
+2025/12/26 22:48:44 [APP-LAUNCHER] Fuzzy search completed in 332.981µs, returned 3 results
+2025/12/26 22:48:44 [REGISTRY-SEARCH] AppLauncher populate completed in 337.495µs, 3 items
+2025/12/26 22:48:44 [SEARCH-CACHE] STORED FAST: key='loc:', 3 results, duration=0.42ms
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Cached results for query='loc' (duration=0.42ms)
+2025/12/26 22:48:44 [REGISTRY-SEARCH] Completed general search in 440.017µs, final result count: 3
+2025/12/26 22:48:44 [ICON-CACHE] MISS: hwloc@32
+2025/12/26 22:48:44 [ICON-CACHE] Icon 'hwloc' not found in theme, returning nil
+2025/12/26 22:48:44 [ICON-CACHE] MISS: libreoffice@32
+2025/12/26 22:48:44 [ICON-CACHE] Icon 'libreoffice' not found in theme, returning nil
+2025/12/26 22:48:44 [ICON-CACHE] HIT: qvidcap@32
