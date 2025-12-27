@@ -12,12 +12,12 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/config"
 	"github.com/chess10kp/locus/internal/launcher"
 	"github.com/chess10kp/locus/internal/layer"
+	"github.com/gotk3/gotk3/gdk"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 var debugLogger = log.New(log.Writer(), "[LAUNCHER-DEBUG] ", log.LstdFlags|log.Lmicroseconds)
@@ -239,6 +239,9 @@ func (l *Launcher) setupSignals() {
 	})
 
 	l.resultList.Connect("row-activated", func(list *gtk.ListBox, row *gtk.ListBoxRow) {
+		if row == nil || l == nil {
+			return
+		}
 		l.onRowActivated(row)
 	})
 
@@ -651,6 +654,9 @@ func (l *Launcher) onActivate() {
 }
 
 func (l *Launcher) onRowActivated(row *gtk.ListBoxRow) {
+	if l == nil || row == nil {
+		return
+	}
 	l.mu.RLock()
 	index := row.GetIndex()
 	if index < 0 || index >= len(l.currentItems) {

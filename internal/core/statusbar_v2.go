@@ -535,6 +535,16 @@ func (sb *StatusBar) handleIPCMessage(message string) bool {
 		})
 		return true
 
+	case message == "lock":
+		// Show lockscreen
+		glib.IdleAdd(func() bool {
+			if err := sb.app.ShowLockScreen(); err != nil {
+				log.Printf("Failed to show lock screen: %v", err)
+			}
+			return false
+		})
+		return true
+
 	case strings.HasPrefix(message, "launcher:"):
 		// Handle launcher subcommands
 		cmd := strings.TrimPrefix(message, "launcher:")
