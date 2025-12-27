@@ -6,11 +6,12 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/chess10kp/locus/internal/launcher"
+	"github.com/chess10kp/locus/internal/layer"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/gotk3/gotk3/pango"
-	"github.com/chess10kp/locus/internal/layer"
 )
 
 var (
@@ -22,26 +23,44 @@ var (
 )
 
 type Banner struct {
-	notification  *Notification
-	window        *gtk.Window
-	container     *gtk.Box
-	onClose       func(string)
-	onAction      func(string, string)
-	dismissTimer  *time.Timer
-	timeout       int
-	position      *BannerPosition
-	animating     bool
-	currentMargin int
-	mu            sync.Mutex
+	notification      *Notification
+	window            *gtk.Window
+	container         *gtk.Box
+	onClose           func(string)
+	onAction          func(string, string)
+	dismissTimer      *time.Timer
+	timeout           int
+	position          *BannerPosition
+	animating         bool
+	currentMargin     int
+	width             int
+	height            int
+	iconCache         *launcher.IconCache
+	animationDuration int
+	mu                sync.Mutex
 }
 
-func NewBanner(notif *Notification, onClose func(string), onAction func(string, string)) (*Banner, error) {
+func NewBanner(notif *Notification, onClose func(string), onAction func(string, string), width, height, animationDuration int, iconCache *launcher.IconCache) (*Banner, error) {
 	b := &Banner{
-		notification:  notif,
-		onClose:       onClose,
-		onAction:      onAction,
-		timeout:       notif.ExpireTimeout,
-		currentMargin: -800,
+		notification:      notif,
+		onClose:           onClose,
+		onAction:          onAction,
+		timeout:           notif.ExpireTimeout,
+		currentMargin:     -800,
+		width:             width,
+		height:            height,
+		iconCache:         iconCache,
+		animationDuration: animationDuration,
+	}
+
+	if b.width == 0 {
+		b.width = 400
+	}
+	if b.height == 0 {
+		b.height = 100
+	}
+	if b.animationDuration == 0 {
+		b.animationDuration = 200
 	}
 
 	if b.timeout == 0 {
@@ -76,7 +95,7 @@ func (b *Banner) createWindow() error {
 	win.SetTitle("Notification")
 	win.SetResizable(false)
 	win.SetDecorated(false)
-	win.SetDefaultSize(400, 100)
+	win.SetDefaultSize(b.width, b.height)
 
 	b.window = win
 
@@ -164,9 +183,7 @@ func (b *Banner) createIconBox() (*gtk.Box, error) {
 		iconName = "dialog-information"
 	}
 
-	if pixbuf, err := loadImageIcon(iconName, 48); err == nil {
-		image.SetFromPixbuf(pixbuf)
-	}
+	b.loadIconAsync(image, iconName, 48)
 
 	iconBox.PackStart(image, false, false, 0)
 
@@ -330,14 +347,26 @@ func (b *Banner) Dismiss() {
 	})
 }
 
-func (b *Banner) UpdatePosition(x, y int) {
+func (b *Banner) UpdatePosition(position BannerPosition) {
 	b.mu.Lock()
-	b.currentMargin = x
+	defer b.mu.Unlock()
+
 	obj := unsafe.Pointer(b.window.GObject)
-	layer.SetMargin(obj, layer.EdgeTop, y)
-	layer.SetMargin(obj, layer.EdgeRight, x)
-	b.position = &BannerPosition{X: x, Y: y}
-	b.mu.Unlock()
+
+	switch position.Corner {
+	case CornerBottomLeft, CornerBottomRight:
+		layer.SetAnchor(obj, layer.EdgeTop, false)
+		layer.SetAnchor(obj, layer.EdgeBottom, true)
+		layer.SetMargin(obj, layer.EdgeBottom, position.Y)
+	default:
+		layer.SetAnchor(obj, layer.EdgeTop, true)
+		layer.SetAnchor(obj, layer.EdgeBottom, false)
+		layer.SetMargin(obj, layer.EdgeTop, position.Y)
+	}
+
+	layer.SetMargin(obj, layer.EdgeRight, position.X)
+	b.position = &position
+	b.currentMargin = position.X
 }
 
 func (b *Banner) startDismissTimer() {
@@ -367,6 +396,12 @@ func (b *Banner) animateIn() {
 	b.animating = true
 	b.currentMargin = -800
 	targetMargin := 10
+	startMargin := b.currentMargin
+	steps := b.animationDuration / 16
+	if steps < 1 {
+		steps = 1
+	}
+	stepSize := (targetMargin - startMargin) / steps
 	obj := unsafe.Pointer(b.window.GObject)
 	b.mu.Unlock()
 
@@ -375,7 +410,7 @@ func (b *Banner) animateIn() {
 		defer b.mu.Unlock()
 
 		if b.currentMargin < targetMargin {
-			b.currentMargin = min(b.currentMargin+20, targetMargin)
+			b.currentMargin = min(b.currentMargin+stepSize, targetMargin)
 			layer.SetMargin(obj, layer.EdgeRight, b.currentMargin)
 			return true
 		}
@@ -388,7 +423,13 @@ func (b *Banner) animateIn() {
 func (b *Banner) animateOut(callback func()) {
 	b.mu.Lock()
 	b.animating = true
+	startMargin := b.currentMargin
 	targetMargin := -800
+	steps := b.animationDuration / 16
+	if steps < 1 {
+		steps = 1
+	}
+	stepSize := (startMargin - targetMargin) / steps
 	obj := unsafe.Pointer(b.window.GObject)
 	b.mu.Unlock()
 
@@ -397,7 +438,7 @@ func (b *Banner) animateOut(callback func()) {
 		defer b.mu.Unlock()
 
 		if b.currentMargin > targetMargin {
-			b.currentMargin = max(b.currentMargin-20, targetMargin)
+			b.currentMargin = max(b.currentMargin-stepSize, targetMargin)
 			layer.SetMargin(obj, layer.EdgeRight, b.currentMargin)
 			return true
 		}
@@ -443,6 +484,23 @@ func loadImageIcon(iconName string, size int) (*gdk.Pixbuf, error) {
 	}
 
 	return iconTheme.LoadIcon(iconName, size, gtk.ICON_LOOKUP_FORCE_SIZE)
+}
+
+func (b *Banner) loadIconAsync(image *gtk.Image, iconName string, size int) {
+	if b.iconCache != nil {
+		go func() {
+			pixbuf, err := b.iconCache.GetIcon(iconName, size)
+			glib.IdleAdd(func() {
+				if err == nil && pixbuf != nil {
+					image.SetFromPixbuf(pixbuf)
+				}
+			})
+		}()
+	} else {
+		if pixbuf, err := loadImageIcon(iconName, size); err == nil {
+			image.SetFromPixbuf(pixbuf)
+		}
+	}
 }
 
 func min(a, b int) int {

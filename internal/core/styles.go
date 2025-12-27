@@ -5,9 +5,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/chess10kp/locus/internal/config"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/chess10kp/locus/internal/config"
 )
 
 const defaultStyles = `

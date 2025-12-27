@@ -3,28 +3,36 @@ package notification
 import (
 	"log"
 	"sync"
+
+	"github.com/chess10kp/locus/internal/launcher"
 )
 
 type Queue struct {
-	store        *Store
-	banners      map[string]*Banner
-	maxBanners   int
-	bannerGap    int
-	bannerHeight int
-	corner       Corner
-	mu           sync.RWMutex
-	onClose      func(string)
-	onAction     func(string, string)
+	store             *Store
+	banners           map[string]*Banner
+	maxBanners        int
+	bannerGap         int
+	bannerHeight      int
+	bannerWidth       int
+	animationDuration int
+	corner            Corner
+	iconCache         *launcher.IconCache
+	mu                sync.RWMutex
+	onClose           func(string)
+	onAction          func(string, string)
 }
 
-func NewQueue(store *Store, maxBanners, bannerGap, bannerHeight int, corner Corner) *Queue {
+func NewQueue(store *Store, maxBanners, bannerGap, bannerHeight, bannerWidth, animationDuration int, corner Corner, iconCache *launcher.IconCache) *Queue {
 	return &Queue{
-		store:        store,
-		banners:      make(map[string]*Banner),
-		maxBanners:   maxBanners,
-		bannerGap:    bannerGap,
-		bannerHeight: bannerHeight,
-		corner:       corner,
+		store:             store,
+		banners:           make(map[string]*Banner),
+		maxBanners:        maxBanners,
+		bannerGap:         bannerGap,
+		bannerHeight:      bannerHeight,
+		bannerWidth:       bannerWidth,
+		animationDuration: animationDuration,
+		corner:            corner,
+		iconCache:         iconCache,
 	}
 }
 
@@ -47,7 +55,7 @@ func (q *Queue) ShowNotification(notif *Notification) error {
 		q.removeOldestBanner()
 	}
 
-	banner, err := NewBanner(notif, q.onBannerClose, q.onBannerAction)
+	banner, err := NewBanner(notif, q.onBannerClose, q.onBannerAction, q.bannerWidth, q.bannerHeight, q.animationDuration, q.iconCache)
 	if err != nil {
 		return err
 	}
@@ -178,23 +186,36 @@ func (q *Queue) repositionAllBanners() {
 }
 
 func (q *Queue) positionBanner(banner *Banner, index int) {
-	x, y := q.calculatePosition(index)
-	banner.UpdatePosition(x, y)
+	position := q.calculatePosition(index)
+	banner.UpdatePosition(position)
 }
 
-func (q *Queue) calculatePosition(index int) (int, int) {
+func (q *Queue) calculatePosition(index int) BannerPosition {
+	position := BannerPosition{
+		Corner: q.corner,
+		Width:  q.bannerWidth,
+		Height: q.bannerHeight,
+	}
+
 	switch q.corner {
 	case CornerTopLeft:
-		return 10, 40 + (index * (q.bannerHeight + q.bannerGap))
+		position.X = 10
+		position.Y = 40 + (index * (q.bannerHeight + q.bannerGap))
 	case CornerTopRight:
-		return 10, 40 + (index * (q.bannerHeight + q.bannerGap))
+		position.X = 10
+		position.Y = 40 + (index * (q.bannerHeight + q.bannerGap))
 	case CornerBottomLeft:
-		return 10, -10 - (index * (q.bannerHeight + q.bannerGap))
+		position.X = 10
+		position.Y = 10 + (index * (q.bannerHeight + q.bannerGap))
 	case CornerBottomRight:
-		return 10, -10 - (index * (q.bannerHeight + q.bannerGap))
+		position.X = 10
+		position.Y = 10 + (index * (q.bannerHeight + q.bannerGap))
 	default:
-		return 10, 40 + (index * (q.bannerHeight + q.bannerGap))
+		position.X = 10
+		position.Y = 40 + (index * (q.bannerHeight + q.bannerGap))
 	}
+
+	return position
 }
 
 func (q *Queue) Cleanup() {

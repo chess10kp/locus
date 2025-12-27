@@ -187,6 +187,23 @@ func (m *LockScreenManager) createLockScreenWindow(monitor *gdk.Monitor, isInput
 		return nil, fmt.Errorf("no password configured")
 	}
 
+	// Initialize layer shell BEFORE building/showing UI (required by gtk-layer-shell)
+	windowPtr := unsafe.Pointer(ls.window.Native())
+	layer.InitForWindow(windowPtr)
+	layer.SetLayer(windowPtr, layer.LayerOverlay)
+	layer.SetKeyboardMode(windowPtr, layer.KeyboardModeExclusive)
+	layer.SetAnchor(windowPtr, layer.EdgeTop, true)
+	layer.SetAnchor(windowPtr, layer.EdgeBottom, true)
+	layer.SetAnchor(windowPtr, layer.EdgeLeft, true)
+	layer.SetAnchor(windowPtr, layer.EdgeRight, true)
+	layer.SetMargin(windowPtr, layer.EdgeTop, 0)
+	layer.SetMargin(windowPtr, layer.EdgeBottom, 0)
+	layer.SetMargin(windowPtr, layer.EdgeLeft, 0)
+	layer.SetMargin(windowPtr, layer.EdgeRight, 0)
+	layer.AutoExclusiveZoneEnable(windowPtr)
+
+	C.gtk_layer_set_monitor((*C.GtkWindow)(windowPtr), (*C.GdkMonitor)(unsafe.Pointer(ls.monitor.Native())))
+
 	if err := m.buildLockScreenUI(ls); err != nil {
 		return nil, fmt.Errorf("failed to build UI: %w", err)
 	}
@@ -364,34 +381,15 @@ func (m *LockScreenManager) showLockScreenWindow(ls *LockScreenWindow) {
 
 	debugLogger.Printf("Before ShowAll: centerBox=%v, passwordEntry=%v", ls.centerBox != nil, ls.passwordEntry != nil)
 
-	// Show all widgets BEFORE setting up layer shell
+	// Show the window (layer shell is already initialized)
 	ls.window.ShowAll()
 
 	debugLogger.Printf("After ShowAll: window visible=%v", ls.window.GetVisible())
 
 	if ls.isInputEnabled && ls.passwordEntry != nil {
 		_, err := ls.passwordEntry.GetParent()
-		debugLogger.Printf("Password entry before layer: visible=%v, has-parent=%v, parent-error=%v", ls.passwordEntry.GetVisible(), err == nil, err)
-	}
+		debugLogger.Printf("Password entry: visible=%v, has-parent=%v, parent-error=%v", ls.passwordEntry.GetVisible(), err == nil, err)
 
-	// Set up layer shell AFTER widgets are shown
-	windowPtr := unsafe.Pointer(ls.window.Native())
-	layer.InitForWindow(windowPtr)
-	layer.SetLayer(windowPtr, layer.LayerOverlay)
-	layer.SetKeyboardMode(windowPtr, layer.KeyboardModeExclusive)
-	layer.SetAnchor(windowPtr, layer.EdgeTop, true)
-	layer.SetAnchor(windowPtr, layer.EdgeBottom, true)
-	layer.SetAnchor(windowPtr, layer.EdgeLeft, true)
-	layer.SetAnchor(windowPtr, layer.EdgeRight, true)
-	layer.SetMargin(windowPtr, layer.EdgeTop, 0)
-	layer.SetMargin(windowPtr, layer.EdgeBottom, 0)
-	layer.SetMargin(windowPtr, layer.EdgeLeft, 0)
-	layer.SetMargin(windowPtr, layer.EdgeRight, 0)
-	layer.AutoExclusiveZoneEnable(windowPtr)
-
-	C.gtk_layer_set_monitor((*C.GtkWindow)(windowPtr), (*C.GdkMonitor)(unsafe.Pointer(ls.monitor.Native())))
-
-	if ls.isInputEnabled && ls.passwordEntry != nil {
 		// Grab focus after a short delay to ensure widgets are realized
 		glib.TimeoutAdd(100, func() bool {
 			debugLogger.Printf("Password entry in timeout: visible=%v", ls.passwordEntry.GetVisible())

@@ -69,6 +69,7 @@ type NotificationEvent struct {
 }
 
 type BannerPosition struct {
+	Corner Corner
 	X      int
 	Y      int
 	Width  int

@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gotk3/gotk3/glib"
 	"github.com/chess10kp/locus/internal/config"
+	"github.com/gotk3/gotk3/glib"
 )
 
 type IPCServer struct {

@@ -624,8 +624,9 @@ func (r *LauncherRegistry) SetLockScreenCallback(callback func() error) {
 		r.ctx.ShowLockScreen = callback
 	}
 	// Register or update the lock screen hook with the callback
+	// Note: Use "lock" as the key since that's the launcher name
 	lockHook := NewLockScreenHook(callback)
-	r.hookRegistry.Register("lock-screen", lockHook)
+	r.hookRegistry.Register("lock", lockHook)
 }
 
 // GetLockScreenCallback returns the lock screen callback

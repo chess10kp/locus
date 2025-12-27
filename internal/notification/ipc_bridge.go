@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/launcher"
 )
 
 type IPCRequest struct {
@@ -308,11 +309,12 @@ type Manager struct {
 	daemon    *Daemon
 	ipcBridge *IPCBridge
 	config    *config.NotificationConfig
+	iconCache *launcher.IconCache
 	running   bool
 	mu        sync.Mutex
 }
 
-func NewManager(cfg *config.NotificationConfig) (*Manager, error) {
+func NewManager(cfg *config.NotificationConfig, iconCache *launcher.IconCache) (*Manager, error) {
 	socketPath := cfg.History.PersistPath + ".sock"
 
 	store, err := NewStore(
@@ -325,13 +327,14 @@ func NewManager(cfg *config.NotificationConfig) (*Manager, error) {
 	}
 
 	corner := Corner(cfg.Daemon.Position)
-	queue := NewQueue(store, cfg.Daemon.MaxBanners, cfg.Daemon.BannerGap, cfg.Daemon.BannerHeight, corner)
+	queue := NewQueue(store, cfg.Daemon.MaxBanners, cfg.Daemon.BannerGap, cfg.Daemon.BannerHeight, cfg.Daemon.BannerWidth, cfg.Daemon.AnimationDuration, corner, iconCache)
 
 	m := &Manager{
-		store:   store,
-		queue:   queue,
-		config:  cfg,
-		running: false,
+		store:     store,
+		queue:     queue,
+		config:    cfg,
+		iconCache: iconCache,
+		running:   false,
 	}
 
 	m.daemon = NewDaemon(store, queue, cfg)

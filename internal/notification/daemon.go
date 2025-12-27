@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/chess10kp/locus/internal/config"
 	"github.com/godbus/dbus/v5"
 	"github.com/gotk3/gotk3/glib"
-	"github.com/chess10kp/locus/internal/config"
 )
 
 type Daemon struct {

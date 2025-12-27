@@ -6,10 +6,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/launcher"
 	"github.com/chess10kp/locus/internal/lockscreen"
 	"github.com/chess10kp/locus/internal/notification"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // App is main application
@@ -22,6 +23,7 @@ type App struct {
 	ipc             *IPCServer
 	lockscreen      *lockscreen.LockScreenManager
 	notificationMgr *notification.Manager
+	iconCache       *launcher.IconCache
 }
 
 // NewApp creates a new application
@@ -71,8 +73,15 @@ func (a *App) initialize() {
 
 	a.lockscreen = lockscreen.NewLockScreenManager(a.config)
 
+	iconCache, err := launcher.NewIconCache(a.config)
+	if err != nil {
+		log.Printf("Failed to create icon cache: %v", err)
+		iconCache = nil
+	}
+	a.iconCache = iconCache
+
 	if a.config.Notification.Daemon.Enabled {
-		notificationMgr, err := notification.NewManager(&a.config.Notification)
+		notificationMgr, err := notification.NewManager(&a.config.Notification, a.iconCache)
 		if err != nil {
 			log.Printf("Failed to create notification manager: %v", err)
 		} else {

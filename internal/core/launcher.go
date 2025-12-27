@@ -290,21 +290,7 @@ func (l *Launcher) setupSignals() {
 
 func (l *Launcher) onSearchChanged(text string) {
 	searchStart := time.Now()
-	visible := l.visible.Load()
-	debugLogger.Printf("SEARCH_CHANGED: text='%s' len=%d visible=%v", text, len(text), visible)
 	fmt.Printf("[SEARCH] Input changed to: '%s' (len=%d)\n", text, len(text))
-
-	// Add debug info about current state
-	currentItems := 0
-	if l.currentItems != nil {
-		currentItems = len(l.currentItems)
-	}
-	children := l.resultList.GetChildren()
-	childCount := 0
-	if children != nil {
-		childCount = int(children.Length())
-	}
-	debugLogger.Printf("SEARCH_CHANGED: current state - currentItems=%d, children=%d", currentItems, childCount)
 
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -333,23 +319,16 @@ func (l *Launcher) onSearchChanged(text string) {
 		debounceMs = baseDelay // Standard delay (150ms default)
 	}
 
-	debugLogger.Printf("SEARCH_CHANGED: version=%d, len=%d, scheduled search in %dms (adaptive)", version, len(text), debounceMs)
-
 	// Cancel previous timer if exists
 	if l.searchTimer != nil {
 		l.stopAndDrainSearchTimer()
-		debugLogger.Printf("SEARCH_CHANGED: cancelled previous timer")
 	}
 
 	// Start new timer with adaptive debounce delay
 	l.searchTimer = time.AfterFunc(time.Duration(debounceMs)*time.Millisecond, func() {
-		timerFireTime := time.Now()
-		debugLogger.Printf("SEARCH_TIMER: fired for version=%d, query='%s', delay was %v", version, text, timerFireTime.Sub(searchStart))
-
 		// Check if this timer callback is still valid before proceeding
 		currentVersion := atomic.LoadInt64(&l.searchVersion)
 		if version != currentVersion {
-			debugLogger.Printf("SEARCH_TIMER: abandoning timer for version=%d, current=%d", version, currentVersion)
 			return
 		}
 
@@ -358,49 +337,33 @@ func (l *Launcher) onSearchChanged(text string) {
 			defer func() {
 				if r := recover(); r != nil {
 					log.Printf("[SEARCH-PANIC] Recovered from panic: %v", r)
-					debugLogger.Printf("SEARCH_PANIC: Recovered from panic in search goroutine: %v", r)
 				}
 			}()
-
-			searchGoroutineStart := time.Now()
-			debugLogger.Printf("SEARCH_GOROUTINE: started for version=%d, query='%s'", version, query)
 
 			// Double-check version before expensive search operation
 			currentVersion = atomic.LoadInt64(&l.searchVersion)
 			if version != currentVersion {
-				debugLogger.Printf("SEARCH_GOROUTINE: abandoning search for version=%d, current=%d", version, currentVersion)
 				return
 			}
 
 			items, err := l.registry.Search(query)
 			if err != nil {
-				debugLogger.Printf("SEARCH_GOROUTINE: error for version=%d: %v", version, err)
 				fmt.Printf("Search error: %v\n", err)
 				return
 			}
 
-			searchCompleted := time.Now()
-			debugLogger.Printf("SEARCH_GOROUTINE: completed for version=%d, found %d items in %v", version, len(items), searchCompleted.Sub(searchGoroutineStart))
-
 			// Update UI in main thread using IdleAdd
 			glib.IdleAdd(func() bool {
-				idleCallbackStart := time.Now()
-				debugLogger.Printf("UI_IDLE: callback started for version=%d with %d items", version, len(items))
-
 				// Get current version atomically to avoid race conditions
 				currentVersion := atomic.LoadInt64(&l.searchVersion)
 
 				// Skip stale results from older searches
 				if version != currentVersion {
-					debugLogger.Printf("UI_IDLE: skipping stale results for version=%d (current=%d)", version, currentVersion)
 					return false // Don't repeat
 				}
 
-				debugLogger.Printf("UI_IDLE: calling updateResults for version=%d", version)
 				l.updateResults(items, version)
 
-				debugLogger.Printf("UI_IDLE: completed for version=%d in %v, total search time %v",
-					version, time.Since(idleCallbackStart), time.Since(searchStart))
 				return false // Don't repeat
 			})
 		}(text, searchVersion, searchStart)
@@ -408,14 +371,12 @@ func (l *Launcher) onSearchChanged(text string) {
 
 	// For zero delay (empty string), also trigger immediate update
 	if debounceMs == 0 {
-		debugLogger.Printf("SEARCH_CHANGED: immediate search requested for empty string")
 	}
 }
 
 func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) {
 	// Check if widgets are still valid
 	if l.resultList == nil || l.window == nil {
-		debugLogger.Printf("UPDATE_RESULTS: widgets are nil, skipping update")
 		return
 	}
 
@@ -425,33 +386,18 @@ func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) 
 }
 
 func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version int64) bool {
-	updateStart := time.Now()
-	debugLogger.Printf("UPDATE_RESULTS: started for version=%d, %d items", version, len(items))
-
 	// Check if resultList is still valid
 	if l.resultList == nil {
-		debugLogger.Printf("UPDATE_RESULTS: resultList is nil, returning false")
 		return false
 	}
 
 	// Double-check version is still current
 	currentVersion := atomic.LoadInt64(&l.searchVersion)
 	if version != currentVersion {
-		debugLogger.Printf("UPDATE_RESULTS: skipping stale update for version=%d (current=%d)", version, currentVersion)
 		return false // Skip stale update
 	}
 
 	l.currentItems = items
-
-	// Clear existing results
-	clearStart := time.Now()
-
-	children := l.resultList.GetChildren()
-	var childCount int
-	if children != nil {
-		childCount = int(children.Length())
-	}
-	debugLogger.Printf("UPDATE_RESULTS: before clear: %d children", childCount)
 
 	// Remove all rows by repeatedly removing the first row
 	removedCount := 0
@@ -464,40 +410,19 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 		removedCount++
 	}
 
-	debugLogger.Printf("UPDATE_RESULTS: removed %d rows in %v", removedCount, time.Since(clearStart))
-
-	// Verify clear
-	childrenAfterClear := l.resultList.GetChildren()
-	afterCount := 0
-	if childrenAfterClear != nil {
-		afterCount = int(childrenAfterClear.Length())
-	}
-	debugLogger.Printf("UPDATE_RESULTS: after clear: %d children remaining", afterCount)
-
 	// Create new result rows
-	renderStart := time.Now()
 	successCount := 0
 	if len(items) > 0 {
-		debugLogger.Printf("UPDATE_RESULTS: first item title: '%s'", items[0].Title)
 	}
 	for i, item := range items {
 		row, err := l.createResultRow(item, i)
 		if err != nil {
-			debugLogger.Printf("UPDATE_RESULTS: failed to create row %d for item '%s': %v", i, item.Title, err)
 			fmt.Printf("Failed to create row: %v\n", err)
 			continue
 		}
 		l.resultList.Add(row)
 		successCount++
-		debugLogger.Printf("UPDATE_RESULTS: added row %d: '%s'", i, item.Title)
 	}
-
-	childrenAfterAdd := l.resultList.GetChildren()
-	addChildCount := 0
-	if childrenAfterAdd != nil {
-		addChildCount = int(childrenAfterAdd.Length())
-	}
-	debugLogger.Printf("UPDATE_RESULTS: after add: %d children (rendered %d/%d rows in %v)", addChildCount, successCount, len(items), time.Since(renderStart))
 
 	// Make sure the scrolled window is visible
 	if l.scrolledWindow != nil {
@@ -513,8 +438,6 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 		l.scrolledWindow.QueueDraw()
 	}
 
-	debugLogger.Printf("UPDATE_RESULTS: ShowAll and QueueDraw completed")
-
 	// Select first row if any
 	if len(items) > 0 {
 		children := l.resultList.GetChildren()
@@ -527,7 +450,6 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 		}
 	}
 
-	debugLogger.Printf("UPDATE_RESULTS: completed for version=%d in %v", version, time.Since(updateStart))
 	return true
 }
 
@@ -1049,20 +971,14 @@ func (l *Launcher) Show() error {
 	}
 	l.mu.Unlock()
 
-	// GTK calls happen without holding lock
-	debugLogger.Printf("SHOW: calling window.ShowAll()")
+	// GTK calls happen without holding lock cause its ont teh same thread
 	l.window.ShowAll()
-	debugLogger.Printf("SHOW: calling window.Present()")
 	l.window.Present()
-	debugLogger.Printf("SHOW: setting search entry text to empty")
 	l.searchEntry.SetText("")
-	debugLogger.Printf("SHOW: grabbing focus")
 	l.searchEntry.GrabFocus()
 
 	// Update visibility flag atomically
-	debugLogger.Printf("SHOW: setting visible flag to true")
 	l.visible.Store(true)
-	debugLogger.Printf("SHOW: Show() complete")
 
 	return nil
 }
@@ -1090,9 +1006,7 @@ func (l *Launcher) stopAndDrainSearchTimer() {
 			if l.searchTimer.C != nil {
 				select {
 				case <-l.searchTimer.C:
-					debugLogger.Printf("TIMER_DRAIN: successfully drained timer channel")
 				default:
-					debugLogger.Printf("TIMER_DRAIN: timer channel was empty")
 				}
 			}
 		}

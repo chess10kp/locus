@@ -12,7 +12,6 @@ type ActionData interface {
 	ToJSON() ([]byte, error)
 }
 
-// ShellAction executes a shell command
 type ShellAction struct {
 	Command string `json:"command"`
 }
@@ -221,6 +220,7 @@ func ParseActionData(data []byte) (ActionData, error) {
 		return &action, nil
 
 	case "lock_screen":
+		fmt.Printf("trying to lokc the screen")
 		var action LockScreenAction
 		if err := json.Unmarshal(data, &action); err != nil {
 			return nil, fmt.Errorf("failed to parse lock screen action: %w", err)
