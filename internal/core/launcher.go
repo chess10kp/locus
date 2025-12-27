@@ -634,6 +634,16 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 		return true
 	case gdk.KEY_Tab:
 		return l.onTabPressed()
+	case gdk.KEY_n:
+		if state&uint(gdk.CONTROL_MASK) != 0 {
+			l.navigateResult(1)
+			return true
+		}
+	case gdk.KEY_p:
+		if state&uint(gdk.CONTROL_MASK) != 0 {
+			l.navigateResult(-1)
+			return true
+		}
 	}
 
 	// Check for Alt+number (1-9) to directly activate corresponding entry
