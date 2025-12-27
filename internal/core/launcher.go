@@ -290,7 +290,6 @@ func (l *Launcher) setupSignals() {
 
 func (l *Launcher) onSearchChanged(text string) {
 	searchStart := time.Now()
-	fmt.Printf("[SEARCH] Input changed to: '%s' (len=%d)\n", text, len(text))
 
 	l.mu.Lock()
 	defer l.mu.Unlock()

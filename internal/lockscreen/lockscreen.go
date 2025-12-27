@@ -222,32 +222,7 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 	if err != nil {
 		return err
 	}
-	cssData := `#lockscreen-window {
-			background-color: #0e1419;
-		}
-		#lockscreen-entry {
-			background-color: #1e1e2e;
-			color: #ebdbb2;
-			border: 4px solid #458588;
-			border-radius: 8px;
-			padding: 12px;
-			font-size: 18px;
-			min-width: 300px;
-			box-shadow: 0 0 10px #458588;
-		}
-		#lockscreen-entry:focus {
-			border-color: #83a598;
-			background-color: #282838;
-		}
-		#lockscreen-status {
-			color: #ebdbb2;
-			font-size: 16px;
-		}
-		#lockscreen-label {
-			color: #ebdbb2;
-			font-size: 24px;
-	}`
-	cssProvider.LoadFromData(cssData)
+	cssProvider.LoadFromData(m.config.LockScreen.CSS)
 
 	screen, err := gdk.ScreenGetDefault()
 	if err == nil {
