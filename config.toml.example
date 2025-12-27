@@ -156,3 +156,8 @@ css_classes = ["emacs-clock-module"]
 
 [status_bar.module_configs.timer]
 css_classes = ["timer-module"]
+
+[lock_screen]
+password = "admin"
+max_attempts = 3
+enabled = true

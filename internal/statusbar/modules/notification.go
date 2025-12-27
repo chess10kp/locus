@@ -1,7 +1,6 @@
 package modules
 
 import (
-	"log"
 	"time"
 
 	"github.com/gotk3/gotk3/glib"
@@ -149,12 +148,10 @@ func (m *NotificationModule) updateLoop(callback func()) {
 func (m *NotificationModule) fetchUnreadCount() int {
 	count, err := notification.GetUnreadCount(m.socketPath)
 	if err != nil {
-		log.Printf("Failed to fetch unread count: %v", err)
 		return 0
 	}
 	return count
 }
-
 func (m *NotificationModule) formatNotification() string {
 	if m.count > 0 {
 		if m.count > 99 {
