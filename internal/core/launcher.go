@@ -607,9 +607,6 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 	key := event.KeyVal()
 	state := event.State()
 
-	debugLogger.Printf("KEY_PRESS: key=%d, state=%d, CONTROL_MASK=%d, MOD1_MASK=%d",
-		key, state, uint(gdk.CONTROL_MASK), uint(gdk.MOD1_MASK))
-
 	switch key {
 	case gdk.KEY_Escape:
 		l.Hide()
@@ -623,17 +620,13 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 	case gdk.KEY_Tab:
 		return l.onTabPressed()
 	case gdk.KEY_n:
-		debugLogger.Printf("KEY_n pressed, has_ctrl=%v", state&uint(gdk.CONTROL_MASK) != 0)
 		if state&uint(gdk.CONTROL_MASK) != 0 {
-			debugLogger.Printf("KEY_n: calling navigateResult(1)")
 			l.navigateResult(1)
 			return true
 		}
 		return false
 	case gdk.KEY_p:
-		debugLogger.Printf("KEY_p pressed, has_ctrl=%v", state&uint(gdk.CONTROL_MASK) != 0)
 		if state&uint(gdk.CONTROL_MASK) != 0 {
-			debugLogger.Printf("KEY_p: calling navigateResult(-1)")
 			l.navigateResult(-1)
 			return true
 		}
@@ -815,88 +808,33 @@ func (l *Launcher) handleStatusRequests(ctx context.Context, ch <-chan launcher.
 }
 
 func (l *Launcher) navigateResult(direction int) {
-	debugLogger.Printf("NAVIGATE_RESULT: called with direction=%d", direction)
-
 	selected := l.resultList.GetSelectedRow()
-	children := l.resultList.GetChildren()
-
-	childCount := int(children.Length())
-	debugLogger.Printf("NAVIGATE_RESULT: current children count=%d", childCount)
-
-	if childCount == 0 {
-		debugLogger.Printf("NAVIGATE_RESULT: no children, returning")
-		return
-	}
 
 	var currentIndex int = -1
 	if selected != nil {
 		currentIndex = selected.GetIndex()
 	}
-	debugLogger.Printf("NAVIGATE_RESULT: current selection index=%d", currentIndex)
 
 	var nextIndex int
 	if currentIndex == -1 {
 		if direction > 0 {
 			nextIndex = 0
 		} else {
-			nextIndex = childCount - 1
+			nextIndex = int(l.resultList.GetChildren().Length()) - 1
 		}
-		debugLogger.Printf("NAVIGATE_RESULT: no current selection, setting nextIndex=%d", nextIndex)
 	} else {
 		nextIndex = currentIndex + direction
+		totalRows := int(l.resultList.GetChildren().Length())
 		if nextIndex < 0 {
-			nextIndex = childCount - 1
-		} else if nextIndex >= childCount {
+			nextIndex = totalRows - 1
+		} else if nextIndex >= totalRows {
 			nextIndex = 0
 		}
-		debugLogger.Printf("NAVIGATE_RESULT: calculated nextIndex=%d from current=%d + direction=%d", nextIndex, currentIndex, direction)
 	}
 
-	// Try to get the row at the calculated index
-	data := children.NthData(uint(nextIndex))
-	debugLogger.Printf("NAVIGATE_RESULT: NthData(%d) returned: %v", nextIndex, data)
-
-	if data != nil {
-		debugLogger.Printf("NAVIGATE_RESULT: data type: %T", data)
-		if row, ok := data.(*gtk.ListBoxRow); ok {
-			debugLogger.Printf("NAVIGATE_RESULT: successfully cast to ListBoxRow, selecting row at index %d", nextIndex)
-			l.resultList.SelectRow(row)
-
-			// Force UI update
-			l.resultList.QueueDraw()
-			if l.scrolledWindow != nil {
-				l.scrolledWindow.QueueDraw()
-			}
-			glib.IdleAdd(func() bool {
-				debugLogger.Printf("NAVIGATE_RESULT: idle callback - checking selection")
-				newSelected := l.resultList.GetSelectedRow()
-				if newSelected != nil {
-					debugLogger.Printf("NAVIGATE_RESULT: selection updated to index %d", newSelected.GetIndex())
-				} else {
-					debugLogger.Printf("NAVIGATE_RESULT: no selection after update")
-				}
-				return false
-			})
-		} else {
-			debugLogger.Printf("NAVIGATE_RESULT: failed to cast data to *gtk.ListBoxRow")
-		}
-	} else {
-		debugLogger.Printf("NAVIGATE_RESULT: NthData(%d) returned nil", nextIndex)
-
-		// Try alternative approach: iterate through children
-		debugLogger.Printf("NAVIGATE_RESULT: trying alternative approach - iterating children")
-		i := 0
-		children.Foreach(func(item interface{}) {
-			if i == nextIndex {
-				if row, ok := item.(*gtk.ListBoxRow); ok {
-					debugLogger.Printf("NAVIGATE_RESULT: found row via iteration at index %d", i)
-					l.resultList.SelectRow(row)
-				} else {
-					debugLogger.Printf("NAVIGATE_RESULT: iteration item at index %d is not a ListBoxRow: %T", i, item)
-				}
-			}
-			i++
-		})
+	// Use GetRowAtIndex instead of NthData - this is the correct GTK API
+	if row := l.resultList.GetRowAtIndex(nextIndex); row != nil {
+		l.resultList.SelectRow(row)
 	}
 }
 
