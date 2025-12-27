@@ -639,11 +639,13 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 			l.navigateResult(1)
 			return true
 		}
+		return false
 	case gdk.KEY_p:
 		if state&uint(gdk.CONTROL_MASK) != 0 {
 			l.navigateResult(-1)
 			return true
 		}
+		return false
 	}
 
 	// Check for Alt+number (1-9) to directly activate corresponding entry
