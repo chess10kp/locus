@@ -9,7 +9,7 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/hashicorp/golang-lru/v2"
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 // IconCache provides efficient icon caching for GTK3

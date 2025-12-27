@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2"
-	"github.com/sigma/locus-go/internal/apps"
+	"github.com/chess10kp/locus/internal/apps"
 )
 
 // SearchCacheEntry represents a cached search result

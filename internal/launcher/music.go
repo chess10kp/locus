@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 type MusicLauncher struct {

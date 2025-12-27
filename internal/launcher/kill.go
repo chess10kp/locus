@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 type KillLauncher struct {

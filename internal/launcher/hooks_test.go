@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 // MockHook is a test hook implementation

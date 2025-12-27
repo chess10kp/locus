@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/sigma/locus-go/internal/config"
-	"github.com/sigma/locus-go/internal/core"
+	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/core"
 )
 
 const pidFile = "/tmp/locus.pid"

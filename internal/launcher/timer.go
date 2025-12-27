@@ -3,6 +3,7 @@ package launcher
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -11,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 type TimerLauncher struct {
@@ -135,6 +136,7 @@ func (l *TimerLauncher) startTimer(timeStr string) error {
 	l.timerActive = true
 
 	initialDisplay := l.formatDuration(time.Duration(*seconds) * time.Second)
+	log.Printf("[TIMER] Starting timer for %s (%d seconds)", timeStr, *seconds)
 	l.sendIPCMessage(fmt.Sprintf("timer:%s", initialDisplay))
 
 	go l.runTimer(ctx, *seconds)
@@ -189,14 +191,23 @@ func (l *TimerLauncher) timerComplete(totalSeconds int) {
 
 func (l *TimerLauncher) sendIPCMessage(message string) {
 	socketPath := l.config.SocketPath
+	if socketPath == "" {
+		socketPath = "/tmp/locus_socket"
+	}
+	log.Printf("[TIMER] Using socket path: %s", socketPath)
 	conn, err := net.Dial("unix", socketPath)
 	if err != nil {
+		log.Printf("[TIMER] Failed to connect to socket %s: %v", socketPath, err)
 		return
 	}
 	defer conn.Close()
 
 	fullMessage := fmt.Sprintf("statusbar:%s", message)
-	_, _ = conn.Write([]byte(fullMessage))
+	log.Printf("[TIMER] Sending IPC message: %s", fullMessage)
+	_, err = conn.Write([]byte(fullMessage))
+	if err != nil {
+		log.Printf("[TIMER] Failed to write IPC message: %v", err)
+	}
 }
 
 func (l *TimerLauncher) GetHooks() []Hook {
@@ -245,21 +256,29 @@ func (h *TimerHook) Priority() int {
 }
 
 func (h *TimerHook) OnSelect(execCtx context.Context, ctx *HookContext, data ActionData) HookResult {
+	log.Printf("[TIMER-HOOK] OnSelect called with data: %+v", data)
 	if timerAction, ok := data.(*TimerAction); ok {
+		log.Printf("[TIMER-HOOK] TimerAction found: action=%s, value=%s", timerAction.Action, timerAction.Value)
 		if timerAction.Action == "start" {
-			_ = h.launcher.startTimer(timerAction.Value)
+			err := h.launcher.startTimer(timerAction.Value)
+			log.Printf("[TIMER-HOOK] Started timer with value '%s', err: %v", timerAction.Value, err)
 			return HookResult{Handled: true}
 		}
 	}
+	log.Printf("[TIMER-HOOK] No valid TimerAction found")
 	return HookResult{Handled: false}
 }
 
 func (h *TimerHook) OnEnter(execCtx context.Context, ctx *HookContext, text string) HookResult {
+	log.Printf("[TIMER-HOOK] OnEnter called with text: '%s'", text)
 	trigger := h.getTrigger()
+	log.Printf("[TIMER-HOOK] Trigger: '%s'", trigger)
 	if strings.HasPrefix(text, trigger) {
 		timeStr := strings.TrimSpace(text[len(trigger):])
+		log.Printf("[TIMER-HOOK] Time string extracted: '%s'", timeStr)
 		if timeStr != "" {
-			_ = h.launcher.startTimer(timeStr)
+			err := h.launcher.startTimer(timeStr)
+			log.Printf("[TIMER-HOOK] Started timer from OnEnter with value '%s', err: %v", timeStr, err)
 			return HookResult{Handled: true}
 		}
 	}

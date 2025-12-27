@@ -8,7 +8,7 @@ import (
 
 	"github.com/godbus/dbus/v5"
 	"github.com/gotk3/gotk3/glib"
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 type Daemon struct {

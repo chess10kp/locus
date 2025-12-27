@@ -329,9 +329,15 @@ func (s *UpdateScheduler) HandleIPCMessage(message string) bool {
 	s.mu.RLock()
 	log.Printf("[SCHEDULER] Checking modules in updates map: %d modules", len(s.updates))
 	for name := range s.updates {
-		log.Printf("[SCHEDULER] Checking module '%s' for IPC handling", name)
+		module, exists := s.registry.GetModule(name)
+		if !exists {
+			log.Printf("[SCHEDULER] Module '%s' not in registry", name)
+			continue
+		}
+		log.Printf("[SCHEDULER] Checking module '%s' for IPC handling (HandlesIPC=%v)", name, module.HandlesIPC())
 		if handled := s.registry.HandleModuleIPC(name, message); handled {
 			handledModule = name
+			log.Printf("[SCHEDULER] Module '%s' handled the message", name)
 			break
 		}
 	}
@@ -345,7 +351,9 @@ func (s *UpdateScheduler) HandleIPCMessage(message string) bool {
 		s.mu.RUnlock()
 
 		if ok && info.Module.UpdateMode() == UpdateModeOnDemand {
-			_ = s.updateModule(handledModule)
+			log.Printf("[SCHEDULER] Updating widget for ON_DEMAND module: %s", handledModule)
+			err := s.updateModule(handledModule)
+			log.Printf("[SCHEDULER] Widget update result for '%s': %v", handledModule, err)
 		}
 		return true
 	}

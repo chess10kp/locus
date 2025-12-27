@@ -3,7 +3,7 @@ package launcher
 import (
 	"testing"
 
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 func TestLauncherRegistration(t *testing.T) {

@@ -12,13 +12,13 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/layer"
+	"github.com/chess10kp/locus/internal/statusbar"
+	statusbarModules "github.com/chess10kp/locus/internal/statusbar/modules"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/sigma/locus-go/internal/config"
-	"github.com/sigma/locus-go/internal/layer"
-	"github.com/sigma/locus-go/internal/statusbar"
-	statusbarModules "github.com/sigma/locus-go/internal/statusbar/modules"
 )
 
 var (
@@ -254,6 +254,8 @@ func (sb *StatusBar) Update() error {
 
 func (sb *StatusBar) HandleIPC(msg string) error {
 	log.Printf("[STATUSBAR] Received IPC message: %s", msg)
+	scheduledModules := sb.scheduler.GetScheduledModules()
+	log.Printf("[STATUSBAR] Scheduled modules: %v", scheduledModules)
 	handled := sb.scheduler.HandleIPCMessage(msg)
 	log.Printf("[STATUSBAR] IPC message handled: %v", handled)
 	return nil

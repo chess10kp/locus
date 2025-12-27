@@ -10,7 +10,7 @@ import (
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/gotk3/gotk3/pango"
-	"github.com/sigma/locus-go/internal/layer"
+	"github.com/chess10kp/locus/internal/layer"
 )
 
 var (

@@ -375,6 +375,7 @@ func (r *ModuleRegistry) HandleModuleIPC(name string, message string) bool {
 	r.mu.RUnlock()
 
 	if !exists {
+		log.Printf("[REGISTRY] Module '%s' does not exist, cannot handle IPC", name)
 		return false
 	}
 

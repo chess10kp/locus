@@ -4,8 +4,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/chess10kp/locus/internal/statusbar"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/sigma/locus-go/internal/statusbar"
 )
 
 type TimerModule struct {
@@ -63,9 +63,24 @@ func (m *TimerModule) Initialize(config map[string]interface{}) error {
 	m.SetCSSClasses([]string{"timer-module"})
 
 	m.SetIPCHandler(func(message string) bool {
-		log.Printf("[TIMER-MODULE] Received IPC message: %s", message)
-		if strings.HasPrefix(message, "timer:") {
+		log.Printf("[TIMER-MODULE] Received IPC message: '%s'", message)
+		log.Printf("[TIMER-MODULE] Checking prefix 'statusbar:timer:': %v", strings.HasPrefix(message, "statusbar:timer:"))
+		log.Printf("[TIMER-MODULE] Checking prefix 'timer:': %v", strings.HasPrefix(message, "timer:"))
+
+		if strings.HasPrefix(message, "statusbar:timer:") {
+			timerMsg := strings.TrimPrefix(message, "statusbar:timer:")
+			log.Printf("[TIMER-MODULE] Matched statusbar:timer:, timerMsg='%s'", timerMsg)
+			if timerMsg == "clear" {
+				log.Printf("[TIMER-MODULE] Clearing timer display")
+				m.display = ""
+			} else {
+				log.Printf("[TIMER-MODULE] Setting timer display to: %s", timerMsg)
+				m.display = "Timer: " + timerMsg
+			}
+			return true
+		} else if strings.HasPrefix(message, "timer:") {
 			timerMsg := strings.TrimPrefix(message, "timer:")
+			log.Printf("[TIMER-MODULE] Matched timer:, timerMsg='%s'", timerMsg)
 			if timerMsg == "clear" {
 				log.Printf("[TIMER-MODULE] Clearing timer display")
 				m.display = ""
@@ -75,6 +90,7 @@ func (m *TimerModule) Initialize(config map[string]interface{}) error {
 			}
 			return true
 		}
+		log.Printf("[TIMER-MODULE] Message not handled: %s", message)
 		return false
 	})
 

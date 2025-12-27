@@ -1,5 +1,5 @@
 app_name = "locus_bar"
-app_id = "com.github.sigma.locus"
+app_id = "com.github.chess10kp.locus"
 
 [status_bar]
 height = 40

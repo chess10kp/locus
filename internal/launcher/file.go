@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 type FileLauncher struct {

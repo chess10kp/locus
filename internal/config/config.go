@@ -240,7 +240,7 @@ type LockScreenConfig struct {
 
 var DefaultConfig = Config{
 	AppName:    "locus_bar",
-	AppID:      "com.github.sigma.locus",
+	AppID:      "com.github.chess10kp.locus",
 	SocketPath: "/tmp/locus_socket",
 	CacheDir:   "~/.cache/locus",
 	ConfigDir:  "~/.config/locus",
@@ -256,6 +256,7 @@ var DefaultConfig = Config{
 			Middle: []string{},
 			Right: []string{
 				"notifications",
+				"timer",
 				"time",
 				"battery",
 				"custom_message",

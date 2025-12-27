@@ -3,8 +3,8 @@ package modules
 import (
 	"log"
 
+	"github.com/chess10kp/locus/internal/statusbar"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/sigma/locus-go/internal/statusbar"
 )
 
 // CustomMessageModule displays custom messages via IPC
@@ -76,6 +76,10 @@ func (m *CustomMessageModule) Initialize(config map[string]interface{}) error {
 
 	m.SetIPCHandler(func(message string) bool {
 		log.Printf("CustomMessageModule received IPC: %s", message)
+		if len(message) > 6 && message[:6] == "timer:" {
+			log.Printf("CustomMessageModule ignoring timer message")
+			return false
+		}
 		m.message = message
 		return true
 	})

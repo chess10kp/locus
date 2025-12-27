@@ -5,9 +5,9 @@ import (
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/sigma/locus-go/internal/config"
-	"github.com/sigma/locus-go/internal/notification"
-	"github.com/sigma/locus-go/internal/statusbar"
+	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/notification"
+	"github.com/chess10kp/locus/internal/statusbar"
 )
 
 type NotificationModule struct {

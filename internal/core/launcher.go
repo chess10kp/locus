@@ -15,9 +15,9 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/sigma/locus-go/internal/config"
-	"github.com/sigma/locus-go/internal/launcher"
-	"github.com/sigma/locus-go/internal/layer"
+	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/launcher"
+	"github.com/chess10kp/locus/internal/layer"
 )
 
 var debugLogger = log.New(log.Writer(), "[LAUNCHER-DEBUG] ", log.LstdFlags|log.Lmicroseconds)
@@ -220,11 +220,14 @@ func (l *Launcher) setupSignals() {
 		if event == nil {
 			return false
 		}
-		keyEvent := gdk.EventKeyNewFromEvent(event)
-		if keyEvent == nil {
+		if l == nil || l.searchEntry == nil {
 			return false
 		}
-		if l == nil {
+		if !l.visible.Load() {
+			return false
+		}
+		keyEvent := gdk.EventKeyNewFromEvent(event)
+		if keyEvent == nil {
 			return false
 		}
 		defer func() {

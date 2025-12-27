@@ -1,4 +1,4 @@
-module github.com/sigma/locus-go
+module github.com/chess10kp/locus
 
 go 1.21
 

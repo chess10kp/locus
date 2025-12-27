@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sigma/locus-go/internal/apps"
-	"github.com/sigma/locus-go/internal/config"
+	"github.com/chess10kp/locus/internal/apps"
+	"github.com/chess10kp/locus/internal/config"
 )
 
 type LauncherUI interface {

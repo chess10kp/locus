@@ -76,7 +76,7 @@ package modules
 
 import (
     "github.com/gotk3/gotk3/gtk"
-    "github.com/sigma/locus-go/internal/statusbar"
+    "github.com/chess10kp/locus/internal/statusbar"
 )
 
 type MyModule struct {

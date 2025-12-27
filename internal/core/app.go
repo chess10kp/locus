@@ -7,9 +7,9 @@ import (
 	"syscall"
 
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/sigma/locus-go/internal/config"
-	"github.com/sigma/locus-go/internal/lockscreen"
-	"github.com/sigma/locus-go/internal/notification"
+	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/lockscreen"
+	"github.com/chess10kp/locus/internal/notification"
 )
 
 // App is main application
