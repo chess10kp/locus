@@ -13,11 +13,11 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/layer"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/chess10kp/locus/internal/config"
-	"github.com/chess10kp/locus/internal/layer"
 )
 
 var debugLogger = log.New(log.Writer(), "[LOCKSCREEN-DEBUG] ", log.LstdFlags|log.Lmicroseconds)
@@ -88,7 +88,7 @@ func (m *LockScreenManager) Show() error {
 			continue
 		}
 
-		isInputEnabled := i == 0
+		isInputEnabled := true
 		lockScreen, err := m.createLockScreenWindow(monitor, isInputEnabled)
 		if err != nil {
 			log.Printf("Failed to create lock screen for monitor %d: %v", i, err)
@@ -198,6 +198,45 @@ func (m *LockScreenManager) createLockScreenWindow(monitor *gdk.Monitor, isInput
 }
 
 func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
+	debugLogger.Println("=== buildLockScreenUI START ===")
+
+	// Apply CSS provider for lock screen styling
+	cssProvider, err := gtk.CssProviderNew()
+	if err != nil {
+		return err
+	}
+	cssData := `#lockscreen-window {
+			background-color: #0e1419;
+		}
+		#lockscreen-entry {
+			background-color: #1e1e2e;
+			color: #ebdbb2;
+			border: 4px solid #458588;
+			border-radius: 8px;
+			padding: 12px;
+			font-size: 18px;
+			min-width: 300px;
+			box-shadow: 0 0 10px #458588;
+		}
+		#lockscreen-entry:focus {
+			border-color: #83a598;
+			background-color: #282838;
+		}
+		#lockscreen-status {
+			color: #ebdbb2;
+			font-size: 16px;
+		}
+		#lockscreen-label {
+			color: #ebdbb2;
+			font-size: 24px;
+	}`
+	cssProvider.LoadFromData(cssData)
+
+	screen, err := gdk.ScreenGetDefault()
+	if err == nil {
+		gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	}
+
 	mainBox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 	if err != nil {
 		return err
@@ -232,6 +271,8 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 		passwordEntry.SetName("lockscreen-entry")
 		ls.passwordEntry = passwordEntry
 
+		debugLogger.Printf("Password entry created: visibility=%v, has-focus=%v", passwordEntry.GetVisible(), passwordEntry.HasFocus())
+
 		statusLabel, err := gtk.LabelNew("")
 		if err != nil {
 			return err
@@ -243,6 +284,12 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 
 		centerBox.PackStart(passwordEntry, false, false, 0)
 		centerBox.PackStart(statusLabel, false, false, 0)
+
+		// Explicitly show widgets
+		passwordEntry.Show()
+		statusLabel.Show()
+
+		debugLogger.Printf("Password entry shown: visible=%v", passwordEntry.GetVisible())
 
 		ls.passwordEntry.Connect("activate", func() {
 			m.checkPassword(ls)
@@ -261,9 +308,14 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 		ls.lockedLabel = lockedLabel
 
 		centerBox.PackStart(lockedLabel, false, false, 0)
+		lockedLabel.Show()
 	}
 
 	mainBox.PackStart(centerBox, true, true, 0)
+
+	// Explicitly show containers
+	centerBox.Show()
+	mainBox.Show()
 
 	return nil
 }
@@ -301,8 +353,8 @@ func (m *LockScreenManager) setupKeyHandlers(ls *LockScreenWindow) {
 }
 
 func (m *LockScreenManager) setupCloseHandler(ls *LockScreenWindow) {
-	ls.window.Connect("close-request", func() bool {
-		return true
+	ls.window.Connect("delete-event", func() bool {
+		return true // Prevent window from being closed
 	})
 }
 
@@ -310,6 +362,19 @@ func (m *LockScreenManager) showLockScreenWindow(ls *LockScreenWindow) {
 	geo := ls.monitor.GetGeometry()
 	ls.window.SetDefaultSize(geo.GetWidth(), geo.GetHeight())
 
+	debugLogger.Printf("Before ShowAll: centerBox=%v, passwordEntry=%v", ls.centerBox != nil, ls.passwordEntry != nil)
+
+	// Show all widgets BEFORE setting up layer shell
+	ls.window.ShowAll()
+
+	debugLogger.Printf("After ShowAll: window visible=%v", ls.window.GetVisible())
+
+	if ls.isInputEnabled && ls.passwordEntry != nil {
+		_, err := ls.passwordEntry.GetParent()
+		debugLogger.Printf("Password entry before layer: visible=%v, has-parent=%v, parent-error=%v", ls.passwordEntry.GetVisible(), err == nil, err)
+	}
+
+	// Set up layer shell AFTER widgets are shown
 	windowPtr := unsafe.Pointer(ls.window.Native())
 	layer.InitForWindow(windowPtr)
 	layer.SetLayer(windowPtr, layer.LayerOverlay)
@@ -326,10 +391,13 @@ func (m *LockScreenManager) showLockScreenWindow(ls *LockScreenWindow) {
 
 	C.gtk_layer_set_monitor((*C.GtkWindow)(windowPtr), (*C.GdkMonitor)(unsafe.Pointer(ls.monitor.Native())))
 
-	ls.window.Show()
-
 	if ls.isInputEnabled && ls.passwordEntry != nil {
-		ls.passwordEntry.GrabFocus()
+		// Grab focus after a short delay to ensure widgets are realized
+		glib.TimeoutAdd(100, func() bool {
+			debugLogger.Printf("Password entry in timeout: visible=%v", ls.passwordEntry.GetVisible())
+			ls.passwordEntry.GrabFocus()
+			return false
+		})
 	}
 }
 

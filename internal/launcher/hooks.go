@@ -13,12 +13,13 @@ import (
 
 // HookContext provides context information to hooks during execution
 type HookContext struct {
-	LauncherName string
-	Query        string
-	SelectedItem *LauncherItem
-	Config       *config.Config
-	RefreshUI    chan<- RefreshUIRequest // Channel to request UI refresh
-	SendStatus   chan<- StatusRequest    // Channel to send status messages
+	LauncherName   string
+	Query          string
+	SelectedItem   *LauncherItem
+	Config         *config.Config
+	RefreshUI      chan<- RefreshUIRequest // Channel to request UI refresh
+	SendStatus     chan<- StatusRequest    // Channel to send status messages
+	ShowLockScreen func() error            // Callback to show lock screen
 }
 
 // RefreshUI sends a request to refresh the UI
@@ -269,6 +270,11 @@ func (r *HookRegistry) ExecuteSelectHooks(execCtx context.Context, ctx *HookCont
 		r.stats.RecordExecution(duration, success)
 	}()
 
+	// Defensive checks
+	if ctx == nil {
+		return HookResult{Handled: false}
+	}
+
 	r.mu.RLock()
 	hooks := r.hooks[ctx.LauncherName]
 	r.mu.RUnlock()
@@ -322,6 +328,11 @@ func (r *HookRegistry) ExecuteEnterHooks(execCtx context.Context, ctx *HookConte
 		r.stats.RecordExecution(duration, success)
 	}()
 
+	// Defensive checks
+	if ctx == nil {
+		return HookResult{Handled: false}
+	}
+
 	r.mu.RLock()
 	hooks := r.hooks[ctx.LauncherName]
 	r.mu.RUnlock()
@@ -368,6 +379,11 @@ func (r *HookRegistry) ExecuteTabHooks(execCtx context.Context, ctx *HookContext
 		success := recover() == nil
 		r.stats.RecordExecution(duration, success)
 	}()
+
+	// Defensive checks
+	if ctx == nil {
+		return TabResult{Handled: false}
+	}
 
 	r.mu.RLock()
 	hooks := r.hooks[ctx.LauncherName]

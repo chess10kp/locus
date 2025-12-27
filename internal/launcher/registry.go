@@ -23,8 +23,9 @@ type LauncherUI interface {
 }
 
 type LauncherContext struct {
-	Config *config.Config
-	UI     LauncherUI
+	Config         *config.Config
+	UI             LauncherUI
+	ShowLockScreen func() error
 }
 
 // LauncherSizeMode represents launcher window size mode
@@ -615,6 +616,24 @@ func (r *LauncherRegistry) RefreshLauncher(name string) error {
 // GetHookRegistry returns the hook registry
 func (r *LauncherRegistry) GetHookRegistry() *HookRegistry {
 	return r.hookRegistry
+}
+
+// SetLockScreenCallback sets the callback to show lock screen and registers the hook
+func (r *LauncherRegistry) SetLockScreenCallback(callback func() error) {
+	if r.ctx != nil {
+		r.ctx.ShowLockScreen = callback
+	}
+	// Register or update the lock screen hook with the callback
+	lockHook := NewLockScreenHook(callback)
+	r.hookRegistry.Register("lock-screen", lockHook)
+}
+
+// GetLockScreenCallback returns the lock screen callback
+func (r *LauncherRegistry) GetLockScreenCallback() func() error {
+	if r.ctx != nil {
+		return r.ctx.ShowLockScreen
+	}
+	return nil
 }
 
 // LoadBuiltIn loads built-in launchers

@@ -207,16 +207,42 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 }
 
 func (l *Launcher) setupSignals() {
+	if l == nil || l.searchEntry == nil || l.resultList == nil || l.window == nil {
+		log.Printf("[LAUNCHER] Cannot setup signals - launcher or widgets are nil")
+		return
+	}
+
 	l.searchEntry.Connect("changed", func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[LAUNCHER] Panic recovered in search changed: %v", r)
+			}
+		}()
+		if l == nil || l.searchEntry == nil {
+			return
+		}
 		text, _ := l.searchEntry.GetText()
 		l.onSearchChanged(text)
 	})
 
 	l.searchEntry.Connect("activate", func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[LAUNCHER] Panic recovered in search activate: %v", r)
+			}
+		}()
+		if l == nil {
+			return
+		}
 		l.onActivate()
 	})
 
 	l.searchEntry.Connect("key-press-event", func(entry *gtk.Entry, event *gdk.Event) bool {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[LAUNCHER] Panic recovered in key press: %v", r)
+			}
+		}()
 		if event == nil {
 			return false
 		}
@@ -230,22 +256,33 @@ func (l *Launcher) setupSignals() {
 		if keyEvent == nil {
 			return false
 		}
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("[LAUNCHER] Panic recovered in onKeyPress: %v", r)
-			}
-		}()
 		return l.onKeyPress(keyEvent)
 	})
 
 	l.resultList.Connect("row-activated", func(list *gtk.ListBox, row *gtk.ListBoxRow) {
-		if row == nil || l == nil {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[LAUNCHER] Panic recovered in row activated: %v", r)
+			}
+		}()
+		if l == nil {
+			return
+		}
+		if row == nil {
 			return
 		}
 		l.onRowActivated(row)
 	})
 
 	l.window.Connect("focus-out-event", func(window *gtk.Window, event *gdk.Event) bool {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[LAUNCHER] Panic recovered in focus out: %v", r)
+			}
+		}()
+		if l == nil {
+			return false
+		}
 		l.Hide()
 		return false
 	})
@@ -667,17 +704,26 @@ func (l *Launcher) onRowActivated(row *gtk.ListBoxRow) {
 	l.mu.RUnlock()
 
 	// Execute hooks first
-	hookCtx := l.createHookContext(item)
-	result := l.registry.GetHookRegistry().ExecuteSelectHooks(l.ctx, hookCtx, item.ActionData)
-
-	if result.Handled {
-		l.Hide()
-		return
+	if l.registry != nil {
+		hookCtx := l.createHookContext(item)
+		if hookCtx != nil && l.ctx != nil {
+			hookRegistry := l.registry.GetHookRegistry()
+			if hookRegistry != nil {
+				result := hookRegistry.ExecuteSelectHooks(l.ctx, hookCtx, item.ActionData)
+				if result.Handled {
+					log.Printf("[LAUNCHER] Hook handled action, hiding launcher")
+					l.Hide()
+					return
+				}
+			}
+		}
 	}
 
 	// Fall back to default execution
-	if err := l.registry.Execute(item); err != nil {
-		fmt.Printf("Failed to execute item: %v\n", err)
+	if l.registry != nil {
+		if err := l.registry.Execute(item); err != nil {
+			log.Printf("[LAUNCHER] Failed to execute item: %v\n", err)
+		}
 	}
 
 	l.Hide()
@@ -698,21 +744,21 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 	case gdk.KEY_Escape:
 		l.Hide()
 		return true
-	case gdk.KEY_Down, gdk.KEY_j:
+	case gdk.KEY_Down:
 		l.navigateResult(1)
 		return true
-	case gdk.KEY_Up, gdk.KEY_k:
+	case gdk.KEY_Up:
 		l.navigateResult(-1)
 		return true
 	case gdk.KEY_Tab:
 		return l.onTabPressed()
-	case gdk.KEY_n:
+	case gdk.KEY_n, gdk.KEY_j:
 		if state&uint(gdk.CONTROL_MASK) != 0 {
 			l.navigateResult(1)
 			return true
 		}
 		return false
-	case gdk.KEY_p:
+	case gdk.KEY_p, gdk.KEY_k: // TODO: add to config file;
 		if state&uint(gdk.CONTROL_MASK) != 0 {
 			l.navigateResult(-1)
 			return true
@@ -821,18 +867,48 @@ func (l *Launcher) onTabPressed() bool {
 }
 
 func (l *Launcher) createHookContext(item *launcher.LauncherItem) *launcher.HookContext {
+	if l == nil {
+		return nil
+	}
+
 	launcherName := ""
 	if item != nil && item.Launcher != nil {
 		launcherName = item.Launcher.Name()
 	}
 
+	var query string
+	if l != nil {
+		query = l.currentInput
+	}
+
+	var config *config.Config
+	if l != nil {
+		config = l.config
+	}
+
+	var refreshUIChan chan<- launcher.RefreshUIRequest
+	if l != nil {
+		refreshUIChan = l.refreshUIChan
+	}
+
+	var statusChan chan<- launcher.StatusRequest
+	if l != nil {
+		statusChan = l.statusChan
+	}
+
+	var showLockScreen func() error
+	if l.registry != nil {
+		showLockScreen = l.registry.GetLockScreenCallback()
+	}
+
 	return &launcher.HookContext{
-		LauncherName: launcherName,
-		Query:        l.currentInput,
-		SelectedItem: item,
-		Config:       l.config,
-		RefreshUI:    l.refreshUIChan,
-		SendStatus:   l.statusChan,
+		LauncherName:   launcherName,
+		Query:          query,
+		SelectedItem:   item,
+		Config:         config,
+		RefreshUI:      refreshUIChan,
+		SendStatus:     statusChan,
+		ShowLockScreen: showLockScreen,
 	}
 }
 
@@ -1069,6 +1145,11 @@ func (l *Launcher) Start() error {
 	if err := l.registry.LoadBuiltIn(); err != nil {
 		log.Printf("Failed to load launchers: %v", err)
 		return fmt.Errorf("failed to load launchers: %w", err)
+	}
+
+	// Set up lock screen callback
+	if l.app != nil {
+		l.registry.SetLockScreenCallback(l.app.ShowLockScreen)
 	}
 
 	log.Printf("Initializing layer shell")

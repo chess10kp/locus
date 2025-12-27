@@ -1,8 +1,6 @@
 package launcher
 
 import (
-	"fmt"
-
 	"github.com/chess10kp/locus/internal/config"
 )
 
@@ -29,13 +27,13 @@ func (l *LockLauncher) GetSizeMode() LauncherSizeMode {
 }
 
 func (l *LockLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
-	socketPath := l.config.SocketPath
 	return []*LauncherItem{
 		{
 			Title:      "Lock Screen",
 			Subtitle:   "Lock the screen immediately",
 			Icon:       "system-lock-screen-symbolic",
-			ActionData: NewShellAction(fmt.Sprintf("echo 'lock' | nc -U %s", socketPath)),
+			ActionData: NewLockScreenAction("show"),
+			Launcher:   l,
 		},
 	}
 }
