@@ -815,10 +815,16 @@ func (l *Launcher) handleStatusRequests(ctx context.Context, ch <-chan launcher.
 }
 
 func (l *Launcher) navigateResult(direction int) {
+	debugLogger.Printf("NAVIGATE_RESULT: called with direction=%d", direction)
+
 	selected := l.resultList.GetSelectedRow()
 	children := l.resultList.GetChildren()
 
-	if children.Length() == 0 {
+	childCount := int(children.Length())
+	debugLogger.Printf("NAVIGATE_RESULT: current children count=%d", childCount)
+
+	if childCount == 0 {
+		debugLogger.Printf("NAVIGATE_RESULT: no children, returning")
 		return
 	}
 
@@ -826,25 +832,47 @@ func (l *Launcher) navigateResult(direction int) {
 	if selected != nil {
 		currentIndex = selected.GetIndex()
 	}
+	debugLogger.Printf("NAVIGATE_RESULT: current selection index=%d", currentIndex)
 
 	var nextIndex int
 	if currentIndex == -1 {
 		if direction > 0 {
 			nextIndex = 0
 		} else {
-			nextIndex = int(children.Length()) - 1
+			nextIndex = childCount - 1
 		}
+		debugLogger.Printf("NAVIGATE_RESULT: no current selection, setting nextIndex=%d", nextIndex)
 	} else {
 		nextIndex = currentIndex + direction
 		if nextIndex < 0 {
-			nextIndex = int(children.Length()) - 1
-		} else if nextIndex >= int(children.Length()) {
+			nextIndex = childCount - 1
+		} else if nextIndex >= childCount {
 			nextIndex = 0
 		}
+		debugLogger.Printf("NAVIGATE_RESULT: calculated nextIndex=%d from current=%d + direction=%d", nextIndex, currentIndex, direction)
 	}
 
 	if row, ok := children.NthData(uint(nextIndex)).(*gtk.ListBoxRow); ok {
+		debugLogger.Printf("NAVIGATE_RESULT: selecting row at index %d", nextIndex)
 		l.resultList.SelectRow(row)
+
+		// Force UI update
+		l.resultList.QueueDraw()
+		if l.scrolledWindow != nil {
+			l.scrolledWindow.QueueDraw()
+		}
+		glib.IdleAdd(func() bool {
+			debugLogger.Printf("NAVIGATE_RESULT: idle callback - checking selection")
+			newSelected := l.resultList.GetSelectedRow()
+			if newSelected != nil {
+				debugLogger.Printf("NAVIGATE_RESULT: selection updated to index %d", newSelected.GetIndex())
+			} else {
+				debugLogger.Printf("NAVIGATE_RESULT: no selection after update")
+			}
+			return false
+		})
+	} else {
+		debugLogger.Printf("NAVIGATE_RESULT: failed to get row at index %d", nextIndex)
 	}
 }
 
