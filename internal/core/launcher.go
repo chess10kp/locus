@@ -835,6 +835,35 @@ func (l *Launcher) navigateResult(direction int) {
 	// Use GetRowAtIndex instead of NthData - this is the correct GTK API
 	if row := l.resultList.GetRowAtIndex(nextIndex); row != nil {
 		l.resultList.SelectRow(row)
+
+		// Scroll the selected row into view
+		if l.scrolledWindow != nil {
+			vadj := l.scrolledWindow.GetVAdjustment()
+			if vadj != nil {
+				// Get row allocation to determine its position
+				if widget := row.ToWidget(); widget != nil {
+					alloc := widget.GetAllocation()
+					rowY := alloc.GetY()
+					rowHeight := alloc.GetHeight()
+
+					// Get current scroll position and viewport size
+					scrollY := vadj.GetValue()
+					pageSize := vadj.GetPageSize()
+
+					// Check if row is visible
+					rowTop := float64(rowY)
+					rowBottom := float64(rowY + rowHeight)
+
+					if rowTop < scrollY {
+						// Row is above visible area, scroll up to show it
+						vadj.SetValue(rowTop)
+					} else if rowBottom > scrollY+pageSize {
+						// Row is below visible area, scroll down to show it
+						vadj.SetValue(rowBottom - pageSize)
+					}
+				}
+			}
+		}
 	}
 }
 
