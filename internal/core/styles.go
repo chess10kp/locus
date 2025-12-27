@@ -109,16 +109,15 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
     border: %dpx solid %s;
 }
 
-#launcher-entry {
-    background-color: %s;
-    color: %s;
-    padding: 12px;
-    border: none;
-    border-bottom: %dpx solid %s;
-    font-family: %s;
-    font-size: %dpx;
-    font-weight: %s;
-}
+ #launcher-entry {
+     background-color: %s;
+     color: %s;
+     padding: 12px;
+     border: none;
+     font-family: %s;
+     font-size: %dpx;
+     font-weight: %s;
+ }
 
 #launcher-entry:focus {
     border-bottom: %dpx solid %s;
@@ -128,24 +127,51 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
     background-color: transparent;
 }
 
-#list-row {
-    padding: 8px 12px;
-    border-bottom: %dpx solid %s;
-    min-height: 40px;
-    background-color: %s;
-}
+ #list-row {
+     padding: 4px 8px;
+     border-bottom: %dpx solid %s;
+     min-height: 32px;
+     background-color: %s;
+ }
 
 #list-row:selected {
     background-color: %s;
     color: %s;
 }
 
-#list-row:hover {
-    background-color: %s;
-}
+ #list-row:hover {
+     background-color: %s;
+ }
+
+ #badges-box {
+     background-color: #3c3836;
+     padding: 4px 8px;
+     border-radius: 3px;
+     margin-top: 4px;
+     font-size: 12px;
+ }
+
+ #badges-box label {
+     color: #888888;
+     font-family: %s;
+     padding: 0px 4px;
+ }
+
+ #footer-box {
+     background-color: #3c3836;
+     padding: 4px 8px;
+     border-radius: 3px;
+     margin-top: 4px;
+     font-size: 12px;
+ }
+
+ #footer-box label {
+     color: #888888;
+     font-family: %s;
+ }
 
 
-`,
+ `,
 		styling.BackgroundColor,
 		styling.ForegroundColor,
 		styling.BorderRadius,
@@ -154,9 +180,6 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
 
 		styling.EntryBackground,
 		styling.ForegroundColor,
-
-		styling.BorderWidth,
-		styling.EntryBorderColor,
 		styling.FontFamily,
 		styling.FontSize,
 		styling.FontWeight,
@@ -173,14 +196,8 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
 
 		styling.ListRowHover,
 
-		styling.ButtonBackground,
-		styling.ForegroundColor,
-		styling.BorderRadius,
 		styling.FontFamily,
-		styling.FontSize,
-		styling.FontWeight,
-
-		styling.ButtonHover,
+		styling.FontFamily,
 	)
 }
 

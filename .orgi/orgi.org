@@ -618,3 +618,30 @@
   :END:
 
   
+
+* DONE add context options at the bottom of the launcher. This might look like Select: Return Down: Ctrl+J and so on.
+  :PROPERTIES:
+  :ID: task-20251226194217
+  :TITLE: add context options at the bottom of the launcher. This might look like Select: Return Down: Ctrl+J and so on.
+  :CREATED: <2025-12-26 Fri 19:42>
+  :END:
+
+  
+
+* DONE remove the border from the input and reduce the spacing between results
+  :PROPERTIES:
+  :ID: task-20251226194236
+  :TITLE: remove the border from the input and reduce the spacing between results
+  :CREATED: <2025-12-26 Fri 19:42>
+  :END:
+
+  
+
+* DONE lets work on implementing a launcher for music. when the user types the prefix m: this should bring up the music launcher. This allow the user to perform all actoins related to the musci launcher and the one that you can check from teh python reference example.
+  :PROPERTIES:
+  :ID: task-20251226194638
+  :TITLE: lets work on implementing a launcher for music. when the user types the prefix m: this should bring up the music launcher. This allow the user to perform all actoins related to the musci launcher and the one that you can check from teh python reference example.
+  :CREATED: <2025-12-26 Fri 19:46>
+  :END:
+
+  

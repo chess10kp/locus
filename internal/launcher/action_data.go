@@ -206,6 +206,13 @@ func ParseActionData(data []byte) (ActionData, error) {
 		}
 		return &action, nil
 
+	case "music":
+		var action MusicAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse music action: %w", err)
+		}
+		return &action, nil
+
 	default:
 		// Treat as custom action
 		var action CustomAction
@@ -244,6 +251,30 @@ func NewStatusMessageAction(message string, duration time.Duration) *StatusMessa
 // NewRebuildLauncherAction creates a new RebuildLauncherAction
 func NewRebuildLauncherAction(launcherName string) *RebuildLauncherAction {
 	return &RebuildLauncherAction{LauncherName: launcherName}
+}
+
+// MusicAction performs music player operations
+type MusicAction struct {
+	Action string `json:"action"` // "toggle", "next", "prev", "clear", "play_file", "play_position", "view_queue", "view_library"
+	Value  string `json:"value"`  // file path, position, etc.
+}
+
+func (a *MusicAction) Type() string {
+	return "music"
+}
+
+func (a *MusicAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":   a.Type(),
+		"action": a.Action,
+		"value":  a.Value,
+	}
+	return json.Marshal(data)
+}
+
+// NewMusicAction creates a new MusicAction
+func NewMusicAction(action, value string) *MusicAction {
+	return &MusicAction{Action: action, Value: value}
 }
 
 // NewCustomAction creates a new CustomAction

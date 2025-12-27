@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -50,6 +51,9 @@ type Launcher struct {
 	currentInput   string
 	currentItems   []*launcher.LauncherItem
 	scrolledWindow *gtk.ScrolledWindow
+	badgesBox      *gtk.Box
+	footerBox      *gtk.Box
+	footerLabel    *gtk.Label
 	running        bool
 	visible        atomic.Bool
 	searchTimer    *time.Timer
@@ -118,6 +122,45 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	scrolledWindow.Add(resultList)
 	scrolledWindow.ShowAll()
 
+	// Create badges box for keyboard shortcuts
+	badgesBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create badges box: %w", err)
+	}
+	badgesBox.SetName("badges-box")
+	badgesBox.SetHAlign(gtk.ALIGN_FILL)
+
+	// Add keyboard shortcut hints
+	shortcuts := []string{"Select: Return", "↓: Ctrl+J", "↑: Ctrl+K"}
+	for _, shortcut := range shortcuts {
+		label, err := gtk.LabelNew(shortcut)
+		if err != nil {
+			continue
+		}
+		label.SetName("badge-label")
+		badgesBox.PackStart(label, false, false, 0)
+	}
+	box.PackStart(badgesBox, false, false, 4)
+
+	// Create footer box for context information
+	footerBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create footer box: %w", err)
+	}
+	footerBox.SetName("footer-box")
+	footerBox.SetHAlign(gtk.ALIGN_FILL)
+
+	footerLabel, err := gtk.LabelNew("Applications")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create footer label: %w", err)
+	}
+	footerLabel.SetName("footer-label")
+	footerLabel.SetHAlign(gtk.ALIGN_START)
+	footerLabel.SetHExpand(true)
+	footerBox.PackStart(footerLabel, true, true, 0)
+
+	box.PackStart(footerBox, false, false, 4)
+
 	registry := launcher.NewLauncherRegistry(cfg)
 
 	// Create icon cache
@@ -140,6 +183,9 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		searchEntry:    searchEntry,
 		resultList:     resultList,
 		scrolledWindow: scrolledWindow,
+		badgesBox:      badgesBox,
+		footerBox:      footerBox,
+		footerLabel:    footerLabel,
 		registry:       registry,
 		iconCache:      iconCache,
 		refreshUIChan:  refreshUIChan,
@@ -207,6 +253,9 @@ func (l *Launcher) onSearchChanged(text string) {
 	defer l.mu.Unlock()
 
 	l.currentInput = text
+
+	// Update footer based on launcher context
+	l.updateFooter(text)
 
 	// Increment search version for this request
 	version := atomic.AddInt64(&l.searchVersion, 1)
@@ -1031,6 +1080,52 @@ func (l *Launcher) IsRunning() bool {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 	return l.running
+}
+
+func (l *Launcher) updateFooter(input string) {
+	// Update footer based on launcher context
+	var footerText string
+
+	if l.footerLabel == nil {
+		return
+	}
+
+	// Check for launcher-specific input using registry
+	_, launcher, _ := l.registry.FindLauncherForInput(input)
+
+	if launcher != nil {
+		// Launcher-specific mode
+		footerText = launcher.Name()
+		if footerText == "" {
+			footerText = "Launcher"
+		} else {
+			// Capitalize first letter
+			runes := []rune(footerText)
+			if len(runes) > 0 {
+				runes[0] = []rune(strings.ToUpper(string(runes[0])))[0]
+				footerText = string(runes)
+			}
+		}
+	} else if strings.HasPrefix(input, ">") {
+		// Command mode
+		command := strings.TrimSpace(input[1:])
+		if command != "" {
+			footerText = fmt.Sprintf("Command: %s", command)
+		} else {
+			footerText = "Commands"
+		}
+	} else {
+		// Default app search
+		footerText = "Applications"
+	}
+
+	// Update the footer label in the main thread
+	glib.IdleAdd(func() bool {
+		if l.footerLabel != nil {
+			l.footerLabel.SetText(footerText)
+		}
+		return false
+	})
 }
 
 func (l *Launcher) IsVisible() bool {

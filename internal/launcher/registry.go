@@ -633,6 +633,7 @@ func (r *LauncherRegistry) LoadBuiltIn() error {
 		NewClipboardLauncher(r.config),
 		NewWifiLauncher(r.config),
 		NewFileLauncher(r.config),
+		NewMusicLauncher(r.config),
 	}
 
 	for _, l := range launchers {
@@ -647,6 +648,11 @@ func (r *LauncherRegistry) LoadBuiltIn() error {
 				log.Printf("Failed to register hook for launcher %s: %v", l.Name(), err)
 			}
 		}
+	}
+
+	// Register custom prefixes
+	if err := r.RegisterWithCustomPrefix(NewMusicLauncher(r.config), "m"); err != nil {
+		log.Printf("Failed to register music launcher with custom prefix: %v", err)
 	}
 
 	// Update apps hash after registration
