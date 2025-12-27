@@ -4347,3 +4347,1425 @@
 2025/12/26 21:32:44 [ICON-CACHE] HIT: blender@32
 2025/12/26 21:32:44 [ICON-CACHE] HIT: org.gnome.Boxes@32
 2025/12/26 21:32:44 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:39:04 Received IPC message: launcher
+2025/12/26 21:39:04 PresentLauncher called, launcher=true
+2025/12/26 21:39:04 Launcher.Show() called, running=true
+2025/12/26 21:39:04 Launcher.Show() returned: <nil>
+2025/12/26 21:39:05 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:39:05 [SEARCH-CACHE] MISS: key='m:'
+2025/12/26 21:39:05 [REGISTRY-SEARCH] Cache MISS for query='m' in 44.717µs
+2025/12/26 21:39:05 [REGISTRY-SEARCH] Using AppLauncher for general query='m'
+2025/12/26 21:39:05 [APP-LAUNCHER] Populate started for query='m'
+2025/12/26 21:39:05 [APP-LAUNCHER] Fuzzy search started for query='m' against 86 apps
+2025/12/26 21:39:05 [APP-LAUNCHER] Fuzzy find completed in 53.696µs, found 32 raw matches
+2025/12/26 21:39:05 [APP-LAUNCHER] Fuzzy search completed in 70.633µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:39:05 [APP-LAUNCHER] Fuzzy search completed in 87.527µs, returned 10 results
+2025/12/26 21:39:05 [REGISTRY-SEARCH] AppLauncher populate completed in 89.658µs, 10 items
+2025/12/26 21:39:05 [REGISTRY-SEARCH] Deduplication removed 1 duplicates (10 -> 9)
+2025/12/26 21:39:05 [SEARCH-CACHE] STORED FAST: key='m:', 9 results, duration=0.22ms
+2025/12/26 21:39:05 [REGISTRY-SEARCH] Cached results for query='m' (duration=0.22ms)
+2025/12/26 21:39:05 [REGISTRY-SEARCH] Completed general search in 230.947µs, final result count: 9
+2025/12/26 21:39:05 [ICON-CACHE] MISS: org.gnome.Meld@32
+2025/12/26 21:39:05 [ICON-CACHE] STORED: org.gnome.Meld@32 (cache size: 18)
+2025/12/26 21:39:05 [ICON-CACHE] MISS: libreoffice-startcenter@32
+2025/12/26 21:39:05 [ICON-CACHE] STORED: libreoffice-startcenter@32 (cache size: 19)
+2025/12/26 21:39:05 [ICON-CACHE] MISS: cups@32
+2025/12/26 21:39:05 [ICON-CACHE] STORED: cups@32 (cache size: 20)
+2025/12/26 21:39:05 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:39:05 [ICON-CACHE] MISS: CMakeSetup@32
+2025/12/26 21:39:05 [ICON-CACHE] STORED: CMakeSetup@32 (cache size: 21)
+2025/12/26 21:39:05 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:39:05 [ICON-CACHE] MISS: mpv@32
+2025/12/26 21:39:05 [ICON-CACHE] STORED: mpv@32 (cache size: 22)
+2025/12/26 21:39:05 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:39:05 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:39:05 [ICON-CACHE] MISS: gvim@32
+2025/12/26 21:39:05 Locus starting...
+2025/12/26 21:39:05 Initializing components...
+2025/12/26 21:39:05 Loaded launcher CSS from /home/sigma/.config/locus/launcher.css
+2025/12/26 21:39:05 Created statusbar windows for 1 monitors
+2025/12/26 21:39:05 Loading modules, config: [workspaces binding_mode brightness emacs_clock notifications time battery]
+2025/12/26 21:39:05 Loading module 'workspaces' with config: {0  false []  map[]}
+2025/12/26 21:39:05 Registered module instance: workspaces
+2025/12/26 21:39:05 Successfully loaded module: workspaces
+2025/12/26 21:39:05 Loading module 'binding_mode' with config: {0  false []  map[]}
+2025/12/26 21:39:05 Registered module instance: binding_mode
+2025/12/26 21:39:05 Successfully loaded module: binding_mode
+2025/12/26 21:39:05 Loading module 'brightness' with config: {0  false []  map[]}
+2025/12/26 21:39:05 Registered module instance: brightness
+2025/12/26 21:39:05 Successfully loaded module: brightness
+2025/12/26 21:39:05 Loading module 'emacs_clock' with config: {10  true []  map[]}
+2025/12/26 21:39:05 Registered module instance: emacs_clock
+2025/12/26 21:39:05 Successfully loaded module: emacs_clock
+2025/12/26 21:39:05 Loading module 'notifications' with config: {0  false []  map[]}
+2025/12/26 21:39:05 Registered module instance: notifications
+2025/12/26 21:39:05 Successfully loaded module: notifications
+2025/12/26 21:39:05 Loading module 'time' with config: {0  false []  map[]}
+2025/12/26 21:39:05 Registered module instance: time
+2025/12/26 21:39:05 Successfully loaded module: time
+2025/12/26 21:39:05 Loading module 'battery' with config: {0  false []  map[]}
+2025/12/26 21:39:05 Registered module instance: battery
+2025/12/26 21:39:05 Successfully loaded module: battery
+2025/12/26 21:39:05 Creating widget for module: workspaces
+2025/12/26 21:39:05 Scheduled module 'workspaces' with update mode: periodic
+2025/12/26 21:39:05 Successfully created widget for module: workspaces
+2025/12/26 21:39:05 Creating widget for module: binding_mode
+2025/12/26 21:39:05 Scheduled module 'binding_mode' with update mode: periodic
+2025/12/26 21:39:05 Successfully created widget for module: binding_mode
+2025/12/26 21:39:05 Creating widget for module: brightness
+2025/12/26 21:39:05 Scheduled module 'brightness' with update mode: periodic
+2025/12/26 21:39:05 Successfully created widget for module: brightness
+2025/12/26 21:39:05 Creating widget for module: emacs_clock
+2025/12/26 21:39:05 Scheduled module 'emacs_clock' with update mode: periodic
+2025/12/26 21:39:05 Successfully created widget for module: emacs_clock
+2025/12/26 21:39:05 Creating widget for module: notifications
+2025/12/26 21:39:05 Failed to start listeners for module 'notifications': no listeners registered for module 'notifications'
+2025/12/26 21:39:05 Scheduled module 'notifications' with update mode: event-driven
+2025/12/26 21:39:05 Successfully created widget for module: notifications
+2025/12/26 21:39:05 Creating widget for module: time
+2025/12/26 21:39:05 Scheduled module 'time' with update mode: periodic
+2025/12/26 21:39:05 Successfully created widget for module: time
+2025/12/26 21:39:05 Creating widget for module: battery
+2025/12/26 21:39:05 Scheduled module 'battery' with update mode: periodic
+2025/12/26 21:39:05 Successfully created widget for module: battery
+2025/12/26 21:39:05 Update scheduler started
+2025/12/26 21:39:05 IPC server started on /tmp/locus_socket
+2025/12/26 21:39:05 Status bar started successfully on 1 monitors
+2025/12/26 21:39:05 Warning: Failed to load launcher styles: <data>:3:22'' is not a valid color name
+2025/12/26 21:39:05 IPC server listening on 
+2025/12/26 21:39:05 Initialization complete
+2025/12/26 21:39:06 Received IPC message: launcher
+2025/12/26 21:39:06 PresentLauncher called, launcher=true
+2025/12/26 21:39:06 Launcher.Show() called, running=false
+2025/12/26 21:39:06 Launcher not running, starting...
+2025/12/26 21:39:06 Launcher.Start() - beginning
+2025/12/26 21:39:06 Setting window size
+2025/12/26 21:39:06 Loading built-in launchers
+2025/12/26 21:39:06 Registered trigger: > -> shell
+2025/12/26 21:39:06 Registered trigger: sh -> shell
+2025/12/26 21:39:06 Registered trigger: shell -> shell
+2025/12/26 21:39:06 Registered trigger: cmd -> shell
+2025/12/26 21:39:06 Registered trigger: command -> shell
+2025/12/26 21:39:06 Registered trigger: : -> web
+2025/12/26 21:39:06 Registered trigger: web -> web
+2025/12/26 21:39:06 [APP-LAUNCHER] Starting background app loading
+2025/12/26 21:39:06 Registered trigger: url -> web
+2025/12/26 21:39:06 Registered trigger: open -> web
+2025/12/26 21:39:06 Registered trigger: = -> calc
+2025/12/26 21:39:06 Registered trigger: calc -> calc
+2025/12/26 21:39:06 Registered trigger: math -> calc
+2025/12/26 21:39:06 Registered trigger: % -> timer
+2025/12/26 21:39:06 [HOOK-REGISTRY] Registered hook 'timer_hook' for launcher 'timer'
+2025/12/26 21:39:06 Registered trigger: brightness -> brightness
+2025/12/26 21:39:06 Registered trigger: bright -> brightness
+2025/12/26 21:39:06 Registered trigger: bri -> brightness
+2025/12/26 21:39:06 Registered trigger: screenshot -> screenshot
+2025/12/26 21:39:06 Registered trigger: shot -> screenshot
+2025/12/26 21:39:06 Registered trigger: scr -> screenshot
+2025/12/26 21:39:06 Registered trigger: ss -> screenshot
+2025/12/26 21:39:06 Registered trigger: lock -> lock
+2025/12/26 21:39:06 Registered trigger: screenlock -> lock
+2025/12/26 21:39:06 Registered trigger: lockscreen -> lock
+2025/12/26 21:39:06 Registered trigger: kill -> kill
+2025/12/26 21:39:06 Registered trigger: k -> kill
+2025/12/26 21:39:06 Registered trigger: focus -> focus
+2025/12/26 21:39:06 Registered trigger: f -> focus
+2025/12/26 21:39:06 Registered trigger: wallpaper -> wallpaper
+2025/12/26 21:39:06 Registered trigger: wp -> wallpaper
+2025/12/26 21:39:06 Registered trigger: bg -> wallpaper
+2025/12/26 21:39:06 Registered trigger: clipboard -> clipboard
+2025/12/26 21:39:06 Registered trigger: cb -> clipboard
+2025/12/26 21:39:06 Registered trigger: clip -> clipboard
+2025/12/26 21:39:06 Registered trigger: history -> clipboard
+2025/12/26 21:39:06 Registered trigger: wifi -> wifi
+2025/12/26 21:39:06 Registered trigger: wlan -> wifi
+2025/12/26 21:39:06 Registered trigger: file -> file
+2025/12/26 21:39:06 Registered trigger: f -> file
+2025/12/26 21:39:06 Registered trigger: music -> music
+2025/12/26 21:39:06 Registered trigger: m -> music
+2025/12/26 21:39:06 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 21:39:06 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 21:39:06 Initializing layer shell
+2025/12/26 21:39:06 Launcher started successfully - window should be visible now
+2025/12/26 21:39:06 Launcher started successfully
+2025/12/26 21:39:06 Found 108 .desktop files, parsing in parallel
+2025/12/26 21:39:06 Loaded 86 applications in 2.427784ms (parallel parsing)
+2025/12/26 21:39:06 Launcher.Show() returned: <nil>
+2025/12/26 21:39:06 [APP-LAUNCHER] Precomputed search data in 7.475µs
+2025/12/26 21:39:06 [APP-LAUNCHER] Background load completed in 3.188592ms, loaded 86 apps
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:39:06 [SEARCH-CACHE] MISS: key='m:'
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Cache MISS for query='m' in 16.584µs
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Using AppLauncher for general query='m'
+2025/12/26 21:39:06 [APP-LAUNCHER] Populate started for query='m'
+2025/12/26 21:39:06 [APP-LAUNCHER] Fuzzy search started for query='m' against 86 apps
+2025/12/26 21:39:06 [APP-LAUNCHER] Fuzzy find completed in 53.12µs, found 32 raw matches
+2025/12/26 21:39:06 [APP-LAUNCHER] Fuzzy search completed in 68.765µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:39:06 [APP-LAUNCHER] Fuzzy search completed in 74.766µs, returned 10 results
+2025/12/26 21:39:06 [REGISTRY-SEARCH] AppLauncher populate completed in 78.766µs, 10 items
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Deduplication removed 1 duplicates (10 -> 9)
+2025/12/26 21:39:06 [SEARCH-CACHE] STORED FAST: key='m:', 9 results, duration=0.14ms
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Cached results for query='m' (duration=0.14ms)
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Completed general search in 156.397µs, final result count: 9
+2025/12/26 21:39:06 [ICON-CACHE] MISS: org.gnome.Meld@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: org.gnome.Meld@32 (cache size: 1)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: libreoffice-startcenter@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: libreoffice-startcenter@32 (cache size: 2)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: cups@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: cups@32 (cache size: 3)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: emacs@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: emacs@32 (cache size: 4)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: CMakeSetup@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: CMakeSetup@32 (cache size: 5)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: network-wireless-symbolic@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: network-wireless-symbolic@32 (cache size: 6)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: mpv@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: mpv@32 (cache size: 7)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:39:06 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:39:06 [ICON-CACHE] MISS: gvim@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: gvim@32 (cache size: 8)
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Launcher-specific populate completed in 5.061525ms, 56 items
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:06 [REGISTRY-SEARCH] Completed launcher-specific search in 5.113634ms
+2025/12/26 21:39:06 [ICON-CACHE] MISS: media-playback-start@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: media-playback-start@32 (cache size: 9)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: media-skip-forward@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: media-skip-forward@32 (cache size: 10)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: media-skip-backward@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: media-skip-backward@32 (cache size: 11)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: edit-clear-all@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: edit-clear-all@32 (cache size: 12)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:39:06 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:39:06 [ICON-CACHE] MISS: folder-music@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: folder-music@32 (cache size: 13)
+2025/12/26 21:39:06 [ICON-CACHE] MISS: audio-x-generic@32
+2025/12/26 21:39:06 [ICON-CACHE] STORED: audio-x-generic@32 (cache size: 14)
+2025/12/26 21:39:06 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:06 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:06 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [REGISTRY-SEARCH] Started for query='m f'
+2025/12/26 21:39:08 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='f'
+2025/12/26 21:39:08 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.42075ms, 51 items
+2025/12/26 21:39:08 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:08 [REGISTRY-SEARCH] Completed launcher-specific search in 2.492363ms
+2025/12/26 21:39:08 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:08 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.548202ms, 56 items
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Completed launcher-specific search in 2.611508ms
+2025/12/26 21:39:10 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:39:10 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:39:10 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:39:10 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Started for query='m e'
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='e'
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.258301ms, 56 items
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:10 [REGISTRY-SEARCH] Completed launcher-specific search in 2.311631ms
+2025/12/26 21:39:10 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:39:10 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:39:10 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:39:10 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:10 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [REGISTRY-SEARCH] Started for query='m em'
+2025/12/26 21:39:11 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='em'
+2025/12/26 21:39:11 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.843353ms, 41 items
+2025/12/26 21:39:11 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:11 [REGISTRY-SEARCH] Completed launcher-specific search in 2.894301ms
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:11 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Started for query='m e'
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='e'
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.415214ms, 56 items
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Completed launcher-specific search in 2.475584ms
+2025/12/26 21:39:12 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:39:12 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:39:12 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:39:12 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.603831ms, 56 items
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Completed launcher-specific search in 2.673401ms
+2025/12/26 21:39:12 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:39:12 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:39:12 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:39:12 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Started for query='m c'
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='c'
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.349977ms, 55 items
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:12 [REGISTRY-SEARCH] Completed launcher-specific search in 2.414285ms
+2025/12/26 21:39:12 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:39:12 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:39:12 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:39:12 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:12 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Started for query='m co'
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='co'
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.420108ms, 28 items
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Completed launcher-specific search in 2.476339ms
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Started for query='m col'
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query='col'
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.761015ms, 3 items
+2025/12/26 21:39:13 [REGISTRY-SEARCH] Completed launcher-specific search in 2.82566ms
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:13 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:39:17 [HOOK-REGISTRY] Hook 'music_hook' handled OnSelect event
+2025/12/26 21:39:17 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:39:17 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 21:39:17 [REGISTRY-SEARCH] Cache MISS for query='' in 17.843µs
+2025/12/26 21:39:17 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 21:39:17 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 21:39:17 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 21:39:17 [REGISTRY-SEARCH] AppLauncher populate completed in 10.229µs, 10 items
+2025/12/26 21:39:17 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.06ms
+2025/12/26 21:39:17 [REGISTRY-SEARCH] Cached results for query='' (duration=0.06ms)
+2025/12/26 21:39:17 [REGISTRY-SEARCH] Completed general search in 78.341µs, final result count: 10
+2025/12/26 21:39:17 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:39:17 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:39:17 [ICON-CACHE] MISS: org.xfce.about@32
+2025/12/26 21:39:17 [ICON-CACHE] STORED: org.xfce.about@32 (cache size: 15)
+2025/12/26 21:39:17 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:39:17 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:39:17 [ICON-CACHE] MISS: audacious@32
+2025/12/26 21:39:17 [ICON-CACHE] STORED: audacious@32 (cache size: 16)
+2025/12/26 21:39:17 [ICON-CACHE] MISS: network-wired@32
+2025/12/26 21:39:17 [ICON-CACHE] STORED: network-wired@32 (cache size: 17)
+2025/12/26 21:39:17 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:39:17 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:39:17 [ICON-CACHE] MISS: blender@32
+2025/12/26 21:39:17 [ICON-CACHE] STORED: blender@32 (cache size: 18)
+2025/12/26 21:39:17 [ICON-CACHE] MISS: org.gnome.Boxes@32
+2025/12/26 21:39:17 [ICON-CACHE] STORED: org.gnome.Boxes@32 (cache size: 19)
+2025/12/26 21:39:17 [ICON-CACHE] MISS: btop@32
+2025/12/26 21:39:17 [ICON-CACHE] STORED: btop@32 (cache size: 20)
+2025/12/26 21:41:30 Received IPC message: launcher
+2025/12/26 21:41:30 PresentLauncher called, launcher=true
+2025/12/26 21:41:30 Launcher.Show() called, running=true
+2025/12/26 21:41:30 Launcher.Show() returned: <nil>
+2025/12/26 21:41:31 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:41:31 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:41:31 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.307556ms, 56 items
+2025/12/26 21:41:31 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:41:31 [REGISTRY-SEARCH] Completed launcher-specific search in 2.364336ms
+2025/12/26 21:41:31 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:41:31 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:41:31 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:41:31 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:41:31 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:41:31 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:41:31 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:41:31 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:41:31 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:41:31 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:41:31 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:41:33 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:41:33 [SEARCH-CACHE] HIT: key='m:', returning 9 cached results (TTL: 30m0s)
+2025/12/26 21:41:33 [REGISTRY-SEARCH] Cache HIT for query='m', returned 9 items in 16.795µs
+2025/12/26 21:41:33 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: libreoffice-startcenter@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: CMakeSetup@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:41:33 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:41:33 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:41:33 [ICON-CACHE] HIT: gvim@32
+2025/12/26 21:41:33 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:41:33 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:41:33 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 20.594µs
+2025/12/26 21:41:33 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:41:33 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:41:33 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:41:33 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:41:33 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:41:33 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:41:33 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:41:36 [REGISTRY-SEARCH] Started for query='woei'
+2025/12/26 21:41:36 [SEARCH-CACHE] MISS: key='woei:'
+2025/12/26 21:41:36 [REGISTRY-SEARCH] Cache MISS for query='woei' in 13.151µs
+2025/12/26 21:41:36 [REGISTRY-SEARCH] Using AppLauncher for general query='woei'
+2025/12/26 21:41:36 [APP-LAUNCHER] Populate started for query='woei'
+2025/12/26 21:41:36 [APP-LAUNCHER] Fuzzy search started for query='woei' against 86 apps
+2025/12/26 21:41:36 [APP-LAUNCHER] Fuzzy find completed in 30.791µs, found 0 raw matches
+2025/12/26 21:41:36 [APP-LAUNCHER] Fuzzy search completed in 33.94µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:41:36 [APP-LAUNCHER] Fuzzy search completed in 36.634µs, returned 0 results
+2025/12/26 21:41:36 [REGISTRY-SEARCH] AppLauncher populate completed in 37.843µs, 0 items
+2025/12/26 21:41:36 [SEARCH-CACHE] STORED FAST: key='woei:', 0 results, duration=0.07ms
+2025/12/26 21:41:36 [REGISTRY-SEARCH] Cached results for query='woei' (duration=0.07ms)
+2025/12/26 21:41:36 [REGISTRY-SEARCH] Completed general search in 80.078µs, final result count: 0
+2025/12/26 21:41:37 [REGISTRY-SEARCH] Started for query='woe'
+2025/12/26 21:41:37 [SEARCH-CACHE] MISS: key='woe:'
+2025/12/26 21:41:37 [REGISTRY-SEARCH] Cache MISS for query='woe' in 14.92µs
+2025/12/26 21:41:37 [REGISTRY-SEARCH] Using AppLauncher for general query='woe'
+2025/12/26 21:41:37 [APP-LAUNCHER] Populate started for query='woe'
+2025/12/26 21:41:37 [APP-LAUNCHER] Fuzzy search started for query='woe' against 86 apps
+2025/12/26 21:41:37 [APP-LAUNCHER] Fuzzy find completed in 44.687µs, found 5 raw matches
+2025/12/26 21:41:37 [APP-LAUNCHER] Fuzzy search completed in 56.032µs, returning 5 items (TEMP: no filtering)
+2025/12/26 21:41:37 [APP-LAUNCHER] Fuzzy search completed in 64.479µs, returned 5 results
+2025/12/26 21:41:37 [REGISTRY-SEARCH] AppLauncher populate completed in 67.103µs, 5 items
+2025/12/26 21:41:37 [REGISTRY-SEARCH] Deduplication removed 1 duplicates (5 -> 4)
+2025/12/26 21:41:37 [SEARCH-CACHE] STORED FAST: key='woe:', 4 results, duration=0.12ms
+2025/12/26 21:41:37 [REGISTRY-SEARCH] Cached results for query='woe' (duration=0.12ms)
+2025/12/26 21:41:37 [REGISTRY-SEARCH] Completed general search in 142.599µs, final result count: 4
+2025/12/26 21:41:37 [ICON-CACHE] MISS: /home/sigma/.local/zed.app/share/icons/hicolor/512x512/apps/zed.png@32
+2025/12/26 21:41:37 [ICON-CACHE] Icon '/home/sigma/.local/zed.app/share/icons/hicolor/512x512/apps/zed.png' not found in theme, returning nil
+2025/12/26 21:41:37 [ICON-CACHE] MISS: document-new@32
+2025/12/26 21:41:37 [ICON-CACHE] STORED: document-new@32 (cache size: 21)
+2025/12/26 21:41:37 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:41:37 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:41:37 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:41:37 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:41:37 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:41:37 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:41:37 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 30.483µs
+2025/12/26 21:41:37 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:41:37 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:41:37 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:41:37 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:41:37 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:41:37 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:41:37 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:37 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:37 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:37 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:41:37 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:41:37 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:41:38 Received IPC message: launcher
+2025/12/26 21:41:38 PresentLauncher called, launcher=true
+2025/12/26 21:41:38 Launcher.Show() called, running=true
+2025/12/26 21:41:38 Launcher.Show() returned: <nil>
+2025/12/26 21:41:39 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:41:39 [SEARCH-CACHE] HIT: key='m:', returning 9 cached results (TTL: 30m0s)
+2025/12/26 21:41:39 [REGISTRY-SEARCH] Cache HIT for query='m', returned 9 items in 19.438µs
+2025/12/26 21:41:39 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: libreoffice-startcenter@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: CMakeSetup@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:41:39 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:41:39 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:41:39 [ICON-CACHE] HIT: gvim@32
+2025/12/26 21:41:39 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:41:39 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:41:39 [REGISTRY-SEARCH] Launcher-specific populate completed in 2.372622ms, 56 items
+2025/12/26 21:41:39 [REGISTRY-SEARCH] Limited results to 10 (max configured)
+2025/12/26 21:41:39 [REGISTRY-SEARCH] Completed launcher-specific search in 2.410992ms
+2025/12/26 21:41:39 [ICON-CACHE] HIT: media-playback-start@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: media-skip-forward@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: media-skip-backward@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: edit-clear-all@32
+2025/12/26 21:41:39 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:41:39 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:41:39 [ICON-CACHE] HIT: folder-music@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:41:39 [ICON-CACHE] HIT: audio-x-generic@32
+2025/12/26 21:41:41 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:41:41 [SEARCH-CACHE] HIT: key='m:', returning 9 cached results (TTL: 30m0s)
+2025/12/26 21:41:41 [REGISTRY-SEARCH] Cache HIT for query='m', returned 9 items in 12.647µs
+2025/12/26 21:41:41 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: libreoffice-startcenter@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: cups@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: emacs@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: CMakeSetup@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: network-wireless-symbolic@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: mpv@32
+2025/12/26 21:41:41 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:41:41 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:41:41 [ICON-CACHE] HIT: gvim@32
+2025/12/26 21:41:41 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:41:41 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:41:41 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 18.897µs
+2025/12/26 21:41:41 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:41:41 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:41:41 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:41:41 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:41:41 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:41:41 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:41:41 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:41:41 [REGISTRY-SEARCH] Started for query='%'
+2025/12/26 21:41:41 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=''
+2025/12/26 21:41:41 [REGISTRY-SEARCH] Launcher-specific populate completed in 1.009µs, 1 items
+2025/12/26 21:41:41 [REGISTRY-SEARCH] Completed launcher-specific search in 43.07µs
+2025/12/26 21:41:41 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:41:41 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:41:42 [REGISTRY-SEARCH] Started for query='%10'
+2025/12/26 21:41:42 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10'
+2025/12/26 21:41:42 [REGISTRY-SEARCH] Launcher-specific populate completed in 51.206µs, 1 items
+2025/12/26 21:41:42 [REGISTRY-SEARCH] Completed launcher-specific search in 83.767µs
+2025/12/26 21:41:42 [ICON-CACHE] MISS: dialog-error@32
+2025/12/26 21:41:42 [ICON-CACHE] STORED: dialog-error@32 (cache size: 22)
+2025/12/26 21:41:44 [REGISTRY-SEARCH] Started for query='%10s'
+2025/12/26 21:41:44 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10s'
+2025/12/26 21:41:44 [REGISTRY-SEARCH] Launcher-specific populate completed in 207.621µs, 1 items
+2025/12/26 21:41:44 [REGISTRY-SEARCH] Completed launcher-specific search in 246.026µs
+2025/12/26 21:41:44 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:41:44 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:41:44 [HOOK-REGISTRY] Hook 'timer_hook' handled OnSelect event
+2025/12/26 21:41:44 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:41:44 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:41:44 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 12.155µs
+2025/12/26 21:41:44 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:41:44 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:41:44 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:41:44 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:41:44 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:41:44 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:41:44 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:44 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:44 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:41:44 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:41:44 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:41:44 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:41:54 Locus starting...
+2025/12/26 21:41:54 Initializing components...
+2025/12/26 21:41:54 Loaded launcher CSS from /home/sigma/.config/locus/launcher.css
+2025/12/26 21:41:54 Created statusbar windows for 1 monitors
+2025/12/26 21:41:54 Loading modules, config: [workspaces binding_mode brightness emacs_clock notifications time battery]
+2025/12/26 21:41:54 Loading module 'workspaces' with config: {0  false []  map[]}
+2025/12/26 21:41:54 Registered module instance: workspaces
+2025/12/26 21:41:54 Successfully loaded module: workspaces
+2025/12/26 21:41:54 Loading module 'binding_mode' with config: {0  false []  map[]}
+2025/12/26 21:41:54 Registered module instance: binding_mode
+2025/12/26 21:41:54 Successfully loaded module: binding_mode
+2025/12/26 21:41:54 Loading module 'brightness' with config: {0  false []  map[]}
+2025/12/26 21:41:54 Registered module instance: brightness
+2025/12/26 21:41:54 Successfully loaded module: brightness
+2025/12/26 21:41:54 Loading module 'emacs_clock' with config: {10  true []  map[]}
+2025/12/26 21:41:54 Registered module instance: emacs_clock
+2025/12/26 21:41:54 Successfully loaded module: emacs_clock
+2025/12/26 21:41:54 Loading module 'notifications' with config: {0  false []  map[]}
+2025/12/26 21:41:54 Registered module instance: notifications
+2025/12/26 21:41:54 Successfully loaded module: notifications
+2025/12/26 21:41:54 Loading module 'time' with config: {0  false []  map[]}
+2025/12/26 21:41:54 Registered module instance: time
+2025/12/26 21:41:54 Successfully loaded module: time
+2025/12/26 21:41:54 Loading module 'battery' with config: {0  false []  map[]}
+2025/12/26 21:41:54 Registered module instance: battery
+2025/12/26 21:41:54 Successfully loaded module: battery
+2025/12/26 21:41:54 Creating widget for module: workspaces
+2025/12/26 21:41:54 Scheduled module 'workspaces' with update mode: periodic
+2025/12/26 21:41:54 Successfully created widget for module: workspaces
+2025/12/26 21:41:54 Creating widget for module: binding_mode
+2025/12/26 21:41:54 Scheduled module 'binding_mode' with update mode: periodic
+2025/12/26 21:41:54 Successfully created widget for module: binding_mode
+2025/12/26 21:41:54 Creating widget for module: brightness
+2025/12/26 21:41:54 Scheduled module 'brightness' with update mode: periodic
+2025/12/26 21:41:54 Successfully created widget for module: brightness
+2025/12/26 21:41:54 Creating widget for module: emacs_clock
+2025/12/26 21:41:54 Scheduled module 'emacs_clock' with update mode: periodic
+2025/12/26 21:41:54 Successfully created widget for module: emacs_clock
+2025/12/26 21:41:54 Creating widget for module: notifications
+2025/12/26 21:41:54 Failed to start listeners for module 'notifications': no listeners registered for module 'notifications'
+2025/12/26 21:41:54 Scheduled module 'notifications' with update mode: event-driven
+2025/12/26 21:41:54 Successfully created widget for module: notifications
+2025/12/26 21:41:54 Creating widget for module: time
+2025/12/26 21:41:54 Scheduled module 'time' with update mode: periodic
+2025/12/26 21:41:54 Successfully created widget for module: time
+2025/12/26 21:41:54 Creating widget for module: battery
+2025/12/26 21:41:54 Scheduled module 'battery' with update mode: periodic
+2025/12/26 21:41:54 Successfully created widget for module: battery
+2025/12/26 21:41:54 Update scheduler started
+2025/12/26 21:41:54 IPC server started on /tmp/locus_socket
+2025/12/26 21:41:54 Status bar started successfully on 1 monitors
+2025/12/26 21:41:54 Warning: Failed to load launcher styles: <data>:3:22'' is not a valid color name
+2025/12/26 21:41:54 IPC server listening on 
+2025/12/26 21:41:54 Initialization complete
+2025/12/26 21:41:59 Received IPC message: launcher
+2025/12/26 21:41:59 PresentLauncher called, launcher=true
+2025/12/26 21:41:59 Launcher.Show() called, running=false
+2025/12/26 21:41:59 Launcher not running, starting...
+2025/12/26 21:41:59 Launcher.Start() - beginning
+2025/12/26 21:41:59 Setting window size
+2025/12/26 21:41:59 Loading built-in launchers
+2025/12/26 21:41:59 Registered trigger: > -> shell
+2025/12/26 21:41:59 Registered trigger: sh -> shell
+2025/12/26 21:41:59 Registered trigger: shell -> shell
+2025/12/26 21:41:59 Registered trigger: cmd -> shell
+2025/12/26 21:41:59 [APP-LAUNCHER] Starting background app loading
+2025/12/26 21:41:59 Registered trigger: command -> shell
+2025/12/26 21:41:59 Registered trigger: : -> web
+2025/12/26 21:41:59 Registered trigger: web -> web
+2025/12/26 21:41:59 Registered trigger: url -> web
+2025/12/26 21:41:59 Registered trigger: open -> web
+2025/12/26 21:41:59 Registered trigger: = -> calc
+2025/12/26 21:41:59 Registered trigger: calc -> calc
+2025/12/26 21:41:59 Registered trigger: math -> calc
+2025/12/26 21:41:59 Registered trigger: % -> timer
+2025/12/26 21:41:59 [HOOK-REGISTRY] Registered hook 'timer_hook' for launcher 'timer'
+2025/12/26 21:41:59 Registered trigger: brightness -> brightness
+2025/12/26 21:41:59 Registered trigger: bright -> brightness
+2025/12/26 21:41:59 Registered trigger: bri -> brightness
+2025/12/26 21:41:59 Registered trigger: screenshot -> screenshot
+2025/12/26 21:41:59 Registered trigger: shot -> screenshot
+2025/12/26 21:41:59 Registered trigger: scr -> screenshot
+2025/12/26 21:41:59 Registered trigger: ss -> screenshot
+2025/12/26 21:41:59 Registered trigger: lock -> lock
+2025/12/26 21:41:59 Registered trigger: screenlock -> lock
+2025/12/26 21:41:59 Registered trigger: lockscreen -> lock
+2025/12/26 21:41:59 Registered trigger: kill -> kill
+2025/12/26 21:41:59 Registered trigger: k -> kill
+2025/12/26 21:41:59 Registered trigger: focus -> focus
+2025/12/26 21:41:59 Registered trigger: f -> focus
+2025/12/26 21:41:59 Registered trigger: wallpaper -> wallpaper
+2025/12/26 21:41:59 Registered trigger: wp -> wallpaper
+2025/12/26 21:41:59 Registered trigger: bg -> wallpaper
+2025/12/26 21:41:59 Registered trigger: clipboard -> clipboard
+2025/12/26 21:41:59 Registered trigger: cb -> clipboard
+2025/12/26 21:41:59 Registered trigger: clip -> clipboard
+2025/12/26 21:41:59 Registered trigger: history -> clipboard
+2025/12/26 21:41:59 Registered trigger: wifi -> wifi
+2025/12/26 21:41:59 Registered trigger: wlan -> wifi
+2025/12/26 21:41:59 Registered trigger: file -> file
+2025/12/26 21:41:59 Registered trigger: f -> file
+2025/12/26 21:41:59 Registered trigger: music -> music
+2025/12/26 21:41:59 Registered trigger: m -> music
+2025/12/26 21:41:59 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 21:41:59 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 21:41:59 Initializing layer shell
+2025/12/26 21:41:59 Launcher started successfully - window should be visible now
+2025/12/26 21:41:59 Launcher started successfully
+2025/12/26 21:41:59 Found 108 .desktop files, parsing in parallel
+2025/12/26 21:41:59 Loaded 86 applications in 2.232425ms (parallel parsing)
+2025/12/26 21:41:59 [APP-LAUNCHER] Precomputed search data in 16.222µs
+2025/12/26 21:41:59 [APP-LAUNCHER] Background load completed in 2.66318ms, loaded 86 apps
+2025/12/26 21:41:59 Launcher.Show() returned: <nil>
+2025/12/26 21:42:00 [REGISTRY-SEARCH] Started for query='% '
+2025/12/26 21:42:00 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=' '
+2025/12/26 21:42:00 [REGISTRY-SEARCH] Launcher-specific populate completed in 1.239µs, 1 items
+2025/12/26 21:42:00 [REGISTRY-SEARCH] Completed launcher-specific search in 36.606µs
+2025/12/26 21:42:00 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:42:00 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Started for query='%'
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=''
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Launcher-specific populate completed in 1.138µs, 1 items
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Completed launcher-specific search in 55.233µs
+2025/12/26 21:42:01 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:42:01 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Started for query='%1'
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='1'
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Launcher-specific populate completed in 54.48µs, 1 items
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Completed launcher-specific search in 94.269µs
+2025/12/26 21:42:01 [ICON-CACHE] MISS: dialog-error@32
+2025/12/26 21:42:01 [ICON-CACHE] STORED: dialog-error@32 (cache size: 1)
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Started for query='%10'
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10'
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Launcher-specific populate completed in 51.328µs, 1 items
+2025/12/26 21:42:01 [REGISTRY-SEARCH] Completed launcher-specific search in 87.281µs
+2025/12/26 21:42:01 [ICON-CACHE] HIT: dialog-error@32
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Started for query='%10m'
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10m'
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Launcher-specific populate completed in 66.202µs, 1 items
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Completed launcher-specific search in 103.424µs
+2025/12/26 21:42:02 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:42:02 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Started for query='%10ms'
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10ms'
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Launcher-specific populate completed in 173.152µs, 1 items
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Completed launcher-specific search in 206.495µs
+2025/12/26 21:42:02 [ICON-CACHE] HIT: dialog-error@32
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Started for query='%10m'
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10m'
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Launcher-specific populate completed in 36.718µs, 1 items
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Completed launcher-specific search in 69.476µs
+2025/12/26 21:42:02 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:42:02 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Started for query='%10s'
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10s'
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Launcher-specific populate completed in 56.811µs, 1 items
+2025/12/26 21:42:02 [REGISTRY-SEARCH] Completed launcher-specific search in 91.765µs
+2025/12/26 21:42:02 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:42:02 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:42:03 [HOOK-REGISTRY] Hook 'timer_hook' handled OnSelect event
+2025/12/26 21:42:03 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:42:03 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 21:42:03 [REGISTRY-SEARCH] Cache MISS for query='' in 16.616µs
+2025/12/26 21:42:03 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 21:42:03 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 21:42:03 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 21:42:03 [REGISTRY-SEARCH] AppLauncher populate completed in 9.773µs, 10 items
+2025/12/26 21:42:03 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.07ms
+2025/12/26 21:42:03 [REGISTRY-SEARCH] Cached results for query='' (duration=0.07ms)
+2025/12/26 21:42:03 [REGISTRY-SEARCH] Completed general search in 78.083µs, final result count: 10
+2025/12/26 21:42:03 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:42:03 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:42:03 [ICON-CACHE] MISS: org.xfce.about@32
+2025/12/26 21:42:03 [ICON-CACHE] STORED: org.xfce.about@32 (cache size: 2)
+2025/12/26 21:42:03 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:42:03 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:42:03 [ICON-CACHE] MISS: audacious@32
+2025/12/26 21:42:03 [ICON-CACHE] STORED: audacious@32 (cache size: 3)
+2025/12/26 21:42:03 [ICON-CACHE] MISS: network-wired@32
+2025/12/26 21:42:03 [ICON-CACHE] STORED: network-wired@32 (cache size: 4)
+2025/12/26 21:42:03 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:42:03 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:42:03 [ICON-CACHE] MISS: blender@32
+2025/12/26 21:42:03 [ICON-CACHE] STORED: blender@32 (cache size: 5)
+2025/12/26 21:42:03 [ICON-CACHE] MISS: org.gnome.Boxes@32
+2025/12/26 21:42:03 [ICON-CACHE] STORED: org.gnome.Boxes@32 (cache size: 6)
+2025/12/26 21:42:03 [ICON-CACHE] MISS: btop@32
+2025/12/26 21:42:03 [ICON-CACHE] STORED: btop@32 (cache size: 7)
+2025/12/26 21:47:38 Received IPC message: launcher
+2025/12/26 21:47:38 PresentLauncher called, launcher=true
+2025/12/26 21:47:38 Launcher.Show() called, running=true
+2025/12/26 21:47:38 Launcher.Show() returned: <nil>
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Started for query='m'
+2025/12/26 21:47:38 [SEARCH-CACHE] MISS: key='m:'
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Cache MISS for query='m' in 38.679µs
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Using AppLauncher for general query='m'
+2025/12/26 21:47:38 [APP-LAUNCHER] Populate started for query='m'
+2025/12/26 21:47:38 [APP-LAUNCHER] Fuzzy search started for query='m' against 86 apps
+2025/12/26 21:47:38 [APP-LAUNCHER] Fuzzy find completed in 110.204µs, found 32 raw matches
+2025/12/26 21:47:38 [APP-LAUNCHER] Fuzzy search completed in 141.226µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:47:38 [APP-LAUNCHER] Fuzzy search completed in 156.697µs, returned 10 results
+2025/12/26 21:47:38 [REGISTRY-SEARCH] AppLauncher populate completed in 164.422µs, 10 items
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Deduplication removed 1 duplicates (10 -> 9)
+2025/12/26 21:47:38 [SEARCH-CACHE] STORED FAST: key='m:', 9 results, duration=0.32ms
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Cached results for query='m' (duration=0.32ms)
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Completed general search in 344.484µs, final result count: 9
+2025/12/26 21:47:38 [ICON-CACHE] MISS: org.gnome.Meld@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: org.gnome.Meld@32 (cache size: 8)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: libreoffice-startcenter@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: libreoffice-startcenter@32 (cache size: 9)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: cups@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: cups@32 (cache size: 10)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: emacs@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: emacs@32 (cache size: 11)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: CMakeSetup@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: CMakeSetup@32 (cache size: 12)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: network-wireless-symbolic@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: network-wireless-symbolic@32 (cache size: 13)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: mpv@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: mpv@32 (cache size: 14)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: /usr/share/hplip/data/images/128x128/hp_logo.png@32
+2025/12/26 21:47:38 [ICON-CACHE] Icon '/usr/share/hplip/data/images/128x128/hp_logo.png' not found in theme, returning nil
+2025/12/26 21:47:38 [ICON-CACHE] MISS: gvim@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: gvim@32 (cache size: 15)
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Started for query='m '
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Launcher-specific search: launcher='music', query=''
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Launcher-specific populate completed in 8.77063ms, 7 items
+2025/12/26 21:47:38 [REGISTRY-SEARCH] Completed launcher-specific search in 8.87ms
+2025/12/26 21:47:38 [ICON-CACHE] MISS: media-playback-start@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: media-playback-start@32 (cache size: 16)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: media-skip-forward@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: media-skip-forward@32 (cache size: 17)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: media-skip-backward@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: media-skip-backward@32 (cache size: 18)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: edit-clear-all@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: edit-clear-all@32 (cache size: 19)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: view-list@32
+2025/12/26 21:47:38 [ICON-CACHE] Icon 'view-list' not found in theme, returning nil
+2025/12/26 21:47:38 [ICON-CACHE] MISS: folder-music@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: folder-music@32 (cache size: 20)
+2025/12/26 21:47:38 [ICON-CACHE] MISS: view-refresh@32
+2025/12/26 21:47:38 [ICON-CACHE] STORED: view-refresh@32 (cache size: 21)
+2025/12/26 21:47:40 [HOOK-REGISTRY] Hook 'music_hook' handled OnSelect event
+2025/12/26 21:47:40 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:47:40 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:47:40 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 30.919µs
+2025/12/26 21:47:40 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:47:40 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:47:40 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:47:40 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:47:40 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:47:40 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:47:40 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:47:40 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:47:40 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:47:40 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:47:40 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:47:40 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:50:14 Received signal: terminated
+2025/12/26 21:50:14 Shutting down...
+2025/12/26 21:50:38 Received IPC message: launcher
+2025/12/26 21:50:38 PresentLauncher called, launcher=true
+2025/12/26 21:50:38 Launcher.Show() called, running=true
+2025/12/26 21:50:38 Launcher.Show() returned: <nil>
+2025/12/26 21:50:39 [REGISTRY-SEARCH] Started for query='f'
+2025/12/26 21:50:39 [SEARCH-CACHE] MISS: key='f:'
+2025/12/26 21:50:39 [REGISTRY-SEARCH] Cache MISS for query='f' in 26.845µs
+2025/12/26 21:50:39 [REGISTRY-SEARCH] Using AppLauncher for general query='f'
+2025/12/26 21:50:39 [APP-LAUNCHER] Populate started for query='f'
+2025/12/26 21:50:39 [APP-LAUNCHER] Fuzzy search started for query='f' against 86 apps
+2025/12/26 21:50:39 [APP-LAUNCHER] Fuzzy find completed in 91.273µs, found 17 raw matches
+2025/12/26 21:50:39 [APP-LAUNCHER] Fuzzy search completed in 111.678µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:50:39 [APP-LAUNCHER] Fuzzy search completed in 121.247µs, returned 10 results
+2025/12/26 21:50:39 [REGISTRY-SEARCH] AppLauncher populate completed in 126.526µs, 10 items
+2025/12/26 21:50:39 [SEARCH-CACHE] STORED FAST: key='f:', 10 results, duration=0.21ms
+2025/12/26 21:50:39 [REGISTRY-SEARCH] Cached results for query='f' (duration=0.21ms)
+2025/12/26 21:50:39 [REGISTRY-SEARCH] Completed general search in 231.576µs, final result count: 10
+2025/12/26 21:50:39 [ICON-CACHE] MISS: foot@32
+2025/12/26 21:50:39 [ICON-CACHE] STORED: foot@32 (cache size: 22)
+2025/12/26 21:50:39 [ICON-CACHE] MISS: firefox@32
+2025/12/26 21:50:39 [ICON-CACHE] STORED: firefox@32 (cache size: 23)
+2025/12/26 21:50:39 [ICON-CACHE] MISS: firewall-config@32
+2025/12/26 21:50:39 [ICON-CACHE] STORED: firewall-config@32 (cache size: 24)
+2025/12/26 21:50:39 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:50:39 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:50:39 [ICON-CACHE] HIT: foot@32
+2025/12/26 21:50:39 [ICON-CACHE] MISS: document-new@32
+2025/12/26 21:50:39 [ICON-CACHE] STORED: document-new@32 (cache size: 25)
+2025/12/26 21:50:39 [ICON-CACHE] MISS: utilities-terminal@32
+2025/12/26 21:50:39 [ICON-CACHE] STORED: utilities-terminal@32 (cache size: 26)
+2025/12/26 21:50:39 [ICON-CACHE] MISS: steam_icon_440@32
+2025/12/26 21:50:39 [ICON-CACHE] STORED: steam_icon_440@32 (cache size: 27)
+2025/12/26 21:50:39 [ICON-CACHE] MISS: stoken-gui@32
+2025/12/26 21:50:39 [ICON-CACHE] Icon 'stoken-gui' not found in theme, returning nil
+2025/12/26 21:50:40 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:50:40 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:50:40 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 45.462µs
+2025/12/26 21:50:40 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:50:40 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:50:40 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:50:40 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:50:40 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:50:40 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:50:40 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:50:40 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:50:40 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:50:40 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:50:40 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:50:40 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:50:42 [REGISTRY-SEARCH] Started for query='l'
+2025/12/26 21:50:42 [SEARCH-CACHE] MISS: key='l:'
+2025/12/26 21:50:42 [REGISTRY-SEARCH] Cache MISS for query='l' in 26.723µs
+2025/12/26 21:50:42 [REGISTRY-SEARCH] Using AppLauncher for general query='l'
+2025/12/26 21:50:42 [APP-LAUNCHER] Populate started for query='l'
+2025/12/26 21:50:42 [APP-LAUNCHER] Fuzzy search started for query='l' against 86 apps
+2025/12/26 21:50:42 [APP-LAUNCHER] Fuzzy find completed in 100.199µs, found 24 raw matches
+2025/12/26 21:50:42 [APP-LAUNCHER] Fuzzy search completed in 116.939µs, returning 10 items (TEMP: no filtering)
+2025/12/26 21:50:42 [APP-LAUNCHER] Fuzzy search completed in 123.69µs, returned 10 results
+2025/12/26 21:50:42 [REGISTRY-SEARCH] AppLauncher populate completed in 127.157µs, 10 items
+2025/12/26 21:50:42 [SEARCH-CACHE] STORED FAST: key='l:', 10 results, duration=0.22ms
+2025/12/26 21:50:42 [REGISTRY-SEARCH] Cached results for query='l' (duration=0.22ms)
+2025/12/26 21:50:42 [REGISTRY-SEARCH] Completed general search in 234.802µs, final result count: 10
+2025/12/26 21:50:42 [ICON-CACHE] HIT: utilities-terminal@32
+2025/12/26 21:50:42 [ICON-CACHE] MISS: libreoffice@32
+2025/12/26 21:50:42 [ICON-CACHE] Icon 'libreoffice' not found in theme, returning nil
+2025/12/26 21:50:42 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:50:42 [ICON-CACHE] HIT: org.gnome.Meld@32
+2025/12/26 21:50:42 [ICON-CACHE] MISS: chrome-kinpkbniadkppecjaginbegiljofpcfc-Default@32
+2025/12/26 21:50:42 [ICON-CACHE] STORED: chrome-kinpkbniadkppecjaginbegiljofpcfc-Default@32 (cache size: 28)
+2025/12/26 21:50:42 [ICON-CACHE] MISS: hwloc@32
+2025/12/26 21:50:42 [ICON-CACHE] Icon 'hwloc' not found in theme, returning nil
+2025/12/26 21:50:42 [ICON-CACHE] MISS: org.xfce.thunar@32
+2025/12/26 21:50:42 [ICON-CACHE] STORED: org.xfce.thunar@32 (cache size: 29)
+2025/12/26 21:50:42 [ICON-CACHE] HIT: firewall-config@32
+2025/12/26 21:50:42 [ICON-CACHE] MISS: org.pulseaudio.pavucontrol@32
+2025/12/26 21:50:42 [ICON-CACHE] STORED: org.pulseaudio.pavucontrol@32 (cache size: 30)
+2025/12/26 21:50:42 [ICON-CACHE] HIT: document-new@32
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Started for query='loc'
+2025/12/26 21:50:43 [SEARCH-CACHE] MISS: key='loc:'
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Cache MISS for query='loc' in 25.047µs
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Using AppLauncher for general query='loc'
+2025/12/26 21:50:43 [APP-LAUNCHER] Populate started for query='loc'
+2025/12/26 21:50:43 [APP-LAUNCHER] Fuzzy search started for query='loc' against 86 apps
+2025/12/26 21:50:43 [APP-LAUNCHER] Fuzzy find completed in 35.118µs, found 3 raw matches
+2025/12/26 21:50:43 [APP-LAUNCHER] Fuzzy search completed in 39.644µs, returning 3 items (TEMP: no filtering)
+2025/12/26 21:50:43 [APP-LAUNCHER] Fuzzy search completed in 42.129µs, returned 3 results
+2025/12/26 21:50:43 [REGISTRY-SEARCH] AppLauncher populate completed in 43.381µs, 3 items
+2025/12/26 21:50:43 [SEARCH-CACHE] STORED FAST: key='loc:', 3 results, duration=0.09ms
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Cached results for query='loc' (duration=0.09ms)
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Completed general search in 93.15µs, final result count: 3
+2025/12/26 21:50:43 [ICON-CACHE] MISS: hwloc@32
+2025/12/26 21:50:43 [ICON-CACHE] Icon 'hwloc' not found in theme, returning nil
+2025/12/26 21:50:43 [ICON-CACHE] MISS: libreoffice@32
+2025/12/26 21:50:43 [ICON-CACHE] Icon 'libreoffice' not found in theme, returning nil
+2025/12/26 21:50:43 [ICON-CACHE] MISS: qvidcap@32
+2025/12/26 21:50:43 [ICON-CACHE] STORED: qvidcap@32 (cache size: 31)
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Started for query='locus'
+2025/12/26 21:50:43 [SEARCH-CACHE] MISS: key='locus:'
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Cache MISS for query='locus' in 24.466µs
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Using AppLauncher for general query='locus'
+2025/12/26 21:50:43 [APP-LAUNCHER] Populate started for query='locus'
+2025/12/26 21:50:43 [APP-LAUNCHER] Fuzzy search started for query='locus' against 86 apps
+2025/12/26 21:50:43 [APP-LAUNCHER] Fuzzy find completed in 68.887µs, found 0 raw matches
+2025/12/26 21:50:43 [APP-LAUNCHER] Fuzzy search completed in 75.674µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:50:43 [APP-LAUNCHER] Fuzzy search completed in 81.3µs, returned 0 results
+2025/12/26 21:50:43 [REGISTRY-SEARCH] AppLauncher populate completed in 84.668µs, 0 items
+2025/12/26 21:50:43 [SEARCH-CACHE] STORED FAST: key='locus:', 0 results, duration=0.16ms
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Cached results for query='locus' (duration=0.16ms)
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Completed general search in 177.906µs, final result count: 0
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:50:43 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:50:43 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 28.897µs
+2025/12/26 21:50:43 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:50:43 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:50:43 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:50:43 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:50:43 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:50:43 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:50:43 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:50:43 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:50:43 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:50:43 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:50:43 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:50:43 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:52:37 Received IPC message: launcher
+2025/12/26 21:52:37 PresentLauncher called, launcher=true
+2025/12/26 21:52:37 Launcher.Show() called, running=true
+2025/12/26 21:52:37 Launcher.Show() returned: <nil>
+2025/12/26 21:52:43 Locus starting...
+2025/12/26 21:52:43 Initializing components...
+2025/12/26 21:52:43 Loaded launcher CSS from /home/sigma/.config/locus/launcher.css
+2025/12/26 21:52:43 Created statusbar windows for 1 monitors
+2025/12/26 21:52:43 Loading modules, config: [workspaces binding_mode brightness emacs_clock notifications time timer battery]
+2025/12/26 21:52:43 Loading module 'workspaces' with config: {0  false []  map[]}
+2025/12/26 21:52:43 Registered module instance: workspaces
+2025/12/26 21:52:43 Successfully loaded module: workspaces
+2025/12/26 21:52:43 Loading module 'binding_mode' with config: {0  false []  map[]}
+2025/12/26 21:52:43 Registered module instance: binding_mode
+2025/12/26 21:52:43 Successfully loaded module: binding_mode
+2025/12/26 21:52:43 Loading module 'brightness' with config: {0  false []  map[]}
+2025/12/26 21:52:43 Registered module instance: brightness
+2025/12/26 21:52:43 Successfully loaded module: brightness
+2025/12/26 21:52:43 Loading module 'emacs_clock' with config: {10  true []  map[]}
+2025/12/26 21:52:43 Registered module instance: emacs_clock
+2025/12/26 21:52:43 Successfully loaded module: emacs_clock
+2025/12/26 21:52:43 Loading module 'notifications' with config: {0  false []  map[]}
+2025/12/26 21:52:43 Registered module instance: notifications
+2025/12/26 21:52:43 Successfully loaded module: notifications
+2025/12/26 21:52:43 Loading module 'time' with config: {0  false []  map[]}
+2025/12/26 21:52:43 Registered module instance: time
+2025/12/26 21:52:43 Successfully loaded module: time
+2025/12/26 21:52:43 Loading module 'timer' with config: {0  true [timer-module]  map[]}
+2025/12/26 21:52:43 Registered module instance: timer
+2025/12/26 21:52:43 Successfully loaded module: timer
+2025/12/26 21:52:43 Loading module 'battery' with config: {0  false []  map[]}
+2025/12/26 21:52:43 Registered module instance: battery
+2025/12/26 21:52:43 Successfully loaded module: battery
+2025/12/26 21:52:43 Creating widget for module: workspaces
+2025/12/26 21:52:43 Scheduled module 'workspaces' with update mode: periodic
+2025/12/26 21:52:43 Successfully created widget for module: workspaces
+2025/12/26 21:52:43 Creating widget for module: binding_mode
+2025/12/26 21:52:43 Scheduled module 'binding_mode' with update mode: periodic
+2025/12/26 21:52:43 Successfully created widget for module: binding_mode
+2025/12/26 21:52:43 Creating widget for module: brightness
+2025/12/26 21:52:43 Scheduled module 'brightness' with update mode: periodic
+2025/12/26 21:52:43 Successfully created widget for module: brightness
+2025/12/26 21:52:43 Creating widget for module: emacs_clock
+2025/12/26 21:52:43 Scheduled module 'emacs_clock' with update mode: periodic
+2025/12/26 21:52:43 Successfully created widget for module: emacs_clock
+2025/12/26 21:52:43 Creating widget for module: notifications
+2025/12/26 21:52:43 Scheduled module 'notifications' with update mode: periodic
+2025/12/26 21:52:43 Successfully created widget for module: notifications
+2025/12/26 21:52:43 Creating widget for module: time
+2025/12/26 21:52:43 Scheduled module 'time' with update mode: periodic
+2025/12/26 21:52:43 Successfully created widget for module: time
+2025/12/26 21:52:43 Creating widget for module: timer
+2025/12/26 21:52:43 Scheduled module 'timer' with update mode: on-demand
+2025/12/26 21:52:43 Successfully created widget for module: timer
+2025/12/26 21:52:43 Creating widget for module: battery
+2025/12/26 21:52:43 Scheduled module 'battery' with update mode: periodic
+2025/12/26 21:52:43 Successfully created widget for module: battery
+2025/12/26 21:52:43 Update scheduler started
+2025/12/26 21:52:43 IPC server started on /tmp/locus_socket
+2025/12/26 21:52:43 Status bar started successfully on 1 monitors
+2025/12/26 21:52:43 Warning: Failed to load launcher styles: <data>:3:22'' is not a valid color name
+2025/12/26 21:52:43 IPC server listening on 
+2025/12/26 21:52:43 Initialization complete
+2025/12/26 21:52:44 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:44 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:45 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:45 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:46 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:46 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:46 Received IPC message: launcher
+2025/12/26 21:52:46 PresentLauncher called, launcher=true
+2025/12/26 21:52:46 Launcher.Show() called, running=false
+2025/12/26 21:52:46 Launcher not running, starting...
+2025/12/26 21:52:46 Launcher.Start() - beginning
+2025/12/26 21:52:46 Setting window size
+2025/12/26 21:52:46 Loading built-in launchers
+2025/12/26 21:52:46 Registered trigger: > -> shell
+2025/12/26 21:52:46 Registered trigger: sh -> shell
+2025/12/26 21:52:46 Registered trigger: shell -> shell
+2025/12/26 21:52:46 Registered trigger: cmd -> shell
+2025/12/26 21:52:46 Registered trigger: command -> shell
+2025/12/26 21:52:46 [APP-LAUNCHER] Starting background app loading
+2025/12/26 21:52:46 Registered trigger: : -> web
+2025/12/26 21:52:46 Registered trigger: web -> web
+2025/12/26 21:52:46 Registered trigger: url -> web
+2025/12/26 21:52:46 Registered trigger: open -> web
+2025/12/26 21:52:46 Registered trigger: = -> calc
+2025/12/26 21:52:46 Registered trigger: calc -> calc
+2025/12/26 21:52:46 Registered trigger: math -> calc
+2025/12/26 21:52:46 Registered trigger: % -> timer
+2025/12/26 21:52:46 [HOOK-REGISTRY] Registered hook 'timer_hook' for launcher 'timer'
+2025/12/26 21:52:46 Registered trigger: brightness -> brightness
+2025/12/26 21:52:46 Registered trigger: bright -> brightness
+2025/12/26 21:52:46 Registered trigger: bri -> brightness
+2025/12/26 21:52:46 Registered trigger: screenshot -> screenshot
+2025/12/26 21:52:46 Registered trigger: shot -> screenshot
+2025/12/26 21:52:46 Registered trigger: scr -> screenshot
+2025/12/26 21:52:46 Registered trigger: ss -> screenshot
+2025/12/26 21:52:46 Registered trigger: lock -> lock
+2025/12/26 21:52:46 Registered trigger: screenlock -> lock
+2025/12/26 21:52:46 Registered trigger: lockscreen -> lock
+2025/12/26 21:52:46 Registered trigger: kill -> kill
+2025/12/26 21:52:46 Registered trigger: k -> kill
+2025/12/26 21:52:46 Registered trigger: focus -> focus
+2025/12/26 21:52:46 Registered trigger: f -> focus
+2025/12/26 21:52:46 Registered trigger: wallpaper -> wallpaper
+2025/12/26 21:52:46 Registered trigger: wp -> wallpaper
+2025/12/26 21:52:46 Registered trigger: bg -> wallpaper
+2025/12/26 21:52:46 Registered trigger: clipboard -> clipboard
+2025/12/26 21:52:46 Registered trigger: cb -> clipboard
+2025/12/26 21:52:46 Registered trigger: clip -> clipboard
+2025/12/26 21:52:46 Registered trigger: history -> clipboard
+2025/12/26 21:52:46 Registered trigger: wifi -> wifi
+2025/12/26 21:52:46 Registered trigger: wlan -> wifi
+2025/12/26 21:52:46 Registered trigger: file -> file
+2025/12/26 21:52:46 Registered trigger: f -> file
+2025/12/26 21:52:46 Registered trigger: music -> music
+2025/12/26 21:52:46 Registered trigger: m -> music
+2025/12/26 21:52:46 [HOOK-REGISTRY] Registered hook 'music_hook' for launcher 'music'
+2025/12/26 21:52:46 Failed to register music launcher with custom prefix: launcher 'music' already registered
+2025/12/26 21:52:46 Initializing layer shell
+2025/12/26 21:52:46 Launcher started successfully - window should be visible now
+2025/12/26 21:52:46 Launcher started successfully
+2025/12/26 21:52:46 Found 108 .desktop files, parsing in parallel
+2025/12/26 21:52:46 Launcher.Show() returned: <nil>
+2025/12/26 21:52:46 Loaded 86 applications in 4.017662ms (parallel parsing)
+2025/12/26 21:52:46 [APP-LAUNCHER] Precomputed search data in 5.055µs
+2025/12/26 21:52:46 [APP-LAUNCHER] Background load completed in 4.380561ms, loaded 86 apps
+2025/12/26 21:52:47 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:47 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:47 [REGISTRY-SEARCH] Started for query='$'
+2025/12/26 21:52:47 [SEARCH-CACHE] MISS: key='$:'
+2025/12/26 21:52:47 [REGISTRY-SEARCH] Cache MISS for query='$' in 13.663µs
+2025/12/26 21:52:47 [REGISTRY-SEARCH] Using AppLauncher for general query='$'
+2025/12/26 21:52:47 [APP-LAUNCHER] Populate started for query='$'
+2025/12/26 21:52:47 [APP-LAUNCHER] Fuzzy search started for query='$' against 86 apps
+2025/12/26 21:52:47 [APP-LAUNCHER] Fuzzy find completed in 31.438µs, found 0 raw matches
+2025/12/26 21:52:47 [APP-LAUNCHER] Fuzzy search completed in 35.882µs, returning 0 items (TEMP: no filtering)
+2025/12/26 21:52:47 [APP-LAUNCHER] Fuzzy search completed in 39.818µs, returned 0 results
+2025/12/26 21:52:47 [REGISTRY-SEARCH] AppLauncher populate completed in 41.644µs, 0 items
+2025/12/26 21:52:47 [SEARCH-CACHE] STORED FAST: key='$:', 0 results, duration=0.09ms
+2025/12/26 21:52:47 [REGISTRY-SEARCH] Cached results for query='$' (duration=0.09ms)
+2025/12/26 21:52:47 [REGISTRY-SEARCH] Completed general search in 99.393µs, final result count: 0
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:52:48 [SEARCH-CACHE] MISS: key=':'
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Cache MISS for query='' in 14.373µs
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Using AppLauncher for general query=''
+2025/12/26 21:52:48 [APP-LAUNCHER] Populate started for query=''
+2025/12/26 21:52:48 [APP-LAUNCHER] Empty query, returning 10 top apps
+2025/12/26 21:52:48 [REGISTRY-SEARCH] AppLauncher populate completed in 7.213µs, 10 items
+2025/12/26 21:52:48 [SEARCH-CACHE] STORED FAST: key=':', 10 results, duration=0.07ms
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Cached results for query='' (duration=0.07ms)
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Completed general search in 81.356µs, final result count: 10
+2025/12/26 21:52:48 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:52:48 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:52:48 [ICON-CACHE] MISS: org.xfce.about@32
+2025/12/26 21:52:48 [ICON-CACHE] STORED: org.xfce.about@32 (cache size: 1)
+2025/12/26 21:52:48 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:52:48 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:52:48 [ICON-CACHE] MISS: audacious@32
+2025/12/26 21:52:48 [ICON-CACHE] STORED: audacious@32 (cache size: 2)
+2025/12/26 21:52:48 [ICON-CACHE] MISS: network-wired@32
+2025/12/26 21:52:48 [ICON-CACHE] STORED: network-wired@32 (cache size: 3)
+2025/12/26 21:52:48 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:52:48 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:52:48 [ICON-CACHE] MISS: blender@32
+2025/12/26 21:52:48 [ICON-CACHE] STORED: blender@32 (cache size: 4)
+2025/12/26 21:52:48 [ICON-CACHE] MISS: org.gnome.Boxes@32
+2025/12/26 21:52:48 [ICON-CACHE] STORED: org.gnome.Boxes@32 (cache size: 5)
+2025/12/26 21:52:48 [ICON-CACHE] MISS: btop@32
+2025/12/26 21:52:48 [ICON-CACHE] STORED: btop@32 (cache size: 6)
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Started for query='%'
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query=''
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Launcher-specific populate completed in 905ns, 1 items
+2025/12/26 21:52:48 [REGISTRY-SEARCH] Completed launcher-specific search in 26.449µs
+2025/12/26 21:52:48 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:52:48 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:52:48 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:48 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:49 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:49 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:49 [REGISTRY-SEARCH] Started for query='%10'
+2025/12/26 21:52:49 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10'
+2025/12/26 21:52:49 [REGISTRY-SEARCH] Launcher-specific populate completed in 70.531µs, 1 items
+2025/12/26 21:52:49 [REGISTRY-SEARCH] Completed launcher-specific search in 98.18µs
+2025/12/26 21:52:49 [ICON-CACHE] MISS: dialog-error@32
+2025/12/26 21:52:49 [ICON-CACHE] STORED: dialog-error@32 (cache size: 7)
+2025/12/26 21:52:49 [REGISTRY-SEARCH] Started for query='%10s'
+2025/12/26 21:52:49 [REGISTRY-SEARCH] Launcher-specific search: launcher='timer', query='10s'
+2025/12/26 21:52:49 [REGISTRY-SEARCH] Launcher-specific populate completed in 70.171µs, 1 items
+2025/12/26 21:52:49 [REGISTRY-SEARCH] Completed launcher-specific search in 100.552µs
+2025/12/26 21:52:49 [ICON-CACHE] MISS: clock@32
+2025/12/26 21:52:49 [ICON-CACHE] Icon 'clock' not found in theme, returning nil
+2025/12/26 21:52:50 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:50 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:51 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:51 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:51 [HOOK-REGISTRY] Hook 'timer_hook' handled OnSelect event
+2025/12/26 21:52:51 [REGISTRY-SEARCH] Started for query=''
+2025/12/26 21:52:51 [SEARCH-CACHE] HIT: key=':', returning 10 cached results (TTL: 30m0s)
+2025/12/26 21:52:51 [REGISTRY-SEARCH] Cache HIT for query='', returned 10 items in 24.907µs
+2025/12/26 21:52:51 [ICON-CACHE] MISS: abiword@32
+2025/12/26 21:52:51 [ICON-CACHE] Icon 'abiword' not found in theme, returning nil
+2025/12/26 21:52:51 [ICON-CACHE] HIT: org.xfce.about@32
+2025/12/26 21:52:51 [ICON-CACHE] MISS: android-studio@32
+2025/12/26 21:52:51 [ICON-CACHE] Icon 'android-studio' not found in theme, returning nil
+2025/12/26 21:52:51 [ICON-CACHE] HIT: audacious@32
+2025/12/26 21:52:51 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:52:51 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:52:51 [ICON-CACHE] HIT: network-wired@32
+2025/12/26 21:52:51 [ICON-CACHE] HIT: blender@32
+2025/12/26 21:52:51 [ICON-CACHE] HIT: org.gnome.Boxes@32
+2025/12/26 21:52:51 [ICON-CACHE] HIT: btop@32
+2025/12/26 21:52:52 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:52 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:53 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:53 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:54 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:54 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:55 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:55 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:56 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:56 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:57 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:57 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:58 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:58 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:59 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:52:59 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:00 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:00 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:01 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:01 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:02 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:02 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:03 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:03 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:04 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:04 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:05 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:05 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:06 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:06 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:07 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:07 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:08 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:08 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:09 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:09 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:10 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:10 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:11 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:11 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:12 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:12 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:13 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:13 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:14 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:14 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:15 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:15 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:16 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:16 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:17 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:17 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:18 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:18 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:19 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:19 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:20 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:20 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:21 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:21 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:22 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:22 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:23 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:23 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:24 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:24 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:25 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:25 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:26 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:26 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:27 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:27 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:28 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:28 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:29 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:29 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:30 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:30 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:31 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:31 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:32 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:32 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:33 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:33 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:34 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:34 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:35 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:35 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:36 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:36 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:37 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:37 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:38 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:38 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:39 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:39 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:40 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:40 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:41 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:41 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:42 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:42 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:43 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:43 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:44 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:44 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:45 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:45 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:46 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:46 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:47 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:47 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:48 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:48 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:49 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:49 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:50 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:50 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:51 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:51 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:52 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:52 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:53 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:53 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:54 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:54 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:55 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:55 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:56 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:56 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:57 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:57 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:58 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:58 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:59 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:53:59 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:00 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:00 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:01 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:01 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:02 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:02 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:03 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:03 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:04 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:04 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:05 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:05 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:06 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:06 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:07 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:07 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:08 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:08 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:09 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:09 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:10 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:10 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:11 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:11 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:12 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:12 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:13 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:13 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:14 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:14 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:15 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:15 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:16 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:16 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:17 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:17 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:18 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:18 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:19 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:19 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:20 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:20 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:21 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:21 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:22 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:22 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:23 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:23 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:24 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:24 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:25 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:25 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:26 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:26 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:27 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:27 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:28 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:28 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:29 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:29 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:30 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:30 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:31 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:31 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:32 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:32 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:33 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:33 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:34 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:34 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:35 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:35 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:36 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:36 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:37 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:37 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:38 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:38 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:39 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:39 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:40 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:40 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:41 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:41 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:42 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:42 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:43 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:43 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:44 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:44 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:45 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:45 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:46 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:46 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:47 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:47 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:48 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:48 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:49 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:49 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:50 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:50 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:51 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:51 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:52 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:52 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:53 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:53 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:54 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:54 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:55 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:55 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:56 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:56 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:57 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:57 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:58 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:58 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:59 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:54:59 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:00 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:00 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:01 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:01 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:02 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:02 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:03 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:03 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:04 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:04 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:05 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:05 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:06 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:06 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory
+2025/12/26 21:55:07 Failed to fetch unread count: failed to connect to notification daemon: dial unix ~/.cache/locus/notifications.json.sock: connect: no such file or directory

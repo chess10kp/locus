@@ -19,6 +19,7 @@ type Config struct {
 	Launcher     LauncherConfig     `toml:"launcher"`
 	Notification NotificationConfig `toml:"notification"`
 	FileSearch   FileSearchConfig   `toml:"file_search"`
+	LockScreen   LockScreenConfig   `toml:"lock_screen"`
 }
 
 type StatusBarLayout struct {
@@ -230,6 +231,13 @@ type ColorsConfig struct {
 	Border     string `toml:"border"`
 }
 
+type LockScreenConfig struct {
+	Password     string `toml:"password"`
+	PasswordHash string `toml:"password_hash"`
+	MaxAttempts  int    `toml:"max_attempts"`
+	Enabled      bool   `toml:"enabled"`
+}
+
 var DefaultConfig = Config{
 	AppName:    "locus_bar",
 	AppID:      "com.github.sigma.locus",
@@ -403,6 +411,12 @@ var DefaultConfig = Config{
 			".config",
 		},
 		MaxResults: 50,
+	},
+	LockScreen: LockScreenConfig{
+		Password:     "",
+		PasswordHash: "",
+		MaxAttempts:  3,
+		Enabled:      true,
 	},
 }
 

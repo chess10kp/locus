@@ -220,6 +220,13 @@ func ParseActionData(data []byte) (ActionData, error) {
 		}
 		return &action, nil
 
+	case "lock_screen":
+		var action LockScreenAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse lock screen action: %w", err)
+		}
+		return &action, nil
+
 	default:
 		// Treat as custom action
 		var action CustomAction
@@ -311,4 +318,26 @@ func (a *TimerAction) ToJSON() ([]byte, error) {
 // NewTimerAction creates a new TimerAction
 func NewTimerAction(action, value string) *TimerAction {
 	return &TimerAction{Action: action, Value: value}
+}
+
+// LockScreenAction controls the lock screen
+type LockScreenAction struct {
+	Action string `json:"action"` // "show", "hide"
+}
+
+func (a *LockScreenAction) Type() string {
+	return "lock_screen"
+}
+
+func (a *LockScreenAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":   a.Type(),
+		"action": a.Action,
+	}
+	return json.Marshal(data)
+}
+
+// NewLockScreenAction creates a new LockScreenAction
+func NewLockScreenAction(action string) *LockScreenAction {
+	return &LockScreenAction{Action: action}
 }

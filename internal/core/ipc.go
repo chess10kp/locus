@@ -140,6 +140,12 @@ func (s *IPCServer) handleMessage(message string) {
 				log.Printf("Failed to hide launcher: %v", err)
 			}
 		})
+	} else if message == "lock" {
+		glib.IdleAdd(func() {
+			if err := s.app.ShowLockScreen(); err != nil {
+				log.Printf("Failed to show lock screen: %v", err)
+			}
+		})
 	} else if strings.HasPrefix(message, "statusbar:") {
 		// Handle statusbar messages
 		if s.app.statusBar != nil {

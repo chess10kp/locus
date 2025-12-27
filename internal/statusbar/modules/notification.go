@@ -1,33 +1,46 @@
 package modules
 
 import (
-	"fmt"
+	"log"
+	"time"
 
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/sigma/locus-go/internal/config"
+	"github.com/sigma/locus-go/internal/notification"
 	"github.com/sigma/locus-go/internal/statusbar"
 )
 
-// NotificationModule displays notification count with icon
 type NotificationModule struct {
 	*statusbar.BaseModule
-	widget   *gtk.Button
-	count    int
-	icon     string
-	iconFull string
+	widget       *gtk.Button
+	count        int
+	icon         string
+	iconFull     string
+	socketPath   string
+	updateTicker *time.Ticker
+	running      bool
 }
 
-// NewNotificationModule creates a new notification module
-func NewNotificationModule() *NotificationModule {
+func NewNotificationModule(cfg *config.Config) *NotificationModule {
+	socketPath := normalizeSocketPath(cfg.Notification.History.PersistPath)
+
 	return &NotificationModule{
-		BaseModule: statusbar.NewBaseModule("notifications", statusbar.UpdateModeEventDriven),
-		widget:     nil,
-		count:      0,
-		icon:       "N",
-		iconFull:   "N",
+		BaseModule:   statusbar.NewBaseModule("notifications", statusbar.UpdateModePeriodic),
+		widget:       nil,
+		count:        0,
+		icon:         "N",
+		iconFull:     "N",
+		socketPath:   socketPath,
+		updateTicker: time.NewTicker(5 * time.Second),
+		running:      false,
 	}
 }
 
-// CreateWidget creates a notification button widget
+func normalizeSocketPath(path string) string {
+	return path + ".sock"
+}
+
 func (m *NotificationModule) CreateWidget() (gtk.IWidget, error) {
 	button, err := gtk.ButtonNewWithLabel(m.formatNotification())
 	if err != nil {
@@ -49,7 +62,6 @@ func (m *NotificationModule) CreateWidget() (gtk.IWidget, error) {
 	return button, nil
 }
 
-// UpdateWidget updates notification widget
 func (m *NotificationModule) UpdateWidget(widget gtk.IWidget) error {
 	if widget == nil {
 		return nil
@@ -60,12 +72,15 @@ func (m *NotificationModule) UpdateWidget(widget gtk.IWidget) error {
 		return nil
 	}
 
-	button.SetLabel(m.formatNotification())
+	count := m.fetchUnreadCount()
+	if count != m.count {
+		m.count = count
+		button.SetLabel(m.formatNotification())
+	}
 
 	return nil
 }
 
-// Initialize initializes the module with configuration
 func (m *NotificationModule) Initialize(config map[string]interface{}) error {
 	if err := m.BaseModule.Initialize(config); err != nil {
 		return err
@@ -79,8 +94,8 @@ func (m *NotificationModule) Initialize(config map[string]interface{}) error {
 		m.iconFull = iconFull
 	}
 
-	if count, ok := config["count"].(int); ok {
-		m.count = count
+	if socketPath, ok := config["socket_path"].(string); ok {
+		m.socketPath = socketPath
 	}
 
 	m.SetCSSClasses([]string{"notification-module", "notification-button"})
@@ -92,94 +107,126 @@ func (m *NotificationModule) Initialize(config map[string]interface{}) error {
 	return nil
 }
 
-// formatNotification formats the notification text for display
+func (m *NotificationModule) Cleanup() error {
+	if m.updateTicker != nil {
+		m.updateTicker.Stop()
+		m.running = false
+	}
+	return m.BaseModule.Cleanup()
+}
+
+func (m *NotificationModule) StartUpdates(callback func()) {
+	if !m.running {
+		m.running = true
+		go m.updateLoop(callback)
+	}
+}
+
+func (m *NotificationModule) StopUpdates() {
+	m.running = false
+	if m.updateTicker != nil {
+		m.updateTicker.Stop()
+	}
+}
+
+func (m *NotificationModule) updateLoop(callback func()) {
+	for m.running {
+		select {
+		case <-m.updateTicker.C:
+			glib.IdleAdd(func() {
+				if m.widget != nil {
+					count := m.fetchUnreadCount()
+					if count != m.count {
+						m.count = count
+						m.widget.SetLabel(m.formatNotification())
+					}
+				}
+			})
+		}
+	}
+}
+
+func (m *NotificationModule) fetchUnreadCount() int {
+	count, err := notification.GetUnreadCount(m.socketPath)
+	if err != nil {
+		log.Printf("Failed to fetch unread count: %v", err)
+		return 0
+	}
+	return count
+}
+
 func (m *NotificationModule) formatNotification() string {
 	if m.count > 0 {
 		if m.count > 99 {
-			return fmt.Sprintf("%s 99+", m.iconFull)
+			return m.iconFull + " 99+"
 		}
-		return fmt.Sprintf("%s %d", m.iconFull, m.count)
+		return m.iconFull + " " + intToString(m.count)
 	}
 	return ""
 }
 
-// SetCount sets the unread notification count
+func intToString(n int) string {
+	if n < 0 {
+		return "0"
+	}
+	if n < 10 {
+		return string('0' + rune(n))
+	}
+	result := ""
+	for n > 0 {
+		result = string('0'+rune(n%10)) + result
+		n = n / 10
+	}
+	return result
+}
+
 func (m *NotificationModule) SetCount(count int) {
 	m.count = count
 }
 
-// GetCount returns the current unread count
 func (m *NotificationModule) GetCount() int {
 	return m.count
 }
 
-// IncrementCount increments the unread notification count
-func (m *NotificationModule) IncrementCount() {
-	m.count++
+type NotificationModuleFactory struct {
+	config *config.Config
 }
 
-// DecrementCount decrements the unread notification count
-func (m *NotificationModule) DecrementCount() {
-	if m.count > 0 {
-		m.count--
+func NewNotificationModuleFactory(cfg *config.Config) *NotificationModuleFactory {
+	return &NotificationModuleFactory{
+		config: cfg,
 	}
 }
 
-// ClearCount clears the unread notification count
-func (m *NotificationModule) ClearCount() {
-	m.count = 0
-}
-
-// SetIcon sets the notification icon
-func (m *NotificationModule) SetIcon(icon string) {
-	m.icon = icon
-}
-
-// SetIconFull sets the full notification icon (used when there are unread notifications)
-func (m *NotificationModule) SetIconFull(icon string) {
-	m.iconFull = icon
-}
-
-// Cleanup cleans up resources
-func (m *NotificationModule) Cleanup() error {
-	return m.BaseModule.Cleanup()
-}
-
-// NotificationModuleFactory is a factory for creating NotificationModule instances
-type NotificationModuleFactory struct{}
-
-// CreateModule creates a new NotificationModule instance
 func (f *NotificationModuleFactory) CreateModule(config map[string]interface{}) (statusbar.Module, error) {
-	module := NewNotificationModule()
+	module := NewNotificationModule(f.config)
 	if err := module.Initialize(config); err != nil {
 		return nil, err
 	}
 	return module, nil
 }
 
-// ModuleName returns module name
 func (f *NotificationModuleFactory) ModuleName() string {
 	return "notifications"
 }
 
-// DefaultConfig returns default configuration
 func (f *NotificationModuleFactory) DefaultConfig() map[string]interface{} {
 	return map[string]interface{}{
 		"icon":        "N",
 		"icon_full":   "N",
-		"count":       0,
 		"css_classes": []string{"notification-module", "notification-button"},
 	}
 }
 
-// Dependencies returns module dependencies
 func (f *NotificationModuleFactory) Dependencies() []string {
 	return []string{}
 }
 
 func init() {
 	registry := statusbar.DefaultRegistry()
-	factory := &NotificationModuleFactory{}
+	factory := &NotificationModuleFactory{
+		config: &config.DefaultConfig,
+	}
 	if err := registry.RegisterFactory(factory); err != nil {
 		panic(err)
 	}

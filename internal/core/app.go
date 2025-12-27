@@ -8,16 +8,20 @@ import (
 
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/sigma/locus-go/internal/config"
+	"github.com/sigma/locus-go/internal/lockscreen"
+	"github.com/sigma/locus-go/internal/notification"
 )
 
 // App is main application
 type App struct {
-	config    *config.Config
-	running   bool
-	sigChan   chan os.Signal
-	statusBar *StatusBar
-	launcher  *Launcher
-	ipc       *IPCServer
+	config          *config.Config
+	running         bool
+	sigChan         chan os.Signal
+	statusBar       *StatusBar
+	launcher        *Launcher
+	ipc             *IPCServer
+	lockscreen      *lockscreen.LockScreenManager
+	notificationMgr *notification.Manager
 }
 
 // NewApp creates a new application
@@ -65,6 +69,22 @@ func (a *App) initialize() {
 	gtk.Init(nil)
 	SetupStyles()
 
+	a.lockscreen = lockscreen.NewLockScreenManager(a.config)
+
+	if a.config.Notification.Daemon.Enabled {
+		notificationMgr, err := notification.NewManager(&a.config.Notification)
+		if err != nil {
+			log.Printf("Failed to create notification manager: %v", err)
+		} else {
+			a.notificationMgr = notificationMgr
+			if err := notificationMgr.Start(); err != nil {
+				log.Printf("Failed to start notification manager: %v", err)
+			} else {
+				log.Println("Notification manager started")
+			}
+		}
+	}
+
 	// Create status bar
 	sb, err := NewStatusBar(a, a.config)
 	if err != nil {
@@ -105,6 +125,14 @@ func (a *App) Quit() {
 	log.Println("Shutting down...")
 
 	// Clean up
+	if a.lockscreen != nil {
+		a.lockscreen.Cleanup()
+	}
+
+	if a.notificationMgr != nil {
+		a.notificationMgr.Stop()
+	}
+
 	if a.statusBar != nil {
 		a.statusBar.Stop()
 	}
@@ -145,4 +173,28 @@ func (a *App) HideLauncher() error {
 // GetConfig returns the application config
 func (a *App) GetConfig() *config.Config {
 	return a.config
+}
+
+// ShowLockScreen shows the lock screen
+func (a *App) ShowLockScreen() error {
+	if a.lockscreen == nil {
+		return nil
+	}
+	return a.lockscreen.Show()
+}
+
+// HideLockScreen hides the lock screen
+func (a *App) HideLockScreen() error {
+	if a.lockscreen == nil {
+		return nil
+	}
+	return a.lockscreen.Hide()
+}
+
+// IsLocked returns whether the lock screen is active
+func (a *App) IsLocked() bool {
+	if a.lockscreen == nil {
+		return false
+	}
+	return a.lockscreen.IsLocked()
 }

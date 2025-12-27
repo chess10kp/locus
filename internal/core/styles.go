@@ -54,6 +54,45 @@ window {
     background-color: #0e1419;
     color: #ebdbb2;
 }
+
+#lockscreen-window {
+    background: #0e1419;
+    color: #ebdbb2;
+}
+
+#lockscreen-entry {
+    background: #0e1419;
+    color: #ebdbb2;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    padding: 12px;
+    font-size: 16px;
+    font-family: "Iosevka", monospace;
+}
+
+#lockscreen-entry:focus {
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+#lockscreen-entry:focus-visible {
+    border: none;
+    outline: none;
+    box-shadow: none;
+}
+
+#lockscreen-status {
+    font-family: "Iosevka", sans-serif;
+    font-size: 14px;
+}
+
+#lockscreen-label {
+    font-family: "Iosevka", sans-serif;
+    font-size: 24px;
+    font-weight: bold;
+}
 `
 
 const defaultLauncherStyles = `

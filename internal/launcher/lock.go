@@ -1,6 +1,8 @@
 package launcher
 
 import (
+	"fmt"
+
 	"github.com/sigma/locus-go/internal/config"
 )
 
@@ -27,12 +29,13 @@ func (l *LockLauncher) GetSizeMode() LauncherSizeMode {
 }
 
 func (l *LockLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
+	socketPath := l.config.SocketPath
 	return []*LauncherItem{
 		{
 			Title:      "Lock Screen",
 			Subtitle:   "Lock the screen immediately",
 			Icon:       "system-lock-screen-symbolic",
-			ActionData: NewShellAction("swaylock -f -c 000000"),
+			ActionData: NewShellAction(fmt.Sprintf("echo 'lock' | nc -U %s", socketPath)),
 		},
 	}
 }
