@@ -253,7 +253,9 @@ func (sb *StatusBar) Update() error {
 }
 
 func (sb *StatusBar) HandleIPC(msg string) error {
-	sb.scheduler.HandleIPCMessage(msg)
+	log.Printf("[STATUSBAR] Received IPC message: %s", msg)
+	handled := sb.scheduler.HandleIPCMessage(msg)
+	log.Printf("[STATUSBAR] IPC message handled: %v", handled)
 	return nil
 }
 
