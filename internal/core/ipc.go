@@ -150,11 +150,14 @@ func (s *IPCServer) handleMessage(message string) {
 		// Handle statusbar messages
 		if s.app.statusBar != nil {
 			cmd := strings.TrimPrefix(message, "statusbar:")
+			log.Printf("[IPC] Forwarding statusbar message: %s", cmd)
 			glib.IdleAdd(func() {
 				if err := s.app.statusBar.HandleIPC(cmd); err != nil {
 					log.Printf("Failed to handle statusbar IPC: %v", err)
 				}
 			})
+		} else {
+			log.Printf("[IPC] StatusBar is nil, cannot handle message: %s", message)
 		}
 	} else if strings.HasPrefix(message, "status:") {
 		// Handle status messages from hooks/launchers

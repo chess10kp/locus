@@ -217,7 +217,21 @@ func (l *Launcher) setupSignals() {
 	})
 
 	l.searchEntry.Connect("key-press-event", func(entry *gtk.Entry, event *gdk.Event) bool {
+		if event == nil {
+			return false
+		}
 		keyEvent := gdk.EventKeyNewFromEvent(event)
+		if keyEvent == nil {
+			return false
+		}
+		if l == nil {
+			return false
+		}
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[LAUNCHER] Panic recovered in onKeyPress: %v", r)
+			}
+		}()
 		return l.onKeyPress(keyEvent)
 	})
 
@@ -661,8 +675,15 @@ func (l *Launcher) onRowActivated(row *gtk.ListBoxRow) {
 }
 
 func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
+	if event == nil {
+		return false
+	}
 	key := event.KeyVal()
 	state := event.State()
+
+	if l.resultList == nil {
+		return false
+	}
 
 	switch key {
 	case gdk.KEY_Escape:
@@ -865,6 +886,9 @@ func (l *Launcher) handleStatusRequests(ctx context.Context, ch <-chan launcher.
 }
 
 func (l *Launcher) navigateResult(direction int) {
+	if l == nil || l.resultList == nil {
+		return
+	}
 	selected := l.resultList.GetSelectedRow()
 
 	var currentIndex int = -1
