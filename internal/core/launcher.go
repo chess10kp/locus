@@ -607,6 +607,9 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 	key := event.KeyVal()
 	state := event.State()
 
+	debugLogger.Printf("KEY_PRESS: key=%d, state=%d, CONTROL_MASK=%d, MOD1_MASK=%d",
+		key, state, uint(gdk.CONTROL_MASK), uint(gdk.MOD1_MASK))
+
 	switch key {
 	case gdk.KEY_Escape:
 		l.Hide()
@@ -620,13 +623,17 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 	case gdk.KEY_Tab:
 		return l.onTabPressed()
 	case gdk.KEY_n:
+		debugLogger.Printf("KEY_n pressed, has_ctrl=%v", state&uint(gdk.CONTROL_MASK) != 0)
 		if state&uint(gdk.CONTROL_MASK) != 0 {
+			debugLogger.Printf("KEY_n: calling navigateResult(1)")
 			l.navigateResult(1)
 			return true
 		}
 		return false
 	case gdk.KEY_p:
+		debugLogger.Printf("KEY_p pressed, has_ctrl=%v", state&uint(gdk.CONTROL_MASK) != 0)
 		if state&uint(gdk.CONTROL_MASK) != 0 {
+			debugLogger.Printf("KEY_p: calling navigateResult(-1)")
 			l.navigateResult(-1)
 			return true
 		}
