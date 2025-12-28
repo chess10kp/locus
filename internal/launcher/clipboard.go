@@ -10,6 +10,20 @@ type ClipboardLauncher struct {
 	config *config.Config
 }
 
+type ClipboardLauncherFactory struct{}
+
+func (f *ClipboardLauncherFactory) Name() string {
+	return "clipboard"
+}
+
+func (f *ClipboardLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewClipboardLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&ClipboardLauncherFactory{})
+}
+
 func NewClipboardLauncher(cfg *config.Config) *ClipboardLauncher {
 	return &ClipboardLauncher{
 		config: cfg,

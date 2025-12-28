@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sahilm/fuzzy"
 	"github.com/chess10kp/locus/internal/apps"
 	"github.com/chess10kp/locus/internal/config"
+	"github.com/sahilm/fuzzy"
 )
 
 type AppLauncher struct {
@@ -22,6 +22,20 @@ type AppLauncher struct {
 	appNames    []string
 	nameToApp   map[string]apps.App
 	initialized bool
+}
+
+type AppLauncherFactory struct{}
+
+func (f *AppLauncherFactory) Name() string {
+	return "apps"
+}
+
+func (f *AppLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewAppLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&AppLauncherFactory{})
 }
 
 func NewAppLauncher(cfg *config.Config) *AppLauncher {

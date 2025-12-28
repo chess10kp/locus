@@ -13,6 +13,20 @@ type KillLauncher struct {
 	config *config.Config
 }
 
+type KillLauncherFactory struct{}
+
+func (f *KillLauncherFactory) Name() string {
+	return "kill"
+}
+
+func (f *KillLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewKillLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&KillLauncherFactory{})
+}
+
 func NewKillLauncher(cfg *config.Config) *KillLauncher {
 	return &KillLauncher{
 		config: cfg,

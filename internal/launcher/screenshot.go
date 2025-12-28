@@ -8,6 +8,20 @@ type ScreenshotLauncher struct {
 	config *config.Config
 }
 
+type ScreenshotLauncherFactory struct{}
+
+func (f *ScreenshotLauncherFactory) Name() string {
+	return "screenshot"
+}
+
+func (f *ScreenshotLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewScreenshotLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&ScreenshotLauncherFactory{})
+}
+
 func NewScreenshotLauncher(cfg *config.Config) *ScreenshotLauncher {
 	return &ScreenshotLauncher{
 		config: cfg,

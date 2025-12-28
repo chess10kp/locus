@@ -10,6 +10,20 @@ type WallpaperLauncher struct {
 	config *config.Config
 }
 
+type WallpaperLauncherFactory struct{}
+
+func (f *WallpaperLauncherFactory) Name() string {
+	return "wallpaper"
+}
+
+func (f *WallpaperLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewWallpaperLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&WallpaperLauncherFactory{})
+}
+
 func NewWallpaperLauncher(cfg *config.Config) *WallpaperLauncher {
 	return &WallpaperLauncher{
 		config: cfg,

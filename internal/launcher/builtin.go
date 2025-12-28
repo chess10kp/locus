@@ -11,6 +11,20 @@ type ShellLauncher struct {
 	config *config.Config
 }
 
+type ShellLauncherFactory struct{}
+
+func (f *ShellLauncherFactory) Name() string {
+	return "shell"
+}
+
+func (f *ShellLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewShellLauncher()
+}
+
+func init() {
+	RegisterLauncherFactory(&ShellLauncherFactory{})
+}
+
 func NewShellLauncher() *ShellLauncher {
 	return &ShellLauncher{}
 }
@@ -69,6 +83,20 @@ func (l *ShellLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool)
 
 type WebLauncher struct {
 	config *config.Config
+}
+
+type WebLauncherFactory struct{}
+
+func (f *WebLauncherFactory) Name() string {
+	return "web"
+}
+
+func (f *WebLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewWebLauncher()
+}
+
+func init() {
+	RegisterLauncherFactory(&WebLauncherFactory{})
 }
 
 func NewWebLauncher() *WebLauncher {
@@ -135,6 +163,20 @@ func (l *WebLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
 
 type CalcLauncher struct {
 	config *config.Config
+}
+
+type CalcLauncherFactory struct{}
+
+func (f *CalcLauncherFactory) Name() string {
+	return "calc"
+}
+
+func (f *CalcLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewCalcLauncher()
+}
+
+func init() {
+	RegisterLauncherFactory(&CalcLauncherFactory{})
 }
 
 func NewCalcLauncher() *CalcLauncher {

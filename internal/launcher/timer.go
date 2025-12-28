@@ -22,6 +22,20 @@ type TimerLauncher struct {
 	cancelFunc  context.CancelFunc
 }
 
+type TimerLauncherFactory struct{}
+
+func (f *TimerLauncherFactory) Name() string {
+	return "timer"
+}
+
+func (f *TimerLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewTimerLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&TimerLauncherFactory{})
+}
+
 func NewTimerLauncher(cfg *config.Config) *TimerLauncher {
 	return &TimerLauncher{
 		config: cfg,

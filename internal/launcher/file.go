@@ -16,6 +16,20 @@ type FileLauncher struct {
 	config *config.Config
 }
 
+type FileLauncherFactory struct{}
+
+func (f *FileLauncherFactory) Name() string {
+	return "file"
+}
+
+func (f *FileLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewFileLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&FileLauncherFactory{})
+}
+
 func NewFileLauncher(cfg *config.Config) *FileLauncher {
 	return &FileLauncher{
 		config: cfg,
@@ -56,6 +70,7 @@ func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 					Subtitle:   path,
 					Icon:       "folder",
 					ActionData: NewShellAction("xdg-open " + path),
+					Launcher:   l,
 				})
 			}
 		}
@@ -81,6 +96,7 @@ func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 				Subtitle:   "File search took too long",
 				Icon:       "dialog-warning",
 				ActionData: NewShellAction(""),
+				Launcher:   l,
 			},
 		}
 	}
@@ -92,6 +108,7 @@ func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 				Subtitle:   err.Error(),
 				Icon:       "dialog-error",
 				ActionData: NewShellAction(""),
+				Launcher:   l,
 			},
 		}
 	}
@@ -112,6 +129,7 @@ func (l *FileLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 			Subtitle:   absPath,
 			Icon:       l.getFileIcon(filename),
 			ActionData: NewShellAction("xdg-open " + absPath),
+			Launcher:   l,
 		})
 
 		if len(items) >= 50 {

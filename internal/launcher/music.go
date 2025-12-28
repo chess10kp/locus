@@ -21,6 +21,20 @@ type MusicLauncher struct {
 	mu         sync.RWMutex
 }
 
+type MusicLauncherFactory struct{}
+
+func (f *MusicLauncherFactory) Name() string {
+	return "music"
+}
+
+func (f *MusicLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewMusicLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&MusicLauncherFactory{})
+}
+
 func NewMusicLauncher(cfg *config.Config) *MusicLauncher {
 	musicDir := os.Getenv("MUSIC_DIR")
 	if musicDir == "" {

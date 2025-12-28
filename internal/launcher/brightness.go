@@ -13,6 +13,20 @@ type BrightnessLauncher struct {
 	downCmd string
 }
 
+type BrightnessLauncherFactory struct{}
+
+func (f *BrightnessLauncherFactory) Name() string {
+	return "brightness"
+}
+
+func (f *BrightnessLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewBrightnessLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&BrightnessLauncherFactory{})
+}
+
 func NewBrightnessLauncher(cfg *config.Config) *BrightnessLauncher {
 	return &BrightnessLauncher{
 		config:  cfg,

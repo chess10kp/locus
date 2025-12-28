@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -51,6 +52,54 @@ type LauncherItem struct {
 // CtrlNumberAction is a function that performs an action on a launcher item
 type CtrlNumberAction func(item *LauncherItem) error
 
+// LauncherFactory creates launcher instances
+type LauncherFactory interface {
+	Name() string
+	Create(cfg *config.Config) Launcher
+}
+
+var (
+	launcherFactories = make(map[string]LauncherFactory)
+	factoriesMutex    sync.RWMutex
+)
+
+// RegisterLauncherFactory registers a launcher factory
+//
+// Example usage:
+//
+//	type MyLauncherFactory struct{}
+//
+//	func (f *MyLauncherFactory) Name() string {
+//	    return "mylauncher"
+//	}
+//
+//	func (f *MyLauncherFactory) Create(cfg *config.Config) Launcher {
+//	    return NewMyLauncher(cfg)
+//	}
+//
+//	func init() {
+//	    RegisterLauncherFactory(&MyLauncherFactory{})
+//	}
+func RegisterLauncherFactory(factory LauncherFactory) {
+	factoriesMutex.Lock()
+	defer factoriesMutex.Unlock()
+	launcherFactories[factory.Name()] = factory
+	log.Printf("Registered launcher factory: %s", factory.Name())
+}
+
+// GetLauncherFactories returns all registered launcher factories
+func GetLauncherFactories() map[string]LauncherFactory {
+	factoriesMutex.RLock()
+	defer factoriesMutex.RUnlock()
+
+	// Return a copy to avoid race conditions
+	factories := make(map[string]LauncherFactory, len(launcherFactories))
+	for name, factory := range launcherFactories {
+		factories[name] = factory
+	}
+	return factories
+}
+
 // Launcher is the interface that all launchers must implement
 type Launcher interface {
 	Name() string
@@ -89,6 +138,9 @@ func NewLauncherRegistry(cfg *config.Config) *LauncherRegistry {
 		triggerMap:   make(map[string]Launcher),
 		customPrefix: make(map[string]string),
 		config:       cfg,
+		ctx: &LauncherContext{
+			Config: cfg,
+		},
 		searchCache:  cache,
 		appsHash:     "",
 		hookRegistry: NewHookRegistry(),
@@ -704,50 +756,50 @@ func (r *LauncherRegistry) GetLockScreenCallback() func() error {
 	return nil
 }
 
-// LoadBuiltIn loads built-in launchers
-func (r *LauncherRegistry) LoadBuiltIn() error {
-	r.ctx = &LauncherContext{
-		Config: r.config,
-	}
-
-	appLauncher := NewAppLauncher(r.config)
-	appLauncher.StartBackgroundLoad() // Start background loading
-
-	launchers := []Launcher{
-		appLauncher, // App launcher first for priority
-		NewShellLauncher(),
-		NewWebLauncher(),
-		NewCalcLauncher(),
-		NewTimerLauncher(r.config),
-		NewBrightnessLauncher(r.config),
-		NewScreenshotLauncher(r.config),
-		NewLockLauncher(r.config),
-		NewKillLauncher(r.config),
-		NewWMFocusLauncher(r.config),
-		NewWallpaperLauncher(r.config),
-		NewClipboardLauncher(r.config),
-		NewWifiLauncher(r.config),
-		NewFileLauncher(r.config),
-		NewMusicLauncher(r.config),
-	}
-
-	for _, l := range launchers {
-		if err := r.Register(l); err != nil {
-			log.Printf("Failed to register launcher %s: %v", l.Name(), err)
+// registerLauncherHooks registers all hooks for a launcher
+func (r *LauncherRegistry) registerLauncherHooks(launcher Launcher) {
+	hooks := launcher.GetHooks()
+	for _, hook := range hooks {
+		if err := r.hookRegistry.Register(launcher.Name(), hook); err != nil {
+			log.Printf("Failed to register hook for launcher %s: %v", launcher.Name(), err)
 		}
+	}
+}
 
-		// Register launcher hooks
-		hooks := l.GetHooks()
-		for _, hook := range hooks {
-			if err := r.hookRegistry.Register(l.Name(), hook); err != nil {
-				log.Printf("Failed to register hook for launcher %s: %v", l.Name(), err)
+// LoadBuiltIn loads built-in launchers using factory pattern
+func (r *LauncherRegistry) LoadBuiltIn() error {
+	// Initialize context if not already done
+	if r.ctx == nil {
+		r.ctx = &LauncherContext{
+			Config: r.config,
+		}
+	}
+
+	factories := GetLauncherFactories()
+
+	for name, factory := range factories {
+		launcher := factory.Create(r.config)
+
+		// Special handling for AppLauncher - start background load
+		if name == "apps" {
+			if appLauncher, ok := launcher.(*AppLauncher); ok {
+				appLauncher.StartBackgroundLoad()
 			}
 		}
+
+		if err := r.Register(launcher); err != nil {
+			log.Printf("Failed to register launcher %s: %v", name, err)
+			continue
+		}
+
+		r.registerLauncherHooks(launcher)
 	}
 
-	// Register custom prefixes
-	if err := r.RegisterWithCustomPrefix(NewMusicLauncher(r.config), "m"); err != nil {
-		log.Printf("Failed to register music launcher with custom prefix: %v", err)
+	// Register custom prefixes for specific launchers
+	if musicLauncher, exists := r.launchers["music"]; exists {
+		if err := r.RegisterWithCustomPrefix(musicLauncher, "m"); err != nil {
+			log.Printf("Failed to register music launcher with custom prefix: %v", err)
+		}
 	}
 
 	// Update apps hash after registration

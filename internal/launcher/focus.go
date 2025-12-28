@@ -10,6 +10,20 @@ type WMFocusLauncher struct {
 	config *config.Config
 }
 
+type WMFocusLauncherFactory struct{}
+
+func (f *WMFocusLauncherFactory) Name() string {
+	return "focus"
+}
+
+func (f *WMFocusLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewWMFocusLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&WMFocusLauncherFactory{})
+}
+
 func NewWMFocusLauncher(cfg *config.Config) *WMFocusLauncher {
 	return &WMFocusLauncher{
 		config: cfg,

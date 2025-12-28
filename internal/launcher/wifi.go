@@ -10,6 +10,20 @@ type WifiLauncher struct {
 	config *config.Config
 }
 
+type WifiLauncherFactory struct{}
+
+func (f *WifiLauncherFactory) Name() string {
+	return "wifi"
+}
+
+func (f *WifiLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewWifiLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&WifiLauncherFactory{})
+}
+
 func NewWifiLauncher(cfg *config.Config) *WifiLauncher {
 	return &WifiLauncher{
 		config: cfg,

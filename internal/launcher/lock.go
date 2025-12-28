@@ -8,6 +8,20 @@ type LockLauncher struct {
 	config *config.Config
 }
 
+type LockLauncherFactory struct{}
+
+func (f *LockLauncherFactory) Name() string {
+	return "lock"
+}
+
+func (f *LockLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewLockLauncher(cfg)
+}
+
+func init() {
+	RegisterLauncherFactory(&LockLauncherFactory{})
+}
+
 func NewLockLauncher(cfg *config.Config) *LockLauncher {
 	return &LockLauncher{
 		config: cfg,
