@@ -234,6 +234,13 @@ func ParseActionData(data []byte) (ActionData, error) {
 		}
 		return &action, nil
 
+	case "color":
+		var action ColorAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse color action: %w", err)
+		}
+		return &action, nil
+
 	default:
 		// Treat as custom action
 		var action CustomAction
@@ -374,4 +381,28 @@ func NewWindowFocusAction(conID int64, workspace string) *WindowFocusAction {
 		ConID:     conID,
 		Workspace: workspace,
 	}
+}
+
+// ColorAction performs color picker operations
+type ColorAction struct {
+	Action string `json:"action"` // "save", "copy", "preview"
+	Color  string `json:"color"`  // Color value in hex format
+}
+
+func (a *ColorAction) Type() string {
+	return "color"
+}
+
+func (a *ColorAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":   a.Type(),
+		"action": a.Action,
+		"color":  a.Color,
+	}
+	return json.Marshal(data)
+}
+
+// NewColorAction creates a new ColorAction
+func NewColorAction(action, color string) *ColorAction {
+	return &ColorAction{Action: action, Color: color}
 }

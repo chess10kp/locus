@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -145,14 +146,15 @@ type Launcher interface {
 
 // LauncherRegistry manages all launchers
 type LauncherRegistry struct {
-	launchers    map[string]Launcher
-	triggerMap   map[string]Launcher
-	customPrefix map[string]string // name -> custom prefix
-	config       *config.Config
-	ctx          *LauncherContext
-	searchCache  *SearchCache
-	appsHash     string
-	hookRegistry *HookRegistry
+	launchers       map[string]Launcher
+	triggerMap      map[string]Launcher
+	customPrefix    map[string]string // name -> custom prefix
+	config          *config.Config
+	ctx             *LauncherContext
+	searchCache     *SearchCache
+	appsHash        string
+	hookRegistry    *HookRegistry
+	frecencyTracker *FrecencyTracker
 }
 
 // NewLauncherRegistry creates a new launcher registry
@@ -164,6 +166,22 @@ func NewLauncherRegistry(cfg *config.Config) *LauncherRegistry {
 		cache = nil
 	}
 
+	dataDir := cfg.CacheDir
+	if dataDir == "" {
+		homeDir := os.Getenv("HOME")
+		if homeDir != "" {
+			dataDir = filepath.Join(homeDir, ".local", "share", "locus")
+		} else {
+			dataDir = "/tmp/locus"
+		}
+	}
+
+	frecencyTracker, err := NewFrecencyTracker(dataDir)
+	if err != nil {
+		log.Printf("Failed to create frecency tracker: %v", err)
+		frecencyTracker = nil
+	}
+
 	registry := &LauncherRegistry{
 		launchers:    make(map[string]Launcher),
 		triggerMap:   make(map[string]Launcher),
@@ -172,9 +190,10 @@ func NewLauncherRegistry(cfg *config.Config) *LauncherRegistry {
 		ctx: &LauncherContext{
 			Config: cfg,
 		},
-		searchCache:  cache,
-		appsHash:     "",
-		hookRegistry: NewHookRegistry(),
+		searchCache:     cache,
+		appsHash:        "",
+		hookRegistry:    NewHookRegistry(),
+		frecencyTracker: frecencyTracker,
 	}
 
 	registry.ctx.Registry = registry
@@ -482,6 +501,10 @@ func (r *LauncherRegistry) GetCacheStats() *CacheStats {
 
 // Execute executes a launcher item
 func (r *LauncherRegistry) Execute(item *LauncherItem) error {
+	if r.frecencyTracker != nil && item.Launcher.Name() == "apps" {
+		r.frecencyTracker.RecordLaunch(item.Title)
+	}
+
 	return r.ExecuteWithActionData(item.Launcher.Name(), item.ActionData)
 }
 
@@ -540,6 +563,13 @@ func (r *LauncherRegistry) ExecuteWithActionData(launcherName string, data Actio
 			return fmt.Errorf("invalid window focus action type")
 		}
 		return r.executeWindowFocusAction(windowAction)
+
+	case "color":
+		colorAction, ok := data.(*ColorAction)
+		if !ok {
+			return fmt.Errorf("invalid color action type")
+		}
+		return r.executeColorAction(colorAction)
 
 	default:
 		// Custom action - pass to launcher hooks if available
@@ -790,6 +820,28 @@ func (r *LauncherRegistry) executeWindowFocusAction(action *WindowFocusAction) e
 	return r.executeShellCommand(focusCmd)
 }
 
+// executeColorAction handles color picker operations
+func (r *LauncherRegistry) executeColorAction(action *ColorAction) error {
+	switch action.Action {
+	case "save":
+		// Save color to statusbar via IPC
+		if r.ctx != nil && r.ctx.RefreshUI != nil {
+			// Send IPC message to statusbar to display color
+			// This will be handled by the statusbar IPC system
+			// We'll use the status message mechanism for now
+			return fmt.Errorf("color save via IPC not yet implemented")
+		}
+	case "copy":
+		// Copy color to clipboard
+		// TODO: Implement clipboard copy
+		return fmt.Errorf("color copy not yet implemented")
+	case "preview":
+		// Preview color (already handled in launcher UI)
+		return nil
+	}
+	return fmt.Errorf("unknown color action: %s", action.Action)
+}
+
 // RefreshLauncher forces a launcher to refresh its items
 func (r *LauncherRegistry) RefreshLauncher(name string) error {
 	launcher, exists := r.launchers[name]
@@ -854,9 +906,13 @@ func (r *LauncherRegistry) LoadBuiltIn() error {
 	for name, factory := range factories {
 		launcher := factory.Create(r.config)
 
-		// Special handling for AppLauncher - start background load
+		// Special handling for AppLauncher - set frecency tracker and start background load
 		if name == "apps" {
 			if appLauncher, ok := launcher.(*AppLauncher); ok {
+				if r.frecencyTracker != nil {
+					appLauncher.SetFrecencyTracker(r.frecencyTracker)
+					log.Printf("[REGISTRY] Frecency tracker set on AppLauncher")
+				}
 				appLauncher.StartBackgroundLoad()
 			}
 		}

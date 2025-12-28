@@ -19,9 +19,10 @@ type AppLauncher struct {
 	appsLoaded bool
 	mu         sync.RWMutex
 	// Pre-computed search data for performance
-	appNames    []string
-	nameToApp   map[string]apps.App
-	initialized bool
+	appNames        []string
+	nameToApp       map[string]apps.App
+	initialized     bool
+	frecencyTracker *FrecencyTracker
 }
 
 type AppLauncherFactory struct{}
@@ -44,6 +45,18 @@ func NewAppLauncher(cfg *config.Config) *AppLauncher {
 		appLoader: apps.NewAppLoader(cfg),
 		apps:      []apps.App{},
 	}
+}
+
+func (l *AppLauncher) SetFrecencyTracker(tracker *FrecencyTracker) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.frecencyTracker = tracker
+}
+
+func (l *AppLauncher) GetFrecencyTracker() *FrecencyTracker {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	return l.frecencyTracker
 }
 
 // StartBackgroundLoad starts loading apps in a background goroutine
@@ -113,17 +126,17 @@ func (l *AppLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIt
 
 	query = strings.TrimSpace(query)
 	if query == "" {
-		// Return top apps by name (alphabetical)
+		// Return top apps by frecency score
 		maxResults := l.config.Launcher.Search.MaxResults
-		topApps := l.apps
-		if len(topApps) > maxResults {
-			topApps = topApps[:maxResults]
+		sortedApps := l.getAppsSortedByFrecency()
+		if len(sortedApps) > maxResults {
+			sortedApps = sortedApps[:maxResults]
 		}
-		log.Printf("[APP-LAUNCHER] Empty query, returning %d top apps", len(topApps))
-		return l.appsToItems(topApps)
+		log.Printf("[APP-LAUNCHER] Empty query, returning %d top apps by frecency", len(sortedApps))
+		return l.appsToItems(sortedApps)
 	}
 
-	// Use fuzzy search
+	// Use fuzzy search with frecency ranking
 	maxResults := l.config.Launcher.Search.MaxResults
 	results := l.fuzzySearch(query, maxResults)
 	log.Printf("[APP-LAUNCHER] Fuzzy search completed in %v, returned %d results", time.Since(populateStart), len(results))
@@ -134,22 +147,83 @@ func (l *AppLauncher) fuzzySearch(query string, maxResults int) []*LauncherItem 
 	fuzzyStart := time.Now()
 	log.Printf("[APP-LAUNCHER] Fuzzy search started for query='%s' against %d apps", query, len(l.apps))
 
-	// Use pre-computed data structures for performance
 	findStart := time.Now()
 	matches := fuzzy.Find(query, l.appNames)
 	log.Printf("[APP-LAUNCHER] Fuzzy find completed in %v, found %d raw matches", time.Since(findStart), len(matches))
 
-	// TEMP: Just return top N matches without filtering to test if UI works
-	items := make([]*LauncherItem, 0, min(len(matches), maxResults))
-	for i := 0; i < len(matches) && i < maxResults; i++ {
-		match := matches[i]
-		if app, ok := l.nameToApp[match.Str]; ok {
-			items = append(items, l.appToItem(app))
+	type scoredMatch struct {
+		match fuzzy.Match
+		score float64
+	}
+
+	scoredMatches := make([]scoredMatch, 0, len(matches))
+	for _, match := range matches {
+		frecencyScore := 0.0
+		if l.frecencyTracker != nil {
+			frecencyScore = l.frecencyTracker.GetFrecencyScore(match.Str)
+		}
+
+		weightedScore := float64(match.Score) + (frecencyScore * 2.0)
+		scoredMatches = append(scoredMatches, scoredMatch{
+			match: match,
+			score: weightedScore,
+		})
+	}
+
+	for i := 0; i < len(scoredMatches); i++ {
+		for j := i + 1; j < len(scoredMatches); j++ {
+			if scoredMatches[j].score > scoredMatches[i].score {
+				scoredMatches[i], scoredMatches[j] = scoredMatches[j], scoredMatches[i]
+			}
 		}
 	}
 
-	log.Printf("[APP-LAUNCHER] Fuzzy search completed in %v, returning %d items (TEMP: no filtering)", time.Since(fuzzyStart), len(items))
+	items := make([]*LauncherItem, 0, min(len(scoredMatches), maxResults))
+	for i := 0; i < len(scoredMatches) && i < maxResults; i++ {
+		scored := scoredMatches[i]
+		if app, ok := l.nameToApp[scored.match.Str]; ok {
+			item := l.appToItem(app)
+			log.Printf("[APP-LAUNCHER] App '%s' - fuzzy_score=%d, frecency=%.2f, total=%.2f",
+				app.Name, scored.match.Score, l.frecencyTracker.GetFrecencyScore(app.Name), scored.score)
+			items = append(items, item)
+		}
+	}
+
+	log.Printf("[APP-LAUNCHER] Fuzzy search completed in %v, returning %d items", time.Since(fuzzyStart), len(items))
 	return items
+}
+
+func (l *AppLauncher) getAppsSortedByFrecency() []apps.App {
+	if l.frecencyTracker == nil {
+		return l.apps
+	}
+
+	topApps := l.frecencyTracker.GetTopApps(len(l.apps))
+	appMap := make(map[string]bool, len(l.apps))
+	for _, app := range l.apps {
+		appMap[app.Name] = true
+	}
+
+	result := make([]apps.App, 0, len(l.apps))
+	usedNames := make(map[string]bool)
+
+	for _, frecencyMatch := range topApps {
+		if usedNames[frecencyMatch.AppName] {
+			continue
+		}
+		if app, ok := l.nameToApp[frecencyMatch.AppName]; ok {
+			result = append(result, app)
+			usedNames[frecencyMatch.AppName] = true
+		}
+	}
+
+	for _, app := range l.apps {
+		if !usedNames[app.Name] {
+			result = append(result, app)
+		}
+	}
+
+	return result
 }
 
 func (l *AppLauncher) appToItem(app apps.App) *LauncherItem {
