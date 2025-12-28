@@ -1268,7 +1268,11 @@ func (l *Launcher) onTabPressed() bool {
 
 	if title != "" {
 		l.searchEntry.SetText(title)
-		l.searchEntry.SetPosition(-1)
+		buf, err := l.searchEntry.GetBuffer()
+		if err == nil {
+			length := buf.GetLength()
+			buf.SetPosition(uint(length))
+		}
 		return true
 	}
 

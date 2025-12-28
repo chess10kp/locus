@@ -75,7 +75,7 @@ cache_size = 500
 fallback_icon = "image-missing"
 # List of launchers that should show icons. Empty list means all launchers show icons.
 # To show icons only for desktop launcher (apps), set to ["apps"]
-icons_for_launchers = []
+icons_for_launchers = ["apps"]
 
 [notification]
 [notification.ui]
