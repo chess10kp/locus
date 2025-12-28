@@ -203,8 +203,12 @@ css = """
     background-color: #282838;
 }
 #lockscreen-status {
-    color: #ebdbb2;
-    font-size: 16px;
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: bold;
+    padding: 20px;
+    min-height: 50px;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
 }
 #lockscreen-label {
     color: #ebdbb2;

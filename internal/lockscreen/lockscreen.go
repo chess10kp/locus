@@ -418,11 +418,13 @@ func (m *LockScreenManager) checkPassword(ls *LockScreenWindow) {
 		remaining := ls.maxAttempts - ls.attempts
 
 		if remaining > 0 {
-			ls.statusLabel.SetMarkup(fmt.Sprintf(`<span color="#ff0000" font-weight="bold" font-size="large">❌ Incorrect password! %d attempts remaining</span>`, remaining))
+			ls.statusLabel.SetMarkup(fmt.Sprintf(`<span foreground="#ff0000" size="x-large" weight="bold">❌ Incorrect password! %d attempts remaining</span>`, remaining))
+			ls.statusLabel.Show()
 			ls.passwordEntry.SetText("")
 			ls.passwordEntry.GrabFocus()
 		} else {
-			ls.statusLabel.SetMarkup(`<span color="#ff0000" font-weight="bold" font-size="large">⚠️ Maximum attempts reached! Locking...</span>`)
+			ls.statusLabel.SetMarkup(`<span foreground="#ff0000" size="x-large" weight="bold">⚠️ Maximum attempts reached! Locking...</span>`)
+			ls.statusLabel.Show()
 			glib.TimeoutAdd(2000, func() bool {
 				m.UnlockAll()
 				return false
