@@ -1,0 +1,195 @@
+app_name = "locus_bar"
+app_id = "com.github.chess10kp.locus"
+
+[status_bar]
+height = 40
+css_file = "~/.config/locus/statusbar.css"
+modules = ["launcher", "time", "timer", "bluetooth", "volume", "cpu", "memory", "disk", "wifi", "network", "brightness", "keyboard", "music", "weather", "emacs_clock"]
+
+[status_bar.colors]
+background = "#1e1e2e"
+foreground = "#cdd6f4"
+
+[status_bar.module_configs.time]
+format = "%H:%M"
+
+[launcher]
+width = 600
+
+[launcher.window]
+width = 600
+height = 500
+
+[launcher.search]
+max_results = 10
+debounce_delay = 150
+
+[launcher.performance]
+enable_cache = true
+cache_max_age_hours = 6
+search_cache_size = 100
+enable_background_loading = true
+max_visible_results = 12
+
+[launcher.cache]
+enabled = true
+max_age_hours = 6
+cache_file = "apps.json"
+
+[launcher.styling]
+background_color = "#0e1419"
+foreground_color = "#ebdbb2"
+border_color = "#313244"
+accent_color = "#89b4fa"
+entry_background = "#181825"
+entry_border_color = "#313244"
+entry_focus_color = "#89b4fa"
+list_row_background = "#0e1419"
+list_row_selected = "#89b4fa"
+list_row_hover = "#504945"
+button_background = "#458588"
+button_hover = "#83a598"
+border_radius = 8
+border_width = 1
+font_family = "Iosevka, monospace"
+font_size = 16
+font_weight = "bold"
+
+[launcher.launcher_prefixes]
+timer = "%"
+
+[launcher.wallpaper]
+setter_command = "swww img"
+preview_on_navigation = true
+
+[notification]
+[notification.ui]
+icon = "🔔"
+
+[file_search]
+search_paths = ["/home"]
+file_opener = "xdg-open"
+
+[status_bar.module_configs.bluetooth]
+show_icon = true
+interval = "30s"
+css_classes = ["bluetooth-module", "bluetooth-button"]
+
+[status_bar.module_configs.volume]
+volume_cmd = "pamixer --get-volume"
+mute_cmd = "pamixer --get-mute"
+show_icon = true
+interval = "10s"
+css_classes = ["volume-module"]
+
+[status_bar.module_configs.cpu]
+command = "mpstat 1 1 | awk 'NR==4 {print 100 - $NF}'"
+show_icon = true
+show_cores = false
+interval = "10s"
+css_classes = ["cpu-module"]
+
+[status_bar.module_configs.memory]
+command = "free -b"
+show_icon = true
+show_details = true
+interval = "10s"
+css_classes = ["memory-module"]
+
+[status_bar.module_configs.disk]
+command = "df -h"
+show_icon = true
+show_details = true
+mounts = ["/", "/home"]
+interval = "30s"
+css_classes = ["disk-module"]
+
+[status_bar.module_configs.wifi]
+command = "nmcli -t -f active,ssid,signal dev wifi"
+interface = "wlan0"
+show_icon = true
+show_signal = true
+interval = "15s"
+css_classes = ["wifi-module"]
+
+[status_bar.module_configs.network]
+command = "nmcli -t -f TYPE con show --active"
+show_icon = true
+show_ethernet = true
+show_vpn = true
+interval = "20s"
+css_classes = ["network-module"]
+
+[status_bar.module_configs.brightness]
+command = "brightnessctl -m"
+device = ""
+show_icon = true
+interval = "5s"
+css_classes = ["brightness-module"]
+
+[status_bar.module_configs.keyboard]
+layout_cmd = "setxkbmap -query | grep layout | awk '{print toupper($2)}'"
+locks_cmd = "xset q | grep LED | awk '{print $10}'"
+show_icon = true
+show_layout = true
+show_locks = true
+interval = "5s"
+css_classes = ["keyboard-module"]
+
+[status_bar.module_configs.music]
+host = "localhost"
+port = 6600
+show_icon = true
+show_status = true
+max_length = 30
+interval = "5s"
+css_classes = ["music-module"]
+
+[status_bar.module_configs.weather]
+service = "wttr.in"
+location = ""
+format = "%c+%t+%C"
+show_icon = true
+show_details = true
+interval = "900s"
+css_classes = ["weather-module"]
+
+[status_bar.module_configs.emacs_clock]
+fallback_text = ""
+interval = "10s"
+css_classes = ["emacs-clock-module"]
+
+[status_bar.module_configs.timer]
+css_classes = ["timer-module"]
+
+[lock_screen]
+password = "admin"
+max_attempts = 3
+enabled = true
+css = """
+#lockscreen-window {
+    background-color: #0e1419;
+}
+#lockscreen-entry {
+    background-color: #1e1e2e;
+    color: #ebdbb2;
+    border: 4px solid #458588;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 18px;
+    min-width: 300px;
+    box-shadow: 0 0 10px #458588;
+}
+#lockscreen-entry:focus {
+    border-color: #83a598;
+    background-color: #282838;
+}
+#lockscreen-status {
+    color: #ebdbb2;
+    font-size: 16px;
+}
+#lockscreen-label {
+    color: #ebdbb2;
+    font-size: 24px;
+}
+"""
