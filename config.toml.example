@@ -58,6 +58,10 @@ font_weight = "bold"
 [launcher.launcher_prefixes]
 timer = "%"
 
+[launcher.wallpaper]
+setter_command = "swww img"
+preview_on_navigation = true
+
 [notification]
 [notification.ui]
 icon = "🔔"

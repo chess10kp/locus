@@ -191,13 +191,14 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		iconCache = nil
 	}
 
-	// Create thumbnail cache for grid items
-	thumbnailCache, err := launcher.NewThumbnailCache(100, 100)
-	if err != nil {
-		log.Printf("Failed to create thumbnail cache: %v", err)
-		// Continue without cache
-		thumbnailCache = nil
-	}
+	// Create thumbnail cache for grid items - DISABLED to prevent image corruption
+	// thumbnailCache, err := launcher.NewThumbnailCache(100, 100)
+	// if err != nil {
+	// 	log.Printf("Failed to create thumbnail cache: %v", err)
+	// 	// Continue without cache
+	// 	thumbnailCache = nil
+	// }
+	var thumbnailCache *launcher.ThumbnailCache = nil
 
 	// Create channels for hook context
 	refreshUIChan := make(chan launcher.RefreshUIRequest, 1)
@@ -304,18 +305,113 @@ func (l *Launcher) setupSignals() {
 		l.onRowActivated(row)
 	})
 
-	l.window.Connect("focus-out-event", func(window *gtk.Window, event *gdk.Event) bool {
+	l.gridFlowBox.Connect("child-activated", func(box *gtk.FlowBox, child *gtk.FlowBoxChild) {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("[LAUNCHER] Panic recovered in focus out: %v", r)
+				log.Printf("[LAUNCHER] Panic recovered in grid child activated: %v", r)
 			}
 		}()
 		if l == nil {
-			return false
+			return
 		}
-		l.Hide()
-		return false
+		if child == nil {
+			return
+		}
+		l.onGridChildActivated(child)
 	})
+
+	l.gridFlowBox.Connect("selected-children-changed", func(box *gtk.FlowBox) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[LAUNCHER] Panic recovered in grid selection changed: %v", r)
+			}
+		}()
+		if l == nil {
+			return
+		}
+		l.onGridSelectionChanged()
+	})
+}
+
+func (l *Launcher) onGridChildActivated(child *gtk.FlowBoxChild) {
+	if l == nil || child == nil {
+		return
+	}
+
+	// Get index of the activated child
+	index := child.GetIndex()
+	if index < 0 || index >= len(l.currentItems) {
+		return
+	}
+
+	item := l.currentItems[index]
+
+	// Execute hooks first
+	if l.registry != nil {
+		hookCtx := l.createHookContext(item)
+		if hookCtx != nil && l.ctx != nil {
+			hookRegistry := l.registry.GetHookRegistry()
+			if hookRegistry != nil {
+				result := hookRegistry.ExecuteSelectHooks(l.ctx, hookCtx, item.ActionData)
+				if result.Handled {
+					log.Printf("[LAUNCHER] Hook handled action, hiding launcher")
+					l.Hide()
+					return
+				}
+			}
+		}
+	}
+
+	// Fall back to default execution
+	if l.registry != nil {
+		if err := l.registry.Execute(item); err != nil {
+			log.Printf("[LAUNCHER] Failed to execute item: %v\n", err)
+		}
+	}
+
+	l.Hide()
+}
+
+func (l *Launcher) onGridSelectionChanged() {
+	if l == nil {
+		return
+	}
+
+	// Check if wallpaper preview is enabled
+	if !l.config.Launcher.Wallpaper.PreviewOnNav {
+		return
+	}
+
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+
+	// Get selected child from grid
+	selected := l.gridFlowBox.GetSelectedChildren()
+	if len(selected) == 0 {
+		return
+	}
+
+	// Get the selected item
+	child := selected[0]
+	if child == nil {
+		return
+	}
+
+	index := child.GetIndex()
+	if index < 0 || index >= len(l.currentItems) {
+		return
+	}
+
+	item := l.currentItems[index]
+
+	// Call preview action if available
+	if item.PreviewAction != nil {
+		go func() {
+			if err := item.PreviewAction(); err != nil {
+				log.Printf("[LAUNCHER] Preview action failed: %v", err)
+			}
+		}()
+	}
 }
 
 func (l *Launcher) onSearchChanged(text string) {

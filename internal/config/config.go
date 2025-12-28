@@ -87,6 +87,7 @@ type LauncherConfig struct {
 	Cache            CacheConfig       `toml:"cache"`
 	Styling          StylingConfig     `toml:"styling"`
 	LauncherPrefixes map[string]string `toml:"launcher_prefixes"`
+	Wallpaper        WallpaperConfig   `toml:"wallpaper"`
 }
 
 type WindowConfig struct {
@@ -180,6 +181,11 @@ type StylingConfig struct {
 	FontFamily        string `toml:"font_family"`
 	FontSize          int    `toml:"font_size"`
 	FontWeight        string `toml:"font_weight"`
+}
+
+type WallpaperConfig struct {
+	SetterCommand string `toml:"setter_command"`
+	PreviewOnNav  bool   `toml:"preview_on_navigation"`
 }
 
 type NotificationConfig struct {
@@ -373,6 +379,10 @@ var DefaultConfig = Config{
 		},
 		LauncherPrefixes: map[string]string{
 			"timer": "%",
+		},
+		Wallpaper: WallpaperConfig{
+			SetterCommand: "swww img",
+			PreviewOnNav:  true,
 		},
 	},
 	Notification: NotificationConfig{

@@ -42,14 +42,15 @@ const (
 
 // LauncherItem represents a single result item
 type LauncherItem struct {
-	Title      string
-	Subtitle   string
-	Icon       string
-	ActionData ActionData
-	Launcher   Launcher
-	IsGridItem bool
-	ImagePath  string
-	Metadata   map[string]string
+	Title         string
+	Subtitle      string
+	Icon          string
+	ActionData    ActionData
+	Launcher      Launcher
+	IsGridItem    bool
+	ImagePath     string
+	Metadata      map[string]string
+	PreviewAction func() error
 }
 
 // GridConfig represents configuration for grid view layout

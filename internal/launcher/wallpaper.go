@@ -117,6 +117,24 @@ func (l *WallpaperLauncher) Populate(query string, ctx *LauncherContext) []*Laun
 	}
 }
 
+func (l *WallpaperLauncher) setWallpaper(path string) error {
+	// Get setter command from config
+	setter := l.config.Launcher.Wallpaper.SetterCommand
+	if setter == "" {
+		// Default to swww if not configured
+		setter = "swww img"
+	}
+
+	// Execute setter command
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("%s %s", setter, path))
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to set wallpaper: %w", err)
+	}
+
+	return nil
+}
+
 func (l *WallpaperLauncher) listWallpapers(dir string) []*LauncherItem {
 	items := []*LauncherItem{}
 
@@ -187,6 +205,9 @@ func (l *WallpaperLauncher) listWallpapers(dir string) []*LauncherItem {
 			Launcher:   l,
 			IsGridItem: true,
 			ImagePath:  wp.path,
+			PreviewAction: func() error {
+				return l.setWallpaper(wp.path)
+			},
 		})
 
 		// Limit to first 25 items
