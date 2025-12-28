@@ -1259,12 +1259,16 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 }
 
 func (l *Launcher) onTabPressed() bool {
-	text, _ := l.searchEntry.GetText()
-	hookCtx := l.createHookContext(nil)
-	result := l.registry.GetHookRegistry().ExecuteTabHooks(l.ctx, hookCtx, text)
+	l.mu.RLock()
+	var title string
+	if len(l.currentItems) > 0 {
+		title = l.currentItems[0].Title
+	}
+	l.mu.RUnlock()
 
-	if result.Handled {
-		l.searchEntry.SetText(result.NewText)
+	if title != "" {
+		l.searchEntry.SetText(title)
+		l.searchEntry.SetPosition(-1)
 		return true
 	}
 

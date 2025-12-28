@@ -358,6 +358,8 @@ func (l *HelpLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 			icon = "display-brightness"
 		case "clipboard":
 			icon = "edit-paste"
+		case "wm":
+			icon = "preferences-system-windows"
 		default:
 			icon = "application-x-executable"
 		}
