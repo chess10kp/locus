@@ -3,6 +3,9 @@
 *.exe~
 *.dll
 *.so
+locus
+locus-client
+locus.log
 *.dylib
 
 # Test binary, built with `go test -c`
