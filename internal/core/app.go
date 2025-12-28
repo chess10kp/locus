@@ -189,6 +189,9 @@ func (a *App) ShowLockScreen() error {
 	if a.lockscreen == nil {
 		return nil
 	}
+	if a.statusBar != nil {
+		a.statusBar.Hide()
+	}
 	return a.lockscreen.Show()
 }
 
@@ -196,6 +199,9 @@ func (a *App) ShowLockScreen() error {
 func (a *App) HideLockScreen() error {
 	if a.lockscreen == nil {
 		return nil
+	}
+	if a.statusBar != nil {
+		a.statusBar.Show()
 	}
 	return a.lockscreen.Hide()
 }

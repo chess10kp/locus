@@ -534,6 +534,13 @@ func (r *LauncherRegistry) ExecuteWithActionData(launcherName string, data Actio
 		}
 		return r.executeRebuildLauncherAction(rebuildAction)
 
+	case "window_focus":
+		windowAction, ok := data.(*WindowFocusAction)
+		if !ok {
+			return fmt.Errorf("invalid window focus action type")
+		}
+		return r.executeWindowFocusAction(windowAction)
+
 	default:
 		// Custom action - pass to launcher hooks if available
 		ctx := &HookContext{
@@ -759,6 +766,28 @@ func (r *LauncherRegistry) executeStatusMessageAction(action *StatusMessageActio
 // executeRebuildLauncherAction rebuilds a launcher
 func (r *LauncherRegistry) executeRebuildLauncherAction(action *RebuildLauncherAction) error {
 	return r.RefreshLauncher(action.LauncherName)
+}
+
+// executeWindowFocusAction switches to workspace and focuses a specific window
+func (r *LauncherRegistry) executeWindowFocusAction(action *WindowFocusAction) error {
+	// Detect WM command
+	wmCommand := "swaymsg"
+	for _, cmd := range []string{"scrollmsg", "swaymsg", "i3-msg"} {
+		if _, err := exec.LookPath(cmd); err == nil {
+			wmCommand = cmd
+			break
+		}
+	}
+
+	// First, switch to the workspace
+	workspaceCmd := fmt.Sprintf("%s workspace %s", wmCommand, action.Workspace)
+	if err := r.executeShellCommand(workspaceCmd); err != nil {
+		return fmt.Errorf("failed to switch to workspace: %w", err)
+	}
+
+	// Then focus the specific window by container ID
+	focusCmd := fmt.Sprintf("%s [con_id=%d] focus", wmCommand, action.ConID)
+	return r.executeShellCommand(focusCmd)
 }
 
 // RefreshLauncher forces a launcher to refresh its items

@@ -51,30 +51,35 @@ func (l *ScreenshotLauncher) Populate(query string, ctx *LauncherContext) []*Lau
 			Subtitle:   "Capture entire screen to clipboard",
 			Icon:       "camera-photo-symbolic",
 			ActionData: NewShellAction("grim - | wl-copy"),
+			Launcher:   l,
 		},
 		{
 			Title:      "Take Screenshot (Screen, Save)",
 			Subtitle:   "Capture entire screen to file",
 			Icon:       "camera-photo-symbolic",
 			ActionData: NewShellAction("grim ~/Pictures/screenshot-$(date +%s).png"),
+			Launcher:   l,
 		},
 		{
 			Title:      "Take Screenshot (Region)",
 			Subtitle:   "Select region to capture to clipboard",
 			Icon:       "camera-photo-symbolic",
 			ActionData: NewShellAction("slurp | grim -g - - | wl-copy"),
+			Launcher:   l,
 		},
 		{
 			Title:      "Take Screenshot (Region, Save)",
 			Subtitle:   "Select region to capture to file",
 			Icon:       "camera-photo-symbolic",
 			ActionData: NewShellAction("slurp | grim -g - ~/Pictures/screenshot-$(date +%s).png"),
+			Launcher:   l,
 		},
 		{
 			Title:      "Take Screenshot (Window)",
 			Subtitle:   "Capture focused window to clipboard",
 			Icon:       "camera-photo-symbolic",
 			ActionData: NewShellAction("swaymsg -t get_tree | jq -r '.. | select(.focused? and .pid?) | .rect | \"\\(.x),\\(.y) \\(.width)x\\(.height)\"' | grim -g - - | wl-copy"),
+			Launcher:   l,
 		},
 	}
 
@@ -85,6 +90,7 @@ func (l *ScreenshotLauncher) Populate(query string, ctx *LauncherContext) []*Lau
 			Subtitle:   "Select region to capture",
 			Icon:       "camera-photo-symbolic",
 			ActionData: NewShellAction("slurp | grim -g - - | wl-copy"),
+			Launcher:   l,
 		}}
 	}
 	if q == "window" {
@@ -93,6 +99,7 @@ func (l *ScreenshotLauncher) Populate(query string, ctx *LauncherContext) []*Lau
 			Subtitle:   "Capture focused window",
 			Icon:       "camera-photo-symbolic",
 			ActionData: NewShellAction("swaymsg -t get_tree | jq -r '.. | select(.focused? and .pid?) | .rect | \"\\(.x),\\(.y) \\(.width)x\\(.height)\"' | grim -g - - | wl-copy"),
+			Launcher:   l,
 		}}
 	}
 

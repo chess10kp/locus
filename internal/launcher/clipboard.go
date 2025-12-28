@@ -55,6 +55,7 @@ func (l *ClipboardLauncher) Populate(query string, ctx *LauncherContext) []*Laun
 				Subtitle:   "Clear all clipboard history",
 				Icon:       "edit-clear-all",
 				ActionData: NewShellAction("wl-copy --clear"),
+				Launcher:   l,
 			},
 		}
 	}
@@ -65,6 +66,7 @@ func (l *ClipboardLauncher) Populate(query string, ctx *LauncherContext) []*Laun
 			Subtitle:   "List and select from clipboard history",
 			Icon:       "edit-paste",
 			ActionData: NewShellAction("cliphist list | head -50 | while read -r line; do echo \"$line\"; done | wl-copy -r 1"),
+			Launcher:   l,
 		},
 	}
 

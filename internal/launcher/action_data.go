@@ -227,6 +227,13 @@ func ParseActionData(data []byte) (ActionData, error) {
 		}
 		return &action, nil
 
+	case "window_focus":
+		var action WindowFocusAction
+		if err := json.Unmarshal(data, &action); err != nil {
+			return nil, fmt.Errorf("failed to parse window focus action: %w", err)
+		}
+		return &action, nil
+
 	default:
 		// Treat as custom action
 		var action CustomAction
@@ -340,4 +347,31 @@ func (a *LockScreenAction) ToJSON() ([]byte, error) {
 // NewLockScreenAction creates a new LockScreenAction
 func NewLockScreenAction(action string) *LockScreenAction {
 	return &LockScreenAction{Action: action}
+}
+
+// WindowFocusAction focuses a specific window and switches to its workspace
+type WindowFocusAction struct {
+	ConID     int64  `json:"con_id"`    // Container ID for focusing
+	Workspace string `json:"workspace"` // Workspace name
+}
+
+func (a *WindowFocusAction) Type() string {
+	return "window_focus"
+}
+
+func (a *WindowFocusAction) ToJSON() ([]byte, error) {
+	data := map[string]interface{}{
+		"type":      a.Type(),
+		"con_id":    a.ConID,
+		"workspace": a.Workspace,
+	}
+	return json.Marshal(data)
+}
+
+// NewWindowFocusAction creates a new WindowFocusAction
+func NewWindowFocusAction(conID int64, workspace string) *WindowFocusAction {
+	return &WindowFocusAction{
+		ConID:     conID,
+		Workspace: workspace,
+	}
 }

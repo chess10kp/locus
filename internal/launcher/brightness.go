@@ -58,12 +58,14 @@ func (l *BrightnessLauncher) Populate(query string, ctx *LauncherContext) []*Lau
 			Subtitle:   "Increase screen brightness by 5%",
 			Icon:       "display-brightness-symbolic",
 			ActionData: NewShellAction(l.upCmd),
+			Launcher:   l,
 		},
 		{
 			Title:      "Brightness Down",
 			Subtitle:   "Decrease screen brightness by 5%",
 			Icon:       "display-brightness-symbolic",
 			ActionData: NewShellAction(l.downCmd),
+			Launcher:   l,
 		},
 	}
 
@@ -76,6 +78,7 @@ func (l *BrightnessLauncher) Populate(query string, ctx *LauncherContext) []*Lau
 				Subtitle:   "Set brightness to specific percentage",
 				Icon:       "display-brightness-symbolic",
 				ActionData: NewShellAction(fmt.Sprintf("brightnessctl set %s%%", pct)),
+				Launcher:   l,
 			})
 		} else if q == "up" || q == "down" {
 			cmd := l.upCmd
@@ -87,6 +90,7 @@ func (l *BrightnessLauncher) Populate(query string, ctx *LauncherContext) []*Lau
 				Subtitle:   fmt.Sprintf("%s brightness by 5%%", strings.Title(q)),
 				Icon:       "display-brightness-symbolic",
 				ActionData: NewShellAction(cmd),
+				Launcher:   l,
 			}}
 		}
 	}

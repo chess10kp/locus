@@ -58,12 +58,14 @@ func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 				Subtitle:   "Close focused window",
 				Icon:       "window-close-symbolic",
 				ActionData: NewShellAction("swaymsg kill"),
+				Launcher:   l,
 			},
 			{
 				Title:      "Kill All Windows",
 				Subtitle:   "Close all windows on current workspace",
 				Icon:       "window-close-symbolic",
 				ActionData: NewShellAction("swaymsg '[workspace focused] kill'"),
+				Launcher:   l,
 			},
 		}
 	}
@@ -76,6 +78,7 @@ func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 				Subtitle:   "Close focused window",
 				Icon:       "window-close-symbolic",
 				ActionData: NewShellAction("swaymsg kill"),
+				Launcher:   l,
 			},
 		}
 	}
@@ -98,6 +101,7 @@ func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 			Subtitle:   "Close focused window",
 			Icon:       "window-close-symbolic",
 			ActionData: NewShellAction("swaymsg kill"),
+			Launcher:   l,
 		},
 	}
 
@@ -108,6 +112,7 @@ func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 			Subtitle:   "Kill all windows matching name",
 			Icon:       "window-close-symbolic",
 			ActionData: NewShellAction("swaymsg '[title=\"" + name + "\"] kill'"),
+			Launcher:   l,
 		})
 	}
 
@@ -117,6 +122,7 @@ func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*L
 			Subtitle:   "Close all windows on current workspace",
 			Icon:       "window-close-symbolic",
 			ActionData: NewShellAction("swaymsg '[workspace focused] kill'"),
+			Launcher:   l,
 		})
 	}
 

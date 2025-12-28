@@ -56,18 +56,21 @@ func (l *WifiLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 				Subtitle:   "Enable/disable WiFi",
 				Icon:       "network-wireless-symbolic",
 				ActionData: NewShellAction("nmcli radio wifi on"),
+				Launcher:   l,
 			},
 			{
 				Title:      "WiFi Scan",
 				Subtitle:   "Scan for networks",
 				Icon:       "network-wireless-symbolic",
 				ActionData: NewShellAction("nmcli device wifi scan"),
+				Launcher:   l,
 			},
 			{
 				Title:      "WiFi Status",
 				Subtitle:   "Show current connection",
 				Icon:       "network-wireless-symbolic",
 				ActionData: NewShellAction("nmcli device wifi show"),
+				Launcher:   l,
 			},
 		}
 	}
@@ -78,12 +81,14 @@ func (l *WifiLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 			Subtitle:   "Enable/disable WiFi",
 			Icon:       "network-wireless-symbolic",
 			ActionData: NewShellAction("nmcli radio wifi on"),
+			Launcher:   l,
 		},
 		{
 			Title:      "WiFi Status",
 			Subtitle:   "Show current connection",
 			Icon:       "network-wireless-symbolic",
 			ActionData: NewShellAction("nmcli device wifi show"),
+			Launcher:   l,
 		},
 	}
 }

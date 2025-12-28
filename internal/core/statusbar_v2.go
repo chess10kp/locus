@@ -442,6 +442,28 @@ func (sb *StatusBar) IsRunning() bool {
 	return sb.running
 }
 
+// Hide hides all statusbar windows
+func (sb *StatusBar) Hide() {
+	sb.mu.Lock()
+	defer sb.mu.Unlock()
+	for _, window := range sb.windows {
+		if window != nil {
+			window.Hide()
+		}
+	}
+}
+
+// Show shows all statusbar windows
+func (sb *StatusBar) Show() {
+	sb.mu.Lock()
+	defer sb.mu.Unlock()
+	for _, window := range sb.windows {
+		if window != nil {
+			window.ShowAll()
+		}
+	}
+}
+
 // startIPCServer starts the IPC socket server for external communication
 func (sb *StatusBar) startIPCServer() error {
 	sb.ipcSocket = sb.config.SocketPath

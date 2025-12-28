@@ -110,7 +110,31 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	box.PackStart(hbox, false, false, 0)
 
-	scrolledWindow, err := gtk.ScrolledWindowNew(nil, nil)
+	// Create footer box for context information
+	var footerBox *gtk.Box
+	var footerLabel *gtk.Label
+	footerBox, err = gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create footer box: %w", err)
+	}
+	footerBox.SetName("footer-box")
+	footerBox.SetHAlign(gtk.ALIGN_START)
+	footerBox.SetHExpand(false)
+	footerBox.SetSizeRequest(cfg.Launcher.Window.Width, -1)
+
+	footerLabel, err = gtk.LabelNew("Applications")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create footer label: %w", err)
+	}
+	footerLabel.SetName("footer-label")
+	footerLabel.SetHAlign(gtk.ALIGN_START)
+	footerLabel.SetHExpand(false)
+	footerBox.PackStart(footerLabel, true, false, 0)
+
+	box.PackStart(footerBox, false, false, 4)
+
+	var scrolledWindow *gtk.ScrolledWindow
+	scrolledWindow, err = gtk.ScrolledWindowNew(nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scrolled window: %w", err)
 	}
@@ -172,28 +196,6 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		badgesBox.PackStart(label, false, false, 0)
 	}
 	box.PackStart(badgesBox, false, false, 4)
-
-	// Create footer box for context information
-	footerBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create footer box: %w", err)
-	}
-	footerBox.SetName("footer-box")
-	footerBox.SetHAlign(gtk.ALIGN_START)
-	footerBox.SetHExpand(false)
-	footerBox.SetSizeRequest(cfg.Launcher.Window.Width, -1)
-	footerBox.SetMarginBottom(12)
-
-	footerLabel, err := gtk.LabelNew("Applications")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create footer label: %w", err)
-	}
-	footerLabel.SetName("footer-label")
-	footerLabel.SetHAlign(gtk.ALIGN_START)
-	footerLabel.SetHExpand(false)
-	footerBox.PackStart(footerLabel, true, false, 0)
-
-	box.PackStart(footerBox, false, false, 4)
 
 	registry := launcher.NewLauncherRegistry(cfg)
 
@@ -1268,11 +1270,7 @@ func (l *Launcher) onTabPressed() bool {
 
 	if title != "" {
 		l.searchEntry.SetText(title)
-		buf, err := l.searchEntry.GetBuffer()
-		if err == nil {
-			length := buf.GetLength()
-			buf.SetPosition(uint(length))
-		}
+		l.searchEntry.SetPosition(-1)
 		return true
 	}
 
@@ -1280,26 +1278,45 @@ func (l *Launcher) onTabPressed() bool {
 }
 
 func (l *Launcher) shouldShowIcon(item *launcher.LauncherItem) bool {
+	fmt.Printf("[SHOULD-ICON-DEBUG] shouldShowIcon called for item: %s\n", item.Title)
+	debugLogger.Printf("[ICON-DEBUG] shouldShowIcon called for item: %s", item.Title)
+
 	if !l.config.Launcher.Icons.EnableIcons {
+		fmt.Printf("[SHOULD-ICON-DEBUG] Icons disabled globally\n")
+		debugLogger.Printf("[ICON-DEBUG] Icons disabled globally")
 		return false
 	}
 
 	allowedLaunchers := l.config.Launcher.Icons.IconsForLaunchers
+	fmt.Printf("[SHOULD-ICON-DEBUG] allowedLaunchers=%v (len=%d)\n", allowedLaunchers, len(allowedLaunchers))
+	debugLogger.Printf("[ICON-DEBUG] allowedLaunchers=%v", allowedLaunchers)
+
 	if len(allowedLaunchers) == 0 {
+		fmt.Printf("[SHOULD-ICON-DEBUG] Empty allowed list, showing all icons\n")
+		debugLogger.Printf("[ICON-DEBUG] Empty allowed list, showing all icons")
 		return true
 	}
 
 	if item.Launcher == nil {
+		fmt.Printf("[SHOULD-ICON-DEBUG] Launcher is nil for item: %s\n", item.Title)
+		debugLogger.Printf("[ICON-DEBUG] Launcher is nil for item: %s", item.Title)
 		return true
 	}
 
 	launcherName := item.Launcher.Name()
+	fmt.Printf("[SHOULD-ICON-DEBUG] Checking launcher '%s' against allowed list\n", launcherName)
+	debugLogger.Printf("[ICON-DEBUG] Checking launcher '%s' against allowed list", launcherName)
+
 	for _, allowed := range allowedLaunchers {
 		if allowed == launcherName {
+			fmt.Printf("[SHOULD-ICON-DEBUG] ALLOWED: launcher='%s' item='%s'\n", launcherName, item.Title)
+			debugLogger.Printf("[ICON-DEBUG] ALLOWED: launcher='%s' item='%s'", launcherName, item.Title)
 			return true
 		}
 	}
 
+	fmt.Printf("[SHOULD-ICON-DEBUG] BLOCKED: launcher='%s' item='%s'\n", launcherName, item.Title)
+	debugLogger.Printf("[ICON-DEBUG] BLOCKED: launcher='%s' item='%s'", launcherName, item.Title)
 	return false
 }
 

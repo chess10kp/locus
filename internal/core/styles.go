@@ -202,18 +202,22 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
      padding: 0px 4px;
  }
 
- #footer-box {
-     background-color: #3c3836;
-     padding: 4px 8px;
-     border-radius: 3px;
-     margin-top: 4px;
-     font-size: 12px;
- }
+  #footer-box {
+      background-color: #d5c4a1;
+      padding: 10px 14px;
+      border-radius: 3px;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      margin-left: 4px;
+      margin-right: 4px;
+      font-size: 24px;
+  }
 
- #footer-box label {
-     color: #888888;
-     font-family: %s;
- }
+  #footer-box label {
+      color: #888888;
+      font-family: %s;
+      font-size: 24px;
+  }
 
 
  `,

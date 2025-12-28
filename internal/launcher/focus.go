@@ -53,24 +53,28 @@ func (l *WMFocusLauncher) Populate(query string, ctx *LauncherContext) []*Launch
 			Subtitle:   "Focus window to the left",
 			Icon:       "go-next-symbolic-rtl",
 			ActionData: NewShellAction("swaymsg focus left"),
+			Launcher:   l,
 		},
 		{
 			Title:      "Focus Right",
 			Subtitle:   "Focus window to the right",
 			Icon:       "go-next-symbolic",
 			ActionData: NewShellAction("swaymsg focus right"),
+			Launcher:   l,
 		},
 		{
 			Title:      "Focus Up",
 			Subtitle:   "Focus window above",
 			Icon:       "go-up-symbolic",
 			ActionData: NewShellAction("swaymsg focus up"),
+			Launcher:   l,
 		},
 		{
 			Title:      "Focus Down",
 			Subtitle:   "Focus window below",
 			Icon:       "go-down-symbolic",
 			ActionData: NewShellAction("swaymsg focus down"),
+			Launcher:   l,
 		},
 	}
 
