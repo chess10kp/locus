@@ -67,7 +67,8 @@ preview_on_navigation = true
 icon = "🔔"
 
 [file_search]
-paths = ["/home"]
+search_paths = ["/home"]
+file_opener = "xdg-open"
 
 [status_bar.module_configs.bluetooth]
 show_icon = true

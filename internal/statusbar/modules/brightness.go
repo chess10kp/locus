@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // BrightnessModule displays screen brightness level
@@ -118,16 +118,16 @@ func (m *BrightnessModule) readBrightness() {
 		return
 	}
 
-	// brightnessctl -m output format: device,current,percent,max
+	// brightnessctl -m output format: device,class,current,percent,max
 	fields := strings.Split(strings.TrimSpace(string(output)), ",")
-	if len(fields) >= 4 {
-		if current, err := strconv.Atoi(fields[1]); err == nil {
+	if len(fields) >= 5 {
+		if current, err := strconv.Atoi(fields[2]); err == nil {
 			m.current = current
 		}
-		if max, err := strconv.Atoi(fields[3]); err == nil {
+		if max, err := strconv.Atoi(fields[4]); err == nil {
 			m.maximum = max
 		}
-		if percentStr := strings.TrimSuffix(fields[2], "%"); true {
+		if percentStr := strings.TrimSuffix(fields[3], "%"); true {
 			if percent, err := strconv.ParseFloat(percentStr, 64); err == nil {
 				m.percentage = percent
 			}

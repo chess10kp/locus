@@ -28,6 +28,7 @@ type LauncherContext struct {
 	Config         *config.Config
 	UI             LauncherUI
 	ShowLockScreen func() error
+	Registry       *LauncherRegistry
 }
 
 // LauncherSizeMode represents launcher window size mode
@@ -163,7 +164,7 @@ func NewLauncherRegistry(cfg *config.Config) *LauncherRegistry {
 		cache = nil
 	}
 
-	return &LauncherRegistry{
+	registry := &LauncherRegistry{
 		launchers:    make(map[string]Launcher),
 		triggerMap:   make(map[string]Launcher),
 		customPrefix: make(map[string]string),
@@ -175,6 +176,9 @@ func NewLauncherRegistry(cfg *config.Config) *LauncherRegistry {
 		appsHash:     "",
 		hookRegistry: NewHookRegistry(),
 	}
+
+	registry.ctx.Registry = registry
+	return registry
 }
 
 // Register registers a launcher
@@ -241,6 +245,14 @@ func (r *LauncherRegistry) GetLauncher(trigger string) (Launcher, bool) {
 
 // FindLauncherForInput finds a launcher for given input
 func (r *LauncherRegistry) FindLauncherForInput(input string) (trigger string, launcher Launcher, query string) {
+	// Check for ? prefix (help launcher)
+	if strings.HasPrefix(input, "?") {
+		launcher, exists := r.GetLauncher("?")
+		if exists {
+			return "?", launcher, input[1:]
+		}
+	}
+
 	// Check for % prefix (timer launcher)
 	if strings.HasPrefix(input, "%") {
 		launcher, exists := r.GetLauncher("%")
@@ -801,7 +813,8 @@ func (r *LauncherRegistry) LoadBuiltIn() error {
 	// Initialize context if not already done
 	if r.ctx == nil {
 		r.ctx = &LauncherContext{
-			Config: r.config,
+			Config:   r.config,
+			Registry: r,
 		}
 	}
 

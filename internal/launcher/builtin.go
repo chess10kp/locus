@@ -246,3 +246,155 @@ func (l *CalcLauncher) Cleanup() {
 func (l *CalcLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
 	return nil, false
 }
+
+type HelpLauncher struct {
+	config *config.Config
+}
+
+type HelpLauncherFactory struct{}
+
+func (f *HelpLauncherFactory) Name() string {
+	return "help"
+}
+
+func (f *HelpLauncherFactory) Create(cfg *config.Config) Launcher {
+	return NewHelpLauncher()
+}
+
+func init() {
+	RegisterLauncherFactory(&HelpLauncherFactory{})
+}
+
+func NewHelpLauncher() *HelpLauncher {
+	return &HelpLauncher{}
+}
+
+func (l *HelpLauncher) Name() string {
+	return "help"
+}
+
+func (l *HelpLauncher) CommandTriggers() []string {
+	return []string{"?"}
+}
+
+func (l *HelpLauncher) GetSizeMode() LauncherSizeMode {
+	return LauncherSizeModeDefault
+}
+
+func (l *HelpLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
+func (l *HelpLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
+	if ctx.Registry == nil {
+		return []*LauncherItem{
+			{
+				Title:    "Registry not available",
+				Subtitle: "Cannot load launcher information",
+				Icon:     "dialog-error",
+				Launcher: l,
+			},
+		}
+	}
+
+	launchers := ctx.Registry.GetAllLaunchers()
+	items := make([]*LauncherItem, 0, len(launchers))
+
+	query = strings.ToLower(strings.TrimSpace(query))
+
+	for _, launcher := range launchers {
+		name := launcher.Name()
+		triggers := launcher.CommandTriggers()
+
+		triggerStr := ""
+		if len(triggers) > 0 {
+			triggerStr = strings.Join(triggers, ", ")
+		}
+
+		title := fmt.Sprintf("%s", name)
+		subtitle := fmt.Sprintf("Prefixes: %s", triggerStr)
+
+		if triggerStr == "" {
+			subtitle = "Default launcher (no prefix needed)"
+		}
+
+		if query != "" {
+			if !strings.Contains(strings.ToLower(title), query) && !strings.Contains(strings.ToLower(subtitle), query) {
+				continue
+			}
+		}
+
+		var icon string
+		switch name {
+		case "apps":
+			icon = "applications-other"
+		case "shell":
+			icon = "utilities-terminal"
+		case "web":
+			icon = "web-browser"
+		case "calc":
+			icon = "accessories-calculator"
+		case "timer":
+			icon = "clock"
+		case "help":
+			icon = "help-about"
+		case "wifi":
+			icon = "network-wireless"
+		case "music":
+			icon = "audio-x-generic"
+		case "wallpaper":
+			icon = "preferences-desktop-wallpaper"
+		case "file":
+			icon = "folder"
+		case "screenshot":
+			icon = "camera-photo"
+		case "lock":
+			icon = "system-lock-screen"
+		case "focus":
+			icon = "view-restore"
+		case "kill":
+			icon = "window-close"
+		case "brightness":
+			icon = "display-brightness"
+		case "clipboard":
+			icon = "edit-paste"
+		default:
+			icon = "application-x-executable"
+		}
+
+		items = append(items, &LauncherItem{
+			Title:    title,
+			Subtitle: subtitle,
+			Icon:     icon,
+			Launcher: launcher,
+		})
+	}
+
+	if len(items) == 0 {
+		return []*LauncherItem{
+			{
+				Title:    "No launchers found",
+				Subtitle: "Try a different search term",
+				Icon:     "dialog-information",
+				Launcher: l,
+			},
+		}
+	}
+
+	return items
+}
+
+func (l *HelpLauncher) GetHooks() []Hook {
+	return []Hook{}
+}
+
+func (l *HelpLauncher) Rebuild(ctx *LauncherContext) error {
+	return nil
+}
+
+func (l *HelpLauncher) Cleanup() {
+}
+
+func (l *HelpLauncher) GetCtrlNumberAction(number int) (CtrlNumberAction, bool) {
+	return nil, false
+}

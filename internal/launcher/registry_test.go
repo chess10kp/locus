@@ -62,7 +62,7 @@ func TestLauncherQueryParsing(t *testing.T) {
 		{">history", "clipboard", true},
 		{">wifi", "wifi", true},
 		{">file", "file", true},
-		{">f", "file", true},
+		{">f", "focus", true},
 		{">screenshot", "screenshot", true},
 		{">brightness", "brightness", true},
 		{">wallpaper", "wallpaper", true},
@@ -71,6 +71,8 @@ func TestLauncherQueryParsing(t *testing.T) {
 		{">kill", "kill", true},
 		{">focus left", "focus", true},
 		{">wallpaper", "wallpaper", true},
+		{"?", "help", true},
+		{"?timer", "help", true},
 	}
 
 	for _, tc := range testCases {
