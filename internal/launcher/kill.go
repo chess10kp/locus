@@ -152,11 +152,8 @@ func (l *KillLauncher) parseProcesses(output string) ([]Process, error) {
 func (l *KillLauncher) filterProcesses(query string) []*LauncherItem {
 	// Get process names for fuzzy search
 	names := make([]string, len(l.processes))
-	pidMap := make(map[string]int)
-
 	for i, proc := range l.processes {
 		names[i] = proc.Name
-		pidMap[proc.Name] = i
 	}
 
 	// Use fuzzy search
@@ -167,9 +164,7 @@ func (l *KillLauncher) filterProcesses(query string) []*LauncherItem {
 
 	for i := 0; i < len(matches) && i < maxResults; i++ {
 		match := matches[i]
-		if idx, ok := pidMap[match.Str]; ok {
-			items = append(items, l.processToItem(l.processes[idx]))
-		}
+		items = append(items, l.processToItem(l.processes[match.Index]))
 	}
 
 	return items
