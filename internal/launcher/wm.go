@@ -16,10 +16,36 @@ type Workspace struct {
 	Visible bool   `json:"visible"`
 }
 
+type SwayNode struct {
+	ID               int64       `json:"id"`
+	Name             string      `json:"name"`
+	Type             string      `json:"type"`
+	Window           *int64      `json:"window"`
+	AppID            string      `json:"app_id"`
+	WindowProperties WindowProps `json:"window_properties"`
+	Nodes            []SwayNode  `json:"nodes"`
+	FloatingNodes    []SwayNode  `json:"floating_nodes"`
+}
+
+type WindowProps struct {
+	Class    string `json:"class"`
+	Instance string `json:"instance"`
+}
+
+type WindowInfo struct {
+	Name        string
+	ConID       int64
+	WindowID    int64
+	Workspace   string
+	AppID       string
+	WindowClass string
+}
+
 type WMLauncher struct {
 	config     *config.Config
 	wmCommand  string
 	workspaces []Workspace
+	windows    []WindowInfo
 }
 
 type WMLauncherFactory struct{}
@@ -84,6 +110,56 @@ func (l *WMLauncher) fetchWorkspaces() ([]Workspace, error) {
 	return wsList, nil
 }
 
+func (l *WMLauncher) fetchWindows() ([]WindowInfo, error) {
+	cmd := exec.Command(l.wmCommand, "-t", "get_tree")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	var tree SwayNode
+	if err := json.Unmarshal(output, &tree); err != nil {
+		return nil, err
+	}
+
+	windows := l.extractWindows(tree, "")
+	l.windows = windows
+	return windows, nil
+}
+
+func (l *WMLauncher) extractWindows(node SwayNode, workspace string) []WindowInfo {
+	var windows []WindowInfo
+
+	// Track workspace when we encounter one
+	if node.Type == "workspace" {
+		workspace = node.Name
+	}
+
+	// Collect windows (nodes that have a window field)
+	if node.Window != nil && node.Type != "workspace" {
+		windows = append(windows, WindowInfo{
+			Name:        node.Name,
+			ConID:       node.ID,
+			WindowID:    *node.Window,
+			Workspace:   workspace,
+			AppID:       node.AppID,
+			WindowClass: node.WindowProperties.Class,
+		})
+	}
+
+	// Recursively search in nodes
+	for _, child := range node.Nodes {
+		windows = append(windows, l.extractWindows(child, workspace)...)
+	}
+
+	// Also search floating nodes
+	for _, child := range node.FloatingNodes {
+		windows = append(windows, l.extractWindows(child, workspace)...)
+	}
+
+	return windows
+}
+
 func (l *WMLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	var items []*LauncherItem
 
@@ -93,6 +169,14 @@ func (l *WMLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIte
 	if err != nil {
 		fmt.Printf("Failed to fetch workspaces: %v\n", err)
 		workspaces = []Workspace{}
+	}
+
+	windows, err := l.fetchWindows()
+	if err != nil {
+		fmt.Printf("Failed to fetch windows: %v\n", err)
+	} else {
+		windowItems := l.buildWindowItems(windows, queryLower)
+		items = append(items, windowItems...)
 	}
 
 	wmItems := l.buildWindowManagementItems(queryLower)
@@ -262,6 +346,59 @@ func (l *WMLauncher) buildScrollwmItems(query string) []*LauncherItem {
 			Launcher:   l,
 		})
 	}
+	return items
+}
+
+func (l *WMLauncher) buildWindowItems(windows []WindowInfo, query string) []*LauncherItem {
+	var items []*LauncherItem
+
+	for _, win := range windows {
+		// Filter by query
+		if query != "" {
+			lowerQuery := strings.ToLower(query)
+			titleMatch := strings.Contains(strings.ToLower(win.Name), lowerQuery)
+			appMatch := strings.Contains(strings.ToLower(win.WindowClass), lowerQuery)
+			workspaceMatch := strings.Contains(strings.ToLower(win.Workspace), lowerQuery)
+
+			if !titleMatch && !appMatch && !workspaceMatch {
+				continue
+			}
+		}
+
+		// Build subtitle with app class and workspace
+		subtitle := win.WindowClass
+		if subtitle == "" {
+			subtitle = win.AppID
+		}
+		if subtitle != "" {
+			subtitle += " · " + win.Workspace
+		} else {
+			subtitle = win.Workspace
+		}
+
+		// Determine icon based on app class
+		icon := "window-new"
+		if win.WindowClass != "" {
+			icon = strings.ToLower(win.WindowClass)
+		} else if win.AppID != "" {
+			icon = strings.ToLower(win.AppID)
+		}
+
+		items = append(items, &LauncherItem{
+			Title:      win.Name,
+			Subtitle:   subtitle,
+			Icon:       icon,
+			ActionData: NewWindowFocusAction(win.ConID, win.Workspace),
+			Launcher:   l,
+			Metadata: map[string]string{
+				"window_id": fmt.Sprintf("%d", win.WindowID),
+				"con_id":    fmt.Sprintf("%d", win.ConID),
+				"workspace": win.Workspace,
+				"app_class": win.WindowClass,
+			},
+		})
+	}
+
 	return items
 }
 
