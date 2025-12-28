@@ -1054,11 +1054,23 @@ func (l *Launcher) onActivate() {
 		l.onRowActivated(selected)
 	} else if len(l.currentItems) > 0 {
 		item := l.currentItems[0]
+
+		// Execute hooks first
 		hookCtx := l.createHookContext(item)
 		result := l.registry.GetHookRegistry().ExecuteSelectHooks(l.ctx, hookCtx, item.ActionData)
 		if result.Handled {
 			l.Hide()
+			return
 		}
+
+		// Fall back to default execution
+		if l.registry != nil {
+			if err := l.registry.Execute(item); err != nil {
+				log.Printf("[LAUNCHER] Failed to execute item: %v\n", err)
+			}
+		}
+
+		l.Hide()
 	}
 }
 

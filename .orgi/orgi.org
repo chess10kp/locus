@@ -700,7 +700,7 @@
 
   
 
-* TODO padding to the bottom mode bar
+* DONE padding to the bottom mode bar
   :PROPERTIES:
   :ID: task-20251228120643
   :TITLE: padding to the bottom mode bar
@@ -709,7 +709,7 @@
 
   
 
-* TODO make the default entry stretch out the entire width of the launcher
+* DONE make the default entry stretch out the entire width of the launcher
   :PROPERTIES:
   :ID: task-20251228120713
   :TITLE: make the default entry stretch out the entire width of the launcher
@@ -718,7 +718,7 @@
 
   
 
-* TODO using the orgi add using the same logic as the lockscreen, remove hte focused entry css from the launcher
+* DONE using the orgi add using the same logic as the lockscreen, remove hte focused entry css from the launcher
   :PROPERTIES:
   :ID: task-20251228120809
   :TITLE: using the orgi add using the same logic as the lockscreen, remove hte focused entry css from the launcher
