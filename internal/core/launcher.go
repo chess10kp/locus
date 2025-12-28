@@ -747,7 +747,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	row.SetHExpand(true) // Allow row to expand horizontally for scrolling
 	row.SetVAlign(gtk.ALIGN_START)
 
-	box, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+	box, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 4)
 	if err != nil {
 		return nil, err
 	}

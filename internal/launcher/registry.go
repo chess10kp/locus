@@ -294,9 +294,11 @@ func (r *LauncherRegistry) FindLauncherForInput(input string) (trigger string, l
 	// Check for space-style triggers (f , m , etc.)
 	if strings.Contains(input, " ") {
 		parts := strings.SplitN(input, " ", 2)
-		if len(parts) > 1 {
+		if len(parts) > 0 {
 			trigger = parts[0]
-			query = strings.TrimSpace(parts[1])
+			if len(parts) > 1 {
+				query = strings.TrimSpace(parts[1])
+			}
 
 			launcher, exists := r.GetLauncher(trigger)
 			if exists {
