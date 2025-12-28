@@ -6,6 +6,7 @@
 locus
 locus-client
 locus.log
+main
 *.dylib
 
 # Test binary, built with `go test -c`
