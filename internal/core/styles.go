@@ -175,11 +175,20 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
     color: %s;
 }
 
- #list-row:hover {
-     background-color: %s;
+  #list-row:hover {
+      background-color: %s;
+  }
+
+ #result-title {
+     font-size: 16px;
+     font-weight: bold;
  }
 
- #badges-box {
+ #result-subtitle {
+     font-size: 11px;
+ }
+
+  #badges-box {
      background-color: #3c3836;
      padding: 4px 8px;
      border-radius: 3px;

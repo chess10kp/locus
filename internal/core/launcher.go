@@ -759,7 +759,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	box.SetHExpand(true) // Allow content to expand horizontally
 
 	// Create a horizontal box for icon and text
-	iconTextBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 4)
+	iconTextBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 12)
 	if err != nil {
 		return nil, err
 	}
@@ -869,6 +869,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 		subLabel.SetHAlign(gtk.ALIGN_START)
 		subLabel.SetMaxWidthChars(30)
 		subLabel.SetEllipsize(pango.ELLIPSIZE_END)
+		subLabel.SetOpacity(0.6)
 		subLabel.SetName("result-subtitle")
 		textBox.PackStart(subLabel, false, false, 0)
 		subLabel.Show()
