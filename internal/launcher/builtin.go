@@ -368,7 +368,7 @@ func (l *HelpLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 			Title:    title,
 			Subtitle: subtitle,
 			Icon:     icon,
-			Launcher: launcher,
+			Launcher: l,
 		})
 	}
 
