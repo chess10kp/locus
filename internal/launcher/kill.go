@@ -45,6 +45,10 @@ func (l *KillLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *KillLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *KillLauncher) Populate(query string, launcherCtx *LauncherContext) []*LauncherItem {
 	q := strings.TrimSpace(query)
 	if q == "" {

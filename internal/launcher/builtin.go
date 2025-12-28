@@ -41,6 +41,10 @@ func (l *ShellLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *ShellLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *ShellLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	if strings.TrimSpace(query) == "" {
 		return []*LauncherItem{
@@ -113,6 +117,10 @@ func (l *WebLauncher) CommandTriggers() []string {
 
 func (l *WebLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
+}
+
+func (l *WebLauncher) GetGridConfig() *GridConfig {
+	return nil
 }
 
 func (l *WebLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
@@ -193,6 +201,10 @@ func (l *CalcLauncher) CommandTriggers() []string {
 
 func (l *CalcLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
+}
+
+func (l *CalcLauncher) GetGridConfig() *GridConfig {
+	return nil
 }
 
 func (l *CalcLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {

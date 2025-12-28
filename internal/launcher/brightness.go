@@ -47,6 +47,10 @@ func (l *BrightnessLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *BrightnessLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *BrightnessLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	items := []*LauncherItem{
 		{

@@ -42,6 +42,10 @@ func (l *WMFocusLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *WMFocusLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *WMFocusLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	items := []*LauncherItem{
 		{

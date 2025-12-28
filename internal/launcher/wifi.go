@@ -42,6 +42,10 @@ func (l *WifiLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *WifiLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *WifiLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	q := strings.TrimSpace(query)
 

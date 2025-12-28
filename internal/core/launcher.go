@@ -18,6 +18,7 @@ import (
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/gotk3/gotk3/pango"
 )
 
 var debugLogger = log.New(log.Writer(), "[LAUNCHER-DEBUG] ", log.LstdFlags|log.Lmicroseconds)
@@ -46,8 +47,10 @@ type Launcher struct {
 	window         *gtk.Window
 	searchEntry    *gtk.Entry
 	resultList     *gtk.ListBox
+	gridFlowBox    *gtk.FlowBox
 	registry       *launcher.LauncherRegistry
 	iconCache      *launcher.IconCache
+	thumbnailCache *launcher.ThumbnailCache
 	currentInput   string
 	currentItems   []*launcher.LauncherItem
 	scrolledWindow *gtk.ScrolledWindow
@@ -58,6 +61,7 @@ type Launcher struct {
 	visible        atomic.Bool
 	searchTimer    *time.Timer
 	searchVersion  int64 // Track search version to prevent race conditions
+	gridMode       bool
 
 	mu            sync.RWMutex
 	refreshUIChan chan launcher.RefreshUIRequest
@@ -122,6 +126,22 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	scrolledWindow.Add(resultList)
 	scrolledWindow.ShowAll()
 
+	// Create grid flow box for grid mode
+	gridFlowBox, err := gtk.FlowBoxNew()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create grid flow box: %w", err)
+	}
+	gridFlowBox.SetName("grid-flow-box")
+	gridFlowBox.SetVExpand(true)
+	gridFlowBox.SetHExpand(true)
+	gridFlowBox.SetSelectionMode(gtk.SELECTION_SINGLE)
+	gridFlowBox.SetHomogeneous(true)
+	gridFlowBox.SetMaxChildrenPerLine(5)
+	gridFlowBox.SetColumnSpacing(10)
+	gridFlowBox.SetRowSpacing(10)
+	// Don't show grid box initially
+	gridFlowBox.Hide()
+
 	// Create badges box for keyboard shortcuts
 	badgesBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	if err != nil {
@@ -171,6 +191,14 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		iconCache = nil
 	}
 
+	// Create thumbnail cache for grid items
+	thumbnailCache, err := launcher.NewThumbnailCache(100, 100)
+	if err != nil {
+		log.Printf("Failed to create thumbnail cache: %v", err)
+		// Continue without cache
+		thumbnailCache = nil
+	}
+
 	// Create channels for hook context
 	refreshUIChan := make(chan launcher.RefreshUIRequest, 1)
 	statusChan := make(chan launcher.StatusRequest, 10) // Buffer for multiple status messages
@@ -182,12 +210,14 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		window:         window,
 		searchEntry:    searchEntry,
 		resultList:     resultList,
+		gridFlowBox:    gridFlowBox,
 		scrolledWindow: scrolledWindow,
 		badgesBox:      badgesBox,
 		footerBox:      footerBox,
 		footerLabel:    footerLabel,
 		registry:       registry,
 		iconCache:      iconCache,
+		thumbnailCache: thumbnailCache,
 		refreshUIChan:  refreshUIChan,
 		statusChan:     statusChan,
 		ctx:            ctx,
@@ -398,21 +428,44 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 
 	l.currentItems = items
 
+	// Check if we should use grid mode
+	shouldUseGridMode := false
+	var gridConfig *launcher.GridConfig
+
+	// Determine if any launcher requests grid mode
+	for _, item := range items {
+		if item.Launcher != nil && item.Launcher.GetSizeMode() == launcher.LauncherSizeModeGrid {
+			shouldUseGridMode = true
+			gridConfig = item.Launcher.GetGridConfig()
+			break
+		}
+	}
+
+	// Switch between list and grid mode
+	if shouldUseGridMode != l.gridMode {
+		l.switchViewMode(shouldUseGridMode, gridConfig)
+	}
+
+	if l.gridMode {
+		l.updateGridResults(items)
+	} else {
+		l.updateListResults(items)
+	}
+
+	return true
+}
+
+func (l *Launcher) updateListResults(items []*launcher.LauncherItem) {
 	// Remove all rows by repeatedly removing the first row
-	removedCount := 0
 	for {
 		row := l.resultList.GetRowAtIndex(0)
 		if row == nil {
 			break
 		}
 		l.resultList.Remove(row)
-		removedCount++
 	}
 
 	// Create new result rows
-	successCount := 0
-	if len(items) > 0 {
-	}
 	for i, item := range items {
 		row, err := l.createResultRow(item, i)
 		if err != nil {
@@ -420,7 +473,6 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 			continue
 		}
 		l.resultList.Add(row)
-		successCount++
 	}
 
 	// Make sure the scrolled window is visible
@@ -448,8 +500,122 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 			}
 		}
 	}
+}
 
-	return true
+func (l *Launcher) updateGridResults(items []*launcher.LauncherItem) {
+	// Remove all children from flow box
+	children := l.gridFlowBox.GetChildren()
+	for i := uint(0); i < children.Length(); i++ {
+		if child := children.NthData(i); child != nil {
+			l.gridFlowBox.Remove(child.(gtk.IWidget))
+		}
+	}
+
+	// Create new grid items
+	for i, item := range items {
+		gridItem, err := l.createGridItem(item, i)
+		if err != nil {
+			fmt.Printf("Failed to create grid item: %v\n", err)
+			continue
+		}
+		l.gridFlowBox.Add(gridItem)
+	}
+
+	// Show all widgets in the grid
+	l.gridFlowBox.ShowAll()
+
+	// Force the grid to redraw
+	l.gridFlowBox.QueueDraw()
+	if l.scrolledWindow != nil {
+		l.scrolledWindow.QueueDraw()
+	}
+
+	// Select first item if any
+	if len(items) > 0 {
+		children := l.gridFlowBox.GetChildren()
+		if children != nil && children.Length() > 0 {
+			if child := children.NthData(0); child != nil {
+				if flowBoxChild, ok := child.(*gtk.FlowBoxChild); ok {
+					l.gridFlowBox.SelectChild(flowBoxChild)
+				}
+			}
+		}
+	}
+}
+
+func (l *Launcher) switchViewMode(toGrid bool, gridConfig *launcher.GridConfig) {
+	l.gridMode = toGrid
+
+	if toGrid {
+		// Switch to grid mode
+		l.resultList.Hide()
+		l.scrolledWindow.Remove(l.resultList)
+		l.scrolledWindow.Add(l.gridFlowBox)
+		l.gridFlowBox.ShowAll()
+
+		// Apply grid configuration if available
+		if gridConfig != nil {
+			l.gridFlowBox.SetMaxChildrenPerLine(uint(gridConfig.Columns))
+			l.gridFlowBox.SetColumnSpacing(uint(gridConfig.Spacing))
+			l.gridFlowBox.SetRowSpacing(uint(gridConfig.Spacing))
+
+			// Calculate window size for grid mode
+			l.adjustWindowSizeForGrid(gridConfig, len(l.currentItems))
+		}
+	} else {
+		// Switch to list mode
+		l.gridFlowBox.Hide()
+		l.scrolledWindow.Remove(l.gridFlowBox)
+		l.scrolledWindow.Add(l.resultList)
+		l.resultList.ShowAll()
+
+		// Restore default window size
+		l.restoreDefaultWindowSize()
+	}
+
+	// Queue redraw
+	l.window.QueueDraw()
+}
+
+func (l *Launcher) adjustWindowSizeForGrid(gridConfig *launcher.GridConfig, itemCount int) {
+	if itemCount == 0 {
+		return
+	}
+
+	// Calculate grid dimensions
+	rows := (itemCount + gridConfig.Columns - 1) / gridConfig.Columns
+	maxRows := 5 // Limit to 5 rows for visibility
+	if rows > maxRows {
+		rows = maxRows
+	}
+
+	// Calculate window size
+	width := gridConfig.Columns*(gridConfig.ItemWidth+gridConfig.Spacing) + 40 // +40 for margins
+	height := rows*(gridConfig.ItemHeight+gridConfig.Spacing) + 100            // +100 for search and footer
+
+	l.window.SetDefaultSize(width, height)
+	log.Printf("[GRID] Adjusted window size to %dx%d for grid mode", width, height)
+}
+
+func (l *Launcher) restoreDefaultWindowSize() {
+	width := l.config.Launcher.Window.Width
+	height := l.config.Launcher.Window.Height
+
+	if width <= 0 {
+		width = 600
+	}
+	if height <= 0 {
+		minHeightForResults := 5 * 44
+		searchEntryHeight := 50
+		extraPadding := 20
+		height = minHeightForResults + searchEntryHeight + extraPadding
+		if height < 500 {
+			height = 500
+		}
+	}
+
+	l.window.SetDefaultSize(width, height)
+	log.Printf("[GRID] Restored default window size to %dx%d", width, height)
 }
 
 func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk.ListBoxRow, error) {
@@ -583,6 +749,161 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	row.Add(box)
 	row.ShowAll()
 	return row, nil
+}
+
+func (l *Launcher) createGridItem(item *launcher.LauncherItem, index int) (gtk.IWidget, error) {
+	// Get grid config from launcher
+	var gridConfig *launcher.GridConfig
+	if item.Launcher != nil {
+		gridConfig = item.Launcher.GetGridConfig()
+	}
+
+	// Use defaults if no grid config
+	if gridConfig == nil {
+		gridConfig = &launcher.GridConfig{
+			Columns:          5,
+			ItemWidth:        200,
+			ItemHeight:       150,
+			Spacing:          10,
+			ShowMetadata:     false,
+			MetadataPosition: launcher.MetadataPositionHidden,
+			AspectRatio:      launcher.AspectRatioOriginal,
+		}
+	}
+
+	// Create container for grid item
+	container, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	if err != nil {
+		return nil, err
+	}
+	container.SetName("grid-item-container")
+
+	// Load image if path is provided
+	if item.ImagePath != "" {
+		image, err := gtk.ImageNew()
+		if err != nil {
+			return nil, err
+		}
+
+		// Check cache first
+		cacheKey := fmt.Sprintf("%s_%dx%d", item.ImagePath, gridConfig.ItemWidth)
+		var pixbuf *gdk.Pixbuf
+
+		if l.thumbnailCache != nil {
+			// Try memory cache
+			if cachedData, found := l.thumbnailCache.Get(cacheKey); found {
+				pixbuf, err = gdk.PixbufNewFromData(cachedData, gdk.COLORSPACE_RGB, true, 8, gridConfig.ItemWidth, gridConfig.ItemHeight, gridConfig.ItemWidth*4)
+				if err != nil {
+					log.Printf("[GRID] Failed to load pixbuf from cache: %v", err)
+				}
+			}
+		}
+
+		// Load from file if not in cache
+		if pixbuf == nil {
+			pixbuf, err = gdk.PixbufNewFromFileAtScale(item.ImagePath, gridConfig.ItemWidth, gridConfig.ItemHeight, false)
+			if err != nil {
+				log.Printf("[GRID] Failed to load image %s: %v", item.ImagePath, err)
+				// Create a placeholder
+				pixbuf, err = gdk.PixbufNew(gdk.COLORSPACE_RGB, true, 8, gridConfig.ItemWidth, gridConfig.ItemHeight)
+				if err == nil {
+					pixbuf.Fill(0x22222222) // Dark gray placeholder
+				}
+			} else {
+				// Cache the loaded pixbuf
+				if l.thumbnailCache != nil {
+					pixels := pixbuf.GetPixels()
+					if len(pixels) > 0 {
+						data := make([]byte, len(pixels))
+						copy(data, pixels)
+						l.thumbnailCache.Put(cacheKey, data)
+					}
+				}
+			}
+		}
+
+		if pixbuf != nil {
+			image.SetFromPixbuf(pixbuf)
+		}
+		container.PackStart(image, true, true, 0)
+		image.Show()
+	}
+
+	// Add metadata if configured
+	if gridConfig.ShowMetadata && gridConfig.MetadataPosition != launcher.MetadataPositionHidden {
+		metaBox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 2)
+		if err != nil {
+			return nil, err
+		}
+		metaBox.SetMarginStart(4)
+		metaBox.SetMarginEnd(4)
+		metaBox.SetMarginTop(4)
+		metaBox.SetMarginBottom(4)
+
+		if item.Title != "" {
+			titleLabel, err := gtk.LabelNew(item.Title)
+			if err != nil {
+				return nil, err
+			}
+			titleLabel.SetName("grid-item-title")
+			titleLabel.SetHAlign(gtk.ALIGN_START)
+			titleLabel.SetMaxWidthChars(20)
+			titleLabel.SetEllipsize(pango.ELLIPSIZE_END)
+			metaBox.PackStart(titleLabel, false, false, 0)
+			titleLabel.Show()
+		}
+
+		if item.Subtitle != "" && gridConfig.MetadataPosition == launcher.MetadataPositionBottom {
+			subLabel, err := gtk.LabelNew(item.Subtitle)
+			if err != nil {
+				return nil, err
+			}
+			subLabel.SetName("grid-item-subtitle")
+			subLabel.SetHAlign(gtk.ALIGN_START)
+			subLabel.SetMaxWidthChars(20)
+			subLabel.SetEllipsize(pango.ELLIPSIZE_END)
+			metaBox.PackStart(subLabel, false, false, 0)
+			subLabel.Show()
+		}
+
+		container.PackEnd(metaBox, false, false, 0)
+		metaBox.Show()
+	}
+
+	// Add keyboard shortcut hint
+	if index < 9 {
+		hintBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+		if err != nil {
+			return nil, err
+		}
+		hintBox.SetHAlign(gtk.ALIGN_END)
+		hintBox.SetMarginStart(4)
+		hintBox.SetMarginEnd(4)
+		hintBox.SetMarginTop(4)
+
+		hintLabel, err := gtk.LabelNew(fmt.Sprintf("%d", index+1))
+		if err != nil {
+			return nil, err
+		}
+		hintLabel.SetName("grid-item-hint")
+		hintLabel.SetMarginTop(2)
+		hintLabel.SetMarginBottom(2)
+		hintLabel.SetMarginStart(4)
+		hintLabel.SetMarginEnd(4)
+		hintBox.PackEnd(hintLabel, false, false, 0)
+
+		// Overlay hint on top of image if configured
+		if gridConfig.MetadataPosition == launcher.MetadataPositionOverlay {
+			// TODO: Implement overlay positioning
+		}
+
+		container.PackEnd(hintBox, false, false, 0)
+		hintBox.Show()
+		hintLabel.Show()
+	}
+
+	container.ShowAll()
+	return container, nil
 }
 
 func (l *Launcher) onActivate() {

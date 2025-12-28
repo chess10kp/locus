@@ -42,6 +42,10 @@ func (l *ClipboardLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *ClipboardLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *ClipboardLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	q := strings.TrimSpace(query)
 	if q == "" {

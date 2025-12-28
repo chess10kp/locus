@@ -40,6 +40,10 @@ func (l *ScreenshotLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *ScreenshotLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *ScreenshotLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	items := []*LauncherItem{
 		{

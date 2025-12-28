@@ -57,6 +57,10 @@ func (l *TimerLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *TimerLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *TimerLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	items := []*LauncherItem{}
 

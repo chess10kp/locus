@@ -40,6 +40,10 @@ func (l *LockLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *LockLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *LockLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	return []*LauncherItem{
 		{

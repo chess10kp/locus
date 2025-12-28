@@ -59,6 +59,10 @@ func (l *MusicLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *MusicLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *MusicLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	// Ensure we have scanned the music directory
 	l.mu.Lock()

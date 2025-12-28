@@ -220,9 +220,12 @@ type NotificationTimeoutsConfig struct {
 }
 
 type FileSearchConfig struct {
-	SearchPaths []string `toml:"search_paths"`
-	Exclusions  []string `toml:"exclusions"`
-	MaxResults  int      `toml:"max_results"`
+	SearchPaths      []string          `toml:"search_paths"`
+	Exclusions       []string          `toml:"exclusions"`
+	MaxResults       int               `toml:"max_results"`
+	FileOpeners      map[string]string `toml:"file_openers"`
+	DefaultOpener    string            `toml:"default_opener"`
+	OpenerConfigPath string            `toml:"opener_config_path"`
 }
 
 type ColorsConfig struct {
@@ -413,6 +416,32 @@ var DefaultConfig = Config{
 			".config",
 		},
 		MaxResults: 50,
+		FileOpeners: map[string]string{
+			".pdf":  "evince",
+			".png":  "xdg-open",
+			".jpg":  "xdg-open",
+			".jpeg": "xdg-open",
+			".gif":  "xdg-open",
+			".svg":  "xdg-open",
+			".webp": "xdg-open",
+			".mp4":  "xdg-open",
+			".mkv":  "xdg-open",
+			".avi":  "xdg-open",
+			".mov":  "xdg-open",
+			".mp3":  "xdg-open",
+			".flac": "xdg-open",
+			".ogg":  "xdg-open",
+			".wav":  "xdg-open",
+			".zip":  "xdg-open",
+			".tar":  "xdg-open",
+			".gz":   "xdg-open",
+			".bz2":  "xdg-open",
+			".xz":   "xdg-open",
+			".txt":  "xdg-open",
+			".md":   "xdg-open",
+		},
+		DefaultOpener:    "xdg-open",
+		OpenerConfigPath: "~/.config/locus/file_openers.toml",
 	},
 	LockScreen: LockScreenConfig{
 		Password:     "",

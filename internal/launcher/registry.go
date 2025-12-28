@@ -47,7 +47,35 @@ type LauncherItem struct {
 	Icon       string
 	ActionData ActionData
 	Launcher   Launcher
+	IsGridItem bool
+	ImagePath  string
+	Metadata   map[string]string
 }
+
+// GridConfig represents configuration for grid view layout
+type GridConfig struct {
+	Columns          int
+	ItemWidth        int
+	ItemHeight       int
+	Spacing          int
+	ShowMetadata     bool
+	MetadataPosition string
+	AspectRatio      string
+}
+
+// MetadataPosition constants
+const (
+	MetadataPositionBottom  = "bottom"
+	MetadataPositionOverlay = "overlay"
+	MetadataPositionHidden  = "hidden"
+)
+
+// AspectRatio constants
+const (
+	AspectRatioSquare   = "square"
+	AspectRatioOriginal = "original"
+	AspectRatioFixed    = "fixed"
+)
 
 // CtrlNumberAction is a function that performs an action on a launcher item
 type CtrlNumberAction func(item *LauncherItem) error
@@ -110,6 +138,7 @@ type Launcher interface {
 	Rebuild(ctx *LauncherContext) error
 	Cleanup()
 	GetCtrlNumberAction(number int) (CtrlNumberAction, bool)
+	GetGridConfig() *GridConfig
 }
 
 // LauncherRegistry manages all launchers

@@ -100,6 +100,10 @@ func (l *AppLauncher) GetSizeMode() LauncherSizeMode {
 	return LauncherSizeModeDefault
 }
 
+func (l *AppLauncher) GetGridConfig() *GridConfig {
+	return nil
+}
+
 func (l *AppLauncher) Populate(query string, ctx *LauncherContext) []*LauncherItem {
 	populateStart := time.Now()
 	log.Printf("[APP-LAUNCHER] Populate started for query='%s'", query)
@@ -160,15 +164,9 @@ func (l *AppLauncher) appToItem(app apps.App) *LauncherItem {
 		icon = l.config.Launcher.Icons.FallbackIcon
 	}
 
-	// Build subtitle from description only, trimmed to first 10 characters
-	subtitle := app.Description
-	if len(subtitle) > 10 {
-		subtitle = subtitle[:10] + "..."
-	}
-
 	return &LauncherItem{
 		Title:      app.Name,
-		Subtitle:   subtitle,
+		Subtitle:   app.Description,
 		Icon:       icon,
 		ActionData: NewDesktopAction(app.File),
 		Launcher:   l,
