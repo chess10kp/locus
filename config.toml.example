@@ -63,8 +63,32 @@ setter_command = "swww img"
 preview_on_navigation = true
 
 [notification]
+
+[notification.history]
+max_history = 500
+max_age_days = 30
+persist_path = "~/.cache/locus/notifications.json"
+
 [notification.ui]
-icon = "🔔"
+icon = "notifications:"
+show_unread_count = true
+max_display = 50
+group_by_app = true
+timestamp_format = "%H:%M"
+
+[notification.daemon]
+enabled = true
+position = "top-right"
+max_banners = 5
+banner_gap = 10
+banner_width = 400
+banner_height = 100
+animation_duration = 200
+
+[notification.timeouts]
+low = 3000
+normal = 5000
+critical = -1
 
 [file_search]
 search_paths = ["/home"]
