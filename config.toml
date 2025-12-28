@@ -51,7 +51,7 @@ button_background = "#458588"
 button_hover = "#83a598"
 border_radius = 8
 border_width = 1
-font_family = "Iosevka, monospace"
+font_family = "Victor Mono, monospace"
 font_size = 16
 font_weight = "bold"
 
@@ -61,6 +61,21 @@ timer = "%"
 [launcher.wallpaper]
 setter_command = "swww img"
 preview_on_navigation = true
+
+[launcher.icons]
+# Enable/disable icons globally
+enable_icons = true
+# Icon size in pixels
+icon_size = 32
+# Cache icons for performance
+cache_icons = true
+# Maximum number of icons to cache
+cache_size = 500
+# Fallback icon when an icon is not found
+fallback_icon = "image-missing"
+# List of launchers that should show icons. Empty list means all launchers show icons.
+# To show icons only for desktop launcher (apps), set to ["apps"]
+icons_for_launchers = []
 
 [notification]
 [notification.ui]

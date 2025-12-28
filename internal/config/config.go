@@ -126,11 +126,12 @@ type PerformanceConfig struct {
 }
 
 type IconsConfig struct {
-	EnableIcons  bool   `toml:"enable_icons"`
-	IconSize     int    `toml:"icon_size"`
-	CacheIcons   bool   `toml:"cache_icons"`
-	CacheSize    int    `toml:"cache_size"`
-	FallbackIcon string `toml:"fallback_icon"`
+	EnableIcons       bool     `toml:"enable_icons"`
+	IconSize          int      `toml:"icon_size"`
+	CacheIcons        bool     `toml:"cache_icons"`
+	CacheSize         int      `toml:"cache_size"`
+	FallbackIcon      string   `toml:"fallback_icon"`
+	IconsForLaunchers []string `toml:"icons_for_launchers"`
 }
 
 type BehaviorConfig struct {
@@ -324,11 +325,12 @@ var DefaultConfig = Config{
 			MaxVisibleResults:       10, // Fewer widgets
 		},
 		Icons: IconsConfig{
-			EnableIcons:  true,
-			IconSize:     32,
-			CacheIcons:   true,
-			CacheSize:    500, // Larger icon cache
-			FallbackIcon: "image-missing",
+			EnableIcons:       true,
+			IconSize:          32,
+			CacheIcons:        true,
+			CacheSize:         500, // Larger icon cache
+			FallbackIcon:      "image-missing",
+			IconsForLaunchers: []string{}, // Empty means all launchers show icons
 		},
 		Behavior: BehaviorConfig{
 			ActivateOnHover:         false,
@@ -371,7 +373,7 @@ var DefaultConfig = Config{
 			ButtonHover:       "#83a598",
 			BorderRadius:      8,
 			BorderWidth:       1,
-			FontFamily:        "Iosevka, monospace",
+			FontFamily:        "Victor Mono, monospace",
 			FontSize:          16,
 			FontWeight:        "bold",
 		},

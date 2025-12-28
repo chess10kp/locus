@@ -12,7 +12,7 @@ import (
 
 const defaultStyles = `
 * {
-    font-family: "Iosevka", monospace;
+    font-family: "Victor Mono", monospace;
     font-size: 16px;
     font-weight: bold;
     margin: 0;
@@ -21,10 +21,9 @@ const defaultStyles = `
 }
 
 label {
-    color: #ebdbb2;
+    color: #6e7681;
     font-size: 16px;
-    font-weight: bold;
-    font-family: "Iosevka", monospace;
+    font-family: "Victor Mono", monospace;
     margin: 0;
     padding: 0;
     transition: opacity 0.2s ease;
@@ -68,7 +67,7 @@ window {
     box-shadow: none;
     padding: 12px;
     font-size: 16px;
-    font-family: "Iosevka", monospace;
+    font-family: "Victor Mono", monospace;
 }
 
 #lockscreen-entry:focus {
@@ -84,12 +83,12 @@ window {
 }
 
 #lockscreen-status {
-    font-family: "Iosevka", sans-serif;
+    font-family: "Victor Mono", sans-serif;
     font-size: 14px;
 }
 
 #lockscreen-label {
-    font-family: "Iosevka", sans-serif;
+    font-family: "Victor Mono", sans-serif;
     font-size: 24px;
     font-weight: bold;
 }
@@ -168,7 +167,7 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
 
  #list-row {
      padding: 4px 8px;
-     border-bottom: %dpx solid %s;
+     border-bottom: none;
      min-height: 32px;
      background-color: %s;
  }
@@ -226,8 +225,6 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
 		styling.BorderWidth,
 		styling.EntryFocusColor,
 
-		styling.BorderWidth,
-		styling.BorderColor,
 		styling.ListRowBackground,
 
 		styling.ListRowSelected,

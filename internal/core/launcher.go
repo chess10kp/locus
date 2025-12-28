@@ -87,6 +87,9 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		return nil, fmt.Errorf("failed to create box: %w", err)
 	}
 
+	box.SetVExpand(true)
+	box.SetHExpand(false)
+	// Let the window expand as needed for content
 	window.Add(box)
 
 	searchEntry, err := gtk.EntryNew()
@@ -102,7 +105,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hbox: %w", err)
 	}
-	hbox.PackStart(searchEntry, true, true, 0)
+	hbox.SetHExpand(false)
+	hbox.PackStart(searchEntry, false, false, 0)
 
 	box.PackStart(hbox, false, false, 0)
 
@@ -111,10 +115,11 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		return nil, fmt.Errorf("failed to create scrolled window: %w", err)
 	}
 
-	scrolledWindow.SetPolicy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+	scrolledWindow.SetPolicy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 	scrolledWindow.SetVExpand(true)
+	scrolledWindow.SetHExpand(false)
 	scrolledWindow.SetMinContentHeight(5 * 44) // Minimum height for 5 results
-	box.PackStart(scrolledWindow, true, true, 0)
+	scrolledWindow.SetSizeRequest(cfg.Launcher.Window.Width, -1)
 
 	resultList, err := gtk.ListBoxNew()
 	if err != nil {
@@ -123,6 +128,7 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	resultList.SetName("result-list")
 	resultList.SetVExpand(true)
+	resultList.SetHExpand(true) // Allow horizontal expansion for scrolling
 	scrolledWindow.Add(resultList)
 	scrolledWindow.ShowAll()
 
@@ -133,7 +139,7 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	}
 	gridFlowBox.SetName("grid-flow-box")
 	gridFlowBox.SetVExpand(true)
-	gridFlowBox.SetHExpand(true)
+	gridFlowBox.SetHExpand(false)
 	gridFlowBox.SetSelectionMode(gtk.SELECTION_SINGLE)
 	gridFlowBox.SetHomogeneous(true)
 	gridFlowBox.SetMaxChildrenPerLine(5)
@@ -148,7 +154,9 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		return nil, fmt.Errorf("failed to create badges box: %w", err)
 	}
 	badgesBox.SetName("badges-box")
-	badgesBox.SetHAlign(gtk.ALIGN_FILL)
+	badgesBox.SetHAlign(gtk.ALIGN_START)
+	badgesBox.SetHExpand(false)
+	badgesBox.SetSizeRequest(cfg.Launcher.Window.Width, -1)
 
 	// Add keyboard shortcut hints
 	shortcuts := []string{"Select: Return", "↓: Ctrl+J", "↑: Ctrl+K"}
@@ -168,7 +176,9 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		return nil, fmt.Errorf("failed to create footer box: %w", err)
 	}
 	footerBox.SetName("footer-box")
-	footerBox.SetHAlign(gtk.ALIGN_FILL)
+	footerBox.SetHAlign(gtk.ALIGN_START)
+	footerBox.SetHExpand(false)
+	footerBox.SetSizeRequest(cfg.Launcher.Window.Width, -1)
 
 	footerLabel, err := gtk.LabelNew("Applications")
 	if err != nil {
@@ -176,8 +186,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	}
 	footerLabel.SetName("footer-label")
 	footerLabel.SetHAlign(gtk.ALIGN_START)
-	footerLabel.SetHExpand(true)
-	footerBox.PackStart(footerLabel, true, true, 0)
+	footerLabel.SetHExpand(false)
+	footerBox.PackStart(footerLabel, true, false, 0)
 
 	box.PackStart(footerBox, false, false, 4)
 
@@ -655,8 +665,7 @@ func (l *Launcher) switchViewMode(toGrid bool, gridConfig *launcher.GridConfig) 
 			l.gridFlowBox.SetColumnSpacing(uint(gridConfig.Spacing))
 			l.gridFlowBox.SetRowSpacing(uint(gridConfig.Spacing))
 
-			// Calculate window size for grid mode
-			l.adjustWindowSizeForGrid(gridConfig, len(l.currentItems))
+			// Window size stays at configured default - no auto-resizing
 		}
 	} else {
 		// Switch to list mode
@@ -665,8 +674,7 @@ func (l *Launcher) switchViewMode(toGrid bool, gridConfig *launcher.GridConfig) 
 		l.scrolledWindow.Add(l.resultList)
 		l.resultList.ShowAll()
 
-		// Restore default window size
-		l.restoreDefaultWindowSize()
+		// Window size stays at configured default - no auto-resizing
 	}
 
 	// Queue redraw
@@ -725,6 +733,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	}
 
 	row.SetName("list-row")
+	row.SetHExpand(true) // Allow row to expand horizontally for scrolling
 
 	box, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	if err != nil {
@@ -735,8 +744,9 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	box.SetMarginEnd(8)
 	box.SetMarginTop(8)
 	box.SetMarginBottom(8)
+	box.SetHExpand(true) // Allow content to expand horizontally
 
-	if item.Icon != "" {
+	if item.Icon != "" && l.shouldShowIcon(item) {
 		icon, err := gtk.ImageNew()
 		if err != nil {
 			return nil, err
@@ -807,7 +817,8 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 		return nil, err
 	}
 	textBox.SetHAlign(gtk.ALIGN_START)
-	box.PackStart(textBox, true, true, 0)
+	textBox.SetHExpand(false)
+	box.PackStart(textBox, true, false, 0)
 
 	label, err := gtk.LabelNew(item.Title)
 	if err != nil {
@@ -815,19 +826,31 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	}
 
 	label.SetHAlign(gtk.ALIGN_START)
+	label.SetHExpand(false)
+	label.SetMaxWidthChars(30)
+	label.SetEllipsize(pango.ELLIPSIZE_END)
+	label.SetName("result-title")
 	textBox.PackStart(label, false, false, 0)
 	label.Show()
 
 	if item.Subtitle != "" {
-		subLabel, err := gtk.LabelNew(item.Subtitle)
+		subtitle := item.Subtitle
+		if len(subtitle) > 50 {
+			subtitle = subtitle[:50]
+		}
+		subLabel, err := gtk.LabelNew(subtitle)
 		if err != nil {
 			return nil, err
 		}
 
 		subLabel.SetHAlign(gtk.ALIGN_START)
+		subLabel.SetMaxWidthChars(30)
+		subLabel.SetEllipsize(pango.ELLIPSIZE_END)
+		subLabel.SetName("result-subtitle")
 		textBox.PackStart(subLabel, false, false, 0)
 		subLabel.Show()
 	}
+	textBox.SetHExpand(false)
 	textBox.Show()
 
 	if index < 9 {
@@ -950,7 +973,11 @@ func (l *Launcher) createGridItem(item *launcher.LauncherItem, index int) (gtk.I
 		}
 
 		if item.Subtitle != "" && gridConfig.MetadataPosition == launcher.MetadataPositionBottom {
-			subLabel, err := gtk.LabelNew(item.Subtitle)
+			subtitle := item.Subtitle
+			if len(subtitle) > 50 {
+				subtitle = subtitle[:50]
+			}
+			subLabel, err := gtk.LabelNew(subtitle)
 			if err != nil {
 				return nil, err
 			}
@@ -1204,6 +1231,30 @@ func (l *Launcher) onTabPressed() bool {
 	return false
 }
 
+func (l *Launcher) shouldShowIcon(item *launcher.LauncherItem) bool {
+	if !l.config.Launcher.Icons.EnableIcons {
+		return false
+	}
+
+	allowedLaunchers := l.config.Launcher.Icons.IconsForLaunchers
+	if len(allowedLaunchers) == 0 {
+		return true
+	}
+
+	if item.Launcher == nil {
+		return true
+	}
+
+	launcherName := item.Launcher.Name()
+	for _, allowed := range allowedLaunchers {
+		if allowed == launcherName {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (l *Launcher) createHookContext(item *launcher.LauncherItem) *launcher.HookContext {
 	if l == nil {
 		return nil
@@ -1387,11 +1438,27 @@ func (l *Launcher) Show() error {
 	}
 	l.mu.Unlock()
 
-	// GTK calls happen without holding lock cause its ont teh same thread
+	// GTK calls happen without holding lock cause its ont eh same thread
 	l.window.ShowAll()
 	l.window.Present()
-	l.searchEntry.SetText("")
-	l.searchEntry.GrabFocus()
+
+	// Apply slide-in animation with a small delay to ensure window is rendered
+	glib.TimeoutAdd(10, func() bool {
+		if styleCtx, err := l.window.GetStyleContext(); err == nil {
+			styleCtx.AddClass("slide-in")
+		}
+		l.searchEntry.SetText("")
+		l.searchEntry.GrabFocus()
+
+		// Remove animation class after it completes
+		glib.TimeoutAdd(uint(300), func() bool {
+			if ctx, ctxErr := l.window.GetStyleContext(); ctxErr == nil {
+				ctx.RemoveClass("slide-in")
+			}
+			return false
+		})
+		return false
+	})
 
 	// Update visibility flag atomically
 	l.visible.Store(true)
@@ -1450,27 +1517,6 @@ func (l *Launcher) Start() error {
 		return ErrLauncherAlreadyRunning
 	}
 
-	log.Printf("Setting window size")
-	width := l.config.Launcher.Window.Width
-	height := l.config.Launcher.Window.Height
-	if width <= 0 {
-		width = 600
-	}
-	if height <= 0 {
-		// Calculate minimum height to show at least 5 results
-		// Each result row is approximately: 8px (margin top) + 16px (font) + 8px (margin bottom) + 12px (padding) = 44px
-		// Plus search entry height (~50px) and some padding
-		minHeightForResults := 5 * 44                                   // 5 rows × ~44px each
-		searchEntryHeight := 50                                         // Approximate search entry height
-		extraPadding := 20                                              // Extra padding
-		height = minHeightForResults + searchEntryHeight + extraPadding // ~290px minimum
-		if height < 500 {
-			height = 500 // Default to 500px if calculated height is smaller
-		}
-	}
-	l.window.SetDefaultSize(width, height)
-	l.window.SetResizable(false)
-
 	log.Printf("Loading built-in launchers")
 	if err := l.registry.LoadBuiltIn(); err != nil {
 		log.Printf("Failed to load launchers: %v", err)
@@ -1482,11 +1528,48 @@ func (l *Launcher) Start() error {
 		l.registry.SetLockScreenCallback(l.app.ShowLockScreen)
 	}
 
+	// Get window dimensions for geometry hints
+	width := l.config.Launcher.Window.Width
+	height := l.config.Launcher.Window.Height
+	if width <= 0 {
+		width = 600
+	}
+	if height <= 0 {
+		minHeightForResults := 5 * 44
+		searchEntryHeight := 50
+		extraPadding := 20
+		height = minHeightForResults + searchEntryHeight + extraPadding
+		if height < 500 {
+			height = 500
+		}
+	}
+
+	// Set geometry hints to enforce fixed window size
+	geometry := gdk.Geometry{}
+	geometry.SetMinWidth(width)
+	geometry.SetMinHeight(height)
+	geometry.SetMaxWidth(width)
+	geometry.SetMaxHeight(height)
+	geometry.SetBaseWidth(width)
+	geometry.SetBaseHeight(height)
+
+	// Use geometry hints with bitwise OR of hint flags
+	var geometryMask gdk.WindowHints
+	geometryMask |= gdk.WindowHints(1 << 1) // HINT_MIN_SIZE
+	geometryMask |= gdk.WindowHints(1 << 2) // HINT_MAX_SIZE
+	geometryMask |= gdk.WindowHints(1 << 3) // HINT_BASE_SIZE
+
+	l.window.SetGeometryHints(l.window, geometry, geometryMask)
+
 	log.Printf("Initializing layer shell")
 	layer.InitForWindow(unsafe.Pointer(l.window.Native()))
 	layer.SetLayer(unsafe.Pointer(l.window.Native()), layer.LayerOverlay)
 	layer.SetKeyboardMode(unsafe.Pointer(l.window.Native()), layer.KeyboardModeExclusive)
+	// Explicitly set all anchors
 	layer.SetAnchor(unsafe.Pointer(l.window.Native()), layer.EdgeTop, true)
+	layer.SetAnchor(unsafe.Pointer(l.window.Native()), layer.EdgeBottom, false)
+	layer.SetAnchor(unsafe.Pointer(l.window.Native()), layer.EdgeLeft, false)
+	layer.SetAnchor(unsafe.Pointer(l.window.Native()), layer.EdgeRight, false)
 	layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, 40)
 	layer.SetExclusiveZone(unsafe.Pointer(l.window.Native()), 0)
 
