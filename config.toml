@@ -170,6 +170,9 @@ css = """
 #lockscreen-window {
     background-color: #0e1419;
 }
+#lockscreen-clock {
+    color: #ebdbb2;
+}
 #lockscreen-entry {
     background-color: #1e1e2e;
     color: #ebdbb2;

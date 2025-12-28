@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/chess10kp/locus/internal/config"
@@ -27,6 +28,7 @@ type LockScreenWindow struct {
 	passwordEntry       *gtk.Entry
 	statusLabel         *gtk.Label
 	lockedLabel         *gtk.Label
+	clockLabel          *gtk.Label
 	centerBox           *gtk.Box
 	monitor             *gdk.Monitor
 	isInputEnabled      bool
@@ -250,6 +252,15 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 	ls.centerBox = centerBox
 
 	if ls.isInputEnabled {
+		clockLabel, err := gtk.LabelNew("")
+		if err != nil {
+			return err
+		}
+		clockLabel.SetMarginBottom(40)
+		clockLabel.SetHAlign(gtk.ALIGN_CENTER)
+		clockLabel.SetName("lockscreen-clock")
+		ls.clockLabel = clockLabel
+
 		passwordEntry, err := gtk.EntryNew()
 		if err != nil {
 			return err
@@ -274,10 +285,12 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 		statusLabel.SetName("lockscreen-status")
 		ls.statusLabel = statusLabel
 
+		centerBox.PackStart(clockLabel, false, false, 0)
 		centerBox.PackStart(passwordEntry, false, false, 0)
 		centerBox.PackStart(statusLabel, false, false, 0)
 
 		// Explicitly show widgets
+		clockLabel.Show()
 		passwordEntry.Show()
 		statusLabel.Show()
 
@@ -372,6 +385,17 @@ func (m *LockScreenManager) showLockScreenWindow(ls *LockScreenWindow) {
 			return false
 		})
 	}
+
+	if ls.isInputEnabled && ls.clockLabel != nil {
+		m.updateClock(ls)
+		glib.TimeoutAdd(1000, func() bool {
+			if ls.window.GetVisible() {
+				m.updateClock(ls)
+				return true
+			}
+			return false
+		})
+	}
 }
 
 func (m *LockScreenManager) checkPassword(ls *LockScreenWindow) {
@@ -405,6 +429,12 @@ func (m *LockScreenManager) checkPassword(ls *LockScreenWindow) {
 			})
 		}
 	}
+}
+
+func (m *LockScreenManager) updateClock(ls *LockScreenWindow) {
+	now := time.Now()
+	timeStr := now.Format("15:04:05")
+	ls.clockLabel.SetMarkup(fmt.Sprintf(`<span size="80000">%s</span>`, timeStr))
 }
 
 func (m *LockScreenManager) setupMonitorChangeHandler() {
