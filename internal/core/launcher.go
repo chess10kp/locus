@@ -551,6 +551,13 @@ func (l *Launcher) updateResultsUnsafe(items []*launcher.LauncherItem, version i
 		}
 	}
 
+	// Explicitly disable grid mode for HelpLauncher items
+	// HelpLauncher creates items that reference other launchers, which can incorrectly trigger grid mode
+	if len(items) > 0 && items[0].Launcher != nil && items[0].Launcher.Name() == "help" {
+		shouldUseGridMode = false
+		gridConfig = nil
+	}
+
 	// Switch between list and grid mode
 	if shouldUseGridMode != l.gridMode {
 		l.switchViewMode(shouldUseGridMode, gridConfig)
