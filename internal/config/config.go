@@ -452,7 +452,15 @@ var DefaultConfig = Config{
 		}
 		#lockscreen-status {
 			color: #ebdbb2;
-			font-size: 16px;
+			font-size: 22px;
+			font-weight: bold;
+			padding: 15px;
+			min-height: 30px;
+		}
+		#lockscreen-status error {
+			color: #fb4934;
+			font-size: 24px;
+			text-shadow: 0 0 10px rgba(251, 73, 52, 0.5);
 		}
 		#lockscreen-label {
 			color: #ebdbb2;

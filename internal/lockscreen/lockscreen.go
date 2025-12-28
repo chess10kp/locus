@@ -280,7 +280,7 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 		if err != nil {
 			return err
 		}
-		statusLabel.SetMarginTop(10)
+		statusLabel.SetMarginTop(20)
 		statusLabel.SetHAlign(gtk.ALIGN_CENTER)
 		statusLabel.SetName("lockscreen-status")
 		ls.statusLabel = statusLabel
@@ -418,11 +418,11 @@ func (m *LockScreenManager) checkPassword(ls *LockScreenWindow) {
 		remaining := ls.maxAttempts - ls.attempts
 
 		if remaining > 0 {
-			ls.statusLabel.SetMarkup(fmt.Sprintf(`<span color="#cc241d">Incorrect password! %d attempts remaining</span>`, remaining))
+			ls.statusLabel.SetMarkup(fmt.Sprintf(`<span color="#ff0000" font-weight="bold" font-size="large">❌ Incorrect password! %d attempts remaining</span>`, remaining))
 			ls.passwordEntry.SetText("")
 			ls.passwordEntry.GrabFocus()
 		} else {
-			ls.statusLabel.SetMarkup(`<span color="#fb4934">Maximum attempts reached! Locking...</span>`)
+			ls.statusLabel.SetMarkup(`<span color="#ff0000" font-weight="bold" font-size="large">⚠️ Maximum attempts reached! Locking...</span>`)
 			glib.TimeoutAdd(2000, func() bool {
 				m.UnlockAll()
 				return false
