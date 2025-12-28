@@ -106,12 +106,11 @@ const defaultLauncherStyles = `
     background-color: #181825;
     color: #ebdbb2;
     padding: 12px;
-    border: none;
-    border-bottom: 1px solid #313244;
+    border: 0px;
 }
 
 #launcher-entry:focus {
-    border-bottom: 1px solid #89b4fa;
+    border-bottom: 0px;
 }
 
 #result-list {
@@ -120,12 +119,11 @@ const defaultLauncherStyles = `
 
 #list-row {
     padding: 8px 12px;
-    border-bottom: 1px solid #313244;
     min-height: 40px;
 }
 
 #list-row:selected {
-    background-color: #89b4fa;
+background-color: #504945;
     color: #1e1e2e;
 }
 
@@ -301,17 +299,5 @@ func LoadCustomCSS() {
 		}
 	} else {
 		log.Printf("Warning: Failed to read launcher CSS from %s: %v", launcherPath, err)
-	}
-
-	// Load statusbar CSS (legacy support)
-	statusbarPath := home + "/.config/locus/statusbar.css"
-	if data, err := os.ReadFile(statusbarPath); err == nil {
-		provider, _ := gtk.CssProviderNew()
-		if loadErr := provider.LoadFromData(string(data)); loadErr == nil {
-			gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_USER)
-			log.Printf("Loaded statusbar CSS from %s", statusbarPath)
-		} else {
-			log.Printf("Warning: Failed to load statusbar CSS: %v", loadErr)
-		}
 	}
 }

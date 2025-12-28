@@ -758,6 +758,13 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	box.SetMarginBottom(8)
 	box.SetHExpand(true) // Allow content to expand horizontally
 
+	// Create a horizontal box for icon and text
+	iconTextBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 4)
+	if err != nil {
+		return nil, err
+	}
+	iconTextBox.SetHAlign(gtk.ALIGN_START)
+
 	if item.Icon != "" && l.shouldShowIcon(item) {
 		icon, err := gtk.ImageNew()
 		if err != nil {
@@ -819,7 +826,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 			}
 		}
 
-		box.PackStart(icon, false, false, 0)
+		iconTextBox.PackStart(icon, false, false, 0)
 		icon.SetVAlign(gtk.ALIGN_START)
 		icon.Show()
 	}
@@ -832,7 +839,9 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	textBox.SetHAlign(gtk.ALIGN_START)
 	textBox.SetVAlign(gtk.ALIGN_START)
 	textBox.SetHExpand(false)
-	box.PackStart(textBox, true, false, 0)
+	iconTextBox.PackStart(textBox, true, false, 0)
+
+	box.PackStart(iconTextBox, false, false, 0)
 
 	label, err := gtk.LabelNew(item.Title)
 	if err != nil {
@@ -866,6 +875,10 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	}
 	textBox.SetHExpand(false)
 	textBox.Show()
+	iconTextBox.SetHAlign(gtk.ALIGN_START)
+	iconTextBox.SetVAlign(gtk.ALIGN_START)
+	iconTextBox.SetHExpand(false)
+	iconTextBox.Show()
 
 	if index < 9 {
 		hintLabel, err := gtk.LabelNew(fmt.Sprintf("%d", index+1))

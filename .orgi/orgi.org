@@ -727,11 +727,47 @@
 
   
 
-* TODO hitting enter on shell launcher does not execute the first entry
+* DONE hitting enter on shell launcher does not execute the first entry
   :PROPERTIES:
   :ID: task-20251228121014
   :TITLE: hitting enter on shell launcher does not execute the first entry
   :CREATED: <2025-12-28 Sun 12:10>
+  :END:
+
+  
+
+* DONE use the same css from the lcokscreens input field ot remove the border or outline around the entry field
+  :PROPERTIES:
+  :ID: task-20251228121429
+  :TITLE: use the same css from the lcokscreens input field ot remove the border or outline around the entry field
+  :CREATED: <2025-12-28 Sun 12:14>
+  :END:
+
+  
+
+* DONE the help launcher that has the prefix = uses the grid launcher for some reaosn when no text is used for hte query fix this
+  :PROPERTIES:
+  :ID: task-20251228121454
+  :TITLE: the help launcher that has the prefix = uses the grid launcher for some reaosn when no text is used for hte query fix this
+  :CREATED: <2025-12-28 Sun 12:14>
+  :END:
+
+  
+
+* DONE each entry in the list should have the icon and the result grouped together currently there seems to be spcer betweeh ten two which means there's a gap
+  :PROPERTIES:
+  :ID: task-20251228121606
+  :TITLE: each entry in the list should have the icon and the result grouped together currently there seems to be spcer betweeh ten two which means there's a gap
+  :CREATED: <2025-12-28 Sun 12:16>
+  :END:
+
+  
+
+* DONE lcok launcher does not run until the user hits lock and then insert a space after it. this should not have to happen
+  :PROPERTIES:
+  :ID: task-20251228121950
+  :TITLE: lcok launcher does not run until the user hits lock and then insert a space after it. this should not have to happen
+  :CREATED: <2025-12-28 Sun 12:19>
   :END:
 
   
