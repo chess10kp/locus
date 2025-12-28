@@ -111,12 +111,6 @@ func (l *AppLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIt
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	// Return empty results if apps haven't loaded yet (non-blocking)
-	if !l.appsLoaded || !l.initialized {
-		log.Printf("[APP-LAUNCHER] Apps not loaded yet, returning empty results")
-		return []*LauncherItem{}
-	}
-
 	query = strings.TrimSpace(query)
 	if query == "" {
 		// Return top apps by name (alphabetical)

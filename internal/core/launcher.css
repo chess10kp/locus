@@ -142,7 +142,6 @@ scrolledwindow {
 /* Grid View Styles */
 #grid-flow-box {
     background-color: transparent;
-    selection-mode: single;
 }
 
 flowboxchild {

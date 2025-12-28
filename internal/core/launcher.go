@@ -132,6 +132,9 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	scrolledWindow.Add(resultList)
 	scrolledWindow.ShowAll()
 
+	// Add scrolled window to the main box
+	box.PackStart(scrolledWindow, true, true, 0)
+
 	// Create grid flow box for grid mode
 	gridFlowBox, err := gtk.FlowBoxNew()
 	if err != nil {
