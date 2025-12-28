@@ -105,8 +105,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create hbox: %w", err)
 	}
-	hbox.SetHExpand(false)
-	hbox.PackStart(searchEntry, false, false, 0)
+	hbox.SetHExpand(true)
+	hbox.PackStart(searchEntry, true, true, 0)
 
 	box.PackStart(hbox, false, false, 0)
 
@@ -182,6 +182,7 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	footerBox.SetHAlign(gtk.ALIGN_START)
 	footerBox.SetHExpand(false)
 	footerBox.SetSizeRequest(cfg.Launcher.Window.Width, -1)
+	footerBox.SetMarginBottom(12)
 
 	footerLabel, err := gtk.LabelNew("Applications")
 	if err != nil {
@@ -737,6 +738,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 
 	row.SetName("list-row")
 	row.SetHExpand(true) // Allow row to expand horizontally for scrolling
+	row.SetVAlign(gtk.ALIGN_START)
 
 	box, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	if err != nil {
@@ -811,6 +813,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 		}
 
 		box.PackStart(icon, false, false, 0)
+		icon.SetVAlign(gtk.ALIGN_START)
 		icon.Show()
 	}
 
@@ -820,6 +823,7 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 		return nil, err
 	}
 	textBox.SetHAlign(gtk.ALIGN_START)
+	textBox.SetVAlign(gtk.ALIGN_START)
 	textBox.SetHExpand(false)
 	box.PackStart(textBox, true, false, 0)
 
@@ -1563,6 +1567,9 @@ func (l *Launcher) Start() error {
 	geometryMask |= gdk.WindowHints(1 << 3) // HINT_BASE_SIZE
 
 	l.window.SetGeometryHints(l.window, geometry, geometryMask)
+
+	// Set the actual window size
+	l.window.SetDefaultSize(width, height)
 
 	log.Printf("Initializing layer shell")
 	layer.InitForWindow(unsafe.Pointer(l.window.Native()))

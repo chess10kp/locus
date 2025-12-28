@@ -294,8 +294,8 @@ var DefaultConfig = Config{
 	},
 	Launcher: LauncherConfig{
 		Window: WindowConfig{
-			Width:             600,
-			Height:            400,
+			Width:             800,
+			Height:            600,
 			Resizable:         true,
 			Modal:             false,
 			Decorated:         false,

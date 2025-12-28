@@ -77,13 +77,6 @@ window {
     box-shadow: none !important;
 }
 
-#launcher-entry:focus {
-    border-bottom: 1px solid #89b4fa;
-    outline: none !important;
-    outline-width: 0 !important;
-    box-shadow: none !important;
-}
-
 #result-list {
     background-color: transparent;
 }
@@ -98,7 +91,7 @@ scrolledwindow {
 }
 
 #list-row box {
-    max-width: 580px;
+    max-width: 760px;
 }
 
 #list-row label {
@@ -110,11 +103,13 @@ scrolledwindow {
     color: #ebdbb2 !important;
     font-size: 18px !important;
     font-weight: bold;
+    text-align: left;
 }
 
 #result-subtitle {
     color: #6e7681 !important;
     font-size: 12px !important;
+    text-align: left;
 }
 
 #list-row:selected {

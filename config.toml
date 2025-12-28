@@ -14,11 +14,11 @@ foreground = "#cdd6f4"
 format = "%H:%M"
 
 [launcher]
-width = 600
+width = 800
 
 [launcher.window]
-width = 600
-height = 500
+width = 1000
+height = 600
 
 [launcher.search]
 max_results = 10

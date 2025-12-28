@@ -699,3 +699,39 @@
   :END:
 
   
+
+* TODO padding to the bottom mode bar
+  :PROPERTIES:
+  :ID: task-20251228120643
+  :TITLE: padding to the bottom mode bar
+  :CREATED: <2025-12-28 Sun 12:06>
+  :END:
+
+  
+
+* TODO make the default entry stretch out the entire width of the launcher
+  :PROPERTIES:
+  :ID: task-20251228120713
+  :TITLE: make the default entry stretch out the entire width of the launcher
+  :CREATED: <2025-12-28 Sun 12:07>
+  :END:
+
+  
+
+* TODO using the orgi add using the same logic as the lockscreen, remove hte focused entry css from the launcher
+  :PROPERTIES:
+  :ID: task-20251228120809
+  :TITLE: using the orgi add using the same logic as the lockscreen, remove hte focused entry css from the launcher
+  :CREATED: <2025-12-28 Sun 12:08>
+  :END:
+
+  
+
+* TODO hitting enter on shell launcher does not execute the first entry
+  :PROPERTIES:
+  :ID: task-20251228121014
+  :TITLE: hitting enter on shell launcher does not execute the first entry
+  :CREATED: <2025-12-28 Sun 12:10>
+  :END:
+
+  
