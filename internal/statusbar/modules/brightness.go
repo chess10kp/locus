@@ -1,10 +1,12 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/chess10kp/locus/internal/statusbar"
 	"github.com/gotk3/gotk3/gtk"
@@ -109,7 +111,10 @@ func (m *BrightnessModule) Initialize(config map[string]interface{}) error {
 
 // readBrightness reads brightness from system
 func (m *BrightnessModule) readBrightness() {
-	cmd := exec.Command("sh", "-c", m.command)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", m.command)
 	output, err := cmd.Output()
 	if err != nil {
 		m.current = 0

@@ -1,11 +1,13 @@
 package modules
 
 import (
+	"context"
 	"os/exec"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // NetworkModule displays overall network connectivity status
@@ -116,7 +118,10 @@ func (m *NetworkModule) Initialize(config map[string]interface{}) error {
 
 // readNetworkStatus reads network status from system
 func (m *NetworkModule) readNetworkStatus() {
-	cmd := exec.Command("sh", "-c", m.command)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", m.command)
 	output, err := cmd.Output()
 	if err != nil {
 		m.hasEthernet = false

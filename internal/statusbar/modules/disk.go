@@ -1,13 +1,15 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // DiskModule displays disk usage for specified mount points
@@ -122,7 +124,10 @@ func (m *DiskModule) Initialize(config map[string]interface{}) error {
 
 // readDiskUsage reads disk usage from system
 func (m *DiskModule) readDiskUsage() {
-	cmd := exec.Command("sh", "-c", m.command)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", m.command)
 	output, err := cmd.Output()
 	if err != nil {
 		return

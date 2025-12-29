@@ -1,12 +1,14 @@
 package modules
 
 import (
+	"context"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // KeyboardModule displays keyboard layout and lock states
@@ -121,15 +123,18 @@ func (m *KeyboardModule) Initialize(config map[string]interface{}) error {
 
 // readKeyboardStatus reads keyboard status from system
 func (m *KeyboardModule) readKeyboardStatus() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2 * time.Second)
+	defer cancel()
+
 	// Get layout
-	if cmd := exec.Command("sh", "-c", m.layoutCmd); cmd != nil {
+	if cmd := exec.CommandContext(ctx, "sh", "-c", m.layoutCmd); cmd != nil {
 		if output, err := cmd.Output(); err == nil {
 			m.layout = strings.TrimSpace(string(output))
 		}
 	}
 
 	// Get lock states
-	if cmd := exec.Command("sh", "-c", m.locksCmd); cmd != nil {
+	if cmd := exec.CommandContext(ctx, "sh", "-c", m.locksCmd); cmd != nil {
 		if output, err := cmd.Output(); err == nil {
 			if maskStr := strings.TrimSpace(string(output)); maskStr != "" {
 				if mask, err := strconv.Atoi(maskStr); err == nil {

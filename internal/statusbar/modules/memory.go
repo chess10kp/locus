@@ -1,13 +1,15 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // MemoryModule displays memory usage
@@ -109,8 +111,11 @@ func (m *MemoryModule) Initialize(config map[string]interface{}) error {
 
 // readMemoryUsage reads memory usage from system
 func (m *MemoryModule) readMemoryUsage() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	// Get detailed usage
-	cmd := exec.Command("free", "-b") // bytes for accurate calculation
+	cmd := exec.CommandContext(ctx, "free", "-b") // bytes for accurate calculation
 	output, err := cmd.Output()
 	if err != nil {
 		m.used = 0.0

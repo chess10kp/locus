@@ -1,12 +1,14 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // BluetoothDevice represents a bluetooth device
@@ -135,8 +137,11 @@ func (m *BluetoothModule) Initialize(config map[string]interface{}) error {
 
 // readBluetoothStatus reads bluetooth status from system
 func (m *BluetoothModule) readBluetoothStatus() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	// Check if powered on
-	if cmd := exec.Command("bluetoothctl", "show"); cmd != nil {
+	if cmd := exec.CommandContext(ctx, "bluetoothctl", "show"); cmd != nil {
 		if output, err := cmd.Output(); err == nil {
 			m.isPowered = strings.Contains(string(output), "Powered: yes")
 		}
@@ -149,7 +154,7 @@ func (m *BluetoothModule) readBluetoothStatus() {
 
 	// Get devices
 	m.devices = []BluetoothDevice{}
-	if cmd := exec.Command("bluetoothctl", "devices"); cmd != nil {
+	if cmd := exec.CommandContext(ctx, "bluetoothctl", "devices"); cmd != nil {
 		if output, err := cmd.Output(); err == nil {
 			lines := strings.Split(string(output), "\n")
 			for _, line := range lines {
@@ -161,7 +166,7 @@ func (m *BluetoothModule) readBluetoothStatus() {
 
 						// Check if connected
 						connected := false
-						if infoCmd := exec.Command("bluetoothctl", "info", mac); infoCmd != nil {
+						if infoCmd := exec.CommandContext(ctx, "bluetoothctl", "info", mac); infoCmd != nil {
 							if infoOutput, err := infoCmd.Output(); err == nil {
 								connected = strings.Contains(string(infoOutput), "Connected: yes")
 							}
@@ -320,11 +325,14 @@ func (m *BluetoothModule) updateDeviceMenu() {
 
 // toggleBluetoothPower toggles bluetooth power
 func (m *BluetoothModule) toggleBluetoothPower() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	var cmd *exec.Cmd
 	if m.isPowered {
-		cmd = exec.Command("bluetoothctl", "power", "off")
+		cmd = exec.CommandContext(ctx, "bluetoothctl", "power", "off")
 	} else {
-		cmd = exec.Command("bluetoothctl", "power", "on")
+		cmd = exec.CommandContext(ctx, "bluetoothctl", "power", "on")
 	}
 	cmd.Run()
 	m.readBluetoothStatus()
@@ -335,6 +343,9 @@ func (m *BluetoothModule) toggleBluetoothPower() {
 
 // toggleDeviceConnection toggles connection to a device
 func (m *BluetoothModule) toggleDeviceConnection(mac string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	var cmd *exec.Cmd
 
 	// Find device
@@ -351,9 +362,9 @@ func (m *BluetoothModule) toggleDeviceConnection(mac string) {
 	}
 
 	if device.Connected {
-		cmd = exec.Command("bluetoothctl", "disconnect", mac)
+		cmd = exec.CommandContext(ctx, "bluetoothctl", "disconnect", mac)
 	} else {
-		cmd = exec.Command("bluetoothctl", "connect", mac)
+		cmd = exec.CommandContext(ctx, "bluetoothctl", "connect", mac)
 	}
 	cmd.Run()
 	m.readBluetoothStatus()

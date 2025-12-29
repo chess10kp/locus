@@ -1,12 +1,14 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // MusicModule displays MPD music playback status
@@ -132,8 +134,11 @@ func (m *MusicModule) Initialize(config map[string]interface{}) error {
 
 // readMusicStatus reads music status from MPD
 func (m *MusicModule) readMusicStatus() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2 * time.Second)
+	defer cancel()
+
 	// Get current song
-	if cmd := exec.Command("sh", "-c", m.currentCmd); cmd != nil {
+	if cmd := exec.CommandContext(ctx, "sh", "-c", m.currentCmd); cmd != nil {
 		if output, err := cmd.Output(); err == nil {
 			current := strings.TrimSpace(string(output))
 			if current != "" {
@@ -154,10 +159,10 @@ func (m *MusicModule) readMusicStatus() {
 	}
 
 	// Get playback status
-	if cmd := exec.Command("sh", "-c", m.statusCmd); cmd != nil {
+	if cmd := exec.CommandContext(ctx, "sh", "-c", m.statusCmd); cmd != nil {
 		if output, err := cmd.Output(); err == nil {
 			lines := strings.Split(string(output), "\n")
-			if len(lines) > 1 {
+			if len(lines) >1 {
 				statusLine := strings.TrimSpace(lines[1])
 				if strings.Contains(statusLine, "[playing]") {
 					m.playbackStatus = "playing"

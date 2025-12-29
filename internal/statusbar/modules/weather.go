@@ -1,12 +1,14 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // WeatherModule displays current weather
@@ -115,7 +117,10 @@ func (m *WeatherModule) Initialize(config map[string]interface{}) error {
 
 // readWeather reads weather from service
 func (m *WeatherModule) readWeather() {
-	cmd := exec.Command("sh", "-c", m.command)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", m.command)
 	output, err := cmd.Output()
 	if err != nil {
 		m.condition = ""

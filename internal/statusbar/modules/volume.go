@@ -1,13 +1,15 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // VolumeModule displays system volume status
@@ -104,8 +106,11 @@ func (m *VolumeModule) Initialize(config map[string]interface{}) error {
 
 // readVolumeStatus reads volume status from system
 func (m *VolumeModule) readVolumeStatus() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
 	// Get volume
-	if cmd := exec.Command("sh", "-c", m.volumeCmd); cmd != nil {
+	if cmd := exec.CommandContext(ctx, "sh", "-c", m.volumeCmd); cmd != nil {
 		if output, err := cmd.Output(); err == nil {
 			if vol, err := strconv.Atoi(strings.TrimSpace(string(output))); err == nil {
 				m.volume = vol
@@ -114,7 +119,7 @@ func (m *VolumeModule) readVolumeStatus() {
 	}
 
 	// Get mute status
-	if cmd := exec.Command("sh", "-c", m.muteCmd); cmd != nil {
+	if cmd := exec.CommandContext(ctx, "sh", "-c", m.muteCmd); cmd != nil {
 		if output, err := cmd.Output(); err == nil {
 			muteStr := strings.TrimSpace(string(output))
 			m.isMuted = muteStr == "true" || muteStr == "1"

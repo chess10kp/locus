@@ -1,13 +1,15 @@
 package modules
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // CpuModule displays CPU usage percentage
@@ -110,7 +112,10 @@ func (m *CpuModule) Initialize(config map[string]interface{}) error {
 
 // readCpuUsage reads CPU usage from system
 func (m *CpuModule) readCpuUsage() {
-	cmd := exec.Command("sh", "-c", m.command)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sh", "-c", m.command)
 	output, err := cmd.Output()
 	if err != nil {
 		m.usage = 0.0
@@ -129,7 +134,10 @@ func (m *CpuModule) readCpuUsage() {
 
 // getCpuCoreCount gets the number of CPU cores
 func (m *CpuModule) getCpuCoreCount() int {
-	cmd := exec.Command("nproc")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "nproc")
 	output, err := cmd.Output()
 	if err != nil {
 		return 0
