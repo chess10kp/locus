@@ -465,6 +465,12 @@ func (l *Launcher) onGridSelectionChanged() {
 
 func (l *Launcher) onSearchChanged(text string) {
 	searchStart := time.Now()
+	defer func() {
+		duration := time.Since(searchStart)
+		if duration > 500*time.Millisecond {
+			log.Printf("[LAUNCHER] WARNING: onSearchChanged took %v for query: %s", duration, text)
+		}
+	}()
 
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -552,6 +558,16 @@ func (l *Launcher) onSearchChanged(text string) {
 }
 
 func (l *Launcher) updateResults(items []*launcher.LauncherItem, version int64) {
+	startTime := time.Now()
+	defer func() {
+		duration := time.Since(startTime)
+		if duration > 500*time.Millisecond {
+			log.Printf("[LAUNCHER] WARNING: updateResults took %v for %d items", duration, len(items))
+		} else {
+			log.Printf("[LAUNCHER] updateResults completed in %v for %d items", duration, len(items))
+		}
+	}()
+
 	// Check if widgets are still valid
 	if l.resultList == nil || l.window == nil {
 		return
@@ -1528,6 +1544,11 @@ func (l *Launcher) navigateResult(direction int) {
 }
 
 func (l *Launcher) Show() error {
+	startTime := time.Now()
+	defer func() {
+		log.Printf("[LAUNCHER] Show() completed in %v", time.Since(startTime))
+	}()
+
 	l.mu.Lock()
 	if !l.running {
 		if err := l.Start(); err != nil {
@@ -1549,21 +1570,31 @@ func (l *Launcher) Show() error {
 
 	if cfg.Enabled && cfg.EnableSlideIn {
 		durationNs := int64(cfg.SlideDuration) * 1_000_000
-		startTime := time.Now().UnixNano()
+		animStartTime := time.Now().UnixNano()
 
 		l.window.AddTickCallback(func(w *gtk.Widget, frameClock *gdk.FrameClock) bool {
-			elapsed := time.Now().UnixNano() - startTime
+			tickStart := time.Now()
+			elapsed := time.Now().UnixNano() - animStartTime
 			progress := float64(elapsed) / float64(durationNs)
 
 			if progress >= 1.0 {
 				layer.SetMargin(unsafe.Pointer(w.Native()), layer.EdgeTop, targetY)
 				l.searchEntry.GrabFocus()
+				tickDuration := time.Since(tickStart)
+				if tickDuration > 50*time.Millisecond {
+					log.Printf("[LAUNCHER] WARNING: Animation tick took %v", tickDuration)
+				}
 				return false
 			}
 
 			easedProgress := easeOutCubic(progress)
 			currentY := startY + int(float64(distance)*easedProgress)
 			layer.SetMargin(unsafe.Pointer(w.Native()), layer.EdgeTop, currentY)
+
+			tickDuration := time.Since(tickStart)
+			if tickDuration > 50*time.Millisecond {
+				log.Printf("[LAUNCHER] WARNING: Animation tick took %v", tickDuration)
+			}
 			return true
 		})
 	} else {
@@ -1576,6 +1607,11 @@ func (l *Launcher) Show() error {
 }
 
 func (l *Launcher) Hide() {
+	startTime := time.Now()
+	defer func() {
+		log.Printf("[LAUNCHER] Hide() completed in %v", time.Since(startTime))
+	}()
+
 	l.mu.Lock()
 	l.stopAndDrainSearchTimer()
 	l.currentItems = nil
@@ -1588,10 +1624,11 @@ func (l *Launcher) Hide() {
 
 	if cfg.Enabled && cfg.EnableSlideIn {
 		durationNs := int64(cfg.SlideDuration) * 1_000_000
-		startTime := time.Now().UnixNano()
+		animStartTime := time.Now().UnixNano()
 
 		l.window.AddTickCallback(func(w *gtk.Widget, frameClock *gdk.FrameClock) bool {
-			elapsed := time.Now().UnixNano() - startTime
+			tickStart := time.Now()
+			elapsed := time.Now().UnixNano() - animStartTime
 			progress := float64(elapsed) / float64(durationNs)
 
 			if progress >= 1.0 {
@@ -1599,12 +1636,22 @@ func (l *Launcher) Hide() {
 				l.searchEntry.SetText("")
 				l.visible.Store(false)
 				layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, cfg.TargetMargin)
+
+				tickDuration := time.Since(tickStart)
+				if tickDuration > 50*time.Millisecond {
+					log.Printf("[LAUNCHER] WARNING: Hide animation tick took %v", tickDuration)
+				}
 				return false
 			}
 
 			easedProgress := easeOutCubic(progress)
 			currentY := startY - int(float64(distance)*easedProgress)
 			layer.SetMargin(unsafe.Pointer(w.Native()), layer.EdgeTop, currentY)
+
+			tickDuration := time.Since(tickStart)
+			if tickDuration > 50*time.Millisecond {
+				log.Printf("[LAUNCHER] WARNING: Hide animation tick took %v", tickDuration)
+			}
 			return true
 		})
 	} else {
@@ -1632,12 +1679,16 @@ func (l *Launcher) stopAndDrainSearchTimer() {
 }
 
 func (l *Launcher) Toggle() error {
+	startTime := time.Now()
 	visible := l.visible.Load()
 
 	if visible {
 		l.Hide()
+		log.Printf("[LAUNCHER] Toggle() (hide) completed in %v", time.Since(startTime))
 	} else {
-		return l.Show()
+		err := l.Show()
+		log.Printf("[LAUNCHER] Toggle() (show) completed in %v", time.Since(startTime))
+		return err
 	}
 
 	return nil

@@ -5,19 +5,19 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
-// EmacsClockInfo represents clock information from Emacs
 type EmacsClockInfo struct {
 	Task string `json:"task"`
 	Time string `json:"time"`
 }
 
-// getEmacsClockInfo gets the current Emacs org-mode clock information
 func getEmacsClockInfo() (*EmacsClockInfo, error) {
 	emacsScript := `
 (let ((inhibit-message t)
@@ -72,7 +72,6 @@ func getEmacsClockInfo() (*EmacsClockInfo, error) {
 	return &info, nil
 }
 
-// unescapeJSONString unescapes a JSON string literal
 func unescapeJSONString(s string) (string, error) {
 	var unescaped string
 	if err := json.Unmarshal([]byte(`"`+s+`"`), &unescaped); err != nil {
@@ -81,27 +80,26 @@ func unescapeJSONString(s string) (string, error) {
 	return unescaped, nil
 }
 
-// EmacsClockModule displays the current Emacs org-mode clocked task
 type EmacsClockModule struct {
 	*statusbar.BaseModule
 	widget       *gtk.Label
 	clockInfo    *EmacsClockInfo
 	fallbackText string
 	interval     time.Duration
+	mu           sync.Mutex
+	lastUpdate   time.Time
 }
 
-// NewEmacsClockModule creates a new Emacs clock module
 func NewEmacsClockModule() *EmacsClockModule {
 	return &EmacsClockModule{
 		BaseModule:   statusbar.NewBaseModule("emacs_clock", statusbar.UpdateModePeriodic),
 		widget:       nil,
 		clockInfo:    nil,
 		fallbackText: "",
-		interval:     10 * time.Second,
+		interval:     30 * time.Second,
 	}
 }
 
-// CreateWidget creates an Emacs clock label widget
 func (m *EmacsClockModule) CreateWidget() (gtk.IWidget, error) {
 	label, err := gtk.LabelNew(m.fallbackText)
 	if err != nil {
@@ -118,7 +116,6 @@ func (m *EmacsClockModule) CreateWidget() (gtk.IWidget, error) {
 	return label, nil
 }
 
-// UpdateWidget updates Emacs clock widget
 func (m *EmacsClockModule) UpdateWidget(widget gtk.IWidget) error {
 	if widget == nil {
 		return nil
@@ -129,29 +126,45 @@ func (m *EmacsClockModule) UpdateWidget(widget gtk.IWidget) error {
 		return nil
 	}
 
-	info, err := getEmacsClockInfo()
-	if err != nil {
-		log.Printf("Failed to get Emacs clock info: %v", err)
-		label.SetText(m.fallbackText)
-		return nil
-	}
+	go func() {
+		startTime := time.Now()
+		info, err := getEmacsClockInfo()
 
-	m.clockInfo = info
+		glib.IdleAdd(func() {
+			m.mu.Lock()
+			defer m.mu.Unlock()
 
-	if info != nil && info.Task != "" {
-		if info.Time != "" {
-			label.SetText("org: " + info.Task + ": " + info.Time)
-		} else {
-			label.SetText("org: " + info.Task)
-		}
-	} else {
-		label.SetText(m.fallbackText)
-	}
+			if err != nil {
+				log.Printf("[EMACS-CLOCK] Failed to get Emacs clock info: %v", err)
+				label.SetText(m.fallbackText)
+				m.clockInfo = nil
+				m.lastUpdate = time.Now()
+				return
+			}
+
+			m.clockInfo = info
+			m.lastUpdate = time.Now()
+
+			if info != nil && info.Task != "" {
+				if info.Time != "" {
+					label.SetText(info.Task + ": " + info.Time)
+				} else {
+					label.SetText(info.Task)
+				}
+			} else {
+				label.SetText(m.fallbackText)
+			}
+
+			duration := time.Since(startTime)
+			if duration > 500*time.Millisecond {
+				log.Printf("[EMACS-CLOCK] WARNING: Update took %v (slow!)", duration)
+			}
+		})
+	}()
 
 	return nil
 }
 
-// Initialize initializes the module with configuration
 func (m *EmacsClockModule) Initialize(config map[string]interface{}) error {
 	if err := m.BaseModule.Initialize(config); err != nil {
 		return err
@@ -172,25 +185,20 @@ func (m *EmacsClockModule) Initialize(config map[string]interface{}) error {
 	return nil
 }
 
-// GetClockInfo returns the current clock information
 func (m *EmacsClockModule) GetClockInfo() *EmacsClockInfo {
 	return m.clockInfo
 }
 
-// SetFallbackText sets the fallback text to display when no clock is active
 func (m *EmacsClockModule) SetFallbackText(text string) {
 	m.fallbackText = text
 }
 
-// Cleanup cleans up resources
 func (m *EmacsClockModule) Cleanup() error {
 	return m.BaseModule.Cleanup()
 }
 
-// EmacsClockModuleFactory is a factory for creating EmacsClockModule instances
 type EmacsClockModuleFactory struct{}
 
-// CreateModule creates a new EmacsClockModule instance
 func (f *EmacsClockModuleFactory) CreateModule(config map[string]interface{}) (statusbar.Module, error) {
 	module := NewEmacsClockModule()
 	if err := module.Initialize(config); err != nil {
@@ -199,12 +207,10 @@ func (f *EmacsClockModuleFactory) CreateModule(config map[string]interface{}) (s
 	return module, nil
 }
 
-// ModuleName returns module name
 func (f *EmacsClockModuleFactory) ModuleName() string {
 	return "emacs_clock"
 }
 
-// DefaultConfig returns default configuration
 func (f *EmacsClockModuleFactory) DefaultConfig() map[string]interface{} {
 	return map[string]interface{}{
 		"fallback_text": "",
@@ -213,7 +219,6 @@ func (f *EmacsClockModuleFactory) DefaultConfig() map[string]interface{} {
 	}
 }
 
-// Dependencies returns module dependencies
 func (f *EmacsClockModuleFactory) Dependencies() []string {
 	return []string{}
 }

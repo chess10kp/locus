@@ -245,6 +245,7 @@ func (a *App) monitorGTKMainLoop() {
 			runtime.NumGoroutine(), m.Alloc/1024/1024, m.HeapObjects)
 
 		// Try to queue a callback to detect if GTK main loop is responsive
+		testStart := time.Now()
 		testDone := make(chan bool, 1)
 		glib.IdleAdd(func() {
 			testDone <- true
@@ -252,9 +253,32 @@ func (a *App) monitorGTKMainLoop() {
 
 		select {
 		case <-testDone:
-			// GTK main loop is responsive
+			waitTime := time.Since(testStart)
+			log.Printf("[MONITOR] GTK main loop responsive (callback executed in %v)", waitTime)
+			if waitTime > 1*time.Second {
+				log.Printf("[MONITOR] WARNING: Callback took %v to execute - some blocking operation may be running", waitTime)
+			}
 		case <-time.After(2 * time.Second):
-			log.Printf("[MONITOR] WARNING: GTK main loop appears to be BLOCKED (callback not executed in 2s)")
+			waitTime := time.Since(testStart)
+			log.Printf("[MONITOR] WARNING: GTK main loop appears to be BLOCKED (callback not executed in %v)", waitTime)
+
+			// Additional diagnostic: try with multiple timeouts to estimate how long it's been blocked
+			for i := 1; i <= 4; i++ {
+				testStart2 := time.Now()
+				testDone2 := make(chan bool, 1)
+				glib.IdleAdd(func() {
+					testDone2 <- true
+				})
+				select {
+				case <-testDone2:
+					log.Printf("[MONITOR] Callback executed on attempt %d after %v from first attempt",
+						i+1, time.Since(testStart2)+time.Duration(i)*2*time.Second)
+					break
+				case <-time.After(2 * time.Second):
+					log.Printf("[MONITOR] Callback still not executing on attempt %d (%v from first attempt)",
+						i+1, time.Since(testStart))
+				}
+			}
 		}
 	}
 }

@@ -146,6 +146,7 @@ func (l *TimerLauncher) startTimer(timeStr string) error {
 	defer l.timerMutex.Unlock()
 
 	if l.timerActive {
+		log.Printf("[TIMER] Cancelling previous timer")
 		l.cancelFunc()
 	}
 
@@ -155,13 +156,21 @@ func (l *TimerLauncher) startTimer(timeStr string) error {
 
 	initialDisplay := l.formatDuration(time.Duration(*seconds) * time.Second)
 	log.Printf("[TIMER] Starting timer for %s (%d seconds)", timeStr, *seconds)
-	l.sendIPCMessage(fmt.Sprintf("timer:%s", initialDisplay))
 
+	// Send initial message async to avoid blocking
+	go l.sendIPCMessage(fmt.Sprintf("timer:%s", initialDisplay))
+
+	// Run timer in goroutine
 	go l.runTimer(ctx, *seconds)
 
-	cmd := exec.Command("notify-send", "-a", "Timer", fmt.Sprintf("Timer set for %s", timeStr))
-	cmd.Env = os.Environ()
-	_ = cmd.Run()
+	// Send notification in goroutine to avoid blocking
+	go func() {
+		cmd := exec.Command("notify-send", "-a", "Timer", fmt.Sprintf("Timer set for %s", timeStr))
+		cmd.Env = os.Environ()
+		if err := cmd.Run(); err != nil {
+			log.Printf("[TIMER] Failed to send notification: %v", err)
+		}
+	}()
 
 	return nil
 }
@@ -175,7 +184,7 @@ func (l *TimerLauncher) runTimer(ctx context.Context, totalSeconds int) {
 	for {
 		select {
 		case <-ctx.Done():
-			l.sendIPCMessage("timer:clear")
+			go l.sendIPCMessage("timer:clear")
 			l.timerMutex.Lock()
 			l.timerActive = false
 			l.timerMutex.Unlock()
@@ -184,27 +193,39 @@ func (l *TimerLauncher) runTimer(ctx context.Context, totalSeconds int) {
 			remaining--
 			if remaining <= 0 {
 				l.timerComplete(totalSeconds)
-				l.sendIPCMessage("timer:clear")
+				go l.sendIPCMessage("timer:clear")
 				l.timerMutex.Lock()
 				l.timerActive = false
 				l.timerMutex.Unlock()
 				return
 			}
 			display := l.formatDuration(time.Duration(remaining) * time.Second)
-			l.sendIPCMessage(fmt.Sprintf("timer:%s", display))
+			go l.sendIPCMessage(fmt.Sprintf("timer:%s", display))
 		}
 	}
 }
 
 func (l *TimerLauncher) timerComplete(totalSeconds int) {
-	cmd := exec.Command("notify-send", "-a", "Timer", "-t", "3000", "Timer complete")
-	cmd.Env = os.Environ()
-	_ = cmd.Run()
+	log.Printf("[TIMER] Timer complete after %d seconds", totalSeconds)
 
-	soundPath := "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
-	cmd = exec.Command("mpv", "--no-video", soundPath)
-	cmd.Env = os.Environ()
-	_ = cmd.Start()
+	// Send notification in goroutine
+	go func() {
+		cmd := exec.Command("notify-send", "-a", "Timer", "-t", "3000", "Timer complete")
+		cmd.Env = os.Environ()
+		if err := cmd.Run(); err != nil {
+			log.Printf("[TIMER] Failed to send completion notification: %v", err)
+		}
+	}()
+
+	// Play sound in goroutine
+	go func() {
+		soundPath := "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
+		cmd := exec.Command("mpv", "--no-video", soundPath)
+		cmd.Env = os.Environ()
+		if err := cmd.Start(); err != nil {
+			log.Printf("[TIMER] Failed to play alarm sound: %v", err)
+		}
+	}()
 }
 
 func (l *TimerLauncher) sendIPCMessage(message string) {
@@ -212,19 +233,56 @@ func (l *TimerLauncher) sendIPCMessage(message string) {
 	if socketPath == "" {
 		socketPath = "/tmp/locus_socket"
 	}
-	log.Printf("[TIMER] Using socket path: %s", socketPath)
-	conn, err := net.Dial("unix", socketPath)
-	if err != nil {
+
+	// Connect with timeout to avoid blocking forever
+	connChan := make(chan net.Conn)
+	errChan := make(chan error)
+
+	go func() {
+		log.Printf("[TIMER] Connecting to socket: %s", socketPath)
+		conn, err := net.Dial("unix", socketPath)
+		if err != nil {
+			errChan <- err
+			return
+		}
+		connChan <- conn
+	}()
+
+	// Wait for connection with 1 second timeout
+	var conn net.Conn
+	select {
+	case conn = <-connChan:
+	case err := <-errChan:
 		log.Printf("[TIMER] Failed to connect to socket %s: %v", socketPath, err)
+		return
+	case <-time.After(1 * time.Second):
+		log.Printf("[TIMER] Connection timeout after 1s")
 		return
 	}
 	defer conn.Close()
 
-	fullMessage := fmt.Sprintf("statusbar:%s", message)
-	log.Printf("[TIMER] Sending IPC message: %s", fullMessage)
-	_, err = conn.Write([]byte(fullMessage))
-	if err != nil {
+	// Write with timeout
+	writeDone := make(chan struct{})
+	writeErr := make(chan error)
+
+	go func() {
+		fullMessage := fmt.Sprintf("statusbar:%s", message)
+		log.Printf("[TIMER] Sending IPC message: %s", fullMessage)
+		_, err := conn.Write([]byte(fullMessage))
+		if err != nil {
+			writeErr <- err
+		} else {
+			close(writeDone)
+		}
+	}()
+
+	select {
+	case <-writeDone:
+		return
+	case err := <-writeErr:
 		log.Printf("[TIMER] Failed to write IPC message: %v", err)
+	case <-time.After(500 * time.Millisecond):
+		log.Printf("[TIMER] Write timeout after 500ms")
 	}
 }
 

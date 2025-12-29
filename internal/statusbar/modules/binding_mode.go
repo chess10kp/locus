@@ -6,10 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // BindingModeResult represents the result from swaymsg/scrollmsg
@@ -59,6 +61,8 @@ type BindingModeModule struct {
 	currentMode string
 	visible     bool
 	interval    time.Duration
+	mu          sync.Mutex
+	lastUpdate  time.Time
 }
 
 // NewBindingModeModule creates a new binding mode module
@@ -102,25 +106,45 @@ func (m *BindingModeModule) UpdateWidget(widget gtk.IWidget) error {
 		return nil
 	}
 
-	mode, err := getBindingModeFromWM()
-	if err != nil {
-		log.Printf("Failed to get binding mode: %v", err)
-		label.SetText("")
-		label.SetVisible(false)
-		return nil
-	}
+	// Fetch binding mode in goroutine to avoid blocking UI thread
+	go func() {
+		startTime := time.Now()
+		mode, err := getBindingModeFromWM()
 
-	if mode != "" && mode != "default" {
-		m.currentMode = mode
-		label.SetText("[" + mode + "]")
-		label.SetVisible(true)
-		m.visible = true
-	} else {
-		m.currentMode = ""
-		label.SetText("")
-		label.SetVisible(false)
-		m.visible = false
-	}
+		// Update widget in UI thread
+		glib.IdleAdd(func() {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			m.lastUpdate = time.Now()
+
+			if err != nil {
+				log.Printf("[BINDING-MODE] Failed to get binding mode: %v", err)
+				label.SetText("")
+				label.SetVisible(false)
+				m.currentMode = ""
+				m.visible = false
+				return
+			}
+
+			if mode != "" && mode != "default" {
+				m.currentMode = mode
+				label.SetText("[" + mode + "]")
+				label.SetVisible(true)
+				m.visible = true
+			} else {
+				m.currentMode = ""
+				label.SetText("")
+				label.SetVisible(false)
+				m.visible = false
+			}
+
+			duration := time.Since(startTime)
+			if duration > 500*time.Millisecond {
+				log.Printf("[BINDING-MODE] WARNING: Update took %v (slow!)", duration)
+			}
+		})
+	}()
 
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -335,6 +336,9 @@ func (r *ModuleRegistry) CreateWidgetForModule(name string) (gtk.IWidget, error)
 
 // UpdateModuleWidget updates a module's widget
 func (r *ModuleRegistry) UpdateModuleWidget(name string, widget gtk.IWidget) error {
+	startTime := time.Now()
+	log.Printf("[REGISTRY] UpdateModuleWidget: starting update for module '%s'", name)
+
 	r.mu.RLock()
 	module, exists := r.modules[name]
 	r.mu.RUnlock()
@@ -348,11 +352,32 @@ func (r *ModuleRegistry) UpdateModuleWidget(name string, widget gtk.IWidget) err
 	errChan := make(chan error, 1)
 
 	glib.IdleAdd(func() {
+		updateStart := time.Now()
+		log.Printf("[REGISTRY] UpdateModuleWidget: callback started for '%s' (waited %v)", name, updateStart.Sub(startTime))
+
 		err := module.UpdateWidget(widget)
 		errChan <- err
+
+		log.Printf("[REGISTRY] UpdateModuleWidget: callback completed for '%s' in %v", name, time.Since(updateStart))
 	})
 
-	return <-errChan
+	log.Printf("[REGISTRY] UpdateModuleWidget: waiting for callback for '%s'", name)
+
+	// Add timeout to detect blocking
+	select {
+	case err := <-errChan:
+		duration := time.Since(startTime)
+		if duration > 500*time.Millisecond {
+			log.Printf("[REGISTRY] WARNING: UpdateModuleWidget for '%s' took %v (slow!)", name, duration)
+		} else {
+			log.Printf("[REGISTRY] UpdateModuleWidget for '%s' completed in %v", name, duration)
+		}
+		return err
+	case <-time.After(5 * time.Second):
+		duration := time.Since(startTime)
+		log.Printf("[REGISTRY] CRITICAL: UpdateModuleWidget for '%s' BLOCKED for %v - GTK main loop not responding!", name, duration)
+		return fmt.Errorf("update timed out after %v", duration)
+	}
 }
 
 // HandleModuleClick handles a click event for a module

@@ -1,13 +1,14 @@
 package modules
 
 import (
+	"log"
 	"time"
 
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/config"
 	"github.com/chess10kp/locus/internal/notification"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 type NotificationModule struct {
@@ -146,11 +147,32 @@ func (m *NotificationModule) updateLoop(callback func()) {
 }
 
 func (m *NotificationModule) fetchUnreadCount() int {
-	count, err := notification.GetUnreadCount(m.socketPath)
-	if err != nil {
-		return 0
+	startTime := time.Now()
+
+	// Count fetch in goroutine to avoid blocking
+	done := make(chan int)
+	go func() {
+		count, err := notification.GetUnreadCount(m.socketPath)
+		if err != nil {
+			log.Printf("[NOTIFICATION] Failed to get unread count: %v", err)
+			done <- 0
+			return
+		}
+		done <- count
+	}()
+
+	// Wait for result with timeout
+	select {
+	case count := <-done:
+		duration := time.Since(startTime)
+		if duration > 500*time.Millisecond {
+			log.Printf("[NOTIFICATION] WARNING: Fetch unread count took %v (slow!)", duration)
+		}
+		return count
+	case <-time.After(5 * time.Second):
+		log.Printf("[NOTIFICATION] CRITICAL: Fetch unread count blocked for >5s!")
+		return m.count // Return cached value
 	}
-	return count
 }
 func (m *NotificationModule) formatNotification() string {
 	if m.count > 0 {

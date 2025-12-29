@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/chess10kp/locus/internal/config"
-	"github.com/gotk3/gotk3/glib"
 )
 
 type IPCServer struct {
@@ -167,17 +166,20 @@ func (s *IPCServer) handleMessage(message string) {
 		}
 		log.Printf("[IPC] About to call glib.IdleAdd")
 		s.callbacks.Add(1)
-		result := glib.IdleAdd(func() {
+		executedBefore := s.callbacksExec.Load()
+
+		LoggedIdleAdd("IPC-launcher", func() {
 			s.callbacksExec.Add(1)
 			log.Printf("[IPC] IdleAdd callback executing (scheduled: %d, executed: %d)",
 				s.callbacks.Load(), s.callbacksExec.Load())
 			// Toggle launcher instead of just showing
-			if err := s.app.ToggleLauncher(); err != nil {
-				log.Printf("Failed to toggle launcher: %v", err)
-			}
+			LogOperation("IPC-launcher", "ToggleLauncher", func() {
+				if err := s.app.ToggleLauncher(); err != nil {
+					log.Printf("Failed to toggle launcher: %v", err)
+				}
+			})
 			log.Printf("[IPC] ToggleLauncher completed")
 		})
-		log.Printf("[IPC] glib.IdleAdd returned: %v", result)
 
 		// Fallback: if callback doesn't execute in 1 second, try direct call
 		go func() {
@@ -187,20 +189,27 @@ func (s *IPCServer) handleMessage(message string) {
 			if scheduled > executed {
 				log.Printf("[IPC] WARNING: Callback not executed after 1s (scheduled: %d, executed: %d), attempting direct call",
 					scheduled, executed)
-				s.callbacksExec.Add(1)
-				if err := s.app.ToggleLauncher(); err != nil {
-					log.Printf("[IPC] Direct ToggleLauncher call failed: %v", err)
+				// Only increment if we haven't already
+				if executed == executedBefore {
+					s.callbacksExec.Add(1)
+					LogOperation("IPC-direct", "ToggleLauncher", func() {
+						if err := s.app.ToggleLauncher(); err != nil {
+							log.Printf("[IPC] Direct ToggleLauncher call failed: %v", err)
+						}
+					})
+				} else {
+					log.Printf("[IPC] Callback executed after fallback started, skipping direct call")
 				}
 			}
 		}()
 	} else if message == "hide" {
-		glib.IdleAdd(func() {
+		LoggedIdleAdd("IPC-hide", func() {
 			if err := s.app.HideLauncher(); err != nil {
 				log.Printf("Failed to hide launcher: %v", err)
 			}
 		})
 	} else if message == "lock" {
-		glib.IdleAdd(func() {
+		LoggedIdleAdd("IPC-lock", func() {
 			if err := s.app.ShowLockScreen(); err != nil {
 				log.Printf("Failed to show lock screen: %v", err)
 			}
@@ -210,7 +219,7 @@ func (s *IPCServer) handleMessage(message string) {
 		if s.app.statusBar != nil {
 			cmd := strings.TrimPrefix(message, "statusbar:")
 			log.Printf("[IPC] Forwarding statusbar message: %s", cmd)
-			glib.IdleAdd(func() {
+			LoggedIdleAdd("IPC-statusbar", func() {
 				if err := s.app.statusBar.HandleIPC(cmd); err != nil {
 					log.Printf("Failed to handle statusbar IPC: %v", err)
 				}
@@ -221,7 +230,7 @@ func (s *IPCServer) handleMessage(message string) {
 	} else if strings.HasPrefix(message, "status:") {
 		// Handle status messages from hooks/launchers
 		statusMsg := strings.TrimPrefix(message, "status:")
-		glib.IdleAdd(func() {
+		LoggedIdleAdd("IPC-status", func() {
 			if s.app.statusBar != nil {
 				// TODO: Implement status message display
 				log.Printf("Status message: %s", statusMsg)
@@ -230,7 +239,7 @@ func (s *IPCServer) handleMessage(message string) {
 	} else if strings.HasPrefix(message, "launcher:refresh:") {
 		// Handle launcher refresh requests
 		launcherName := strings.TrimPrefix(message, "launcher:refresh:")
-		glib.IdleAdd(func() {
+		LoggedIdleAdd("IPC-refresh", func() {
 			if s.app.launcher != nil && s.app.launcher.registry != nil {
 				if err := s.app.launcher.registry.RefreshLauncher(launcherName); err != nil {
 					log.Printf("Failed to refresh launcher '%s': %v", launcherName, err)

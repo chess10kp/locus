@@ -7,10 +7,13 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
+	"time"
 
+	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"github.com/joshuarubin/go-sway"
-	"github.com/chess10kp/locus/internal/statusbar"
 )
 
 // Workspace represents a sway workspace
@@ -76,6 +79,8 @@ type WorkspacesModule struct {
 	workspaces   []string
 	focusedIndex int
 	showLabels   bool
+	mu           sync.Mutex
+	lastUpdate   time.Time
 }
 
 // NewWorkspacesModule creates a new workspaces module
@@ -122,24 +127,43 @@ func (m *WorkspacesModule) UpdateWidget(widget gtk.IWidget) error {
 		return nil
 	}
 
-	// Poll workspaces from sway
-	workspaces, err := getWorkspacesFromSway()
-	if err != nil {
-		log.Printf("Failed to get workspaces from sway: %v", err)
-		// Keep existing workspaces if polling fails
-	} else {
-		// Update workspaces list
-		m.workspaces = make([]string, len(workspaces))
-		for i, ws := range workspaces {
-			m.workspaces[i] = ws.Name
-			if ws.Focused {
-				m.focusedIndex = i
-			}
-		}
-	}
+	// Fetch workspaces in goroutine to avoid blocking UI thread
+	go func() {
+		startTime := time.Now()
 
-	formatted := m.formatWorkspaces()
-	label.SetText(formatted)
+		// Poll workspaces from sway
+		workspaces, err := getWorkspacesFromSway()
+
+		// Update widget in UI thread
+		glib.IdleAdd(func() {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+
+			m.lastUpdate = time.Now()
+
+			if err != nil {
+				log.Printf("[WORKSPACES] Failed to get workspaces from sway: %v", err)
+				// Keep existing workspaces if polling fails
+			} else {
+				// Update workspaces list
+				m.workspaces = make([]string, len(workspaces))
+				for i, ws := range workspaces {
+					m.workspaces[i] = ws.Name
+					if ws.Focused {
+						m.focusedIndex = i
+					}
+				}
+			}
+
+			formatted := m.formatWorkspaces()
+			label.SetText(formatted)
+
+			duration := time.Since(startTime)
+			if duration > 500*time.Millisecond {
+				log.Printf("[WORKSPACES] WARNING: Update took %v (slow!)", duration)
+			}
+		})
+	}()
 
 	return nil
 }

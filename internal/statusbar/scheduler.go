@@ -222,12 +222,24 @@ func (s *UpdateScheduler) UpdateModule(name string) error {
 
 // updateModule updates a module's widget
 func (s *UpdateScheduler) updateModule(name string) error {
+	startTime := time.Now()
+	log.Printf("[SCHEDULER] Updating module '%s'", name)
+
 	widget, ok := s.widgetMap[name]
 	if !ok {
 		return fmt.Errorf("widget not found for module '%s'", name)
 	}
 
-	return s.registry.UpdateModuleWidget(name, widget)
+	err := s.registry.UpdateModuleWidget(name, widget)
+
+	duration := time.Since(startTime)
+	if duration > 500*time.Millisecond {
+		log.Printf("[SCHEDULER] WARNING: Module '%s' update took %v (slow!)", name, duration)
+	} else {
+		log.Printf("[SCHEDULER] Module '%s' update completed in %v", name, duration)
+	}
+
+	return err
 }
 
 // UpdateAll updates all scheduled modules
