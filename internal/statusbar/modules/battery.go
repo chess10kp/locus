@@ -2,12 +2,16 @@ package modules
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
-	"github.com/gotk3/gotk3/gtk"
 	"github.com/chess10kp/locus/internal/statusbar"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 // BatteryModule displays battery status
@@ -19,6 +23,8 @@ type BatteryModule struct {
 	showIcon       bool
 	percentage     int
 	isCharging     bool
+	mu             sync.Mutex
+	lastUpdate     time.Time
 }
 
 // NewBatteryModule creates a new battery module
@@ -62,20 +68,38 @@ func (m *BatteryModule) UpdateWidget(widget gtk.IWidget) error {
 		return nil
 	}
 
-	m.readBatteryStatus()
-	formatted := m.formatBattery()
-	label.SetText(formatted)
-
-	// Update CSS classes for color
-	if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
-		ctx.RemoveClass("battery-low")
-		ctx.RemoveClass("battery-critical")
-		if m.percentage <= 20 {
-			ctx.AddClass("battery-critical")
-		} else if m.percentage <= 50 {
-			ctx.AddClass("battery-low")
-		}
+	m.mu.Lock()
+	if time.Since(m.lastUpdate) < 100*time.Millisecond {
+		m.mu.Unlock()
+		return nil
 	}
+	m.mu.Unlock()
+
+	go func() {
+		startTime := time.Now()
+		m.readBatteryStatus()
+
+		elapsed := time.Since(startTime)
+		if elapsed > 500*time.Millisecond {
+			log.Printf("[BATTERY] Slow readBatteryStatus took %v", elapsed)
+		}
+
+		glib.IdleAdd(func() {
+			formatted := m.formatBattery()
+			label.SetText(formatted)
+
+			// Update CSS classes for color
+			if ctx, err := label.ToWidget().GetStyleContext(); err == nil {
+				ctx.RemoveClass("battery-low")
+				ctx.RemoveClass("battery-critical")
+				if m.percentage <= 20 {
+					ctx.AddClass("battery-critical")
+				} else if m.percentage <= 50 {
+					ctx.AddClass("battery-low")
+				}
+			}
+		})
+	}()
 
 	return nil
 }
@@ -100,7 +124,7 @@ func (m *BatteryModule) Initialize(config map[string]interface{}) error {
 
 	m.SetCSSClasses([]string{"battery-module"})
 
-	m.readBatteryStatus()
+	go m.readBatteryStatus()
 
 	return nil
 }
@@ -110,6 +134,7 @@ func (m *BatteryModule) readBatteryStatus() {
 	data, err := os.ReadFile(m.batteryPath)
 	if err != nil {
 		m.percentage = 100
+		m.lastUpdate = time.Now()
 		return
 	}
 
@@ -125,6 +150,7 @@ func (m *BatteryModule) readBatteryStatus() {
 		status := strings.TrimSpace(string(statusData))
 		m.isCharging = status == "Charging"
 	}
+	m.lastUpdate = time.Now()
 }
 
 // formatBattery formats battery status for display

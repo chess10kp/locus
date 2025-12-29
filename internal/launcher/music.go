@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/chess10kp/locus/internal/config"
 )
@@ -302,7 +303,11 @@ func (l *MusicLauncher) scanMusicDirectory() {
 }
 
 func (l *MusicLauncher) getStatus() map[string]string {
-	output, err := exec.Command("mpc", "status").Output()
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "mpc", "status")
+	output, err := cmd.Output()
 	if err != nil {
 		return map[string]string{
 			"state":  "stopped",
@@ -345,7 +350,10 @@ func (l *MusicLauncher) getStatus() map[string]string {
 }
 
 func (l *MusicLauncher) runMPC(args []string) string {
-	cmd := exec.Command("mpc", args...)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "mpc", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		return ""

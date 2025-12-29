@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"os"
@@ -29,7 +30,10 @@ func getBindingModeFromWM() (string, error) {
 		}
 	}
 
-	cmd := exec.Command("scrollmsg", "-t", "get_binding_state")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "scrollmsg", "-t", "get_binding_state")
 	cmd.Env = env
 	output, err := cmd.Output()
 	if err == nil {
@@ -39,7 +43,10 @@ func getBindingModeFromWM() (string, error) {
 		}
 	}
 
-	cmd = exec.Command("swaymsg", "-t", "get_binding_mode")
+	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd = exec.CommandContext(ctx, "swaymsg", "-t", "get_binding_mode")
 	cmd.Env = env
 	output, err = cmd.Output()
 	if err != nil {

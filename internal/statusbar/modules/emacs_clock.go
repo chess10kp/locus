@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"os/exec"
@@ -40,7 +41,10 @@ func getEmacsClockInfo() (*EmacsClockInfo, error) {
       (princ "null"))))
 `
 
-	cmd := exec.Command("emacsclient", "--quiet", "-e", emacsScript)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "emacsclient", "--quiet", "-e", emacsScript)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err

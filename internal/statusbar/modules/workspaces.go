@@ -13,7 +13,6 @@ import (
 	"github.com/chess10kp/locus/internal/statusbar"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/joshuarubin/go-sway"
 )
 
 // Workspace represents a sway workspace
@@ -27,27 +26,7 @@ type Workspace struct {
 
 // getWorkspacesFromSway gets workspaces from sway IPC
 func getWorkspacesFromSway() ([]Workspace, error) {
-	// Try using go-sway library first
-	ctx := context.Background()
-	client, err := sway.New(ctx)
-	if err == nil {
-		swayWorkspaces, err := client.GetWorkspaces(ctx)
-		if err == nil {
-			workspaces := make([]Workspace, len(swayWorkspaces))
-			for i, ws := range swayWorkspaces {
-				workspaces[i] = Workspace{
-					Name:    ws.Name,
-					Focused: ws.Focused,
-					Visible: ws.Visible,
-					Num:     ws.Num,
-					Output:  ws.Output,
-				}
-			}
-			return workspaces, nil
-		}
-	}
-
-	// Fallback to swaymsg command
+	// Use swaymsg command
 	env := os.Environ()
 	// Remove LD_PRELOAD to avoid child process issues
 	for i, e := range env {
@@ -57,7 +36,10 @@ func getWorkspacesFromSway() ([]Workspace, error) {
 		}
 	}
 
-	cmd := exec.Command("swaymsg", "-t", "get_workspaces")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "swaymsg", "-t", "get_workspaces")
 	cmd.Env = env
 	output, err := cmd.Output()
 	if err != nil {

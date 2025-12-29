@@ -347,8 +347,25 @@ func (r *ModuleRegistry) UpdateModuleWidget(name string, widget gtk.IWidget) err
 		return fmt.Errorf("module '%s' not found", name)
 	}
 
-	// GTK operations must be performed on the main thread
-	// Use a channel to synchronously wait for the result
+	// Check if we're already on the main thread by attempting a non-blocking check
+	// If we're in a callback, we should execute directly to avoid blocking
+	onMainThread := glib.MainContextDefault().IsOwner()
+	log.Printf("[REGISTRY] UpdateModuleWidget: on main thread = %v for '%s'", onMainThread, name)
+
+	if onMainThread {
+		// Already on main thread, execute directly to avoid blocking
+		log.Printf("[REGISTRY] UpdateModuleWidget: executing directly on main thread for '%s'", name)
+		err := module.UpdateWidget(widget)
+		duration := time.Since(startTime)
+		if duration > 500*time.Millisecond {
+			log.Printf("[REGISTRY] WARNING: UpdateModuleWidget for '%s' took %v (slow!)", name, duration)
+		} else {
+			log.Printf("[REGISTRY] UpdateModuleWidget for '%s' completed in %v", name, duration)
+		}
+		return err
+	}
+
+	// Not on main thread, schedule via IdleAdd
 	errChan := make(chan error, 1)
 
 	glib.IdleAdd(func() {

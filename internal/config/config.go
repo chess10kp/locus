@@ -11,17 +11,16 @@ import (
 )
 
 type Config struct {
-	AppName      string             `toml:"app_name"`
-	AppID        string             `toml:"app_id"`
-	SocketPath   string             `toml:"socket_path"`
-	CacheDir     string             `toml:"cache_dir"`
-	ConfigDir    string             `toml:"config_dir"`
-	StatusBar    StatusBarConfig    `toml:"status_bar"`
-	Launcher     LauncherConfig     `toml:"launcher"`
-	Notification NotificationConfig `toml:"notification"`
-	FileSearch   FileSearchConfig   `toml:"file_search"`
-	LockScreen   LockScreenConfig   `toml:"lock_screen"`
-	Color        ColorConfig        `toml:"color"`
+	AppName    string           `toml:"app_name"`
+	AppID      string           `toml:"app_id"`
+	SocketPath string           `toml:"socket_path"`
+	CacheDir   string           `toml:"cache_dir"`
+	ConfigDir  string           `toml:"config_dir"`
+	StatusBar  StatusBarConfig  `toml:"status_bar"`
+	Launcher   LauncherConfig   `toml:"launcher"`
+	FileSearch FileSearchConfig `toml:"file_search"`
+	LockScreen LockScreenConfig `toml:"lock_screen"`
+	Color      ColorConfig      `toml:"color"`
 }
 
 type StatusBarLayout struct {
@@ -202,43 +201,6 @@ type WallpaperConfig struct {
 	PreviewOnNav  bool   `toml:"preview_on_navigation"`
 }
 
-type NotificationConfig struct {
-	History  NotificationHistoryConfig  `toml:"history"`
-	UI       NotificationUIConfig       `toml:"ui"`
-	Daemon   NotificationDaemonConfig   `toml:"daemon"`
-	Timeouts NotificationTimeoutsConfig `toml:"timeouts"`
-}
-
-type NotificationHistoryConfig struct {
-	MaxHistory  int    `toml:"max_history"`
-	MaxAgeDays  int    `toml:"max_age_days"`
-	PersistPath string `toml:"persist_path"`
-}
-
-type NotificationUIConfig struct {
-	Icon            string `toml:"icon"`
-	ShowUnreadCount bool   `toml:"show_unread_count"`
-	MaxDisplay      int    `toml:"max_display"`
-	GroupByApp      bool   `toml:"group_by_app"`
-	TimestampFormat string `toml:"timestamp_format"`
-}
-
-type NotificationDaemonConfig struct {
-	Enabled           bool   `toml:"enabled"`
-	Position          string `toml:"position"`
-	MaxBanners        int    `toml:"max_banners"`
-	BannerGap         int    `toml:"banner_gap"`
-	BannerWidth       int    `toml:"banner_width"`
-	BannerHeight      int    `toml:"banner_height"`
-	AnimationDuration int    `toml:"animation_duration"`
-}
-
-type NotificationTimeoutsConfig struct {
-	Low      int `toml:"low"`
-	Normal   int `toml:"normal"`
-	Critical int `toml:"critical"`
-}
-
 type FileSearchConfig struct {
 	SearchPaths []string `toml:"search_paths"`
 	Exclusions  []string `toml:"exclusions"`
@@ -282,12 +244,10 @@ var DefaultConfig = Config{
 			},
 			Middle: []string{},
 			Right: []string{
-				"notifications",
 				"timer",
 				"time",
 				"color",
 				"battery",
-				"custom_message",
 			},
 		},
 		ModuleConfigs: map[string]ModuleConfig{
@@ -415,34 +375,6 @@ var DefaultConfig = Config{
 			PreviewOnNav:  true,
 		},
 	},
-	Notification: NotificationConfig{
-		History: NotificationHistoryConfig{
-			MaxHistory:  500,
-			MaxAgeDays:  30,
-			PersistPath: "~/.cache/locus/notifications.json",
-		},
-		UI: NotificationUIConfig{
-			Icon:            "notifications:",
-			ShowUnreadCount: true,
-			MaxDisplay:      50,
-			GroupByApp:      true,
-			TimestampFormat: "%H:%M",
-		},
-		Daemon: NotificationDaemonConfig{
-			Enabled:           true,
-			Position:          "top-right",
-			MaxBanners:        5,
-			BannerGap:         10,
-			BannerWidth:       400,
-			BannerHeight:      100,
-			AnimationDuration: 200,
-		},
-		Timeouts: NotificationTimeoutsConfig{
-			Low:      3000,
-			Normal:   5000,
-			Critical: -1, // -1 means no timeout
-		},
-	},
 	FileSearch: FileSearchConfig{
 		SearchPaths: []string{"~"},
 		Exclusions: []string{
@@ -525,12 +457,10 @@ func LoadConfig(path string) (*Config, error) {
 		log.Printf("Failed to unmarshal TOML: %v", err)
 		return nil, err
 	}
-	log.Printf("Successfully unmarshaled TOML, notification daemon enabled: %v", cfg.Notification.Daemon.Enabled)
 
 	cfg.CacheDir = expandPath(cfg.CacheDir)
 	cfg.ConfigDir = expandPath(cfg.ConfigDir)
 	cfg.SocketPath = expandPath(cfg.SocketPath)
-	cfg.Notification.History.PersistPath = expandPath(cfg.Notification.History.PersistPath)
 
 	return &cfg, nil
 }
@@ -582,9 +512,6 @@ func (c *Config) Validate() error {
 	if err := c.validateStatusBar(); err != nil {
 		return err
 	}
-	if err := c.validateNotification(); err != nil {
-		return err
-	}
 	if err := c.validateIcons(); err != nil {
 		return err
 	}
@@ -632,55 +559,6 @@ func (c *Config) validateStatusBar() error {
 	if c.StatusBar.Height < 10 || c.StatusBar.Height > 100 {
 		return fmt.Errorf("invalid statusbar height: %d (must be 10-100px)", c.StatusBar.Height)
 	}
-	return nil
-}
-
-func (c *Config) validateNotification() error {
-	d := c.Notification.Daemon
-	if d.MaxBanners < 1 || d.MaxBanners > 20 {
-		return fmt.Errorf("invalid max_banners: %d (must be 1-20)", d.MaxBanners)
-	}
-	if d.BannerGap < 0 || d.BannerGap > 50 {
-		return fmt.Errorf("invalid banner_gap: %d (must be 0-50px)", d.BannerGap)
-	}
-	if d.BannerWidth < 100 || d.BannerWidth > 2000 {
-		return fmt.Errorf("invalid banner_width: %d (must be 100-2000)", d.BannerWidth)
-	}
-	if d.BannerHeight < 50 || d.BannerHeight > 500 {
-		return fmt.Errorf("invalid banner_height: %d (must be 50-500)", d.BannerHeight)
-	}
-	if d.AnimationDuration < 0 || d.AnimationDuration > 2000 {
-		return fmt.Errorf("invalid animation_duration: %d (must be 0-2000ms)", d.AnimationDuration)
-	}
-	if d.Position != "" {
-		validPositions := map[string]bool{
-			"top-left": true, "top-center": true, "top-right": true,
-			"bottom-left": true, "bottom-center": true, "bottom-right": true,
-		}
-		if !validPositions[d.Position] {
-			return fmt.Errorf("invalid daemon position: %s (must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right)", d.Position)
-		}
-	}
-
-	h := c.Notification.History
-	if h.MaxHistory < 0 || h.MaxHistory > 10000 {
-		return fmt.Errorf("invalid max_history: %d (must be 0-10000)", h.MaxHistory)
-	}
-	if h.MaxAgeDays < 1 || h.MaxAgeDays > 365 {
-		return fmt.Errorf("invalid max_age_days: %d (must be 1-365)", h.MaxAgeDays)
-	}
-
-	t := c.Notification.Timeouts
-	if t.Low < 0 || t.Low > 60000 {
-		return fmt.Errorf("invalid low timeout: %d (must be 0-60000ms)", t.Low)
-	}
-	if t.Normal < 0 || t.Normal > 60000 {
-		return fmt.Errorf("invalid normal timeout: %d (must be 0-60000ms)", t.Normal)
-	}
-	if t.Critical < -1 || t.Critical > 60000 {
-		return fmt.Errorf("invalid critical timeout: %d (must be -1 for no timeout, or 0-60000ms)", t.Critical)
-	}
-
 	return nil
 }
 
