@@ -125,6 +125,22 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	box.PackStart(hbox, false, false, 0)
 
+	// Create footer box for context information
+	footerBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create footer box: %w", err)
+	}
+	footerBox.SetName("footer-box")
+
+	footerLabel, err := gtk.LabelNew("Applications")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create footer label: %w", err)
+	}
+	footerLabel.SetName("footer-label")
+	footerBox.PackStart(footerLabel, false, false, 0)
+
+	box.PackStart(footerBox, false, false, 4)
+
 	scrolledWindow, err := gtk.ScrolledWindowNew(nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scrolled window: %w", err)
@@ -211,28 +227,6 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	colorPreviewBox.PackStart(colorPreviewWidget, false, false, 0)
 	box.PackStart(colorPreviewBox, false, false, 4)
-
-	// Create footer box for context information
-	footerBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create footer box: %w", err)
-	}
-	footerBox.SetName("footer-box")
-	footerBox.SetHAlign(gtk.ALIGN_START)
-	footerBox.SetHExpand(false)
-	footerBox.SetSizeRequest(cfg.Launcher.Window.Width, -1)
-	footerBox.SetMarginBottom(12)
-
-	footerLabel, err := gtk.LabelNew("Applications")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create footer label: %w", err)
-	}
-	footerLabel.SetName("footer-label")
-	footerLabel.SetHAlign(gtk.ALIGN_START)
-	footerLabel.SetHExpand(false)
-	footerBox.PackStart(footerLabel, true, false, 0)
-
-	box.PackStart(footerBox, false, false, 4)
 
 	registry := launcher.NewLauncherRegistry(cfg)
 
@@ -809,6 +803,14 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 	}
 	iconTextBox.SetHAlign(gtk.ALIGN_START)
 
+	// Check if item has color metadata to create a colored icon
+	itemColor := ""
+	if item.Metadata != nil {
+		if c, ok := item.Metadata["color"]; ok {
+			itemColor = c
+		}
+	}
+
 	if item.Icon != "" && l.shouldShowIcon(item) {
 		icon, err := gtk.ImageNew()
 		if err != nil {
@@ -821,52 +823,71 @@ func (l *Launcher) createResultRow(item *launcher.LauncherItem, index int) (*gtk
 			iconSize = 32 // Default consistent size
 		}
 
-		var pixbuf *gdk.Pixbuf
-		var loadErr error
-
-		if l.iconCache != nil {
-			// Use cache if available (includes fallback handling)
-			pixbuf, loadErr = l.iconCache.GetIcon(item.Icon, iconSize)
+		// If item has a color, create a colored icon
+		if itemColor != "" {
+			pixbuf, pixErr := gdk.PixbufNew(gdk.COLORSPACE_RGB, true, 8, iconSize, iconSize)
+			if pixErr == nil && pixbuf != nil {
+				// Parse hex color and fill pixbuf
+				if colorRGBA, ok := parseHexColor(itemColor); ok {
+					pixbuf.Fill(colorRGBA)
+					icon.SetFromPixbuf(pixbuf)
+				} else {
+					// Fallback to blank icon
+					pixbuf.Fill(0x00000000)
+					icon.SetFromPixbuf(pixbuf)
+				}
+			} else {
+				icon.SetFromIconName(item.Icon, gtk.ICON_SIZE_LARGE_TOOLBAR)
+			}
 		} else {
-			// Load directly from theme at custom size with fallback
-			theme, themeErr := gtk.IconThemeGetDefault()
-			if themeErr == nil {
-				// Try the requested icon first
-				pixbuf, loadErr = theme.LoadIcon(item.Icon, iconSize, gtk.ICON_LOOKUP_USE_BUILTIN)
-				if loadErr != nil || pixbuf == nil {
-					// Try fallback icon
-					fallback := l.config.Launcher.Icons.FallbackIcon
-					if fallback == "" {
-						fallback = "image-missing"
-					}
-					if item.Icon != fallback {
-						pixbuf, loadErr = theme.LoadIcon(fallback, iconSize, gtk.ICON_LOOKUP_USE_BUILTIN)
+			// Load standard icon
+			var pixbuf *gdk.Pixbuf
+			var loadErr error
+
+			if l.iconCache != nil {
+				// Use cache if available (includes fallback handling)
+				pixbuf, loadErr = l.iconCache.GetIcon(item.Icon, iconSize)
+			} else {
+				// Load directly from theme at custom size with fallback
+				theme, themeErr := gtk.IconThemeGetDefault()
+				if themeErr == nil {
+					// Try the requested icon first
+					pixbuf, loadErr = theme.LoadIcon(item.Icon, iconSize, gtk.ICON_LOOKUP_USE_BUILTIN)
+					if loadErr != nil || pixbuf == nil {
+						// Try fallback icon
+						fallback := l.config.Launcher.Icons.FallbackIcon
+						if fallback == "" {
+							fallback = "image-missing"
+						}
+						if item.Icon != fallback {
+							pixbuf, loadErr = theme.LoadIcon(fallback, iconSize, gtk.ICON_LOOKUP_USE_BUILTIN)
+						}
 					}
 				}
 			}
-		}
 
-		if loadErr == nil && pixbuf != nil {
-			// Ensure pixbuf is exactly the right size
-			if pixbuf.GetWidth() != iconSize || pixbuf.GetHeight() != iconSize {
-				// Scale to exact size if needed
-				scaled, scaleErr := pixbuf.ScaleSimple(iconSize, iconSize, gdk.INTERP_BILINEAR)
-				if scaleErr == nil && scaled != nil {
-					pixbuf = scaled
-				}
-			}
-			icon.SetFromPixbuf(pixbuf)
-		} else {
-			// Create a blank icon at the custom size to ensure consistency
-			// This ensures all icons have the same dimensions even when loading fails
-			pixbuf, loadErr = gdk.PixbufNew(gdk.COLORSPACE_RGB, true, 8, iconSize, iconSize)
 			if loadErr == nil && pixbuf != nil {
-				// Fill with transparent background
-				pixbuf.Fill(0x00000000) // RGBA: transparent
+				// Ensure pixbuf is exactly the right size
+				if pixbuf.GetWidth() != iconSize || pixbuf.GetHeight() != iconSize {
+					// Scale to exact size if needed
+					scaled, scaleErr := pixbuf.ScaleSimple(iconSize, iconSize, gdk.INTERP_BILINEAR)
+					if scaleErr == nil && scaled != nil {
+						pixbuf = scaled
+					}
+				}
 				icon.SetFromPixbuf(pixbuf)
 			} else {
-				// Ultimate fallback
-				icon.SetFromIconName(item.Icon, gtk.ICON_SIZE_LARGE_TOOLBAR)
+				// Create a blank icon at the custom size to ensure consistency
+				// This ensures all icons have the same dimensions even when loading fails
+				pixbuf, loadErr = gdk.PixbufNew(gdk.COLORSPACE_RGB, true, 8, iconSize, iconSize)
+				if loadErr == nil && pixbuf != nil {
+					// Fill with transparent background
+					pixbuf.Fill(0x00000000) // RGBA: transparent
+					icon.SetFromPixbuf(pixbuf)
+				} else {
+					// Ultimate fallback
+					icon.SetFromIconName(item.Icon, gtk.ICON_SIZE_LARGE_TOOLBAR)
+				}
 			}
 		}
 
@@ -1778,6 +1799,19 @@ func (l *Launcher) updateFooter(input string) {
 		}
 		return false
 	})
+
+	// Update color preview if this is a color launcher
+	if launcher != nil && launcher.Name() == "color" {
+		l.updateColorPreview(input)
+	} else {
+		// Hide color preview for non-color launchers
+		glib.IdleAdd(func() bool {
+			if l.colorPreviewBox != nil {
+				l.colorPreviewBox.Hide()
+			}
+			return false
+		})
+	}
 }
 
 func (l *Launcher) updateColorPreview(input string) {
@@ -1852,4 +1886,59 @@ func (l *Launcher) isValidColor(input string) (string, bool) {
 
 func (l *Launcher) IsVisible() bool {
 	return l.visible.Load()
+}
+
+// parseHexColor parses a hex color string to RGBA uint32 for gdk.Pixbuf.Fill
+func parseHexColor(hex string) (uint32, bool) {
+	if len(hex) == 0 {
+		return 0, false
+	}
+
+	if hex[0] == '#' {
+		hex = hex[1:]
+	}
+
+	var r, g, b, a uint8
+
+	switch len(hex) {
+	case 3: // RGB shorthand
+		r = parseHexByte(hex[0]) * 17
+		g = parseHexByte(hex[1]) * 17
+		b = parseHexByte(hex[2]) * 17
+		a = 255
+	case 4: // RGBA shorthand
+		r = parseHexByte(hex[0]) * 17
+		g = parseHexByte(hex[1]) * 17
+		b = parseHexByte(hex[2]) * 17
+		a = parseHexByte(hex[3]) * 17
+	case 6: // RGB
+		r = parseHexByte(hex[0])<<4 | parseHexByte(hex[1])
+		g = parseHexByte(hex[2])<<4 | parseHexByte(hex[3])
+		b = parseHexByte(hex[4])<<4 | parseHexByte(hex[5])
+		a = 255
+	case 8: // RGBA
+		r = parseHexByte(hex[0])<<4 | parseHexByte(hex[1])
+		g = parseHexByte(hex[2])<<4 | parseHexByte(hex[3])
+		b = parseHexByte(hex[4])<<4 | parseHexByte(hex[5])
+		a = parseHexByte(hex[6])<<4 | parseHexByte(hex[7])
+	default:
+		return 0, false
+	}
+
+	// RGBA format for gdk.Pixbuf.Fill is 0xAABBGGRR
+	return uint32(a)<<24 | uint32(b)<<16 | uint32(g)<<8 | uint32(r), true
+}
+
+// parseHexByte parses a single hex character to its value
+func parseHexByte(c byte) uint8 {
+	switch {
+	case c >= '0' && c <= '9':
+		return c - '0'
+	case c >= 'a' && c <= 'f':
+		return c - 'a' + 10
+	case c >= 'A' && c <= 'F':
+		return c - 'A' + 10
+	default:
+		return 0
+	}
 }

@@ -235,7 +235,8 @@ func generateLauncherCSS(styling *config.StylingConfig, animConfig *config.Anima
        color: #888888;
        font-family: %s;
        font-size: 24px;
-  }
+       text-align: left;
+   }
 
 
  `,

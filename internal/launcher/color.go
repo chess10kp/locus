@@ -134,6 +134,7 @@ func (l *ColorLauncher) getHistoryItems(colors ...string) []*LauncherItem {
 			Icon:       "color-select",
 			ActionData: NewColorAction("save", displayColor),
 			Launcher:   l,
+			Metadata:   map[string]string{"color": displayColor},
 		})
 	}
 
@@ -154,6 +155,7 @@ func (l *ColorLauncher) getColorItems(color string) []*LauncherItem {
 			Icon:       "color-select",
 			ActionData: NewColorAction("save", displayColor),
 			Launcher:   l,
+			Metadata:   map[string]string{"color": displayColor},
 		},
 		{
 			Title:      "Copy " + displayColor,
@@ -161,6 +163,7 @@ func (l *ColorLauncher) getColorItems(color string) []*LauncherItem {
 			Icon:       "edit-copy",
 			ActionData: NewColorAction("copy", displayColor),
 			Launcher:   l,
+			Metadata:   map[string]string{"color": displayColor},
 		},
 	}
 }

@@ -46,6 +46,7 @@ func (m *ColorModule) CreateWidget() (gtk.IWidget, error) {
 		return nil, err
 	}
 	indicator.SetSizeRequest(16, 16)
+	indicator.SetName("color-indicator-widget")
 
 	// Set initial background color directly on indicator
 	m.updateIndicatorColor(indicator)
