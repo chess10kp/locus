@@ -118,6 +118,9 @@ func (l *WallpaperLauncher) Populate(query string, ctx *LauncherContext) []*Laun
 }
 
 func (l *WallpaperLauncher) setWallpaper(path string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	// Get setter command from config
 	setter := l.config.Launcher.Wallpaper.SetterCommand
 	if setter == "" {
@@ -126,7 +129,7 @@ func (l *WallpaperLauncher) setWallpaper(path string) error {
 	}
 
 	// Execute setter command
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("%s %s", setter, path))
+	cmd := exec.CommandContext(ctx, "sh", "-c", fmt.Sprintf("%s %s", setter, path))
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to set wallpaper: %w", err)

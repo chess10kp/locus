@@ -1,10 +1,12 @@
 package launcher
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/chess10kp/locus/internal/config"
 )
@@ -96,7 +98,10 @@ func detectWMCommand() string {
 }
 
 func (l *WMLauncher) fetchWorkspaces() ([]Workspace, error) {
-	cmd := exec.Command(l.wmCommand, "-t", "get_workspaces")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, l.wmCommand, "-t", "get_workspaces")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -111,7 +116,10 @@ func (l *WMLauncher) fetchWorkspaces() ([]Workspace, error) {
 }
 
 func (l *WMLauncher) fetchWindows() ([]WindowInfo, error) {
-	cmd := exec.Command(l.wmCommand, "-t", "get_tree")
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, l.wmCommand, "-t", "get_tree")
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
@@ -135,12 +143,20 @@ func (l *WMLauncher) extractWindows(node SwayNode, workspace string) []WindowInf
 		workspace = node.Name
 	}
 
-	// Collect windows (nodes that have a window field)
-	if node.Window != nil && node.Type != "workspace" {
+	// Collect windows (nodes that have a window field OR are leaf containers with name/app_id)
+	isLeafNode := len(node.Nodes) == 0 && len(node.FloatingNodes) == 0
+	hasWindowInfo := node.Name != "" || node.AppID != "" || node.WindowProperties.Class != ""
+
+	if node.Type == "con" && isLeafNode && hasWindowInfo {
+		windowID := int64(0)
+		if node.Window != nil {
+			windowID = *node.Window
+		}
+
 		windows = append(windows, WindowInfo{
 			Name:        node.Name,
 			ConID:       node.ID,
-			WindowID:    *node.Window,
+			WindowID:    windowID,
 			Workspace:   workspace,
 			AppID:       node.AppID,
 			WindowClass: node.WindowProperties.Class,
