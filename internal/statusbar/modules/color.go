@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/chess10kp/locus/internal/statusbar"
-	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -99,16 +98,16 @@ func (m *ColorModule) updateWidget() error {
 		return nil
 	}
 
-	// Update CSS for color indicator
-	css := `
-		#color-indicator {
-			background-color: ` + m.color + `;
+	// Update CSS for color indicator using simple class selector
+	css := fmt.Sprintf(`
+		.color-indicator {
+			background-color: %s;
 			border-radius: 3px;
 			border: 1px solid rgba(255, 255, 255, 0.3);
 		}
-	`
+	`, m.color)
 
-	// Apply inline style to color box
+	// Apply inline style to color indicator widget
 	styleProvider, err := gtk.CssProviderNew()
 	if err != nil {
 		return err
@@ -118,15 +117,17 @@ func (m *ColorModule) updateWidget() error {
 		return err
 	}
 
-	screen, err := gdk.ScreenGetDefault()
-	if err != nil {
-		return err
+	// Apply to the indicator widget (first child of colorBox)
+	children := m.colorBox.GetChildren()
+	if children.Length() > 0 {
+		if indicator, ok := children.NthData(0).(*gtk.Box); ok {
+			if styleCtx, err := indicator.GetStyleContext(); err == nil {
+				styleCtx.AddProvider(styleProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+			}
+		}
 	}
 
-	gtk.AddProviderForScreen(screen, styleProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
 	// Update label
-	children := m.colorBox.GetChildren()
 	if children.Length() > 1 {
 		if label, ok := children.NthData(1).(*gtk.Label); ok {
 			label.SetText(m.color)
@@ -143,19 +144,16 @@ func (m *ColorModule) updateWidget() error {
 
 // updateIndicatorColor updates the color indicator's background
 func (m *ColorModule) updateIndicatorColor(indicator *gtk.Box) {
-	// Apply background color directly to the widget using a unique ID
-	indicator.SetName(fmt.Sprintf("color-indicator-%s", m.color))
-
-	// Create CSS with ID selector (not class selector)
+	// Use simple CSS class instead of ID with special characters
 	css := fmt.Sprintf(`
-		#color-indicator-%s {
+		.color-indicator {
 			background-color: %s;
 			border-radius: 3px;
 			min-width: 16px;
 			min-height: 16px;
 			border: 1px solid rgba(255,255,255,0.3);
 		}
-	`, m.color, m.color)
+	`, m.color)
 
 	// Get or create style provider
 	styleProvider, err := gtk.CssProviderNew()
@@ -169,13 +167,10 @@ func (m *ColorModule) updateIndicatorColor(indicator *gtk.Box) {
 		return
 	}
 
-	screen, err := gdk.ScreenGetDefault()
-	if err != nil {
-		log.Printf("Failed to get screen: %v", err)
-		return
+	// Apply directly to the indicator widget's style context
+	if styleCtx, err := indicator.GetStyleContext(); err == nil {
+		styleCtx.AddProvider(styleProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 	}
-
-	gtk.AddProviderForScreen(screen, styleProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 }
 
 // SetColor sets the current color

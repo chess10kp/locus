@@ -4,12 +4,15 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/chess10kp/locus/internal/config"
 	"github.com/chess10kp/locus/internal/launcher"
 	"github.com/chess10kp/locus/internal/lockscreen"
 	"github.com/chess10kp/locus/internal/notification"
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -71,6 +74,9 @@ func (a *App) initialize() {
 
 	gtk.Init(nil)
 	SetupStyles()
+
+	// Add GTK main loop monitoring
+	go a.monitorGTKMainLoop()
 
 	a.lockscreen = lockscreen.NewLockScreenManager(a.config)
 
@@ -163,13 +169,13 @@ func (a *App) Quit() {
 // PresentLauncher shows the launcher
 func (a *App) PresentLauncher() error {
 	log.Printf("PresentLauncher called, launcher=%v", a.launcher != nil)
-	if a.launcher != nil {
-		err := a.launcher.Show()
-		log.Printf("Launcher.Show() returned: %v", err)
-		return err
+	if a.launcher == nil {
+		log.Printf("PresentLauncher: launcher is nil!")
+		return nil
 	}
-	log.Printf("No launcher available")
-	return nil
+	err := a.launcher.Show()
+	log.Printf("Launcher.Show() returned: %v", err)
+	return err
 }
 
 // HideLauncher hides the launcher
@@ -179,6 +185,17 @@ func (a *App) HideLauncher() error {
 		return nil
 	}
 	return nil
+}
+
+// ToggleLauncher toggles the launcher visibility
+func (a *App) ToggleLauncher() error {
+	if a.launcher == nil {
+		log.Printf("ToggleLauncher: launcher is nil!")
+		return nil
+	}
+	err := a.launcher.Toggle()
+	log.Printf("Launcher.Toggle() returned: %v", err)
+	return err
 }
 
 // GetConfig returns the application config
@@ -214,4 +231,30 @@ func (a *App) IsLocked() bool {
 		return false
 	}
 	return a.lockscreen.IsLocked()
+}
+
+// monitorGTKMainLoop monitors the GTK main loop for blockages
+func (a *App) monitorGTKMainLoop() {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+		log.Printf("[MONITOR] Goroutines: %d, Alloc: %d MB, HeapObjects: %d",
+			runtime.NumGoroutine(), m.Alloc/1024/1024, m.HeapObjects)
+
+		// Try to queue a callback to detect if GTK main loop is responsive
+		testDone := make(chan bool, 1)
+		glib.IdleAdd(func() {
+			testDone <- true
+		})
+
+		select {
+		case <-testDone:
+			// GTK main loop is responsive
+		case <-time.After(2 * time.Second):
+			log.Printf("[MONITOR] WARNING: GTK main loop appears to be BLOCKED (callback not executed in 2s)")
+		}
+	}
 }

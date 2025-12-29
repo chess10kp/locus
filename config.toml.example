@@ -18,8 +18,8 @@ width = 600
 
 [launcher.animation]
 enabled = true
-enable_slide_in = false
-slide_duration = 300
+enable_slide_in = true
+slide_duration = 100
 slide_step = 100
 target_margin = 40
 fade_enabled = true

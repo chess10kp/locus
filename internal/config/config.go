@@ -327,8 +327,8 @@ var DefaultConfig = Config{
 		},
 		Animation: AnimationConfig{
 			Enabled:         true,
-			EnableSlideIn:   false,
-			SlideDuration:   300,
+			EnableSlideIn:   true,
+			SlideDuration:   100,
 			SlideStep:       100,
 			TargetMargin:    40,
 			FadeEnabled:     true,

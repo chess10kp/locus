@@ -7,18 +7,22 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/chess10kp/locus/internal/config"
 	"github.com/gotk3/gotk3/glib"
 )
 
 type IPCServer struct {
-	app     *App
-	config  *config.Config
-	server  *net.UnixListener
-	running bool
-	ctx     context.Context
-	cancel  context.CancelFunc
+	app           *App
+	config        *config.Config
+	server        *net.UnixListener
+	running       bool
+	ctx           context.Context
+	cancel        context.CancelFunc
+	callbacks     atomic.Int64
+	callbacksExec atomic.Int64
 }
 
 func NewIPCServer(app *App, cfg *config.Config) *IPCServer {
@@ -57,7 +61,34 @@ func (s *IPCServer) Start() error {
 	// Start accepting connections
 	go s.acceptConnections(s.ctx)
 
+	// Start callback monitoring
+	go s.monitorCallbacks(s.ctx)
+
 	return nil
+}
+
+func (s *IPCServer) monitorCallbacks(ctx context.Context) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	lastExecCount := s.callbacksExec.Load()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			scheduled := s.callbacks.Load()
+			executed := s.callbacksExec.Load()
+			if executed > lastExecCount {
+				lastExecCount = executed
+			} else if scheduled > executed && scheduled-executed > 3 {
+				// More than 3 callbacks pending without execution
+				log.Printf("[IPC] WARNING: %d callbacks scheduled but only %d executed (diff=%d), GTK main loop may be blocked!",
+					scheduled, executed, scheduled-executed)
+			}
+		}
+	}
 }
 
 func (s *IPCServer) acceptConnections(ctx context.Context) {
@@ -129,11 +160,39 @@ func (s *IPCServer) handleConnection(ctx context.Context, conn *net.UnixConn) {
 
 func (s *IPCServer) handleMessage(message string) {
 	if message == "launcher" {
-		glib.IdleAdd(func() {
-			if err := s.app.PresentLauncher(); err != nil {
-				log.Printf("Failed to present launcher: %v", err)
+		log.Printf("[IPC] Handling launcher message - app=%v", s.app != nil)
+		if s.app == nil {
+			log.Printf("[IPC] ERROR: app is nil!")
+			return
+		}
+		log.Printf("[IPC] About to call glib.IdleAdd")
+		s.callbacks.Add(1)
+		result := glib.IdleAdd(func() {
+			s.callbacksExec.Add(1)
+			log.Printf("[IPC] IdleAdd callback executing (scheduled: %d, executed: %d)",
+				s.callbacks.Load(), s.callbacksExec.Load())
+			// Toggle launcher instead of just showing
+			if err := s.app.ToggleLauncher(); err != nil {
+				log.Printf("Failed to toggle launcher: %v", err)
 			}
+			log.Printf("[IPC] ToggleLauncher completed")
 		})
+		log.Printf("[IPC] glib.IdleAdd returned: %v", result)
+
+		// Fallback: if callback doesn't execute in 1 second, try direct call
+		go func() {
+			time.Sleep(1 * time.Second)
+			scheduled := s.callbacks.Load()
+			executed := s.callbacksExec.Load()
+			if scheduled > executed {
+				log.Printf("[IPC] WARNING: Callback not executed after 1s (scheduled: %d, executed: %d), attempting direct call",
+					scheduled, executed)
+				s.callbacksExec.Add(1)
+				if err := s.app.ToggleLauncher(); err != nil {
+					log.Printf("[IPC] Direct ToggleLauncher call failed: %v", err)
+				}
+			}
+		}()
 	} else if message == "hide" {
 		glib.IdleAdd(func() {
 			if err := s.app.HideLauncher(); err != nil {

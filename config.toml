@@ -68,7 +68,7 @@ preview_on_navigation = true
 
 [launcher.animation]
 enabled = true
-slide_duration = 300
+slide_duration = 150
 easing = "ease-out"
 
 [launcher.icons]

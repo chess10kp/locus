@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -22,6 +23,10 @@ import (
 )
 
 var debugLogger = log.New(log.Writer(), "[LAUNCHER-DEBUG] ", log.LstdFlags|log.Lmicroseconds)
+
+func easeOutCubic(t float64) float64 {
+	return 1 - (1-t)*(1-t)*(1-t)
+}
 
 // logMemoryStats provides memory usage information for debugging
 func (l *Launcher) logMemoryStats(context string) {
@@ -45,7 +50,6 @@ type Launcher struct {
 	app                *App
 	config             *config.Config
 	window             *gtk.Window
-	animationContainer *gtk.Box
 	searchEntry        *gtk.Entry
 	resultList         *gtk.ListBox
 	gridFlowBox        *gtk.FlowBox
@@ -60,10 +64,11 @@ type Launcher struct {
 	footerLabel        *gtk.Label
 	running            bool
 	visible            atomic.Bool
-	animating          atomic.Bool
 	searchTimer        *time.Timer
 	searchVersion      int64 // Track search version to prevent race conditions
 	gridMode           bool
+	colorPreviewBox    *gtk.Box
+	colorPreviewWidget *gtk.Box
 
 	mu            sync.RWMutex
 	refreshUIChan chan launcher.RefreshUIRequest
@@ -92,15 +97,6 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	window.SetResizable(false)
 	window.SetName("launcher-window")
 
-	// Create animation container for all launcher content
-	animationContainer, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create animation container: %w", err)
-	}
-	animationContainer.SetName("animation-container")
-	animationContainer.SetVExpand(true)
-	animationContainer.SetHExpand(false)
-
 	box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create box: %w", err)
@@ -108,9 +104,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	box.SetVExpand(true)
 	box.SetHExpand(false)
-	// Let the window expand as needed for content
-	window.Add(animationContainer)
-	animationContainer.Add(box)
+	// Add box directly to window
+	window.Add(box)
 
 	searchEntry, err := gtk.EntryNew()
 	if err != nil {
@@ -193,6 +188,30 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	}
 	box.PackStart(badgesBox, false, false, 4)
 
+	// Create color preview box (hidden by default)
+	colorPreviewBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create color preview box: %w", err)
+	}
+	colorPreviewBox.SetName("color-preview-box")
+	colorPreviewBox.SetHAlign(gtk.ALIGN_START)
+	colorPreviewBox.SetMarginStart(8)
+	colorPreviewBox.SetMarginEnd(8)
+	colorPreviewBox.Hide()
+
+	// Create color preview widget (box with background color)
+	colorPreviewWidget, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create color preview widget: %w", err)
+	}
+	colorPreviewWidget.SetName("color-preview-widget")
+	colorPreviewWidget.SetSizeRequest(30, 30)
+	colorPreviewWidget.SetMarginStart(4)
+	colorPreviewWidget.SetMarginEnd(4)
+
+	colorPreviewBox.PackStart(colorPreviewWidget, false, false, 0)
+	box.PackStart(colorPreviewBox, false, false, 4)
+
 	// Create footer box for context information
 	footerBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	if err != nil {
@@ -243,7 +262,6 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		app:                app,
 		config:             cfg,
 		window:             window,
-		animationContainer: animationContainer,
 		searchEntry:        searchEntry,
 		resultList:         resultList,
 		gridFlowBox:        gridFlowBox,
@@ -254,6 +272,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		registry:           registry,
 		iconCache:          iconCache,
 		thumbnailCache:     thumbnailCache,
+		colorPreviewBox:    colorPreviewBox,
+		colorPreviewWidget: colorPreviewWidget,
 		refreshUIChan:      refreshUIChan,
 		statusChan:         statusChan,
 		ctx:                ctx,
@@ -459,6 +479,9 @@ func (l *Launcher) onSearchChanged(text string) {
 
 	// Update footer based on launcher context
 	l.updateFooter(text)
+
+	// Update color preview if input is a color
+	l.updateColorPreview(text)
 
 	// Increment search version for this request
 	version := atomic.AddInt64(&l.searchVersion, 1)
@@ -1484,7 +1507,6 @@ func (l *Launcher) navigateResult(direction int) {
 }
 
 func (l *Launcher) Show() error {
-	// Acquire lock only for internal state changes
 	l.mu.Lock()
 	if !l.running {
 		if err := l.Start(); err != nil {
@@ -1494,147 +1516,82 @@ func (l *Launcher) Show() error {
 	}
 	l.mu.Unlock()
 
-	// Check if animations are enabled
-	if l.config.Launcher.Animation.Enabled {
-		return l.showWithAnimation()
-	}
+	cfg := l.config.Launcher.Animation
+	startY := -400
+	targetY := cfg.TargetMargin
+	distance := targetY - startY
 
-	// Non-animated show (original behavior)
+	layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, startY)
 	l.window.ShowAll()
 	l.window.Present()
 	l.searchEntry.SetText("")
-	l.searchEntry.GrabFocus()
 
-	// Update visibility flag atomically
-	l.visible.Store(true)
+	if cfg.Enabled && cfg.EnableSlideIn {
+		durationNs := int64(cfg.SlideDuration) * 1_000_000
+		startTime := time.Now().UnixNano()
 
-	return nil
-}
+		l.window.AddTickCallback(func(w *gtk.Widget, frameClock *gdk.FrameClock) bool {
+			elapsed := time.Now().UnixNano() - startTime
+			progress := float64(elapsed) / float64(durationNs)
 
-func (l *Launcher) showWithAnimation() error {
-	l.animating.Store(true)
+			if progress >= 1.0 {
+				layer.SetMargin(unsafe.Pointer(w.Native()), layer.EdgeTop, targetY)
+				l.searchEntry.GrabFocus()
+				return false
+			}
 
-	// Clear search and prepare for input
-	l.searchEntry.SetText("")
-
-	// Set initial animation state - window off-screen (pushed up)
-	defaultMargin := 40
-	layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, defaultMargin-l.config.Launcher.Window.Height)
-	l.window.SetOpacity(0.0)
-
-	// Show window
-	l.window.ShowAll()
-	l.window.Present()
-	l.visible.Store(true)
-
-	// Animate slide in and fade in
-	duration := l.config.Launcher.Animation.SlideDuration
-	if duration == 0 {
-		duration = 300
-	}
-
-	fps := 60
-	frames := duration * fps / 1000
-	frameDelay := 1000 / fps
-
-	startMargin := defaultMargin - l.config.Launcher.Window.Height
-	endMargin := defaultMargin
-
-	for i := 0; i <= frames; i++ {
-		iCopy := i
-		glib.TimeoutAdd(uint(i*frameDelay), func() bool {
-			t := float64(iCopy) / float64(frames)
-			// Ease-out cubic
-			progress := 1 - (1-t)*(1-t)*(1-t)
-
-			// Animate layer margin (slide down)
-			currentMargin := startMargin + int(float64(endMargin-startMargin)*progress)
-			layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, currentMargin)
-
-			// Animate opacity
-			l.window.SetOpacity(progress)
-
-			return false
+			easedProgress := easeOutCubic(progress)
+			currentY := startY + int(float64(distance)*easedProgress)
+			layer.SetMargin(unsafe.Pointer(w.Native()), layer.EdgeTop, currentY)
+			return true
 		})
+	} else {
+		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, targetY)
+		l.searchEntry.GrabFocus()
 	}
 
-	// Finalize animation
-	glib.TimeoutAdd(uint(duration+50), func() bool {
-		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, endMargin)
-		l.window.SetOpacity(1.0)
-		l.searchEntry.GrabFocus()
-		l.animating.Store(false)
-		return false
-	})
-
+	l.visible.Store(true)
 	return nil
 }
 
 func (l *Launcher) Hide() {
-	// Acquire lock only for internal state changes
 	l.mu.Lock()
 	l.stopAndDrainSearchTimer()
 	l.currentItems = nil
 	l.mu.Unlock()
 
-	// Check if animations are enabled and we're not already animating
-	if l.config.Launcher.Animation.Enabled && !l.animating.Load() {
-		l.hideWithAnimation()
-		return
-	}
+	cfg := l.config.Launcher.Animation
+	startY := cfg.TargetMargin
+	targetY := -400
+	distance := startY - targetY
 
-	// Non-animated hide (original behavior)
-	l.window.Hide()
-	l.searchEntry.SetText("")
-	l.visible.Store(false)
-}
+	if cfg.Enabled && cfg.EnableSlideIn {
+		durationNs := int64(cfg.SlideDuration) * 1_000_000
+		startTime := time.Now().UnixNano()
 
-func (l *Launcher) hideWithAnimation() {
-	// Get default top margin
-	defaultMargin := 40
+		l.window.AddTickCallback(func(w *gtk.Widget, frameClock *gdk.FrameClock) bool {
+			elapsed := time.Now().UnixNano() - startTime
+			progress := float64(elapsed) / float64(durationNs)
 
-	// Animate slide up and fade out
-	duration := l.config.Launcher.Animation.SlideDuration
-	if duration == 0 {
-		duration = 300
-	}
+			if progress >= 1.0 {
+				l.window.Hide()
+				l.searchEntry.SetText("")
+				l.visible.Store(false)
+				layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, cfg.TargetMargin)
+				return false
+			}
 
-	fps := 60
-	frames := duration * fps / 1000
-	frameDelay := 1000 / fps
-
-	startMargin := defaultMargin
-	endMargin := defaultMargin - l.config.Launcher.Window.Height
-
-	for i := 0; i <= frames; i++ {
-		iCopy := i
-		glib.TimeoutAdd(uint(i*frameDelay), func() bool {
-			t := float64(iCopy) / float64(frames)
-			// Ease-in cubic
-			progress := t * t * t
-
-			// Animate layer margin (slide up)
-			currentMargin := startMargin + int(float64(endMargin-startMargin)*progress)
-			layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, currentMargin)
-
-			// Animate opacity
-			l.window.SetOpacity(1.0 - progress)
-
-			return false
+			easedProgress := easeOutCubic(progress)
+			currentY := startY - int(float64(distance)*easedProgress)
+			layer.SetMargin(unsafe.Pointer(w.Native()), layer.EdgeTop, currentY)
+			return true
 		})
-	}
-
-	// Finalize animation
-	glib.TimeoutAdd(uint(duration+50), func() bool {
+	} else {
 		l.window.Hide()
 		l.searchEntry.SetText("")
 		l.visible.Store(false)
-		l.animating.Store(false)
-		// Reset for next show
-		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, defaultMargin)
-		l.window.SetOpacity(1.0)
-		return false
-	})
+		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, cfg.TargetMargin)
+	}
 }
 
 func (l *Launcher) stopAndDrainSearchTimer() {
@@ -1821,6 +1778,76 @@ func (l *Launcher) updateFooter(input string) {
 		}
 		return false
 	})
+}
+
+func (l *Launcher) updateColorPreview(input string) {
+	glib.IdleAdd(func() bool {
+		if l.colorPreviewBox == nil || l.colorPreviewWidget == nil {
+			return false
+		}
+
+		color, ok := l.isValidColor(input)
+
+		if ok {
+			css := fmt.Sprintf(`
+				#color-preview-widget {
+					background-color: %s;
+					border-radius: 4px;
+					border: 1px solid rgba(255, 255, 255, 0.3);
+				}
+			`, color)
+
+			styleProvider, err := gtk.CssProviderNew()
+			if err == nil {
+				if err := styleProvider.LoadFromData(css); err == nil {
+					if styleCtx, err := l.colorPreviewWidget.GetStyleContext(); err == nil {
+						styleCtx.AddProvider(styleProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+					}
+				}
+			}
+
+			l.colorPreviewBox.ShowAll()
+		} else {
+			l.colorPreviewBox.Hide()
+		}
+
+		return false
+	})
+}
+
+func (l *Launcher) isValidColor(input string) (string, bool) {
+	input = strings.TrimSpace(input)
+	if input == "" {
+		return "", false
+	}
+
+	hexPattern := regexp.MustCompile(`^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$`)
+	if hexPattern.MatchString(input) {
+		normalized := input
+		if len(input) > 0 && input[0] != '#' {
+			normalized = "#" + normalized
+		}
+		if len(normalized) == 4 {
+			normalized = "#" + string([]byte{normalized[1], normalized[1], normalized[2], normalized[2], normalized[3], normalized[3]})
+		} else if len(normalized) == 5 {
+			normalized = "#" + string([]byte{normalized[1], normalized[1], normalized[2], normalized[2], normalized[3], normalized[3], normalized[4], normalized[4]})
+		}
+		return normalized, true
+	}
+
+	namedColors := map[string]string{
+		"red": "#ff0000", "green": "#00ff00", "blue": "#0000ff",
+		"white": "#ffffff", "black": "#000000",
+		"yellow": "#ffff00", "cyan": "#00ffff", "magenta": "#ff00ff",
+		"gray": "#808080", "grey": "#808080",
+		"orange": "#ffa500", "purple": "#800080", "pink": "#ffc0cb",
+		"brown": "#a52a2a",
+	}
+	if hex, ok := namedColors[strings.ToLower(input)]; ok {
+		return hex, true
+	}
+
+	return "", false
 }
 
 func (l *Launcher) IsVisible() bool {
