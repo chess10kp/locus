@@ -6,8 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/exec"
-	"strconv"
 	"strings"
 	"sync"
 	"unsafe"
@@ -30,7 +28,8 @@ type StatusBar struct {
 	config      *config.Config
 	windows     map[int]*gtk.Window // Map: monitor index -> window
 	containers  map[int]*gtk.Box    // Map: monitor index -> container
-	screen      *gdk.Screen         // GDK screen for monitor tracking
+	screen      *gdk.Screen         // GDK screen for monitor tracking (legacy)
+	display     *gdk.Display        // GDK display for modern monitor tracking
 	registry    *statusbar.ModuleRegistry
 	scheduler   *statusbar.UpdateScheduler
 	widgets     map[string]gtk.IWidget
@@ -43,10 +42,16 @@ type StatusBar struct {
 }
 
 func NewStatusBar(app *App, cfg *config.Config) (*StatusBar, error) {
-	// Get default screen for monitor tracking
+	// Get default screen for monitor tracking (legacy)
 	screen, err := gdk.ScreenGetDefault()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get default screen: %w", err)
+	}
+
+	// Get default display for monitor tracking
+	display, err := gdk.DisplayGetDefault()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default display: %w", err)
 	}
 
 	registry := statusbar.DefaultRegistry()
@@ -58,6 +63,7 @@ func NewStatusBar(app *App, cfg *config.Config) (*StatusBar, error) {
 		windows:    make(map[int]*gtk.Window),
 		containers: make(map[int]*gtk.Box),
 		screen:     screen,
+		display:    display,
 		registry:   registry,
 		scheduler:  scheduler,
 	}, nil
@@ -71,10 +77,8 @@ func (sb *StatusBar) Start() error {
 		return ErrStatusBarAlreadyRunning
 	}
 
-	// Set up monitor change signal handler
 	sb.screen.Connect("monitors-changed", sb.onMonitorsChanged)
 
-	// Create statusbar windows for all current monitors
 	if err := sb.createStatusBarsForAllMonitors(); err != nil {
 		return fmt.Errorf("failed to create statusbar windows: %w", err)
 	}
@@ -91,13 +95,11 @@ func (sb *StatusBar) Start() error {
 		return fmt.Errorf("failed to start scheduler: %w", err)
 	}
 
-	// Start IPC server
 	if err := sb.startIPCServer(); err != nil {
 		log.Printf("Warning: failed to start IPC server: %v", err)
 		// Don't fail the entire startup for IPC server issues
 	}
 
-	// Show all statusbar windows
 	for _, window := range sb.windows {
 		window.ShowAll()
 	}
@@ -110,32 +112,23 @@ func (sb *StatusBar) Start() error {
 	return nil
 }
 
-// createStatusBarsForAllMonitors creates statusbar windows for all current monitors
 func (sb *StatusBar) createStatusBarsForAllMonitors() error {
-	// Destroy existing windows if any
 	sb.destroyAllStatusBars()
 
-	// Get monitor count using xrandr
-	cmd := exec.Command("sh", "-c", "xrandr --listmonitors 2>/dev/null | grep Monitors: | awk '{print $2}' || echo 1")
-	output, err := cmd.Output()
-	monitorCount := 1 // default
-	if err != nil {
-		log.Printf("Warning: failed to get monitor count, assuming 1: %v", err)
-	} else {
-		countStr := strings.TrimSpace(string(output))
-		if count, err := strconv.Atoi(countStr); err == nil && count > 0 {
-			monitorCount = count
-		}
-	}
-
+	monitorCount := sb.display.GetNMonitors()
 	if monitorCount == 0 {
 		return fmt.Errorf("no monitors available")
 	}
 
 	height := sb.config.StatusBar.Height
 
-	// Create statusbar for each monitor
 	for i := 0; i < monitorCount; i++ {
+		monitor, err := sb.display.GetMonitor(i)
+		if err != nil {
+			log.Printf("Warning: failed to get monitor %d: %v", i, err)
+			continue
+		}
+
 		window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 		if err != nil {
 			return fmt.Errorf("failed to create window for monitor %d: %w", i, err)
@@ -154,7 +147,6 @@ func (sb *StatusBar) createStatusBarsForAllMonitors() error {
 			window.SetSizeRequest(-1, height)
 		}
 
-		// Initialize layer shell for this monitor
 		layer.InitForWindow(unsafe.Pointer(window.GObject))
 		layer.SetAnchor(unsafe.Pointer(window.GObject), layer.EdgeLeft, true)
 		layer.SetAnchor(unsafe.Pointer(window.GObject), layer.EdgeRight, true)
@@ -164,7 +156,8 @@ func (sb *StatusBar) createStatusBarsForAllMonitors() error {
 		layer.SetExclusiveZone(unsafe.Pointer(window.GObject), height)
 		layer.SetKeyboardMode(unsafe.Pointer(window.GObject), layer.KeyboardModeNone)
 
-		// Connect destroy signal to quit
+		layer.SetMonitor(unsafe.Pointer(window.GObject), monitor)
+
 		window.Connect("destroy", func() {
 			close(sb.stopUpdate)
 			sb.Quit()
@@ -174,11 +167,10 @@ func (sb *StatusBar) createStatusBarsForAllMonitors() error {
 		sb.containers[i] = container
 	}
 
-	log.Printf("Created statusbar windows for %d monitors", monitorCount)
+	log.Printf("Created statusbar windows for %d monitors", len(sb.windows))
 	return nil
 }
 
-// destroyAllStatusBars destroys all statusbar windows
 func (sb *StatusBar) destroyAllStatusBars() {
 	for _, window := range sb.windows {
 		if window != nil {
@@ -189,22 +181,18 @@ func (sb *StatusBar) destroyAllStatusBars() {
 	sb.containers = make(map[int]*gtk.Box)
 }
 
-// onMonitorsChanged handles monitor configuration changes
 func (sb *StatusBar) onMonitorsChanged() {
 	log.Printf("Monitors changed, recreating statusbar windows")
-	// Recreate all statusbars from scratch as requested
 	if err := sb.createStatusBarsForAllMonitors(); err != nil {
 		log.Printf("Failed to recreate statusbar windows: %v", err)
 		return
 	}
 
-	// Recreate widgets for all monitors
 	if err := sb.createWidgets(); err != nil {
 		log.Printf("Failed to recreate widgets: %v", err)
 		return
 	}
 
-	// Show all windows
 	for _, window := range sb.windows {
 		window.ShowAll()
 	}
@@ -222,7 +210,6 @@ func (sb *StatusBar) Stop() error {
 	sb.registry.CleanupAll()
 	sb.stopIPCServer()
 
-	// Close all windows
 	for _, window := range sb.windows {
 		if window != nil {
 			window.Close()
@@ -262,7 +249,6 @@ func (sb *StatusBar) HandleIPC(msg string) error {
 }
 
 func (sb *StatusBar) loadModules() error {
-	// Collect all modules from all sections
 	allModules := append(append(sb.config.StatusBar.Layout.Left, sb.config.StatusBar.Layout.Middle...), sb.config.StatusBar.Layout.Right...)
 	log.Printf("Loading modules, config: %v", allModules)
 
@@ -306,7 +292,6 @@ func (sb *StatusBar) loadModules() error {
 func (sb *StatusBar) createWidgets() error {
 	sb.widgets = make(map[string]gtk.IWidget)
 
-	// Create widget tree for each monitor's container
 	for monitorIndex, container := range sb.containers {
 		if err := sb.createWidgetsForContainer(container, monitorIndex); err != nil {
 			return fmt.Errorf("failed to create widgets for monitor %d: %w", monitorIndex, err)
@@ -317,7 +302,6 @@ func (sb *StatusBar) createWidgets() error {
 }
 
 func (sb *StatusBar) createWidgetsForContainer(container *gtk.Box, monitorIndex int) error {
-	// Create section containers
 	leftBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create left box: %w", err)
@@ -333,7 +317,6 @@ func (sb *StatusBar) createWidgetsForContainer(container *gtk.Box, monitorIndex 
 		return fmt.Errorf("failed to create right box: %w", err)
 	}
 
-	// Create spacers for centering middle section
 	leftSpacer, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	if err != nil {
 		return fmt.Errorf("failed to create left spacer: %w", err)
@@ -346,7 +329,6 @@ func (sb *StatusBar) createWidgetsForContainer(container *gtk.Box, monitorIndex 
 	}
 	rightSpacer.SetHExpand(true)
 
-	// Build sections
 	if err := sb.constructSection(sb.config.StatusBar.Layout.Left, leftBox); err != nil {
 		return fmt.Errorf("failed to construct left section: %w", err)
 	}
@@ -359,7 +341,6 @@ func (sb *StatusBar) createWidgetsForContainer(container *gtk.Box, monitorIndex 
 		return fmt.Errorf("failed to construct right section: %w", err)
 	}
 
-	// Assemble main container
 	container.PackStart(leftBox, false, false, 0)
 	container.PackStart(leftSpacer, false, false, 0)
 	container.PackStart(middleBox, false, false, 0)
@@ -372,7 +353,6 @@ func (sb *StatusBar) createWidgetsForContainer(container *gtk.Box, monitorIndex 
 func (sb *StatusBar) constructSection(modules []string, box *gtk.Box) error {
 	for i, moduleName := range modules {
 		if i > 0 {
-			// Add separator between modules
 			sep, err := gtk.LabelNew(" | ")
 			if err != nil {
 				log.Printf("Failed to create separator: %v", err)
