@@ -1517,53 +1517,55 @@ func (l *Launcher) showWithAnimation() error {
 	// Clear search and prepare for input
 	l.searchEntry.SetText("")
 
-	// Set initial animation state
-	if styleCtx, err := l.animationContainer.GetStyleContext(); err == nil {
-		styleCtx.AddClass("animating-in")
-	}
+	// Set initial animation state - window off-screen (pushed up)
+	defaultMargin := 40
+	layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, defaultMargin-l.config.Launcher.Window.Height)
+	l.window.SetOpacity(0.0)
 
 	// Show window
 	l.window.ShowAll()
 	l.window.Present()
 	l.visible.Store(true)
 
-	// Simple fade-in animation using opacity
-	if l.config.Launcher.Animation.FadeEnabled {
-		l.window.SetOpacity(0.0)
-		duration := l.config.Launcher.Animation.FadeInDuration
-		if duration == 0 {
-			duration = 250
-		}
+	// Animate slide in and fade in
+	duration := l.config.Launcher.Animation.SlideDuration
+	if duration == 0 {
+		duration = 300
+	}
 
-		fps := 60
-		frames := duration * fps / 1000
-		frameDelay := 1000 / fps
+	fps := 60
+	frames := duration * fps / 1000
+	frameDelay := 1000 / fps
 
-		for i := 0; i <= frames; i++ {
-			iCopy := i
-			glib.TimeoutAdd(uint(i*frameDelay), func() bool {
-				t := float64(iCopy) / float64(frames)
-				// Ease-out
-				progress := 1 - (1-t)*(1-t)
-				l.window.SetOpacity(progress)
-				return false
-			})
-		}
+	startMargin := defaultMargin - l.config.Launcher.Window.Height
+	endMargin := defaultMargin
 
-		glib.TimeoutAdd(uint(duration+50), func() bool {
-			l.window.SetOpacity(1.0)
-			if styleCtx, err := l.animationContainer.GetStyleContext(); err == nil {
-				styleCtx.RemoveClass("animating-in")
-			}
-			l.searchEntry.GrabFocus()
-			l.animating.Store(false)
+	for i := 0; i <= frames; i++ {
+		iCopy := i
+		glib.TimeoutAdd(uint(i*frameDelay), func() bool {
+			t := float64(iCopy) / float64(frames)
+			// Ease-out cubic
+			progress := 1 - (1-t)*(1-t)*(1-t)
+
+			// Animate layer margin (slide down)
+			currentMargin := startMargin + int(float64(endMargin-startMargin)*progress)
+			layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, currentMargin)
+
+			// Animate opacity
+			l.window.SetOpacity(progress)
+
 			return false
 		})
-	} else {
-		// No animation
+	}
+
+	// Finalize animation
+	glib.TimeoutAdd(uint(duration+50), func() bool {
+		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, endMargin)
+		l.window.SetOpacity(1.0)
 		l.searchEntry.GrabFocus()
 		l.animating.Store(false)
-	}
+		return false
+	})
 
 	return nil
 }
@@ -1588,58 +1590,21 @@ func (l *Launcher) Hide() {
 }
 
 func (l *Launcher) hideWithAnimation() {
-	// Simple fade-out animation
-	if l.config.Launcher.Animation.FadeEnabled {
-		duration := l.config.Launcher.Animation.FadeOutDuration
-		if duration == 0 {
-			duration = 200
-		}
+	// Get default top margin
+	defaultMargin := 40
 
-		fps := 60
-		frames := duration * fps / 1000
-		frameDelay := 1000 / fps
-
-		for i := 0; i <= frames; i++ {
-			iCopy := i
-			glib.TimeoutAdd(uint(i*frameDelay), func() bool {
-				t := float64(iCopy) / float64(frames)
-				// Ease-in
-				progress := t * t
-				l.window.SetOpacity(1.0 - progress)
-				return false
-			})
-		}
-
-		glib.TimeoutAdd(uint(duration+50), func() bool {
-			l.window.Hide()
-			l.searchEntry.SetText("")
-			l.visible.Store(false)
-			l.animating.Store(false)
-			l.window.SetOpacity(1.0)
-			return false
-		})
-	} else {
-		// No animation
-		l.window.Hide()
-		l.searchEntry.SetText("")
-		l.visible.Store(false)
-		l.animating.Store(false)
-	}
-}
-
-func (l *Launcher) runHideAnimation() {
+	// Animate slide up and fade out
 	duration := l.config.Launcher.Animation.SlideDuration
 	if duration == 0 {
 		duration = 300
 	}
 
-	// Get current margin (should be 40 from Start())
-	startMargin := 40
-	endMargin := l.config.Launcher.Window.Height + 40
-
 	fps := 60
 	frames := duration * fps / 1000
 	frameDelay := 1000 / fps
+
+	startMargin := defaultMargin
+	endMargin := defaultMargin - l.config.Launcher.Window.Height
 
 	for i := 0; i <= frames; i++ {
 		iCopy := i
@@ -1648,8 +1613,12 @@ func (l *Launcher) runHideAnimation() {
 			// Ease-in cubic
 			progress := t * t * t
 
+			// Animate layer margin (slide up)
 			currentMargin := startMargin + int(float64(endMargin-startMargin)*progress)
 			layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, currentMargin)
+
+			// Animate opacity
+			l.window.SetOpacity(1.0 - progress)
 
 			return false
 		})
@@ -1661,8 +1630,9 @@ func (l *Launcher) runHideAnimation() {
 		l.searchEntry.SetText("")
 		l.visible.Store(false)
 		l.animating.Store(false)
-		// Reset margin to default
-		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, 40)
+		// Reset for next show
+		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, defaultMargin)
+		l.window.SetOpacity(1.0)
 		return false
 	})
 }
