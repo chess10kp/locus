@@ -4,7 +4,11 @@ app_id = "com.github.chess10kp.locus"
 [status_bar]
 height = 40
 css_file = "~/.config/locus/statusbar.css"
-modules = ["launcher", "time", "timer", "bluetooth", "volume", "cpu", "memory", "disk", "wifi", "network", "brightness", "keyboard", "music", "weather", "emacs_clock"]
+
+[status_bar.layout]
+left = ["launcher", "workspaces", "binding_mode", "emacs_clock"]
+middle = []
+right = ["notifications", "timer", "time", "color", "battery"]
 
 [status_bar.colors]
 background = "#1e1e2e"
@@ -62,6 +66,13 @@ timer = "%"
 setter_command = "swww img"
 preview_on_navigation = true
 
+[launcher.animation]
+enabled = true
+fade_enabled = true
+fade_in_duration = 250
+fade_out_duration = 200
+easing = "ease-out"
+
 [launcher.icons]
 # Enable/disable icons globally
 enable_icons = true
@@ -78,8 +89,32 @@ fallback_icon = "image-missing"
 icons_for_launchers = ["apps"]
 
 [notification]
+
+[notification.history]
+max_history = 500
+max_age_days = 30
+persist_path = "~/.cache/locus/notifications.json"
+
 [notification.ui]
 icon = "🔔"
+show_unread_count = true
+max_display = 50
+group_by_app = true
+timestamp_format = "%H:%M"
+
+[notification.daemon]
+enabled = true
+position = "top-right"
+max_banners = 5
+banner_gap = 10
+banner_width = 400
+banner_height = 100
+animation_duration = 200
+
+[notification.timeouts]
+low = 3000
+normal = 5000
+critical = -1
 
 [file_search]
 search_paths = ["/home"]

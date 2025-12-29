@@ -825,16 +825,23 @@ func (r *LauncherRegistry) executeColorAction(action *ColorAction) error {
 	switch action.Action {
 	case "save":
 		// Save color to statusbar via IPC
-		if r.ctx != nil && r.ctx.RefreshUI != nil {
-			// Send IPC message to statusbar to display color
-			// This will be handled by the statusbar IPC system
-			// We'll use the status message mechanism for now
-			return fmt.Errorf("color save via IPC not yet implemented")
+		// Send IPC message to update color module in statusbar
+		ipcMessage := fmt.Sprintf("color:%s", action.Color)
+		cmd := exec.Command("sh", "-c", fmt.Sprintf("echo %s | nc -U %s 2>/dev/null || echo %s > /tmp/locus_statusbar_ipc", ipcMessage, r.config.SocketPath, ipcMessage))
+		if err := cmd.Start(); err != nil {
+			log.Printf("Failed to send color IPC message: %v", err)
+			return fmt.Errorf("failed to send color to statusbar: %w", err)
 		}
+		return nil
 	case "copy":
-		// Copy color to clipboard
-		// TODO: Implement clipboard copy
-		return fmt.Errorf("color copy not yet implemented")
+		// Copy color to clipboard using wl-copy or xclip
+		copyCmd := "echo -n " + action.Color + " | wl-copy 2>/dev/null || echo -n " + action.Color + " | xclip -selection clipboard"
+		cmd := exec.Command("sh", "-c", copyCmd)
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+		if err := cmd.Start(); err != nil {
+			return fmt.Errorf("failed to copy color to clipboard: %w", err)
+		}
+		return nil
 	case "preview":
 		// Preview color (already handled in launcher UI)
 		return nil

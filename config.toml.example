@@ -16,12 +16,27 @@ format = "%H:%M"
 [launcher]
 width = 600
 
+[launcher.animation]
+enabled = true
+enable_slide_in = false
+slide_duration = 300
+slide_step = 100
+target_margin = 40
+fade_enabled = true
+fade_in_duration = 250
+fade_out_duration = 200
+scale_enabled = true
+scale_duration = 300
+scale_start = 0.8
+easing = "ease-out"
+
 [launcher.window]
 width = 800
 height = 600
 
 [launcher.search]
 max_results = 10
+max_command_results = 10
 debounce_delay = 150
 
 [launcher.performance]
@@ -30,11 +45,6 @@ cache_max_age_hours = 6
 search_cache_size = 100
 enable_background_loading = true
 max_visible_results = 12
-
-[launcher.cache]
-enabled = true
-max_age_hours = 6
-cache_file = "apps.json"
 
 [launcher.styling]
 background_color = "#0e1419"
@@ -54,6 +64,18 @@ border_width = 1
 font_family = "Iosevka, monospace"
 font_size = 16
 font_weight = "bold"
+
+[launcher.icons]
+enable_icons = true
+icon_size = 32
+cache_icons = true
+cache_size = 500
+fallback_icon = "image-missing"
+icons_for_launchers = []
+
+[launcher.cache]
+cache_dir = "~/.cache/locus"
+apps_cache_file = "apps.json"
 
 [launcher.launcher_prefixes]
 timer = "%"
@@ -96,28 +118,28 @@ file_opener = "xdg-open"
 
 [status_bar.module_configs.bluetooth]
 show_icon = true
-interval = "30s"
+interval = 30
 css_classes = ["bluetooth-module", "bluetooth-button"]
 
 [status_bar.module_configs.volume]
 volume_cmd = "pamixer --get-volume"
 mute_cmd = "pamixer --get-mute"
 show_icon = true
-interval = "10s"
+interval = 10
 css_classes = ["volume-module"]
 
 [status_bar.module_configs.cpu]
 command = "mpstat 1 1 | awk 'NR==4 {print 100 - $NF}'"
 show_icon = true
 show_cores = false
-interval = "10s"
+interval = 10
 css_classes = ["cpu-module"]
 
 [status_bar.module_configs.memory]
 command = "free -b"
 show_icon = true
 show_details = true
-interval = "10s"
+interval = 10
 css_classes = ["memory-module"]
 
 [status_bar.module_configs.disk]
@@ -125,7 +147,7 @@ command = "df -h"
 show_icon = true
 show_details = true
 mounts = ["/", "/home"]
-interval = "30s"
+interval = 30
 css_classes = ["disk-module"]
 
 [status_bar.module_configs.wifi]
@@ -133,7 +155,7 @@ command = "nmcli -t -f active,ssid,signal dev wifi"
 interface = "wlan0"
 show_icon = true
 show_signal = true
-interval = "15s"
+interval = 15
 css_classes = ["wifi-module"]
 
 [status_bar.module_configs.network]
@@ -141,14 +163,14 @@ command = "nmcli -t -f TYPE con show --active"
 show_icon = true
 show_ethernet = true
 show_vpn = true
-interval = "20s"
+interval = 20
 css_classes = ["network-module"]
 
 [status_bar.module_configs.brightness]
 command = "brightnessctl -m"
 device = ""
 show_icon = true
-interval = "5s"
+interval = 5
 css_classes = ["brightness-module"]
 
 [status_bar.module_configs.keyboard]
@@ -157,7 +179,7 @@ locks_cmd = "xset q | grep LED | awk '{print $10}'"
 show_icon = true
 show_layout = true
 show_locks = true
-interval = "5s"
+interval = 5
 css_classes = ["keyboard-module"]
 
 [status_bar.module_configs.music]
@@ -166,7 +188,7 @@ port = 6600
 show_icon = true
 show_status = true
 max_length = 30
-interval = "5s"
+interval = 5
 css_classes = ["music-module"]
 
 [status_bar.module_configs.weather]
@@ -175,21 +197,20 @@ location = ""
 format = "%c+%t+%C"
 show_icon = true
 show_details = true
-interval = "900s"
+interval = 900
 css_classes = ["weather-module"]
 
 [status_bar.module_configs.emacs_clock]
 fallback_text = ""
-interval = "10s"
+interval = 10
 css_classes = ["emacs-clock-module"]
 
 [status_bar.module_configs.timer]
 css_classes = ["timer-module"]
 
 [lock_screen]
-password = "admin"
+enabled = false
 max_attempts = 3
-enabled = true
 css = """
 #lockscreen-window {
     background-color: #0e1419;

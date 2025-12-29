@@ -42,26 +42,28 @@ var (
 )
 
 type Launcher struct {
-	app            *App
-	config         *config.Config
-	window         *gtk.Window
-	searchEntry    *gtk.Entry
-	resultList     *gtk.ListBox
-	gridFlowBox    *gtk.FlowBox
-	registry       *launcher.LauncherRegistry
-	iconCache      *launcher.IconCache
-	thumbnailCache *launcher.ThumbnailCache
-	currentInput   string
-	currentItems   []*launcher.LauncherItem
-	scrolledWindow *gtk.ScrolledWindow
-	badgesBox      *gtk.Box
-	footerBox      *gtk.Box
-	footerLabel    *gtk.Label
-	running        bool
-	visible        atomic.Bool
-	searchTimer    *time.Timer
-	searchVersion  int64 // Track search version to prevent race conditions
-	gridMode       bool
+	app                *App
+	config             *config.Config
+	window             *gtk.Window
+	animationContainer *gtk.Box
+	searchEntry        *gtk.Entry
+	resultList         *gtk.ListBox
+	gridFlowBox        *gtk.FlowBox
+	registry           *launcher.LauncherRegistry
+	iconCache          *launcher.IconCache
+	thumbnailCache     *launcher.ThumbnailCache
+	currentInput       string
+	currentItems       []*launcher.LauncherItem
+	scrolledWindow     *gtk.ScrolledWindow
+	badgesBox          *gtk.Box
+	footerBox          *gtk.Box
+	footerLabel        *gtk.Label
+	running            bool
+	visible            atomic.Bool
+	animating          atomic.Bool
+	searchTimer        *time.Timer
+	searchVersion      int64 // Track search version to prevent race conditions
+	gridMode           bool
 
 	mu            sync.RWMutex
 	refreshUIChan chan launcher.RefreshUIRequest
@@ -76,11 +78,28 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		return nil, fmt.Errorf("failed to create window: %w", err)
 	}
 
+	// Enable transparency
+	if screen, err := gdk.ScreenGetDefault(); err == nil {
+		visual, _ := screen.GetRGBAVisual()
+		if visual != nil {
+			window.SetVisual(visual)
+		}
+	}
+
 	window.SetDecorated(false)
 	window.SetSkipTaskbarHint(true)
 	window.SetSkipPagerHint(true)
 	window.SetResizable(false)
 	window.SetName("launcher-window")
+
+	// Create animation container for all launcher content
+	animationContainer, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create animation container: %w", err)
+	}
+	animationContainer.SetName("animation-container")
+	animationContainer.SetVExpand(true)
+	animationContainer.SetHExpand(false)
 
 	box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 	if err != nil {
@@ -90,7 +109,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	box.SetVExpand(true)
 	box.SetHExpand(false)
 	// Let the window expand as needed for content
-	window.Add(box)
+	window.Add(animationContainer)
+	animationContainer.Add(box)
 
 	searchEntry, err := gtk.EntryNew()
 	if err != nil {
@@ -110,31 +130,7 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	box.PackStart(hbox, false, false, 0)
 
-	// Create footer box for context information
-	var footerBox *gtk.Box
-	var footerLabel *gtk.Label
-	footerBox, err = gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create footer box: %w", err)
-	}
-	footerBox.SetName("footer-box")
-	footerBox.SetHAlign(gtk.ALIGN_START)
-	footerBox.SetHExpand(false)
-	footerBox.SetSizeRequest(cfg.Launcher.Window.Width, -1)
-
-	footerLabel, err = gtk.LabelNew("Applications")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create footer label: %w", err)
-	}
-	footerLabel.SetName("footer-label")
-	footerLabel.SetHAlign(gtk.ALIGN_START)
-	footerLabel.SetHExpand(false)
-	footerBox.PackStart(footerLabel, true, false, 0)
-
-	box.PackStart(footerBox, false, false, 4)
-
-	var scrolledWindow *gtk.ScrolledWindow
-	scrolledWindow, err = gtk.ScrolledWindowNew(nil, nil)
+	scrolledWindow, err := gtk.ScrolledWindowNew(nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scrolled window: %w", err)
 	}
@@ -197,6 +193,28 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	}
 	box.PackStart(badgesBox, false, false, 4)
 
+	// Create footer box for context information
+	footerBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create footer box: %w", err)
+	}
+	footerBox.SetName("footer-box")
+	footerBox.SetHAlign(gtk.ALIGN_START)
+	footerBox.SetHExpand(false)
+	footerBox.SetSizeRequest(cfg.Launcher.Window.Width, -1)
+	footerBox.SetMarginBottom(12)
+
+	footerLabel, err := gtk.LabelNew("Applications")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create footer label: %w", err)
+	}
+	footerLabel.SetName("footer-label")
+	footerLabel.SetHAlign(gtk.ALIGN_START)
+	footerLabel.SetHExpand(false)
+	footerBox.PackStart(footerLabel, true, false, 0)
+
+	box.PackStart(footerBox, false, false, 4)
+
 	registry := launcher.NewLauncherRegistry(cfg)
 
 	// Create icon cache
@@ -222,23 +240,24 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	l := &Launcher{
-		app:            app,
-		config:         cfg,
-		window:         window,
-		searchEntry:    searchEntry,
-		resultList:     resultList,
-		gridFlowBox:    gridFlowBox,
-		scrolledWindow: scrolledWindow,
-		badgesBox:      badgesBox,
-		footerBox:      footerBox,
-		footerLabel:    footerLabel,
-		registry:       registry,
-		iconCache:      iconCache,
-		thumbnailCache: thumbnailCache,
-		refreshUIChan:  refreshUIChan,
-		statusChan:     statusChan,
-		ctx:            ctx,
-		cancel:         cancel,
+		app:                app,
+		config:             cfg,
+		window:             window,
+		animationContainer: animationContainer,
+		searchEntry:        searchEntry,
+		resultList:         resultList,
+		gridFlowBox:        gridFlowBox,
+		scrolledWindow:     scrolledWindow,
+		badgesBox:          badgesBox,
+		footerBox:          footerBox,
+		footerLabel:        footerLabel,
+		registry:           registry,
+		iconCache:          iconCache,
+		thumbnailCache:     thumbnailCache,
+		refreshUIChan:      refreshUIChan,
+		statusChan:         statusChan,
+		ctx:                ctx,
+		cancel:             cancel,
 	}
 
 	// Start goroutines to handle channel requests
@@ -1261,16 +1280,12 @@ func (l *Launcher) onKeyPress(event *gdk.EventKey) bool {
 }
 
 func (l *Launcher) onTabPressed() bool {
-	l.mu.RLock()
-	var title string
-	if len(l.currentItems) > 0 {
-		title = l.currentItems[0].Title
-	}
-	l.mu.RUnlock()
+	text, _ := l.searchEntry.GetText()
+	hookCtx := l.createHookContext(nil)
+	result := l.registry.GetHookRegistry().ExecuteTabHooks(l.ctx, hookCtx, text)
 
-	if title != "" {
-		l.searchEntry.SetText(title)
-		l.searchEntry.SetPosition(-1)
+	if result.Handled {
+		l.searchEntry.SetText(result.NewText)
 		return true
 	}
 
@@ -1278,45 +1293,26 @@ func (l *Launcher) onTabPressed() bool {
 }
 
 func (l *Launcher) shouldShowIcon(item *launcher.LauncherItem) bool {
-	fmt.Printf("[SHOULD-ICON-DEBUG] shouldShowIcon called for item: %s\n", item.Title)
-	debugLogger.Printf("[ICON-DEBUG] shouldShowIcon called for item: %s", item.Title)
-
 	if !l.config.Launcher.Icons.EnableIcons {
-		fmt.Printf("[SHOULD-ICON-DEBUG] Icons disabled globally\n")
-		debugLogger.Printf("[ICON-DEBUG] Icons disabled globally")
 		return false
 	}
 
 	allowedLaunchers := l.config.Launcher.Icons.IconsForLaunchers
-	fmt.Printf("[SHOULD-ICON-DEBUG] allowedLaunchers=%v (len=%d)\n", allowedLaunchers, len(allowedLaunchers))
-	debugLogger.Printf("[ICON-DEBUG] allowedLaunchers=%v", allowedLaunchers)
-
 	if len(allowedLaunchers) == 0 {
-		fmt.Printf("[SHOULD-ICON-DEBUG] Empty allowed list, showing all icons\n")
-		debugLogger.Printf("[ICON-DEBUG] Empty allowed list, showing all icons")
 		return true
 	}
 
 	if item.Launcher == nil {
-		fmt.Printf("[SHOULD-ICON-DEBUG] Launcher is nil for item: %s\n", item.Title)
-		debugLogger.Printf("[ICON-DEBUG] Launcher is nil for item: %s", item.Title)
 		return true
 	}
 
 	launcherName := item.Launcher.Name()
-	fmt.Printf("[SHOULD-ICON-DEBUG] Checking launcher '%s' against allowed list\n", launcherName)
-	debugLogger.Printf("[ICON-DEBUG] Checking launcher '%s' against allowed list", launcherName)
-
 	for _, allowed := range allowedLaunchers {
 		if allowed == launcherName {
-			fmt.Printf("[SHOULD-ICON-DEBUG] ALLOWED: launcher='%s' item='%s'\n", launcherName, item.Title)
-			debugLogger.Printf("[ICON-DEBUG] ALLOWED: launcher='%s' item='%s'", launcherName, item.Title)
 			return true
 		}
 	}
 
-	fmt.Printf("[SHOULD-ICON-DEBUG] BLOCKED: launcher='%s' item='%s'\n", launcherName, item.Title)
-	debugLogger.Printf("[ICON-DEBUG] BLOCKED: launcher='%s' item='%s'", launcherName, item.Title)
 	return false
 }
 
@@ -1488,45 +1484,86 @@ func (l *Launcher) navigateResult(direction int) {
 }
 
 func (l *Launcher) Show() error {
-	log.Printf("Launcher.Show() called, running=%v", l.running)
-
 	// Acquire lock only for internal state changes
 	l.mu.Lock()
 	if !l.running {
-		log.Printf("Launcher not running, starting...")
 		if err := l.Start(); err != nil {
 			l.mu.Unlock()
-			log.Printf("Failed to start launcher: %v", err)
 			return err
 		}
-		log.Printf("Launcher started successfully")
 	}
 	l.mu.Unlock()
 
-	// GTK calls happen without holding lock cause its ont eh same thread
+	// Check if animations are enabled
+	if l.config.Launcher.Animation.Enabled {
+		return l.showWithAnimation()
+	}
+
+	// Non-animated show (original behavior)
 	l.window.ShowAll()
 	l.window.Present()
-
-	// Apply slide-in animation with a small delay to ensure window is rendered
-	glib.TimeoutAdd(10, func() bool {
-		if styleCtx, err := l.window.GetStyleContext(); err == nil {
-			styleCtx.AddClass("slide-in")
-		}
-		l.searchEntry.SetText("")
-		l.searchEntry.GrabFocus()
-
-		// Remove animation class after it completes
-		glib.TimeoutAdd(uint(300), func() bool {
-			if ctx, ctxErr := l.window.GetStyleContext(); ctxErr == nil {
-				ctx.RemoveClass("slide-in")
-			}
-			return false
-		})
-		return false
-	})
+	l.searchEntry.SetText("")
+	l.searchEntry.GrabFocus()
 
 	// Update visibility flag atomically
 	l.visible.Store(true)
+
+	return nil
+}
+
+func (l *Launcher) showWithAnimation() error {
+	l.animating.Store(true)
+
+	// Clear search and prepare for input
+	l.searchEntry.SetText("")
+
+	// Set initial animation state
+	if styleCtx, err := l.animationContainer.GetStyleContext(); err == nil {
+		styleCtx.AddClass("animating-in")
+	}
+
+	// Show window
+	l.window.ShowAll()
+	l.window.Present()
+	l.visible.Store(true)
+
+	// Simple fade-in animation using opacity
+	if l.config.Launcher.Animation.FadeEnabled {
+		l.window.SetOpacity(0.0)
+		duration := l.config.Launcher.Animation.FadeInDuration
+		if duration == 0 {
+			duration = 250
+		}
+
+		fps := 60
+		frames := duration * fps / 1000
+		frameDelay := 1000 / fps
+
+		for i := 0; i <= frames; i++ {
+			iCopy := i
+			glib.TimeoutAdd(uint(i*frameDelay), func() bool {
+				t := float64(iCopy) / float64(frames)
+				// Ease-out
+				progress := 1 - (1-t)*(1-t)
+				l.window.SetOpacity(progress)
+				return false
+			})
+		}
+
+		glib.TimeoutAdd(uint(duration+50), func() bool {
+			l.window.SetOpacity(1.0)
+			if styleCtx, err := l.animationContainer.GetStyleContext(); err == nil {
+				styleCtx.RemoveClass("animating-in")
+			}
+			l.searchEntry.GrabFocus()
+			l.animating.Store(false)
+			return false
+		})
+	} else {
+		// No animation
+		l.searchEntry.GrabFocus()
+		l.animating.Store(false)
+	}
 
 	return nil
 }
@@ -1538,12 +1575,96 @@ func (l *Launcher) Hide() {
 	l.currentItems = nil
 	l.mu.Unlock()
 
-	// GTK calls happen without holding lock
+	// Check if animations are enabled and we're not already animating
+	if l.config.Launcher.Animation.Enabled && !l.animating.Load() {
+		l.hideWithAnimation()
+		return
+	}
+
+	// Non-animated hide (original behavior)
 	l.window.Hide()
 	l.searchEntry.SetText("")
-
-	// Update visibility flag atomically
 	l.visible.Store(false)
+}
+
+func (l *Launcher) hideWithAnimation() {
+	// Simple fade-out animation
+	if l.config.Launcher.Animation.FadeEnabled {
+		duration := l.config.Launcher.Animation.FadeOutDuration
+		if duration == 0 {
+			duration = 200
+		}
+
+		fps := 60
+		frames := duration * fps / 1000
+		frameDelay := 1000 / fps
+
+		for i := 0; i <= frames; i++ {
+			iCopy := i
+			glib.TimeoutAdd(uint(i*frameDelay), func() bool {
+				t := float64(iCopy) / float64(frames)
+				// Ease-in
+				progress := t * t
+				l.window.SetOpacity(1.0 - progress)
+				return false
+			})
+		}
+
+		glib.TimeoutAdd(uint(duration+50), func() bool {
+			l.window.Hide()
+			l.searchEntry.SetText("")
+			l.visible.Store(false)
+			l.animating.Store(false)
+			l.window.SetOpacity(1.0)
+			return false
+		})
+	} else {
+		// No animation
+		l.window.Hide()
+		l.searchEntry.SetText("")
+		l.visible.Store(false)
+		l.animating.Store(false)
+	}
+}
+
+func (l *Launcher) runHideAnimation() {
+	duration := l.config.Launcher.Animation.SlideDuration
+	if duration == 0 {
+		duration = 300
+	}
+
+	// Get current margin (should be 40 from Start())
+	startMargin := 40
+	endMargin := l.config.Launcher.Window.Height + 40
+
+	fps := 60
+	frames := duration * fps / 1000
+	frameDelay := 1000 / fps
+
+	for i := 0; i <= frames; i++ {
+		iCopy := i
+		glib.TimeoutAdd(uint(i*frameDelay), func() bool {
+			t := float64(iCopy) / float64(frames)
+			// Ease-in cubic
+			progress := t * t * t
+
+			currentMargin := startMargin + int(float64(endMargin-startMargin)*progress)
+			layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, currentMargin)
+
+			return false
+		})
+	}
+
+	// Finalize animation
+	glib.TimeoutAdd(uint(duration+50), func() bool {
+		l.window.Hide()
+		l.searchEntry.SetText("")
+		l.visible.Store(false)
+		l.animating.Store(false)
+		// Reset margin to default
+		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, 40)
+		return false
+	})
 }
 
 func (l *Launcher) stopAndDrainSearchTimer() {

@@ -67,6 +67,7 @@ func (a *App) runMainLoop() error {
 // initialize initializes all components
 func (a *App) initialize() {
 	log.Println("Initializing components...")
+	log.Printf("Notification daemon enabled: %v", a.config.Notification.Daemon.Enabled)
 
 	gtk.Init(nil)
 	SetupStyles()
@@ -80,6 +81,7 @@ func (a *App) initialize() {
 	}
 	a.iconCache = iconCache
 
+	log.Printf("Notification daemon enabled: %v", a.config.Notification.Daemon.Enabled)
 	if a.config.Notification.Daemon.Enabled {
 		notificationMgr, err := notification.NewManager(&a.config.Notification, a.iconCache)
 		if err != nil {

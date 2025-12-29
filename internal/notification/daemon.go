@@ -102,10 +102,13 @@ func (d *Daemon) Notify(
 	hints map[string]dbus.Variant,
 	expireTimeout int32,
 ) (uint32, *dbus.Error) {
+	log.Printf("Notify called: app=%s, summary=%s, body=%s", appName, summary, body)
+
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	if !d.running {
+		log.Printf("Daemon not running, rejecting notification")
 		return 0, dbus.MakeFailedError(fmt.Errorf("daemon not running"))
 	}
 
@@ -156,6 +159,7 @@ func (d *Daemon) Notify(
 	}
 
 	notificationID := generateID()
+	log.Printf("Creating notification with ID: %s", notificationID)
 	notif := &Notification{
 		ID:            notificationID,
 		AppName:       appName,
@@ -171,18 +175,27 @@ func (d *Daemon) Notify(
 		ReplacesID:    replacesID,
 	}
 
+	log.Printf("Adding notification to store...")
 	if err := d.store.AddNotification(notif); err != nil {
 		log.Printf("Failed to add notification to store: %v", err)
+	} else {
+		log.Printf("Successfully added notification to store")
 	}
 
 	d.activeNotifs[notifID] = notificationID
+	log.Printf("Active notifications count: %d", len(d.activeNotifs))
 
+	log.Printf("Queueing notification for display...")
 	glib.IdleAdd(func() {
+		log.Printf("Showing notification banner...")
 		if err := d.queue.ShowNotification(notif); err != nil {
 			log.Printf("Failed to show banner: %v", err)
+		} else {
+			log.Printf("Successfully showed notification banner")
 		}
 	})
 
+	log.Printf("Returning notification ID: %d", notifID)
 	return notifID, nil
 }
 

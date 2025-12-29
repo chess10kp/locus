@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os/user"
+	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/chess10kp/locus/internal/config"
 	"github.com/chess10kp/locus/internal/launcher"
@@ -37,6 +40,16 @@ func NewIPCBridge(store *Store, socketPath string) *IPCBridge {
 		socketPath: socketPath,
 		running:    false,
 	}
+}
+
+func expandPath(path string) string {
+	if len(path) > 0 && path[0] == '~' {
+		usr, err := user.Current()
+		if err == nil {
+			return filepath.Join(usr.HomeDir, path[1:])
+		}
+	}
+	return path
 }
 
 func (b *IPCBridge) Start() error {
@@ -315,7 +328,11 @@ type Manager struct {
 }
 
 func NewManager(cfg *config.NotificationConfig, iconCache *launcher.IconCache) (*Manager, error) {
-	socketPath := cfg.History.PersistPath + ".sock"
+	// Expand ~ in socket path
+	socketPath := expandPath(cfg.History.PersistPath) + ".sock"
+	// Add random suffix to avoid conflicts
+	socketPath = socketPath + "." + fmt.Sprintf("%d", time.Now().Unix())
+	log.Printf("Notification socket path: %s", socketPath)
 
 	store, err := NewStore(
 		cfg.History.MaxHistory,

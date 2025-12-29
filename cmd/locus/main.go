@@ -51,11 +51,24 @@ func main() {
 
 	// Load configuration
 	configPath := "~/.config/locus/config.toml"
+	if len(os.Args) > 2 && os.Args[1] == "--config" {
+		configPath = os.Args[2]
+	}
+	log.Printf("Attempting to load config from: %s", configPath)
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		log.Printf("Failed to load config: %v", err)
 		cfg = &config.DefaultConfig
+		log.Printf("Using default config, notification daemon enabled: %v", cfg.Notification.Daemon.Enabled)
+	} else {
+		log.Printf("Config loaded successfully, notification daemon enabled: %v", cfg.Notification.Daemon.Enabled)
+		log.Printf("Config loaded successfully, notifications in layout: %v", cfg.StatusBar.Layout.Right)
+		log.Printf("Animation config - Enabled: %v, FadeEnabled: %v, ScaleEnabled: %v",
+			cfg.Launcher.Animation.Enabled, cfg.Launcher.Animation.FadeEnabled, cfg.Launcher.Animation.ScaleEnabled)
 	}
+
+	log.Printf("Config values - Daemon.Enabled: %v", cfg.Notification.Daemon.Enabled)
+	log.Printf("Config values - Daemon.Position: %s", cfg.Notification.Daemon.Position)
 
 	// Create application
 	app, err := core.NewApp(cfg)

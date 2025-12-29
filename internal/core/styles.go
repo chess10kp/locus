@@ -102,6 +102,17 @@ const defaultLauncherStyles = `
     border: 1px solid #313244;
 }
 
+#animation-container {
+    transition: opacity 300ms ease-out, transform 300ms ease-out !important;
+    opacity: 1 !important;
+    transform: scale(1) !important;
+}
+
+#animation-container.animating-in {
+    opacity: 0 !important;
+    transform: scale(0.8) !important;
+}
+
 #launcher-entry {
     background-color: #181825;
     color: #ebdbb2;
@@ -136,7 +147,14 @@ background-color: #504945;
 
 var globalStyleProvider *gtk.CssProvider
 
-func generateLauncherCSS(styling *config.StylingConfig) string {
+func generateLauncherCSS(styling *config.StylingConfig, animConfig *config.AnimationConfig) string {
+	// Parse background color to add transparency
+	bgColor := styling.BackgroundColor
+	if len(bgColor) == 7 && bgColor[0] == '#' {
+		// Add alpha channel (0.95 = 95% opacity)
+		bgColor = bgColor + "f2"
+	}
+
 	return fmt.Sprintf(`
 #launcher-window {
     background-color: %s;
@@ -153,7 +171,7 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
      font-family: %s;
      font-size: %dpx;
      font-weight: %s;
- }
+  }
 
 #launcher-entry:focus {
     border-bottom: %dpx solid %s;
@@ -179,49 +197,49 @@ func generateLauncherCSS(styling *config.StylingConfig) string {
       background-color: %s;
   }
 
- #result-title {
+  #result-title {
      font-size: 16px;
      font-weight: bold;
- }
-
- #result-subtitle {
-     font-size: 11px;
- }
-
-  #badges-box {
-     background-color: #3c3836;
-     padding: 4px 8px;
-     border-radius: 3px;
-     margin-top: 4px;
-     font-size: 12px;
- }
-
- #badges-box label {
-     color: #888888;
-     font-family: %s;
-     padding: 0px 4px;
- }
-
-  #footer-box {
-      background-color: #d5c4a1;
-      padding: 10px 14px;
-      border-radius: 3px;
-      margin-top: 4px;
-      margin-bottom: 4px;
-      margin-left: 4px;
-      margin-right: 4px;
-      font-size: 24px;
   }
 
-  #footer-box label {
+  #result-subtitle {
+     font-size: 11px;
+  }
+
+   #badges-box {
+      background-color: #3c3836;
+      padding: 4px 8px;
+      border-radius: 3px;
+      margin-top: 4px;
+      font-size: 12px;
+  }
+
+   #badges-box label {
       color: #888888;
       font-family: %s;
-      font-size: 24px;
+      padding: 0px 4px;
+  }
+
+   #footer-box {
+       background-color: #d5c4a1;
+       padding: 10px 14px;
+       border-radius: 3px;
+       margin-top: 4px;
+       margin-bottom: 4px;
+       margin-left: 4px;
+       margin-right: 4px;
+       font-size: 24px;
+  }
+
+   #footer-box label {
+       color: #888888;
+       font-family: %s;
+       font-size: 24px;
   }
 
 
  `,
-		styling.BackgroundColor,
+		bgColor,
 		styling.ForegroundColor,
 		styling.BorderRadius,
 		styling.BorderWidth,
@@ -276,7 +294,7 @@ func SetupLauncherStyles(cfg *config.Config) {
 	}
 
 	// Generate CSS from config
-	launcherCSS := generateLauncherCSS(&cfg.Launcher.Styling)
+	launcherCSS := generateLauncherCSS(&cfg.Launcher.Styling, &cfg.Launcher.Animation)
 
 	// Load built-in launcher CSS
 	provider, _ := gtk.CssProviderNew()

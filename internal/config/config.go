@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -20,6 +21,7 @@ type Config struct {
 	Notification NotificationConfig `toml:"notification"`
 	FileSearch   FileSearchConfig   `toml:"file_search"`
 	LockScreen   LockScreenConfig   `toml:"lock_screen"`
+	Color        ColorConfig        `toml:"color"`
 }
 
 type StatusBarLayout struct {
@@ -102,10 +104,21 @@ type WindowConfig struct {
 }
 
 type AnimationConfig struct {
+	Enabled       bool `toml:"enabled"`
 	EnableSlideIn bool `toml:"enable_slide_in"`
-	SlideDuration int  `toml:"slide_duration"` // ms per frame
-	SlideStep     int  `toml:"slide_step"`     // pixels per frame
+	SlideDuration int  `toml:"slide_duration"` // ms
+	SlideStep     int  `toml:"slide_step"`     // pixels per frame (deprecated, kept for compat)
 	TargetMargin  int  `toml:"target_margin"`  // margin from top
+
+	FadeEnabled     bool `toml:"fade_enabled"`
+	FadeInDuration  int  `toml:"fade_in_duration"`  // milliseconds
+	FadeOutDuration int  `toml:"fade_out_duration"` // milliseconds
+
+	ScaleEnabled  bool    `toml:"scale_enabled"`
+	ScaleDuration int     `toml:"scale_duration"` // milliseconds
+	ScaleStart    float64 `toml:"scale_start"`    // 0.0-1.0
+
+	Easing string `toml:"easing"` // "linear", "ease-in", "ease-out", "ease-in-out"
 }
 
 type SearchConfig struct {
@@ -247,6 +260,11 @@ type LockScreenConfig struct {
 	CSS          string `toml:"css"`
 }
 
+type ColorConfig struct {
+	MaxHistory  int    `toml:"max_history"`
+	HistoryPath string `toml:"history_path"`
+}
+
 var DefaultConfig = Config{
 	AppName:    "locus_bar",
 	AppID:      "com.github.chess10kp.locus",
@@ -267,6 +285,7 @@ var DefaultConfig = Config{
 				"notifications",
 				"timer",
 				"time",
+				"color",
 				"battery",
 				"custom_message",
 			},
@@ -284,6 +303,9 @@ var DefaultConfig = Config{
 			"emacs_clock": {
 				Interval: 10,
 				Enabled:  true,
+			},
+			"color": {
+				Enabled: true,
 			},
 		},
 		Colors: ColorsConfig{
@@ -304,10 +326,18 @@ var DefaultConfig = Config{
 			HideOnClose:       true,
 		},
 		Animation: AnimationConfig{
-			EnableSlideIn: true,
-			SlideDuration: 20,
-			SlideStep:     100,
-			TargetMargin:  40,
+			Enabled:         true,
+			EnableSlideIn:   false,
+			SlideDuration:   300,
+			SlideStep:       100,
+			TargetMargin:    40,
+			FadeEnabled:     true,
+			FadeInDuration:  250,
+			FadeOutDuration: 200,
+			ScaleEnabled:    true,
+			ScaleDuration:   300,
+			ScaleStart:      0.8,
+			Easing:          "ease-out",
 		},
 		Search: SearchConfig{
 			MaxResults:        10, // Reduced for better performance
@@ -465,27 +495,37 @@ var DefaultConfig = Config{
 		#lockscreen-label {
 			color: #ebdbb2;
 			font-size: 24px;
-	}`,
+		}`,
+	},
+	Color: ColorConfig{
+		MaxHistory:  50,
+		HistoryPath: "",
 	},
 }
 
 func LoadConfig(path string) (*Config, error) {
 	expandedPath := expandPath(path)
+	log.Printf("Loading config from expanded path: %s", expandedPath)
 
 	if _, err := os.Stat(expandedPath); os.IsNotExist(err) {
+		log.Printf("Config file does not exist, using defaults")
 		cfg := DefaultConfig
 		return &cfg, nil
 	}
 
 	data, err := os.ReadFile(expandedPath)
 	if err != nil {
+		log.Printf("Failed to read config file: %v", err)
 		return nil, err
 	}
+	log.Printf("Read %d bytes from config file", len(data))
 
 	var cfg Config
 	if err := toml.Unmarshal(data, &cfg); err != nil {
+		log.Printf("Failed to unmarshal TOML: %v", err)
 		return nil, err
 	}
+	log.Printf("Successfully unmarshaled TOML, notification daemon enabled: %v", cfg.Notification.Daemon.Enabled)
 
 	cfg.CacheDir = expandPath(cfg.CacheDir)
 	cfg.ConfigDir = expandPath(cfg.ConfigDir)
@@ -552,6 +592,9 @@ func (c *Config) Validate() error {
 		return err
 	}
 	if err := c.validateBehavior(); err != nil {
+		return err
+	}
+	if err := c.validateAnimation(); err != nil {
 		return err
 	}
 	if err := c.validateLockScreen(); err != nil {
@@ -673,6 +716,32 @@ func (c *Config) validateBehavior() error {
 	}
 	if b.DesktopLauncherFastPath && b.MaxRecentApps == 0 {
 		return fmt.Errorf("desktop_launcher_fast_path requires max_recent_apps > 0")
+	}
+	return nil
+}
+
+func (c *Config) validateAnimation() error {
+	a := c.Launcher.Animation
+	if a.SlideDuration < 0 || a.SlideDuration > 5000 {
+		return fmt.Errorf("invalid slide_duration: %d (must be 0-5000ms)", a.SlideDuration)
+	}
+	if a.FadeInDuration < 0 || a.FadeInDuration > 5000 {
+		return fmt.Errorf("invalid fade_in_duration: %d (must be 0-5000ms)", a.FadeInDuration)
+	}
+	if a.FadeOutDuration < 0 || a.FadeOutDuration > 5000 {
+		return fmt.Errorf("invalid fade_out_duration: %d (must be 0-5000ms)", a.FadeOutDuration)
+	}
+	if a.ScaleDuration < 0 || a.ScaleDuration > 5000 {
+		return fmt.Errorf("invalid scale_duration: %d (must be 0-5000ms)", a.ScaleDuration)
+	}
+	if a.ScaleStart < 0.0 || a.ScaleStart > 1.0 {
+		return fmt.Errorf("invalid scale_start: %f (must be 0.0-1.0)", a.ScaleStart)
+	}
+	validEasings := map[string]bool{
+		"linear": true, "ease-in": true, "ease-out": true, "ease-in-out": true,
+	}
+	if !validEasings[a.Easing] {
+		return fmt.Errorf("invalid easing: %s (must be one of: linear, ease-in, ease-out, ease-in-out)", a.Easing)
 	}
 	return nil
 }

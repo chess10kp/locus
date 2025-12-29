@@ -44,26 +44,36 @@ func (q *Queue) SetCallbacks(onClose func(string), onAction func(string, string)
 }
 
 func (q *Queue) ShowNotification(notif *Notification) error {
+	log.Printf("Queue.ShowNotification called for: %s", notif.Summary)
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	if _, exists := q.banners[notif.ID]; exists {
+		log.Printf("Banner already exists for notification: %s", notif.ID)
 		return nil
 	}
 
 	if len(q.banners) >= q.maxBanners {
+		log.Printf("Max banners reached, removing oldest...")
 		q.removeOldestBanner()
 	}
 
+	log.Printf("Creating new banner...")
 	banner, err := NewBanner(notif, q.onBannerClose, q.onBannerAction, q.bannerWidth, q.bannerHeight, q.animationDuration, q.iconCache)
 	if err != nil {
+		log.Printf("Failed to create banner: %v", err)
 		return err
 	}
+	log.Printf("Banner created successfully")
 
 	q.banners[notif.ID] = banner
+	log.Printf("Calling banner.Show()...")
 	banner.Show()
+	log.Printf("Banner.Show() completed")
 
+	log.Printf("Repositioning all banners...")
 	q.repositionAllBanners()
+	log.Printf("Banner repositioning complete")
 
 	return nil
 }

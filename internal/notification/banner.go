@@ -2,6 +2,7 @@ package notification
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 	"unsafe"
@@ -41,6 +42,8 @@ type Banner struct {
 }
 
 func NewBanner(notif *Notification, onClose func(string), onAction func(string, string), width, height, animationDuration int, iconCache *launcher.IconCache) (*Banner, error) {
+	log.Printf("Creating banner for notification: %s - %s", notif.Summary, notif.Body)
+
 	b := &Banner{
 		notification:      notif,
 		onClose:           onClose,
@@ -67,21 +70,33 @@ func NewBanner(notif *Notification, onClose func(string), onAction func(string, 
 		b.timeout = 5000
 	}
 
+	log.Printf("Creating banner window...")
 	if err := b.createWindow(); err != nil {
+		log.Printf("Failed to create banner window: %v", err)
 		return nil, err
 	}
+	log.Printf("Banner window created successfully")
 
+	log.Printf("Building banner UI...")
 	if err := b.buildUI(); err != nil {
+		log.Printf("Failed to build banner UI: %v", err)
 		return nil, err
 	}
+	log.Printf("Banner UI built successfully")
 
+	log.Printf("Setting up layer shell...")
 	b.setupLayerShell()
+	log.Printf("Layer shell setup complete")
 
 	if b.timeout > 0 && notif.Urgency != UrgencyCritical {
+		log.Printf("Starting dismiss timer...")
 		b.startDismissTimer()
+		log.Printf("Dismiss timer started")
 	}
 
+	log.Printf("Starting animate in...")
 	b.animateIn()
+	log.Printf("Banner creation complete")
 
 	return b, nil
 }
@@ -327,7 +342,9 @@ func (b *Banner) createCloseButton() (*gtk.Button, error) {
 }
 
 func (b *Banner) Show() {
+	log.Printf("Banner.Show() called - showing window")
 	b.window.ShowAll()
+	log.Printf("Banner.Show() completed - window should be visible")
 }
 
 func (b *Banner) Dismiss() {
