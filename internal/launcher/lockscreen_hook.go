@@ -25,6 +25,8 @@ func (h *LockScreenHook) Priority() int {
 }
 
 func (h *LockScreenHook) OnSelect(execCtx context.Context, ctx *HookContext, data ActionData) HookResult {
+	log.Printf("[LOCK-SCREEN-HOOK] OnSelect called with data type: %s, launcher: %s", data.Type(), ctx.LauncherName)
+
 	// Check if this is a lock screen action
 	if data.Type() == "lock_screen" {
 		log.Println("[LOCK-SCREEN-HOOK] Handling lock screen action")
@@ -38,6 +40,7 @@ func (h *LockScreenHook) OnSelect(execCtx context.Context, ctx *HookContext, dat
 			}
 		}
 
+		log.Println("[LOCK-SCREEN-HOOK] Lock screen shown successfully")
 		return HookResult{
 			Handled: true,
 		}

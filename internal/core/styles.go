@@ -408,10 +408,11 @@ func SetupLauncherStylesWithTheme() {
 	}
 
 	launcherCSS := globalThemeEngine.GenerateLauncherCSS()
+	log.Printf("Generated launcher CSS, first 200 chars: %s", launcherCSS[:min(200, len(launcherCSS))])
 
 	provider, _ := gtk.CssProviderNew()
 	if err := provider.LoadFromData(launcherCSS); err != nil {
-		log.Printf("Warning: Failed to load launcher styles from theme: %v", err)
+		log.Printf("Warning: Failed to load launcher styles: %v", err)
 		return
 	}
 

@@ -46,6 +46,7 @@ type LockScreenManager struct {
 	locked         bool
 	destroying     bool
 	monitorHandler glib.SignalHandle
+	onUnlock       func()
 }
 
 func NewLockScreenManager(cfg *config.Config) *LockScreenManager {
@@ -60,13 +61,15 @@ func (m *LockScreenManager) Show() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	log.Println("[LOCKSCREEN] Show() called")
+
 	if m.locked {
-		debugLogger.Println("Already locked")
+		log.Println("[LOCKSCREEN] Already locked")
 		return nil
 	}
 
 	if !m.config.LockScreen.Enabled {
-		log.Println("Lockscreen is disabled in config")
+		log.Println("[LOCKSCREEN] Lockscreen is disabled in config")
 		return nil
 	}
 
@@ -155,6 +158,15 @@ func (m *LockScreenManager) IsLocked() bool {
 
 func (m *LockScreenManager) UnlockAll() {
 	m.Hide()
+	if m.onUnlock != nil {
+		m.onUnlock()
+	}
+}
+
+func (m *LockScreenManager) SetUnlockCallback(callback func()) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.onUnlock = callback
 }
 
 func (m *LockScreenManager) createLockScreenWindow(monitor *gdk.Monitor, isInputEnabled bool) (*LockScreenWindow, error) {
@@ -227,8 +239,13 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 
 	// Apply theme engine for lock screen styling if available
 	if engine := theme.GetGlobalEngine(); engine != nil {
+		css := engine.GenerateLockscreenCSS()
+		log.Printf("Generated lockscreen CSS: %s", css)
 		cssProvider, _ := gtk.CssProviderNew()
-		cssProvider.LoadFromData(engine.GenerateLockscreenCSS())
+		if err := cssProvider.LoadFromData(css); err != nil {
+			log.Printf("Failed to load lockscreen CSS: %v", err)
+			return err
+		}
 		gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 		debugLogger.Println("Applied theme engine to lockscreen")
 	} else {
@@ -243,9 +260,24 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 	if err != nil {
 		return err
 	}
+
+	bgColor := "#282828"
+	if engine := theme.GetGlobalEngine(); engine != nil {
+		bgColor = engine.GetSemanticColor("background")
+	}
+
 	mainBox.SetVAlign(gtk.ALIGN_FILL)
 	mainBox.SetHAlign(gtk.ALIGN_FILL)
+	mainBox.SetName("lockscreen-container")
 	ls.window.Add(mainBox)
+
+	// Apply background color directly to main box as well
+	if ctx, err := mainBox.GetStyleContext(); err == nil {
+		provider, _ := gtk.CssProviderNew()
+		css := fmt.Sprintf("#lockscreen-container { background-color: %s; }", bgColor)
+		provider.LoadFromData(css)
+		ctx.AddProvider(provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	}
 
 	centerBox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 20)
 	if err != nil {
@@ -375,10 +407,14 @@ func (m *LockScreenManager) showLockScreenWindow(ls *LockScreenWindow) {
 	geo := ls.monitor.GetGeometry()
 	ls.window.SetDefaultSize(geo.GetWidth(), geo.GetHeight())
 
+	log.Printf("[LOCKSCREEN] Showing lockscreen window for monitor")
+
 	debugLogger.Printf("Before ShowAll: centerBox=%v, passwordEntry=%v", ls.centerBox != nil, ls.passwordEntry != nil)
 
 	// Show the window (layer shell is already initialized)
 	ls.window.ShowAll()
+
+	log.Printf("[LOCKSCREEN] Window shown, visible=%v", ls.window.GetVisible())
 
 	debugLogger.Printf("After ShowAll: window visible=%v", ls.window.GetVisible())
 

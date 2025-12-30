@@ -55,10 +55,11 @@ func main() {
 		configPath = os.Args[2]
 	}
 	log.Printf("Attempting to load config from: %s", configPath)
-	cfg, err := config.LoadConfig(configPath)
+	cfg, err := config.LoadAndValidateConfig(configPath)
 	if err != nil {
-		log.Printf("Failed to load config: %v", err)
+		log.Printf("Failed to load or validate config: %v", err)
 		cfg = &config.DefaultConfig
+		log.Println("Using default config")
 	} else {
 		log.Printf("Config loaded successfully, layout: %v", cfg.StatusBar.Layout.Right)
 		log.Printf("Animation config - Enabled: %v, FadeEnabled: %v, ScaleEnabled: %v",

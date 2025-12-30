@@ -77,6 +77,7 @@ func (a *App) initialize() {
 		currentTheme = config.DefaultTheme()
 	}
 
+	log.Printf("Using theme: %s, FontSize: %d", currentTheme.Name, currentTheme.Typography.FontSize)
 	SetupThemeEngine(&currentTheme)
 	SetupStylesWithTheme()
 	SetupStatusBarStylesWithTheme()
@@ -89,6 +90,11 @@ func (a *App) initialize() {
 	go a.monitorGTKMainLoop()
 
 	a.lockscreen = lockscreen.NewLockScreenManager(a.config)
+	a.lockscreen.SetUnlockCallback(func() {
+		if a.statusBar != nil {
+			a.statusBar.Show()
+		}
+	})
 
 	iconCache, err := launcher.NewIconCache(a.config)
 	if err != nil {

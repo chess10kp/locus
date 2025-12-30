@@ -336,32 +336,34 @@ func (e *ThemeEngine) GenerateLockscreenCSS() string {
 	t := e.theme.Typography
 
 	return fmt.Sprintf(`
-#lockscreen-window {
-    background: %s;
-    color: %s;
+#lockscreen-container {
+    background-color: %s;
 }
 
-#lockscreen-entry {
-    background: %s;
+#lockscreen-window {
+    background-color: %s;
+}
+
+ #lockscreen-entry {
+    background-color: %s;
     color: %s;
     border: 2px solid %s;
     border-radius: %dpx;
     padding: 12px;
     font-size: %dpx;
-    font-family: %s, monospace;
+    font-family: %s;
     min-width: 300px;
 }
 
 #lockscreen-entry:focus {
     border-color: %s;
-    background: %s;
+    background-color: %s;
 }
 
 #lockscreen-status {
     color: %s;
-    font-size: %dpx;
-    font-family: %s, monospace;
-    padding: 15px;
+    font-family: %s;
+    padding: %dpx;
     min-height: 30px;
 }
 
@@ -379,40 +381,40 @@ func (e *ThemeEngine) GenerateLockscreenCSS() string {
 
 #lockscreen-label {
     color: %s;
-    font-size: %dpx;
-    font-family: %s, monospace;
+    font-family: %s;
     font-weight: bold;
+    font-size: 24px;
 }
 
 #lockscreen-clock {
     color: %s;
-    font-family: %s, monospace;
+    font-family: %s;
     font-weight: bold;
+    font-size: 80px;
 }
-`,
+ `,
+		c.LockscreenBackground,
+		c.LockscreenBackground,
 		c.LockscreenBackground,
 		c.Foreground,
 
 		e.adjustBrightness(c.Background, -0.1),
-		c.Foreground,
-		c.Primary,
 		b.Medium,
-		t.FontSize+2,
+		24,
 		t.FontFamily,
 
-		c.Secondary,
+		c.Primary,
 		e.adjustBrightness(c.Background, -0.15),
 
 		c.Foreground,
-		t.FontSize-2,
 		t.FontFamily,
+		15,
 
 		c.Error,
 		c.Success,
 		c.Warning,
 
 		c.Foreground,
-		t.FontSize+8,
 		t.FontFamily,
 
 		c.Foreground,

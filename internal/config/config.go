@@ -38,7 +38,7 @@ type StatusBarConfig struct {
 }
 
 type ModuleConfig struct {
-	Interval   int                    `toml:"interval"`
+	Interval   string                 `toml:"interval"`
 	Format     string                 `toml:"format"`
 	Enabled    bool                   `toml:"enabled"`
 	CSSClasses []string               `toml:"css_classes"`
@@ -50,8 +50,8 @@ type ModuleConfig struct {
 func (c *ModuleConfig) ToMap() map[string]interface{} {
 	result := make(map[string]interface{})
 
-	if c.Interval > 0 {
-		result["interval"] = fmt.Sprintf("%ds", c.Interval)
+	if c.Interval != "" {
+		result["interval"] = c.Interval
 	}
 
 	if c.Format != "" {
@@ -254,16 +254,16 @@ var DefaultConfig = Config{
 		},
 		ModuleConfigs: map[string]ModuleConfig{
 			"time": {
-				Interval: 1,
+				Interval: "1s",
 				Format:   "15:04:05",
 				Enabled:  true,
 			},
 			"battery": {
-				Interval: 30,
+				Interval: "30s",
 				Enabled:  true,
 			},
 			"emacs_clock": {
-				Interval: 10,
+				Interval: "10s",
 				Enabled:  true,
 			},
 			"color": {
@@ -396,7 +396,7 @@ var DefaultConfig = Config{
 		Password:     "",
 		PasswordHash: "",
 		MaxAttempts:  3,
-		Enabled:      true,
+		Enabled:      false,
 		CSS: `#lockscreen-window {
 			background-color: #0e1419;
 		}

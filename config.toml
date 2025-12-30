@@ -176,7 +176,7 @@ css_classes = ["weather-module"]
 
 [status_bar.module_configs.emacs_clock]
 fallback_text = ""
-interval = "10s"
+interval = "30s"
 css_classes = ["emacs-clock-module"]
 
 [status_bar.module_configs.timer]
