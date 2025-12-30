@@ -6,9 +6,12 @@ import (
 	"os"
 
 	"github.com/chess10kp/locus/internal/config"
+	"github.com/chess10kp/locus/internal/theme"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
+
+var globalThemeEngine *theme.ThemeEngine
 
 const defaultStyles = `
 * {
@@ -332,4 +335,114 @@ func LoadCustomCSS() {
 	} else {
 		log.Printf("Warning: Failed to read launcher CSS from %s: %v", launcherPath, err)
 	}
+}
+
+func SetupThemeEngine(th *config.Theme) {
+	globalThemeEngine = theme.NewThemeEngine(th)
+	theme.SetGlobalEngine(globalThemeEngine)
+}
+
+func SetupStylesWithTheme() {
+	if globalThemeEngine == nil {
+		log.Printf("Warning: Theme engine not initialized, falling back to default styles")
+		SetupStyles()
+		return
+	}
+
+	screen, err := gdk.ScreenGetDefault()
+	if err != nil || screen == nil {
+		log.Printf("Warning: Failed to get default screen: %v", err)
+		return
+	}
+
+	globalCSS := globalThemeEngine.GenerateGlobalCSS()
+
+	provider, _ := gtk.CssProviderNew()
+	if err := provider.LoadFromData(globalCSS); err != nil {
+		log.Printf("Warning: Failed to load global styles from theme: %v", err)
+		return
+	}
+
+	globalStyleProvider = provider
+	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	log.Printf("Loaded global styles from theme")
+
+	// Load user CSS file
+	LoadCustomCSS()
+}
+
+func SetupStatusBarStylesWithTheme() {
+	if globalThemeEngine == nil {
+		log.Printf("Warning: Theme engine not initialized, statusbar styles not applied")
+		return
+	}
+
+	screen, err := gdk.ScreenGetDefault()
+	if err != nil || screen == nil {
+		log.Printf("Warning: Failed to get default screen for statusbar styles: %v", err)
+		return
+	}
+
+	statusbarCSS := globalThemeEngine.GenerateStatusBarCSS()
+
+	provider, _ := gtk.CssProviderNew()
+	if err := provider.LoadFromData(statusbarCSS); err != nil {
+		log.Printf("Warning: Failed to load statusbar styles from theme: %v", err)
+		return
+	}
+
+	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	log.Printf("Loaded statusbar styles from theme")
+}
+
+func SetupLauncherStylesWithTheme() {
+	if globalThemeEngine == nil {
+		log.Printf("Warning: Theme engine not initialized, launcher styles not applied")
+		return
+	}
+
+	screen, err := gdk.ScreenGetDefault()
+	if err != nil || screen == nil {
+		log.Printf("Warning: Failed to get default screen for launcher styles: %v", err)
+		return
+	}
+
+	launcherCSS := globalThemeEngine.GenerateLauncherCSS()
+
+	provider, _ := gtk.CssProviderNew()
+	if err := provider.LoadFromData(launcherCSS); err != nil {
+		log.Printf("Warning: Failed to load launcher styles from theme: %v", err)
+		return
+	}
+
+	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	log.Printf("Loaded launcher styles from theme")
+}
+
+func SetupLockscreenStylesWithTheme() {
+	if globalThemeEngine == nil {
+		log.Printf("Warning: Theme engine not initialized, lockscreen styles not applied")
+		return
+	}
+
+	screen, err := gdk.ScreenGetDefault()
+	if err != nil || screen == nil {
+		log.Printf("Warning: Failed to get default screen for lockscreen styles: %v", err)
+		return
+	}
+
+	lockscreenCSS := globalThemeEngine.GenerateLockscreenCSS()
+
+	provider, _ := gtk.CssProviderNew()
+	if err := provider.LoadFromData(lockscreenCSS); err != nil {
+		log.Printf("Warning: Failed to load lockscreen styles from theme: %v", err)
+		return
+	}
+
+	gtk.AddProviderForScreen(screen, provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+	log.Printf("Loaded lockscreen styles from theme")
+}
+
+func GetThemeEngine() *theme.ThemeEngine {
+	return globalThemeEngine
 }

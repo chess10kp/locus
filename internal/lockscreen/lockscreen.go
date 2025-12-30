@@ -16,6 +16,7 @@ import (
 
 	"github.com/chess10kp/locus/internal/config"
 	"github.com/chess10kp/locus/internal/layer"
+	"github.com/chess10kp/locus/internal/theme"
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -219,16 +220,23 @@ func (m *LockScreenManager) createLockScreenWindow(monitor *gdk.Monitor, isInput
 func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 	debugLogger.Println("=== buildLockScreenUI START ===")
 
-	// Apply CSS provider for lock screen styling
-	cssProvider, err := gtk.CssProviderNew()
+	screen, err := gdk.ScreenGetDefault()
 	if err != nil {
 		return err
 	}
-	cssProvider.LoadFromData(m.config.LockScreen.CSS)
 
-	screen, err := gdk.ScreenGetDefault()
-	if err == nil {
+	// Apply theme engine for lock screen styling if available
+	if engine := theme.GetGlobalEngine(); engine != nil {
+		cssProvider, _ := gtk.CssProviderNew()
+		cssProvider.LoadFromData(engine.GenerateLockscreenCSS())
 		gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+		debugLogger.Println("Applied theme engine to lockscreen")
+	} else {
+		// Fallback to inline CSS from config
+		cssProvider, _ := gtk.CssProviderNew()
+		cssProvider.LoadFromData(m.config.LockScreen.CSS)
+		gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+		debugLogger.Println("Applied inline CSS to lockscreen")
 	}
 
 	mainBox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)

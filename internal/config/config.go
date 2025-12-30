@@ -21,6 +21,7 @@ type Config struct {
 	FileSearch FileSearchConfig `toml:"file_search"`
 	LockScreen LockScreenConfig `toml:"lock_screen"`
 	Color      ColorConfig      `toml:"color"`
+	Theme      ThemeConfig      `toml:"theme"`
 }
 
 type StatusBarLayout struct {
@@ -233,6 +234,7 @@ var DefaultConfig = Config{
 	SocketPath: "/tmp/locus_socket",
 	CacheDir:   "~/.cache/locus",
 	ConfigDir:  "~/.config/locus",
+	Theme:      DefaultThemeConfig(),
 	StatusBar: StatusBarConfig{
 		Height: 40,
 		Layout: StatusBarLayout{
@@ -527,7 +529,14 @@ func (c *Config) Validate() error {
 	if err := c.validateLockScreen(); err != nil {
 		return err
 	}
+	if err := c.validateTheme(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (c *Config) validateTheme() error {
+	return c.Theme.Validate()
 }
 
 func (c *Config) validateWindow() error {

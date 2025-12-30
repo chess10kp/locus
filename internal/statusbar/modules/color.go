@@ -47,6 +47,9 @@ func (m *ColorModule) CreateWidget() (gtk.IWidget, error) {
 	}
 	indicator.SetSizeRequest(16, 16)
 	indicator.SetName("color-indicator-widget")
+	if styleCtx, err := indicator.GetStyleContext(); err == nil {
+		styleCtx.AddClass("color-indicator")
+	}
 
 	// Set initial background color directly on indicator
 	m.updateIndicatorColor(indicator)
@@ -99,12 +102,10 @@ func (m *ColorModule) updateWidget() error {
 		return nil
 	}
 
-	// Update CSS for color indicator using simple class selector
 	css := fmt.Sprintf(`
 		.color-indicator {
 			background-color: %s;
-			border-radius: 3px;
-			border: 1px solid rgba(255, 255, 255, 0.3);
+			border-radius: 2px;
 		}
 	`, m.color)
 
@@ -149,10 +150,7 @@ func (m *ColorModule) updateIndicatorColor(indicator *gtk.Box) {
 	css := fmt.Sprintf(`
 		.color-indicator {
 			background-color: %s;
-			border-radius: 3px;
-			min-width: 16px;
-			min-height: 16px;
-			border: 1px solid rgba(255,255,255,0.3);
+			border-radius: 2px;
 		}
 	`, m.color)
 

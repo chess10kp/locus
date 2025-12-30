@@ -70,7 +70,20 @@ func (a *App) initialize() {
 	log.Println("Initializing components...")
 
 	gtk.Init(nil)
-	SetupStyles()
+
+	currentTheme, exists := a.config.Theme.Themes[a.config.Theme.CurrentTheme]
+	if !exists {
+		log.Printf("Theme '%s' not found, using default", a.config.Theme.CurrentTheme)
+		currentTheme = config.DefaultTheme()
+	}
+
+	SetupThemeEngine(&currentTheme)
+	SetupStylesWithTheme()
+	SetupStatusBarStylesWithTheme()
+	SetupLauncherStylesWithTheme()
+	SetupLockscreenStylesWithTheme()
+
+	log.Printf("Applied theme: %s", a.config.Theme.CurrentTheme)
 
 	// Add GTK main loop monitoring
 	go a.monitorGTKMainLoop()
