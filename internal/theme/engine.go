@@ -129,6 +129,14 @@ func (e *ThemeEngine) GenerateStatusBarCSS() string {
     font-weight: %s;
 }
 
+window#statusbar {
+    background-color: %s;
+}
+
+box#statusbar {
+    background-color: %s;
+}
+
 .text-muted {
     color: %s;
 }
@@ -160,13 +168,15 @@ func (e *ThemeEngine) GenerateStatusBarCSS() string {
 .battery-low {
     color: %s;
 }
- `,
+	 `,
 		c.StatusbarBackground,
 		c.Foreground,
 		s.SM/2,
 		t.FontFamily,
 		t.FontSize,
 		t.FontWeight,
+		c.StatusbarBackground,
+		c.StatusbarBackground,
 		c.Muted,
 		c.Error,
 		c.Warning,

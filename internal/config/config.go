@@ -22,6 +22,7 @@ type Config struct {
 	LockScreen LockScreenConfig `toml:"lock_screen"`
 	Color      ColorConfig      `toml:"color"`
 	Theme      ThemeConfig      `toml:"theme"`
+	Bookmarks  BookmarksConfig  `toml:"bookmarks"`
 }
 
 type StatusBarLayout struct {
@@ -226,6 +227,11 @@ type LockScreenConfig struct {
 type ColorConfig struct {
 	MaxHistory  int    `toml:"max_history"`
 	HistoryPath string `toml:"history_path"`
+}
+
+type BookmarksConfig struct {
+	BrowserCommand string `toml:"browser_command"`
+	Path           string `toml:"path"`
 }
 
 var DefaultConfig = Config{
@@ -434,6 +440,10 @@ var DefaultConfig = Config{
 	Color: ColorConfig{
 		MaxHistory:  50,
 		HistoryPath: "",
+	},
+	Bookmarks: BookmarksConfig{
+		BrowserCommand: "xdg-open",
+		Path:           "~/.bookmarks",
 	},
 }
 

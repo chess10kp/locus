@@ -1925,10 +1925,22 @@ func (l *Launcher) Show() error {
 		cfg.Enabled, cfg.EnableSlideIn, cfg.TargetMargin, cfg.SlideDuration)
 
 	log.Printf("[LAUNCHER-SHOW] Setting initial margin to %d and showing window", startY)
-	layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, startY)
-	l.window.ShowAll()
-	l.window.Present()
-	log.Printf("[LAUNCHER-SHOW] Window shown and presented")
+
+	done := make(chan struct{})
+	go func() {
+		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, startY)
+		l.window.ShowAll()
+		l.window.Present()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		log.Printf("[LAUNCHER-SHOW] Window shown and presented")
+	case <-time.After(5 * time.Second):
+		log.Printf("[LAUNCHER-SHOW] WARNING: Window operations timed out after 5s")
+	}
+
 	l.searchEntry.SetText("")
 
 	if cfg.Enabled && cfg.EnableSlideIn {
@@ -1939,14 +1951,25 @@ func (l *Launcher) Show() error {
 		animationTicks := 0
 		l.window.AddTickCallback(func(w *gtk.Widget, frameClock *gdk.FrameClock) bool {
 			animationTicks++
+
 			tickStart := time.Now()
 			elapsed := time.Now().UnixNano() - animStartTime
+
+			if elapsed > durationNs*2 {
+				log.Printf("[LAUNCHER-SHOW] WARNING: Animation timeout after %vms, forcing completion", elapsed/1_000_000)
+				layer.SetMargin(unsafe.Pointer(w.Native()), layer.EdgeTop, targetY)
+				l.searchEntry.GrabFocus()
+				l.visible.Store(true)
+				return false
+			}
+
 			progress := float64(elapsed) / float64(durationNs)
 
 			if progress >= 1.0 {
 				log.Printf("[LAUNCHER-SHOW] Animation completed after %d ticks, setting final margin to %d", animationTicks, targetY)
 				layer.SetMargin(unsafe.Pointer(w.Native()), layer.EdgeTop, targetY)
 				l.searchEntry.GrabFocus()
+				l.visible.Store(true)
 				log.Printf("[LAUNCHER-SHOW] Focus grabbed by search entry")
 				tickDuration := time.Since(tickStart)
 				if tickDuration > 50*time.Millisecond {
@@ -2005,8 +2028,19 @@ func (l *Launcher) Hide() {
 		animationTicks := 0
 		l.window.AddTickCallback(func(w *gtk.Widget, frameClock *gdk.FrameClock) bool {
 			animationTicks++
+
 			tickStart := time.Now()
 			elapsed := time.Now().UnixNano() - animStartTime
+
+			if elapsed > durationNs*2 {
+				log.Printf("[LAUNCHER-HIDE] WARNING: Animation timeout after %vms, forcing window hide", elapsed/1_000_000)
+				l.window.Hide()
+				l.searchEntry.SetText("")
+				l.visible.Store(false)
+				layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, cfg.TargetMargin)
+				return false
+			}
+
 			progress := float64(elapsed) / float64(durationNs)
 
 			if progress >= 1.0 {

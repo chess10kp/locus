@@ -181,21 +181,123 @@ func (sb *StatusBar) destroyAllStatusBars() {
 	sb.containers = make(map[int]*gtk.Box)
 }
 
+type monitorWindowConfig struct {
+	monitorIndex int
+	monitor      *gdk.Monitor
+	height       int
+}
+
 func (sb *StatusBar) onMonitorsChanged() {
-	log.Printf("Monitors changed, recreating statusbar windows")
-	if err := sb.createStatusBarsForAllMonitors(); err != nil {
-		log.Printf("Failed to recreate statusbar windows: %v", err)
+	log.Printf("Monitors changed, preparing to recreate statusbar windows")
+
+	sb.mu.Lock()
+	if !sb.running {
+		sb.mu.Unlock()
+		log.Printf("Statusbar not running, skipping recreation")
 		return
 	}
+	sb.mu.Unlock()
 
-	if err := sb.createWidgets(); err != nil {
-		log.Printf("Failed to recreate widgets: %v", err)
-		return
+	go sb.recreateStatusBarsAsync()
+}
+
+func (sb *StatusBar) recreateStatusBarsAsync() {
+	log.Printf("Collecting monitor information")
+
+	var monitorConfigs []monitorWindowConfig
+	monitorCount := sb.display.GetNMonitors()
+
+	glib.IdleAdd(func() bool {
+		for i := 0; i < monitorCount; i++ {
+			monitor, err := sb.display.GetMonitor(i)
+			if err != nil {
+				log.Printf("Warning: failed to get monitor %d: %v", i, err)
+				continue
+			}
+			monitorConfigs = append(monitorConfigs, monitorWindowConfig{
+				monitorIndex: i,
+				monitor:      monitor,
+				height:       sb.config.StatusBar.Height,
+			})
+		}
+
+		log.Printf("Collected %d monitor configs, starting window creation", len(monitorConfigs))
+		return false
+	})
+
+	for _, cfg := range monitorConfigs {
+		cfg := cfg
+		glib.IdleAdd(func() bool {
+			window, container, err := sb.createSingleStatusWindow(cfg)
+			if err != nil {
+				log.Printf("Failed to create window for monitor %d: %v", cfg.monitorIndex, err)
+				return false
+			}
+
+			sb.mu.Lock()
+			sb.windows[cfg.monitorIndex] = window
+			sb.containers[cfg.monitorIndex] = container
+			sb.mu.Unlock()
+
+			log.Printf("Created statusbar window for monitor %d", cfg.monitorIndex)
+			return false
+		})
 	}
 
-	for _, window := range sb.windows {
-		window.ShowAll()
+	glib.IdleAdd(func() bool {
+		log.Printf("Creating widgets for all monitors")
+		sb.mu.Lock()
+		defer sb.mu.Unlock()
+
+		if err := sb.createWidgets(); err != nil {
+			log.Printf("Failed to recreate widgets: %v", err)
+		}
+
+		log.Printf("Showing all statusbar windows")
+		for _, window := range sb.windows {
+			window.ShowAll()
+		}
+
+		log.Printf("Statusbar recreation completed")
+		return false
+	})
+}
+
+func (sb *StatusBar) createSingleStatusWindow(cfg monitorWindowConfig) (*gtk.Window, *gtk.Box, error) {
+	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create window: %w", err)
 	}
+
+	container, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create container: %w", err)
+	}
+
+	window.Add(container)
+	window.SetTitle(sb.config.AppName)
+	window.SetName("statusbar")
+
+	if cfg.height > 0 {
+		window.SetSizeRequest(-1, cfg.height)
+	}
+
+	layer.InitForWindow(unsafe.Pointer(window.GObject))
+	layer.SetAnchor(unsafe.Pointer(window.GObject), layer.EdgeLeft, true)
+	layer.SetAnchor(unsafe.Pointer(window.GObject), layer.EdgeRight, true)
+	layer.SetAnchor(unsafe.Pointer(window.GObject), layer.EdgeTop, true)
+	layer.SetMargin(unsafe.Pointer(window.GObject), layer.EdgeTop, 0)
+	layer.SetLayer(unsafe.Pointer(window.GObject), layer.LayerTop)
+	layer.SetExclusiveZone(unsafe.Pointer(window.GObject), cfg.height)
+	layer.SetKeyboardMode(unsafe.Pointer(window.GObject), layer.KeyboardModeNone)
+	layer.SetMonitor(unsafe.Pointer(window.GObject), cfg.monitor)
+
+	window.Connect("destroy", func() {
+		close(sb.stopUpdate)
+		sb.Quit()
+	})
+
+	return window, container, nil
 }
 
 func (sb *StatusBar) Stop() error {

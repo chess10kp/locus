@@ -185,6 +185,26 @@ func (m *LockScreenManager) createLockScreenWindow(monitor *gdk.Monitor, isInput
 	geo := monitor.GetGeometry()
 	window.SetDefaultSize(geo.GetWidth(), geo.GetHeight())
 
+	bgColor := "#0e1419"
+	if engine := theme.GetGlobalEngine(); engine != nil {
+		bgColor = engine.GetSemanticColor("lockscreen-background")
+	}
+
+	if overrideProvider, err := gtk.CssProviderNew(); err == nil {
+		overrideCSS := fmt.Sprintf(`
+#lockscreen-window {
+    background-color: %s !important;
+}
+window#lockscreen-window {
+    background-color: %s !important;
+}
+`, bgColor, bgColor)
+		overrideProvider.LoadFromData(overrideCSS)
+		if ctx, err := window.GetStyleContext(); err == nil {
+			ctx.AddProvider(overrideProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+		}
+	}
+
 	ls := &LockScreenWindow{
 		window:         window,
 		monitor:        monitor,
@@ -261,23 +281,10 @@ func (m *LockScreenManager) buildLockScreenUI(ls *LockScreenWindow) error {
 		return err
 	}
 
-	bgColor := "#282828"
-	if engine := theme.GetGlobalEngine(); engine != nil {
-		bgColor = engine.GetSemanticColor("background")
-	}
-
 	mainBox.SetVAlign(gtk.ALIGN_FILL)
 	mainBox.SetHAlign(gtk.ALIGN_FILL)
 	mainBox.SetName("lockscreen-container")
 	ls.window.Add(mainBox)
-
-	// Apply background color directly to main box as well
-	if ctx, err := mainBox.GetStyleContext(); err == nil {
-		provider, _ := gtk.CssProviderNew()
-		css := fmt.Sprintf("#lockscreen-container { background-color: %s; }", bgColor)
-		provider.LoadFromData(css)
-		ctx.AddProvider(provider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-	}
 
 	centerBox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 20)
 	if err != nil {
@@ -491,21 +498,26 @@ func (m *LockScreenManager) setupMonitorChangeHandler() {
 
 	m.monitorHandler = display.Connect("monitor-added", func(display *gdk.Display, monitor *gdk.Monitor) {
 		m.mu.Lock()
-		defer m.mu.Unlock()
 
 		if !m.locked || m.destroying {
+			m.mu.Unlock()
 			return
 		}
 
 		debugLogger.Println("Monitor configuration changed, recreating lock screens")
 		m.destroying = true
-		m.UnlockAll()
+		m.mu.Unlock()
 
-		glib.TimeoutAdd(100, func() bool {
-			m.destroying = false
-			m.Show()
-			return false
-		})
+		go func() {
+			m.UnlockAll()
+
+			glib.IdleAdd(func() {
+				m.mu.Lock()
+				m.destroying = false
+				m.mu.Unlock()
+				m.Show()
+			})
+		}()
 	})
 }
 

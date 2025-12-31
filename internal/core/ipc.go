@@ -164,15 +164,25 @@ func (s *IPCServer) handleMessage(message string) {
 			log.Printf("[IPC] ERROR: app is nil!")
 			return
 		}
-		log.Printf("[IPC] About to call glib.IdleAdd")
 		s.callbacks.Add(1)
 		executedBefore := s.callbacksExec.Load()
 
+		callbackDone := make(chan bool, 1)
 		LoggedIdleAdd("IPC-launcher", func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[IPC] PANIC in ToggleLauncher callback: %v", r)
+				}
+				select {
+				case callbackDone <- true:
+				default:
+				}
+			}()
+
 			s.callbacksExec.Add(1)
 			log.Printf("[IPC] IdleAdd callback executing (scheduled: %d, executed: %d)",
 				s.callbacks.Load(), s.callbacksExec.Load())
-			// Toggle launcher instead of just showing
+
 			LogOperation("IPC-launcher", "ToggleLauncher", func() {
 				if err := s.app.ToggleLauncher(); err != nil {
 					log.Printf("Failed to toggle launcher: %v", err)
@@ -181,24 +191,45 @@ func (s *IPCServer) handleMessage(message string) {
 			log.Printf("[IPC] ToggleLauncher completed")
 		})
 
-		// Fallback: if callback doesn't execute in 1 second, try direct call
 		go func() {
-			time.Sleep(1 * time.Second)
-			scheduled := s.callbacks.Load()
-			executed := s.callbacksExec.Load()
-			if scheduled > executed {
-				log.Printf("[IPC] WARNING: Callback not executed after 1s (scheduled: %d, executed: %d), attempting direct call",
-					scheduled, executed)
-				// Only increment if we haven't already
-				if executed == executedBefore {
-					s.callbacksExec.Add(1)
-					LogOperation("IPC-direct", "ToggleLauncher", func() {
-						if err := s.app.ToggleLauncher(); err != nil {
+			ticker := time.NewTicker(500 * time.Millisecond)
+			defer ticker.Stop()
+
+			for i := 1; i <= 4; i++ {
+				<-ticker.C
+
+				select {
+				case <-callbackDone:
+					log.Printf("[IPC] Callback executed successfully after %v", time.Duration(i)*500*time.Millisecond)
+					return
+				default:
+				}
+
+				executed := s.callbacksExec.Load()
+				log.Printf("[IPC] Check %d: Callback still not executing (scheduled: %d, executed: %d)",
+					i, s.callbacks.Load(), executed)
+
+				if i == 4 && executed == executedBefore {
+					log.Printf("[IPC] EMERGENCY: GTK main loop blocked for 2s, attempting direct call with timeout protection")
+
+					done := make(chan error, 1)
+					go func() {
+						err := s.app.ToggleLauncher()
+						done <- err
+					}()
+
+					select {
+					case err := <-done:
+						if err != nil {
 							log.Printf("[IPC] Direct ToggleLauncher call failed: %v", err)
+						} else {
+							log.Printf("[IPC] Direct ToggleLauncher call succeeded")
 						}
-					})
-				} else {
-					log.Printf("[IPC] Callback executed after fallback started, skipping direct call")
+						s.callbacksExec.Add(1)
+					case <-time.After(1 * time.Second):
+						log.Printf("[IPC] FATAL: Direct ToggleLauncher call timed out after 1s")
+						s.callbacksExec.Add(1)
+					}
 				}
 			}
 		}()
