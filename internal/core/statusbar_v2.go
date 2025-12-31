@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/chess10kp/locus/internal/config"
@@ -24,21 +25,23 @@ var (
 )
 
 type StatusBar struct {
-	app         *App
-	config      *config.Config
-	windows     map[int]*gtk.Window // Map: monitor index -> window
-	containers  map[int]*gtk.Box    // Map: monitor index -> container
-	screen      *gdk.Screen         // GDK screen for monitor tracking (legacy)
-	display     *gdk.Display        // GDK display for modern monitor tracking
-	registry    *statusbar.ModuleRegistry
-	scheduler   *statusbar.UpdateScheduler
-	widgets     map[string]gtk.IWidget
-	running     bool
-	stopUpdate  chan struct{}
-	ipcRunning  bool
-	ipcListener net.Listener
-	ipcSocket   string
-	mu          sync.RWMutex
+	app                *App
+	config             *config.Config
+	windows            map[int]*gtk.Window
+	containers         map[int]*gtk.Box
+	screen             *gdk.Screen
+	display            *gdk.Display
+	registry           *statusbar.ModuleRegistry
+	scheduler          *statusbar.UpdateScheduler
+	widgets            map[string]gtk.IWidget
+	running            bool
+	stopUpdate         chan struct{}
+	ipcRunning         bool
+	ipcListener        net.Listener
+	ipcSocket          string
+	mu                 sync.RWMutex
+	monitorDebounce    *time.Timer
+	monitorChangeTimer *time.Timer
 }
 
 func NewStatusBar(app *App, cfg *config.Config) (*StatusBar, error) {
@@ -143,8 +146,11 @@ func (sb *StatusBar) createStatusBarsForAllMonitors() error {
 		window.SetTitle(sb.config.AppName)
 		window.SetName("statusbar")
 
+		monitorGeo := monitor.GetGeometry()
+		windowWidth := monitorGeo.GetWidth()
+
 		if height > 0 {
-			window.SetSizeRequest(-1, height)
+			window.SetSizeRequest(windowWidth, height)
 		}
 
 		layer.InitForWindow(unsafe.Pointer(window.GObject))
@@ -174,7 +180,7 @@ func (sb *StatusBar) createStatusBarsForAllMonitors() error {
 func (sb *StatusBar) destroyAllStatusBars() {
 	for _, window := range sb.windows {
 		if window != nil {
-			window.Destroy()
+			window.Close()
 		}
 	}
 	sb.windows = make(map[int]*gtk.Window)
@@ -188,21 +194,51 @@ type monitorWindowConfig struct {
 }
 
 func (sb *StatusBar) onMonitorsChanged() {
-	log.Printf("Monitors changed, preparing to recreate statusbar windows")
-
 	sb.mu.Lock()
 	if !sb.running {
 		sb.mu.Unlock()
 		log.Printf("Statusbar not running, skipping recreation")
 		return
 	}
+
+	if sb.monitorDebounce != nil {
+		sb.monitorDebounce.Stop()
+	}
 	sb.mu.Unlock()
 
-	go sb.recreateStatusBarsAsync()
+	log.Printf("Monitors changed, debouncing recreation...")
+
+	sb.mu.Lock()
+	sb.monitorDebounce = time.AfterFunc(500*time.Millisecond, func() {
+		sb.mu.Lock()
+		if !sb.running {
+			sb.mu.Unlock()
+			return
+		}
+
+		if sb.monitorChangeTimer != nil {
+			sb.monitorChangeTimer.Stop()
+		}
+		sb.mu.Unlock()
+
+		log.Printf("Delaying recreation to let GDK finish processing monitor change")
+		sb.mu.Lock()
+		sb.monitorChangeTimer = time.AfterFunc(1*time.Second, func() {
+			log.Printf("Starting statusbar recreation")
+			sb.recreateStatusBarsAsync()
+		})
+		sb.mu.Unlock()
+	})
+	sb.mu.Unlock()
 }
 
 func (sb *StatusBar) recreateStatusBarsAsync() {
 	log.Printf("Collecting monitor information")
+
+	sb.mu.Lock()
+	sb.destroyAllStatusBars()
+	sb.widgets = make(map[string]gtk.IWidget)
+	sb.mu.Unlock()
 
 	var monitorConfigs []monitorWindowConfig
 	monitorCount := sb.display.GetNMonitors()
@@ -278,8 +314,11 @@ func (sb *StatusBar) createSingleStatusWindow(cfg monitorWindowConfig) (*gtk.Win
 	window.SetTitle(sb.config.AppName)
 	window.SetName("statusbar")
 
+	monitorGeo := cfg.monitor.GetGeometry()
+	windowWidth := monitorGeo.GetWidth()
+
 	if cfg.height > 0 {
-		window.SetSizeRequest(-1, cfg.height)
+		window.SetSizeRequest(windowWidth, cfg.height)
 	}
 
 	layer.InitForWindow(unsafe.Pointer(window.GObject))
@@ -306,6 +345,16 @@ func (sb *StatusBar) Stop() error {
 
 	if !sb.running {
 		return nil
+	}
+
+	if sb.monitorDebounce != nil {
+		sb.monitorDebounce.Stop()
+		sb.monitorDebounce = nil
+	}
+
+	if sb.monitorChangeTimer != nil {
+		sb.monitorChangeTimer.Stop()
+		sb.monitorChangeTimer = nil
 	}
 
 	sb.scheduler.Stop()

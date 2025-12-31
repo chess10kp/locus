@@ -40,13 +40,15 @@ type LockScreenWindow struct {
 }
 
 type LockScreenManager struct {
-	config         *config.Config
-	lockScreens    []*LockScreenWindow
-	mu             sync.RWMutex
-	locked         bool
-	destroying     bool
-	monitorHandler glib.SignalHandle
-	onUnlock       func()
+	config             *config.Config
+	lockScreens        []*LockScreenWindow
+	mu                 sync.RWMutex
+	locked             bool
+	destroying         bool
+	monitorHandler     glib.SignalHandle
+	onUnlock           func()
+	monitorDebounce    *time.Timer
+	monitorChangeTimer *time.Timer
 }
 
 func NewLockScreenManager(cfg *config.Config) *LockScreenManager {
@@ -504,23 +506,69 @@ func (m *LockScreenManager) setupMonitorChangeHandler() {
 			return
 		}
 
-		debugLogger.Println("Monitor configuration changed, recreating lock screens")
-		m.destroying = true
+		if m.monitorDebounce != nil {
+			m.monitorDebounce.Stop()
+		}
 		m.mu.Unlock()
 
-		go func() {
-			m.UnlockAll()
+		debugLogger.Println("Monitor configuration changed, debouncing lockscreen recreation...")
 
-			glib.IdleAdd(func() {
-				m.mu.Lock()
-				m.destroying = false
+		m.mu.Lock()
+		m.monitorDebounce = time.AfterFunc(500*time.Millisecond, func() {
+			m.mu.Lock()
+			if !m.locked || m.destroying {
 				m.mu.Unlock()
-				m.Show()
+				return
+			}
+
+			if m.monitorChangeTimer != nil {
+				m.monitorChangeTimer.Stop()
+			}
+			m.mu.Unlock()
+
+			debugLogger.Println("Delaying lockscreen recreation to let GDK finish processing monitor change")
+			m.mu.Lock()
+			m.monitorChangeTimer = time.AfterFunc(1*time.Second, func() {
+				m.mu.Lock()
+
+				if !m.locked || m.destroying {
+					m.mu.Unlock()
+					return
+				}
+
+				debugLogger.Println("Recreating lock screens")
+				m.destroying = true
+				m.mu.Unlock()
+
+				go func() {
+					m.UnlockAll()
+
+					glib.IdleAdd(func() {
+						m.mu.Lock()
+						m.destroying = false
+						m.mu.Unlock()
+						m.Show()
+					})
+				}()
 			})
-		}()
+			m.mu.Unlock()
+		})
+		m.mu.Unlock()
 	})
 }
 
 func (m *LockScreenManager) Cleanup() {
+	m.mu.Lock()
+	if m.monitorDebounce != nil {
+		m.monitorDebounce.Stop()
+		m.monitorDebounce = nil
+	}
+
+	if m.monitorChangeTimer != nil {
+		m.monitorChangeTimer.Stop()
+		m.monitorChangeTimer = nil
+	}
+	m.mu.Unlock()
+
 	m.Hide()
 }
