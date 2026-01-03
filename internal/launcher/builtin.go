@@ -362,6 +362,8 @@ func (l *HelpLauncher) Populate(query string, ctx *LauncherContext) []*LauncherI
 			icon = "color-select"
 		case "wm":
 			icon = "preferences-system-windows"
+		case "refile":
+			icon = "exchange-places"
 		default:
 			icon = "application-x-executable"
 		}
