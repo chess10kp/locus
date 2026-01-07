@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/chess10kp/locus/internal/config"
@@ -180,22 +181,55 @@ func (l *AppLoader) saveToCache() error {
 	return nil
 }
 
+// getApplicationPaths returns XDG-compliant application paths based on XDG Base Directory Specification
+func getApplicationPaths() []string {
+	var paths []string
+
+	xdgDataDirs := os.Getenv("XDG_DATA_DIRS")
+	if xdgDataDirs == "" {
+		xdgDataDirs = "/usr/local/share/:/usr/share/"
+	}
+
+	xdgDataHome := os.Getenv("XDG_DATA_HOME")
+	if xdgDataHome == "" {
+		home := os.Getenv("HOME")
+		if home != "" {
+			xdgDataHome = filepath.Join(home, ".local", "share")
+		}
+	}
+
+	var combinedDirs string
+	if xdgDataHome != "" {
+		combinedDirs = xdgDataHome + ":" + xdgDataDirs
+	} else {
+		combinedDirs = xdgDataDirs
+	}
+
+	for _, dir := range strings.Split(combinedDirs, ":") {
+		if dir == "" {
+			continue
+		}
+		appPath := filepath.Join(dir, "applications")
+		paths = append(paths, appPath)
+	}
+
+	return paths
+}
+
 // loadFromSystem loads applications from .desktop files
 func (l *AppLoader) loadFromSystem() error {
 	start := time.Now()
 	var apps []App
 	loadedFiles := make(map[string]bool)
 
-	// Search paths
-	searchPaths := []string{
-		filepath.Join(os.Getenv("HOME"), ".local", "share", "applications"),
-		"/usr/share/applications",
-		"/usr/local/share/applications",
-	}
+	searchPaths := getApplicationPaths()
+
+	log.Printf("Search paths: %v", searchPaths)
 
 	var wg sync.WaitGroup
 	appChan := make(chan App, 100)       // Buffered channel for results
 	semaphore := make(chan struct{}, 10) // Limit parallel parsing
+	var skippedCount int32
 
 	// Collect all .desktop files first
 	var desktopFiles []string
@@ -241,7 +275,14 @@ func (l *AppLoader) loadFromSystem() error {
 			defer func() { <-semaphore }()
 
 			app, err := l.parseDesktopFile(fp)
-			if err == nil && !app.NoDisplay {
+			if err != nil {
+				log.Printf("[SKIP] %s: %v", fp, err)
+				atomic.AddInt32(&skippedCount, 1)
+			} else if app.NoDisplay {
+				log.Printf("[SKIP] %s: NoDisplay=true or Hidden=true", fp)
+				atomic.AddInt32(&skippedCount, 1)
+			} else {
+				log.Printf("[LOAD] %s: %s (%s)", fp, app.Name, app.Exec)
 				appChan <- app
 			}
 		}(filePath)
@@ -266,7 +307,8 @@ func (l *AppLoader) loadFromSystem() error {
 	l.apps = apps
 	l.cacheValid = true
 
-	log.Printf("Loaded %d applications in %v (parallel parsing)", len(apps), time.Since(start))
+	skipped := atomic.LoadInt32(&skippedCount)
+	log.Printf("Loaded %d applications, skipped %d in %v (parallel parsing)", len(apps), skipped, time.Since(start))
 	fmt.Printf("Loaded %d applications\n", len(apps))
 
 	return nil
@@ -285,15 +327,29 @@ func (l *AppLoader) parseDesktopFile(path string) (App, error) {
 	}
 
 	scanner := bufio.NewScanner(file)
+	inDesktopEntry := false
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
-		// Skip comments and empty lines
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 
-		// Parse key=value pairs
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			section := line[1 : len(line)-1]
+			if section == "Desktop Entry" {
+				inDesktopEntry = true
+			} else {
+				break
+			}
+			continue
+		}
+
+		if !inDesktopEntry {
+			continue
+		}
+
 		if strings.Contains(line, "=") {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) != 2 {

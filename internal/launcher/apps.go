@@ -65,7 +65,7 @@ func (l *AppLauncher) StartBackgroundLoad() {
 		log.Printf("[APP-LAUNCHER] Starting background app loading")
 		loadStart := time.Now()
 
-		if _, err := l.appLoader.LoadApps(false); err != nil {
+		if _, err := l.appLoader.LoadApps(true); err != nil {
 			log.Printf("[APP-LAUNCHER] Background app load failed: %v", err)
 			return
 		}

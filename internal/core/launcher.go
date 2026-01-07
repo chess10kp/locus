@@ -1665,7 +1665,19 @@ func (l *Launcher) onTabPressed() bool {
 		return true
 	}
 
-	log.Printf("[LAUNCHER-TAB] Tab hooks not handled, allowing default behavior")
+	log.Printf("[LAUNCHER-TAB] Tab hooks not handled, inserting first result into search box")
+	l.mu.RLock()
+	if len(l.currentItems) > 0 {
+		firstItem := l.currentItems[0]
+		l.mu.RUnlock()
+		log.Printf("[LAUNCHER-TAB] Inserting first item title into search box: '%s'", firstItem.Title)
+		l.searchEntry.SetText(firstItem.Title)
+		l.searchEntry.SetPosition(-1)
+		return true
+	}
+	l.mu.RUnlock()
+
+	log.Printf("[LAUNCHER-TAB] No items available, allowing default behavior")
 	return false
 }
 
