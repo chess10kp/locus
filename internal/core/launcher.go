@@ -1194,6 +1194,38 @@ func (l *Launcher) createGridItem(item *launcher.LauncherItem, index int) (gtk.I
 		}
 	}
 
+	if item.IsSeparator {
+		separatorBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+		if err != nil {
+			return nil, err
+		}
+		separatorBox.SetName("grid-separator")
+
+		separator, err := gtk.SeparatorNew(gtk.ORIENTATION_HORIZONTAL)
+		if err != nil {
+			return nil, err
+		}
+		separatorBox.PackStart(separator, true, true, 0)
+
+		label, err := gtk.LabelNew(item.Title)
+		if err != nil {
+			return nil, err
+		}
+		label.SetName("grid-separator-label")
+		label.SetMarginStart(10)
+		label.SetMarginEnd(10)
+		separatorBox.PackStart(label, false, false, 0)
+
+		separator, err = gtk.SeparatorNew(gtk.ORIENTATION_HORIZONTAL)
+		if err != nil {
+			return nil, err
+		}
+		separatorBox.PackStart(separator, true, true, 0)
+
+		separatorBox.ShowAll()
+		return separatorBox, nil
+	}
+
 	// Create container for grid item
 	container, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 	if err != nil {
@@ -1275,6 +1307,36 @@ func (l *Launcher) createGridItem(item *launcher.LauncherItem, index int) (gtk.I
 		log.Printf("[LAUNCHER-GRID] Image added to grid item")
 	} else {
 		log.Printf("[LAUNCHER-GRID] No image path provided for item '%s'", item.Title)
+
+		if item.Icon != "" && l.iconCache != nil {
+			log.Printf("[LAUNCHER-GRID] Loading icon for item '%s': icon='%s', size=%d",
+				item.Title, item.Icon, gridConfig.ItemHeight)
+
+			pixbuf, err := l.iconCache.GetIcon(item.Icon, gridConfig.ItemHeight)
+			if err != nil {
+				log.Printf("[LAUNCHER-GRID] ERROR: Failed to load icon '%s': %v", item.Icon, err)
+			} else {
+				centerBox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+				if err != nil {
+					return nil, err
+				}
+				centerBox.SetVAlign(gtk.ALIGN_CENTER)
+				centerBox.SetHAlign(gtk.ALIGN_CENTER)
+
+				iconImage, err := gtk.ImageNew()
+				if err != nil {
+					return nil, err
+				}
+				iconImage.SetFromPixbuf(pixbuf)
+				iconImage.SetVAlign(gtk.ALIGN_CENTER)
+				iconImage.SetHAlign(gtk.ALIGN_CENTER)
+
+				centerBox.PackStart(iconImage, true, true, 0)
+				container.PackStart(centerBox, true, true, 0)
+				centerBox.ShowAll()
+				log.Printf("[LAUNCHER-GRID] Icon added to grid item")
+			}
+		}
 	}
 
 	// Add metadata if configured

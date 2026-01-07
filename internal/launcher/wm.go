@@ -48,6 +48,7 @@ type WMLauncher struct {
 	wmCommand  string
 	workspaces []Workspace
 	windows    []WindowInfo
+	gridMode   bool
 }
 
 type WMLauncherFactory struct{}
@@ -76,15 +77,29 @@ func (l *WMLauncher) Name() string {
 }
 
 func (l *WMLauncher) CommandTriggers() []string {
-	return []string{"wm"}
+	return []string{"wm", "wm grid"}
 }
 
 func (l *WMLauncher) GetSizeMode() LauncherSizeMode {
+	if l.gridMode {
+		return LauncherSizeModeGrid
+	}
 	return LauncherSizeModeDefault
 }
 
 func (l *WMLauncher) GetGridConfig() *GridConfig {
-	return nil
+	if !l.gridMode {
+		return nil
+	}
+	return &GridConfig{
+		Columns:          4,
+		ItemWidth:        300,
+		ItemHeight:       200,
+		Spacing:          10,
+		ShowMetadata:     false,
+		MetadataPosition: MetadataPositionHidden,
+		AspectRatio:      AspectRatioOriginal,
+	}
 }
 
 func detectWMCommand() string {
@@ -181,6 +196,13 @@ func (l *WMLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIte
 
 	queryLower := strings.ToLower(strings.TrimSpace(query))
 
+	if queryLower == "grid" {
+		l.gridMode = true
+		return l.buildGridModeItems()
+	} else {
+		l.gridMode = false
+	}
+
 	workspaces, err := l.fetchWorkspaces()
 	if err != nil {
 		fmt.Printf("Failed to fetch workspaces: %v\n", err)
@@ -211,6 +233,65 @@ func (l *WMLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIte
 	items = append(items, utilityItems...)
 
 	return items
+}
+
+func (l *WMLauncher) buildGridModeItems() []*LauncherItem {
+	var items []*LauncherItem
+
+	workspaces, err := l.fetchWorkspaces()
+	if err != nil {
+		fmt.Printf("Failed to fetch workspaces: %v\n", err)
+		return items
+	}
+
+	windows, err := l.fetchWindows()
+	if err != nil {
+		fmt.Printf("Failed to fetch windows: %v\n", err)
+		return items
+	}
+
+	for _, ws := range workspaces {
+		items = append(items, &LauncherItem{
+			Title:       ws.Name,
+			Subtitle:    fmt.Sprintf("Workspace %d", ws.Number),
+			Icon:        "",
+			ActionData:  nil,
+			Launcher:    l,
+			IsGridItem:  false,
+			IsSeparator: true,
+		})
+
+		for _, win := range windows {
+			if win.Workspace == ws.Name {
+				items = append(items, &LauncherItem{
+					Title:      win.Name,
+					Subtitle:   win.WindowClass,
+					Icon:       l.getWindowIcon(win),
+					ActionData: NewWindowFocusAction(win.ConID, win.Workspace),
+					Launcher:   l,
+					IsGridItem: true,
+					Metadata: map[string]string{
+						"window_id": fmt.Sprintf("%d", win.WindowID),
+						"con_id":    fmt.Sprintf("%d", win.ConID),
+						"workspace": win.Workspace,
+						"app_class": win.WindowClass,
+					},
+				})
+			}
+		}
+	}
+
+	return items
+}
+
+func (l *WMLauncher) getWindowIcon(win WindowInfo) string {
+	if win.WindowClass != "" {
+		return strings.ToLower(win.WindowClass)
+	}
+	if win.AppID != "" {
+		return strings.ToLower(win.AppID)
+	}
+	return "window-new"
 }
 
 func (l *WMLauncher) buildWindowManagementItems(query string) []*LauncherItem {

@@ -50,6 +50,7 @@ type LauncherItem struct {
 	ActionData    ActionData
 	Launcher      Launcher
 	IsGridItem    bool
+	IsSeparator   bool
 	ImagePath     string
 	Metadata      map[string]string
 	PreviewAction func() error
