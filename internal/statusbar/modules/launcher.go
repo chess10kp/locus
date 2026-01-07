@@ -27,7 +27,7 @@ func NewLauncherModule(callback LauncherCallback) *LauncherModule {
 		BaseModule: statusbar.NewBaseModule("launcher", statusbar.UpdateModeStatic),
 		callback:   callback,
 		widget:     nil,
-		label:      "Launcher",
+		label:      "󱓞",
 	}
 }
 
@@ -117,7 +117,7 @@ func (f *LauncherModuleFactory) ModuleName() string {
 // DefaultConfig returns default configuration
 func (f *LauncherModuleFactory) DefaultConfig() map[string]interface{} {
 	return map[string]interface{}{
-		"label":       "Launcher",
+		"label":       "󱓞",
 		"css_classes": []string{"launcher-module", "launcher-button"},
 	}
 }

@@ -123,6 +123,27 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 	window.Add(box)
 	log.Printf("[LAUNCHER-INIT] Main box added to window")
 
+	// Create footer box for context information
+	log.Printf("[LAUNCHER-INIT] Creating footer box and label")
+	footerBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	if err != nil {
+		log.Printf("[LAUNCHER-INIT] ERROR: Failed to create footer box: %v", err)
+		return nil, fmt.Errorf("failed to create footer box: %w", err)
+	}
+	footerBox.SetName("footer-box")
+
+	footerLabel, err := gtk.LabelNew("Applications")
+	if err != nil {
+		log.Printf("[LAUNCHER-INIT] ERROR: Failed to create footer label: %v", err)
+		return nil, fmt.Errorf("failed to create footer label: %w", err)
+	}
+	footerLabel.SetName("footer-label")
+	footerBox.PackStart(footerLabel, false, false, 0)
+	log.Printf("[LAUNCHER-INIT] Footer box and label created")
+
+	box.PackStart(footerBox, false, false, 4)
+	log.Printf("[LAUNCHER-INIT] Footer box packed into main box")
+
 	log.Printf("[LAUNCHER-INIT] Creating search entry widget")
 	searchEntry, err := gtk.EntryNew()
 	if err != nil {
@@ -148,27 +169,6 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	box.PackStart(hbox, false, false, 0)
 	log.Printf("[LAUNCHER-INIT] Search entry packed into horizontal box")
-
-	// Create footer box for context information
-	log.Printf("[LAUNCHER-INIT] Creating footer box and label")
-	footerBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
-	if err != nil {
-		log.Printf("[LAUNCHER-INIT] ERROR: Failed to create footer box: %v", err)
-		return nil, fmt.Errorf("failed to create footer box: %w", err)
-	}
-	footerBox.SetName("footer-box")
-
-	footerLabel, err := gtk.LabelNew("Applications")
-	if err != nil {
-		log.Printf("[LAUNCHER-INIT] ERROR: Failed to create footer label: %v", err)
-		return nil, fmt.Errorf("failed to create footer label: %w", err)
-	}
-	footerLabel.SetName("footer-label")
-	footerBox.PackStart(footerLabel, false, false, 0)
-	log.Printf("[LAUNCHER-INIT] Footer box and label created")
-
-	box.PackStart(footerBox, false, false, 4)
-	log.Printf("[LAUNCHER-INIT] Footer box packed into main box")
 
 	log.Printf("[LAUNCHER-INIT] Creating scrolled window and result list")
 	scrolledWindow, err := gtk.ScrolledWindowNew(nil, nil)
@@ -1213,7 +1213,7 @@ func (l *Launcher) createGridItem(item *launcher.LauncherItem, index int) (gtk.I
 		}
 
 		// Check cache first
-		cacheKey := fmt.Sprintf("%s_%dx%d", item.ImagePath, gridConfig.ItemWidth)
+		cacheKey := fmt.Sprintf("%s_%dx%d", item.ImagePath, gridConfig.ItemWidth, gridConfig.ItemHeight)
 		var pixbuf *gdk.Pixbuf
 
 		if l.thumbnailCache != nil {

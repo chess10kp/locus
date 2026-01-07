@@ -44,6 +44,7 @@ type ModuleConfig struct {
 	Enabled    bool                   `toml:"enabled"`
 	CSSClasses []string               `toml:"css_classes"`
 	Styles     string                 `toml:"styles"`
+	Label      string                 `toml:"label"`
 	Properties map[string]interface{} `toml:"properties"`
 }
 
@@ -57,6 +58,10 @@ func (c *ModuleConfig) ToMap() map[string]interface{} {
 
 	if c.Format != "" {
 		result["format"] = c.Format
+	}
+
+	if c.Label != "" {
+		result["label"] = c.Label
 	}
 
 	result["enabled"] = c.Enabled
@@ -259,6 +264,10 @@ var DefaultConfig = Config{
 			},
 		},
 		ModuleConfigs: map[string]ModuleConfig{
+			"launcher": {
+				Label:   "󱓞",
+				Enabled: true,
+			},
 			"time": {
 				Interval: "1s",
 				Format:   "15:04:05",
