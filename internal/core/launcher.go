@@ -2015,20 +2015,10 @@ func (l *Launcher) Show() error {
 
 	log.Printf("[LAUNCHER-SHOW] Setting initial margin to %d and showing window", startY)
 
-	done := make(chan struct{})
-	go func() {
-		layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, startY)
-		l.window.ShowAll()
-		l.window.Present()
-		close(done)
-	}()
-
-	select {
-	case <-done:
-		log.Printf("[LAUNCHER-SHOW] Window shown and presented")
-	case <-time.After(5 * time.Second):
-		log.Printf("[LAUNCHER-SHOW] WARNING: Window operations timed out after 5s")
-	}
+	layer.SetMargin(unsafe.Pointer(l.window.Native()), layer.EdgeTop, startY)
+	l.window.ShowAll()
+	l.window.Present()
+	log.Printf("[LAUNCHER-SHOW] Window shown and presented")
 
 	l.searchEntry.SetText("")
 

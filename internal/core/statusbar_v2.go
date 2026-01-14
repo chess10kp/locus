@@ -263,7 +263,7 @@ func (sb *StatusBar) onMonitorsChanged() {
 }
 
 func (sb *StatusBar) recreateStatusBarsAsync() {
-	log.Printf("Collecting monitor information")
+	log.Printf("Starting statusbar recreation")
 
 	// Set recreating flag to prevent destroy handlers from quitting app
 	sb.mu.Lock()
@@ -273,15 +273,19 @@ func (sb *StatusBar) recreateStatusBarsAsync() {
 	// Pause scheduler before destroying windows
 	sb.scheduler.Pause()
 
-	sb.mu.Lock()
-	sb.destroyAllStatusBars()
-	sb.widgets = make(map[string]gtk.IWidget)
-	sb.mu.Unlock()
-
-	monitorCount := sb.display.GetNMonitors()
-
 	// Do all recreation work in a single IdleAdd to ensure proper ordering
+	// and to ensure GDK has finished processing monitor changes
 	glib.IdleAdd(func() bool {
+		log.Printf("Destroying old statusbars")
+		sb.mu.Lock()
+		sb.destroyAllStatusBars()
+		sb.widgets = make(map[string]gtk.IWidget)
+		sb.mu.Unlock()
+
+		// Get monitor count after GDK has processed changes
+		monitorCount := sb.display.GetNMonitors()
+		log.Printf("Collecting monitor information for %d monitors", monitorCount)
+
 		var monitorConfigs []monitorWindowConfig
 		for i := 0; i < monitorCount; i++ {
 			monitor, err := sb.display.GetMonitor(i)

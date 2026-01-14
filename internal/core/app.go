@@ -3,6 +3,7 @@ package core
 import (
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"runtime"
 	"syscall"
@@ -11,6 +12,7 @@ import (
 	"github.com/chess10kp/locus/internal/config"
 	"github.com/chess10kp/locus/internal/launcher"
 	"github.com/chess10kp/locus/internal/lockscreen"
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
@@ -88,6 +90,9 @@ func (a *App) initialize() {
 
 	// Add GTK main loop monitoring
 	go a.monitorGTKMainLoop()
+
+	// Setup monitor-added handler to restart application
+	a.setupMonitorAddedHandler()
 
 	a.lockscreen = lockscreen.NewLockScreenManager(a.config)
 	a.lockscreen.SetUnlockCallback(func() {
@@ -278,4 +283,50 @@ func (a *App) monitorGTKMainLoop() {
 			}
 		}
 	}
+}
+
+// setupMonitorAddedHandler sets up a handler to restart the application when a monitor is added
+func (a *App) setupMonitorAddedHandler() {
+	display, err := gdk.DisplayGetDefault()
+	if err != nil || display == nil {
+		log.Println("Failed to get default display for monitor-added handler")
+		return
+	}
+
+	display.Connect("monitor-added", func() {
+		log.Println("Monitor added, restarting application...")
+		a.restartApplication()
+	})
+
+	display.Connect("monitor-removed", func() {
+		log.Println("Monitor removed, restarting application...")
+		a.restartApplication()
+	})
+}
+
+// restartApplication restarts the application by re-executing the current binary
+func (a *App) restartApplication() {
+	executable, err := os.Executable()
+	if err != nil {
+		log.Printf("Failed to get executable path: %v", err)
+		return
+	}
+
+	glib.TimeoutAdd(500, func() bool {
+		log.Println("Executing restart...")
+
+		cmd := exec.Command(executable, os.Args[1:]...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+
+		if err := cmd.Start(); err != nil {
+			log.Printf("Failed to start new instance: %v", err)
+			return false
+		}
+
+		log.Println("New instance started, quitting current instance...")
+		a.Quit()
+		return false
+	})
 }
