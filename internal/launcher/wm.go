@@ -93,8 +93,8 @@ func (l *WMLauncher) GetGridConfig() *GridConfig {
 	}
 	return &GridConfig{
 		Columns:          4,
-		ItemWidth:        300,
-		ItemHeight:       200,
+		ItemWidth:        180,
+		ItemHeight:       120,
 		Spacing:          10,
 		ShowMetadata:     false,
 		MetadataPosition: MetadataPositionHidden,
@@ -238,47 +238,27 @@ func (l *WMLauncher) Populate(query string, ctx *LauncherContext) []*LauncherIte
 func (l *WMLauncher) buildGridModeItems() []*LauncherItem {
 	var items []*LauncherItem
 
-	workspaces, err := l.fetchWorkspaces()
-	if err != nil {
-		fmt.Printf("Failed to fetch workspaces: %v\n", err)
-		return items
-	}
-
 	windows, err := l.fetchWindows()
 	if err != nil {
 		fmt.Printf("Failed to fetch windows: %v\n", err)
 		return items
 	}
 
-	for _, ws := range workspaces {
+	for _, win := range windows {
 		items = append(items, &LauncherItem{
-			Title:       ws.Name,
-			Subtitle:    fmt.Sprintf("Workspace %d", ws.Number),
-			Icon:        "",
-			ActionData:  nil,
-			Launcher:    l,
-			IsGridItem:  false,
-			IsSeparator: true,
+			Title:      win.Name,
+			Subtitle:   fmt.Sprintf("%s · %s", win.WindowClass, win.Workspace),
+			Icon:       l.getWindowIcon(win),
+			ActionData: NewWindowFocusAction(win.ConID, win.Workspace),
+			Launcher:   l,
+			IsGridItem: true,
+			Metadata: map[string]string{
+				"window_id": fmt.Sprintf("%d", win.WindowID),
+				"con_id":    fmt.Sprintf("%d", win.ConID),
+				"workspace": win.Workspace,
+				"app_class": win.WindowClass,
+			},
 		})
-
-		for _, win := range windows {
-			if win.Workspace == ws.Name {
-				items = append(items, &LauncherItem{
-					Title:      win.Name,
-					Subtitle:   win.WindowClass,
-					Icon:       l.getWindowIcon(win),
-					ActionData: NewWindowFocusAction(win.ConID, win.Workspace),
-					Launcher:   l,
-					IsGridItem: true,
-					Metadata: map[string]string{
-						"window_id": fmt.Sprintf("%d", win.WindowID),
-						"con_id":    fmt.Sprintf("%d", win.ConID),
-						"workspace": win.Workspace,
-						"app_class": win.WindowClass,
-					},
-				})
-			}
-		}
 	}
 
 	return items

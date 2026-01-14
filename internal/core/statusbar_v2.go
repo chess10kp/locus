@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"time"
 	"unsafe"
 
 	"github.com/chess10kp/locus/internal/config"
@@ -39,9 +38,10 @@ type StatusBar struct {
 	ipcRunning         bool
 	ipcListener        net.Listener
 	ipcSocket          string
-	mu                 sync.RWMutex
-	monitorDebounce    *time.Timer
-	monitorChangeTimer *time.Timer
+	mu                       sync.RWMutex
+	monitorDebounceSource    glib.SourceHandle
+	monitorChangeTimerSource glib.SourceHandle
+	recreating               bool
 }
 
 func NewStatusBar(app *App, cfg *config.Config) (*StatusBar, error) {
@@ -165,8 +165,21 @@ func (sb *StatusBar) createStatusBarsForAllMonitors() error {
 		layer.SetMonitor(unsafe.Pointer(window.GObject), monitor)
 
 		window.Connect("destroy", func() {
-			close(sb.stopUpdate)
-			sb.Quit()
+			// Only quit if we're not recreating (recreation destroys windows intentionally)
+			sb.mu.Lock()
+			recreating := sb.recreating
+			sb.mu.Unlock()
+
+			if !recreating {
+				// Safely close the channel (don't panic if already closed)
+				select {
+				case <-sb.stopUpdate:
+					// Channel already closed
+				default:
+					close(sb.stopUpdate)
+				}
+				sb.Quit()
+			}
 		})
 
 		sb.windows[i] = window
@@ -195,39 +208,56 @@ type monitorWindowConfig struct {
 
 func (sb *StatusBar) onMonitorsChanged() {
 	sb.mu.Lock()
-	if !sb.running {
+	if !sb.running || sb.recreating {
 		sb.mu.Unlock()
-		log.Printf("Statusbar not running, skipping recreation")
+		if sb.recreating {
+			log.Printf("Statusbar already recreating, skipping")
+		} else {
+			log.Printf("Statusbar not running, skipping recreation")
+		}
 		return
 	}
 
-	if sb.monitorDebounce != nil {
-		sb.monitorDebounce.Stop()
+	if sb.monitorDebounceSource != 0 {
+		glib.SourceRemove(sb.monitorDebounceSource)
+		sb.monitorDebounceSource = 0
 	}
 	sb.mu.Unlock()
 
 	log.Printf("Monitors changed, debouncing recreation...")
 
 	sb.mu.Lock()
-	sb.monitorDebounce = time.AfterFunc(500*time.Millisecond, func() {
+	sb.monitorDebounceSource = glib.TimeoutAdd(500, func() bool {
 		sb.mu.Lock()
-		if !sb.running {
+		sb.monitorDebounceSource = 0
+		if !sb.running || sb.recreating {
 			sb.mu.Unlock()
-			return
+			return false
 		}
 
-		if sb.monitorChangeTimer != nil {
-			sb.monitorChangeTimer.Stop()
+		if sb.monitorChangeTimerSource != 0 {
+			glib.SourceRemove(sb.monitorChangeTimerSource)
+			sb.monitorChangeTimerSource = 0
 		}
 		sb.mu.Unlock()
 
 		log.Printf("Delaying recreation to let GDK finish processing monitor change")
 		sb.mu.Lock()
-		sb.monitorChangeTimer = time.AfterFunc(1*time.Second, func() {
+		sb.monitorChangeTimerSource = glib.TimeoutAdd(1000, func() bool {
+			sb.mu.Lock()
+			sb.monitorChangeTimerSource = 0
+			if !sb.running || sb.recreating {
+				sb.mu.Unlock()
+				log.Printf("Skipping recreation - statusbar not running or already recreating")
+				return false
+			}
+			sb.mu.Unlock()
 			log.Printf("Starting statusbar recreation")
 			sb.recreateStatusBarsAsync()
+			return false
 		})
 		sb.mu.Unlock()
+		return false
 	})
 	sb.mu.Unlock()
 }
@@ -235,15 +265,24 @@ func (sb *StatusBar) onMonitorsChanged() {
 func (sb *StatusBar) recreateStatusBarsAsync() {
 	log.Printf("Collecting monitor information")
 
+	// Set recreating flag to prevent destroy handlers from quitting app
+	sb.mu.Lock()
+	sb.recreating = true
+	sb.mu.Unlock()
+
+	// Pause scheduler before destroying windows
+	sb.scheduler.Pause()
+
 	sb.mu.Lock()
 	sb.destroyAllStatusBars()
 	sb.widgets = make(map[string]gtk.IWidget)
 	sb.mu.Unlock()
 
-	var monitorConfigs []monitorWindowConfig
 	monitorCount := sb.display.GetNMonitors()
 
+	// Do all recreation work in a single IdleAdd to ensure proper ordering
 	glib.IdleAdd(func() bool {
+		var monitorConfigs []monitorWindowConfig
 		for i := 0; i < monitorCount; i++ {
 			monitor, err := sb.display.GetMonitor(i)
 			if err != nil {
@@ -258,16 +297,13 @@ func (sb *StatusBar) recreateStatusBarsAsync() {
 		}
 
 		log.Printf("Collected %d monitor configs, starting window creation", len(monitorConfigs))
-		return false
-	})
 
-	for _, cfg := range monitorConfigs {
-		cfg := cfg
-		glib.IdleAdd(func() bool {
+		// Create windows for each monitor
+		for _, cfg := range monitorConfigs {
 			window, container, err := sb.createSingleStatusWindow(cfg)
 			if err != nil {
 				log.Printf("Failed to create window for monitor %d: %v", cfg.monitorIndex, err)
-				return false
+				continue
 			}
 
 			sb.mu.Lock()
@@ -276,23 +312,29 @@ func (sb *StatusBar) recreateStatusBarsAsync() {
 			sb.mu.Unlock()
 
 			log.Printf("Created statusbar window for monitor %d", cfg.monitorIndex)
-			return false
-		})
-	}
+		}
 
-	glib.IdleAdd(func() bool {
 		log.Printf("Creating widgets for all monitors")
 		sb.mu.Lock()
-		defer sb.mu.Unlock()
-
 		if err := sb.createWidgets(); err != nil {
 			log.Printf("Failed to recreate widgets: %v", err)
 		}
+		sb.mu.Unlock()
 
 		log.Printf("Showing all statusbar windows")
+		sb.mu.RLock()
 		for _, window := range sb.windows {
 			window.ShowAll()
 		}
+		sb.mu.RUnlock()
+
+		// Clear recreating flag after everything is done
+		sb.mu.Lock()
+		sb.recreating = false
+		sb.mu.Unlock()
+
+		// Resume scheduler after recreation is complete
+		sb.scheduler.Resume()
 
 		log.Printf("Statusbar recreation completed")
 		return false
@@ -347,14 +389,14 @@ func (sb *StatusBar) Stop() error {
 		return nil
 	}
 
-	if sb.monitorDebounce != nil {
-		sb.monitorDebounce.Stop()
-		sb.monitorDebounce = nil
+	if sb.monitorDebounceSource != 0 {
+		glib.SourceRemove(sb.monitorDebounceSource)
+		sb.monitorDebounceSource = 0
 	}
 
-	if sb.monitorChangeTimer != nil {
-		sb.monitorChangeTimer.Stop()
-		sb.monitorChangeTimer = nil
+	if sb.monitorChangeTimerSource != 0 {
+		glib.SourceRemove(sb.monitorChangeTimerSource)
+		sb.monitorChangeTimerSource = 0
 	}
 
 	sb.scheduler.Stop()

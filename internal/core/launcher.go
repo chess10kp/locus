@@ -70,11 +70,16 @@ type Launcher struct {
 	colorPreviewBox    *gtk.Box
 	colorPreviewWidget *gtk.Box
 
-	mu            sync.RWMutex
-	refreshUIChan chan launcher.RefreshUIRequest
-	statusChan    chan launcher.StatusRequest
-	ctx           context.Context
-	cancel        context.CancelFunc
+	mu                    sync.RWMutex
+	refreshUIChan         chan launcher.RefreshUIRequest
+	statusChan            chan launcher.StatusRequest
+	ctx                   context.Context
+	cancel                context.CancelFunc
+	screen                *gdk.Screen
+	display               *gdk.Display
+	monitorHandler        glib.SignalHandle
+	monitorDebounceSource glib.SourceHandle
+	recreating            bool
 }
 
 func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
@@ -89,7 +94,11 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 
 	// Enable transparency
 	log.Printf("[LAUNCHER-INIT] Setting up window transparency")
-	if screen, err := gdk.ScreenGetDefault(); err == nil {
+	screen, err := gdk.ScreenGetDefault()
+	if err != nil {
+		log.Printf("[LAUNCHER-INIT] WARNING: Could not get default screen: %v", err)
+		screen = nil
+	} else {
 		visual, _ := screen.GetRGBAVisual()
 		if visual != nil {
 			window.SetVisual(visual)
@@ -97,8 +106,12 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		} else {
 			log.Printf("[LAUNCHER-INIT] WARNING: Could not get RGBA visual for transparency")
 		}
-	} else {
-		log.Printf("[LAUNCHER-INIT] WARNING: Could not get default screen for transparency: %v", err)
+	}
+
+	display, err := gdk.DisplayGetDefault()
+	if err != nil {
+		log.Printf("[LAUNCHER-INIT] WARNING: Could not get default display: %v", err)
+		display = nil
 	}
 
 	log.Printf("[LAUNCHER-INIT] Configuring window properties")
@@ -320,6 +333,8 @@ func NewLauncher(app *App, cfg *config.Config) (*Launcher, error) {
 		statusChan:         statusChan,
 		ctx:                ctx,
 		cancel:             cancel,
+		screen:             screen,
+		display:            display,
 	}
 	log.Printf("[LAUNCHER-INIT] Launcher struct created")
 
@@ -2172,9 +2187,10 @@ func (l *Launcher) Toggle() error {
 	visible := l.visible.Load()
 
 	if visible {
-		l.Hide()
-		log.Printf("[LAUNCHER] Toggle() (hide) completed in %v", time.Since(startTime))
+		// Launcher is already visible, do nothing (don't hide it)
+		log.Printf("[LAUNCHER] Toggle() - launcher already visible, no action taken")
 	} else {
+		// Show the launcher
 		err := l.Show()
 		log.Printf("[LAUNCHER] Toggle() (show) completed in %v", time.Since(startTime))
 		return err
@@ -2254,6 +2270,8 @@ func (l *Launcher) Start() error {
 		l.Quit()
 	})
 
+	l.setupMonitorChangeHandler()
+
 	l.running = true
 	log.Printf("Launcher started successfully - window should be visible now")
 	return nil
@@ -2272,6 +2290,16 @@ func (l *Launcher) Stop() error {
 	close(l.refreshUIChan)
 	close(l.statusChan)
 
+	if l.monitorDebounceSource != 0 {
+		glib.SourceRemove(l.monitorDebounceSource)
+		l.monitorDebounceSource = 0
+	}
+
+	if l.monitorHandler != 0 && l.display != nil {
+		l.display.HandlerDisconnect(l.monitorHandler)
+		l.monitorHandler = 0
+	}
+
 	l.registry.Cleanup()
 	if l.iconCache != nil {
 		l.iconCache.Clear()
@@ -2287,6 +2315,77 @@ func (l *Launcher) Quit() {
 		fmt.Printf("Error stopping launcher: %v\n", err)
 	}
 	l.app.Quit()
+}
+
+func (l *Launcher) setupMonitorChangeHandler() {
+	if l.display == nil {
+		log.Printf("[LAUNCHER] Display not available, skipping monitor change handler setup")
+		return
+	}
+
+	l.display.Connect("monitor-added", func() {
+		l.handleMonitorChange()
+	})
+	l.display.Connect("monitor-removed", func() {
+		l.handleMonitorChange()
+	})
+}
+
+func (l *Launcher) handleMonitorChange() {
+	l.mu.Lock()
+
+	if l.recreating {
+		l.mu.Unlock()
+		log.Printf("[LAUNCHER] Already recreating, skipping monitor change")
+		return
+	}
+
+	wasVisible := l.visible.Load()
+	if l.monitorDebounceSource != 0 {
+		glib.SourceRemove(l.monitorDebounceSource)
+		l.monitorDebounceSource = 0
+	}
+	l.mu.Unlock()
+
+	log.Printf("[LAUNCHER] Monitor configuration changed, was visible=%v", wasVisible)
+
+	l.mu.Lock()
+	l.recreating = true
+	l.monitorDebounceSource = glib.TimeoutAdd(500, func() bool {
+		l.mu.Lock()
+		l.monitorDebounceSource = 0
+		if wasVisible {
+			log.Printf("[LAUNCHER] Reconfiguring launcher for new monitor configuration")
+			l.mu.Unlock()
+
+			if l.visible.Load() {
+				l.mu.Lock()
+				l.Hide()
+				l.mu.Unlock()
+
+				glib.TimeoutAdd(100, func() bool {
+					l.mu.Lock()
+					err := l.Show()
+					l.recreating = false
+					l.mu.Unlock()
+
+					if err != nil {
+						log.Printf("[LAUNCHER] Failed to re-show launcher after monitor change: %v", err)
+					}
+					return false
+				})
+			} else {
+				l.mu.Lock()
+				l.recreating = false
+				l.mu.Unlock()
+			}
+		} else {
+			l.recreating = false
+			l.mu.Unlock()
+		}
+		return false
+	})
+	l.mu.Unlock()
 }
 
 func (l *Launcher) IsRunning() bool {

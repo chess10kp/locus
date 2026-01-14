@@ -771,3 +771,12 @@
   :END:
 
   
+
+* DONE multimonitor support is not wokring. when connecting a new monitor, teh statusbar does not spawn on the newly connected monitor
+  :PROPERTIES:
+  :ID: task-20260113232220
+  :TITLE: multimonitor support is not wokring. when connecting a new monitor, teh statusbar does not spawn on the newly connected monitor
+  :CREATED: <2026-01-13 Tue 23:22>
+  :END:
+
+  

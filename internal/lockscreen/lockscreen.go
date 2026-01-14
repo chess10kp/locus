@@ -40,22 +40,36 @@ type LockScreenWindow struct {
 }
 
 type LockScreenManager struct {
-	config             *config.Config
-	lockScreens        []*LockScreenWindow
-	mu                 sync.RWMutex
-	locked             bool
-	destroying         bool
-	monitorHandler     glib.SignalHandle
-	onUnlock           func()
-	monitorDebounce    *time.Timer
-	monitorChangeTimer *time.Timer
+	config                   *config.Config
+	lockScreens              []*LockScreenWindow
+	mu                       sync.RWMutex
+	locked                   bool
+	destroying               bool
+	monitorHandler           glib.SignalHandle
+	screen                   *gdk.Screen
+	display                  *gdk.Display
+	onUnlock                 func()
+	monitorDebounceSource    glib.SourceHandle
+	monitorChangeTimerSource glib.SourceHandle
 }
 
 func NewLockScreenManager(cfg *config.Config) *LockScreenManager {
+	screen, err := gdk.ScreenGetDefault()
+	if err != nil {
+		log.Printf("Failed to get default screen for monitor tracking: %v", err)
+	}
+
+	display, err := gdk.DisplayGetDefault()
+	if err != nil {
+		log.Printf("Failed to get default display for monitor tracking: %v", err)
+	}
+
 	return &LockScreenManager{
 		config:      cfg,
 		lockScreens: make([]*LockScreenWindow, 0),
 		locked:      false,
+		screen:      screen,
+		display:     display,
 	}
 }
 
@@ -140,12 +154,9 @@ func (m *LockScreenManager) Hide() error {
 	m.locked = false
 	m.destroying = false
 
-	if m.monitorHandler != 0 {
-		display, _ := gdk.DisplayGetDefault()
-		if display != nil {
-			display.HandlerDisconnect(m.monitorHandler)
-			m.monitorHandler = 0
-		}
+	if m.monitorHandler != 0 && m.display != nil {
+		m.display.HandlerDisconnect(m.monitorHandler)
+		m.monitorHandler = 0
 	}
 
 	debugLogger.Println("Lock screen deactivated")
@@ -493,80 +504,90 @@ func (m *LockScreenManager) updateClock(ls *LockScreenWindow) {
 }
 
 func (m *LockScreenManager) setupMonitorChangeHandler() {
-	display, err := gdk.DisplayGetDefault()
-	if err != nil {
+	if m.display == nil {
+		debugLogger.Println("Display not available, skipping monitor change handler setup")
 		return
 	}
 
-	m.monitorHandler = display.Connect("monitor-added", func(display *gdk.Display, monitor *gdk.Monitor) {
-		m.mu.Lock()
+	m.monitorHandler = m.display.Connect("monitor-added", func() {
+		m.handleMonitorChange()
+	})
+	m.display.Connect("monitor-removed", func() {
+		m.handleMonitorChange()
+	})
+}
 
+func (m *LockScreenManager) handleMonitorChange() {
+	m.mu.Lock()
+
+	if !m.locked || m.destroying {
+		m.mu.Unlock()
+		return
+	}
+
+	if m.monitorDebounceSource != 0 {
+		glib.SourceRemove(m.monitorDebounceSource)
+		m.monitorDebounceSource = 0
+	}
+	m.mu.Unlock()
+
+	debugLogger.Println("Monitor configuration changed, debouncing lockscreen recreation...")
+
+	m.mu.Lock()
+	m.monitorDebounceSource = glib.TimeoutAdd(500, func() bool {
+		m.mu.Lock()
+		m.monitorDebounceSource = 0
 		if !m.locked || m.destroying {
 			m.mu.Unlock()
-			return
+			return false
 		}
 
-		if m.monitorDebounce != nil {
-			m.monitorDebounce.Stop()
+		if m.monitorChangeTimerSource != 0 {
+			glib.SourceRemove(m.monitorChangeTimerSource)
+			m.monitorChangeTimerSource = 0
 		}
 		m.mu.Unlock()
 
-		debugLogger.Println("Monitor configuration changed, debouncing lockscreen recreation...")
-
+		debugLogger.Println("Delaying lockscreen recreation to let GDK finish processing monitor change")
 		m.mu.Lock()
-		m.monitorDebounce = time.AfterFunc(500*time.Millisecond, func() {
+		m.monitorChangeTimerSource = glib.TimeoutAdd(1000, func() bool {
 			m.mu.Lock()
+			m.monitorChangeTimerSource = 0
+
 			if !m.locked || m.destroying {
 				m.mu.Unlock()
-				return
+				return false
 			}
 
-			if m.monitorChangeTimer != nil {
-				m.monitorChangeTimer.Stop()
-			}
+			debugLogger.Println("Recreating lock screens")
+			m.destroying = true
 			m.mu.Unlock()
 
-			debugLogger.Println("Delaying lockscreen recreation to let GDK finish processing monitor change")
+			m.UnlockAll()
+
 			m.mu.Lock()
-			m.monitorChangeTimer = time.AfterFunc(1*time.Second, func() {
-				m.mu.Lock()
-
-				if !m.locked || m.destroying {
-					m.mu.Unlock()
-					return
-				}
-
-				debugLogger.Println("Recreating lock screens")
-				m.destroying = true
-				m.mu.Unlock()
-
-				go func() {
-					m.UnlockAll()
-
-					glib.IdleAdd(func() {
-						m.mu.Lock()
-						m.destroying = false
-						m.mu.Unlock()
-						m.Show()
-					})
-				}()
-			})
+			m.destroying = false
 			m.mu.Unlock()
+			m.Show()
+
+			return false
 		})
 		m.mu.Unlock()
+		return false
 	})
+	m.mu.Unlock()
 }
 
 func (m *LockScreenManager) Cleanup() {
 	m.mu.Lock()
-	if m.monitorDebounce != nil {
-		m.monitorDebounce.Stop()
-		m.monitorDebounce = nil
+	if m.monitorDebounceSource != 0 {
+		glib.SourceRemove(m.monitorDebounceSource)
+		m.monitorDebounceSource = 0
 	}
 
-	if m.monitorChangeTimer != nil {
-		m.monitorChangeTimer.Stop()
-		m.monitorChangeTimer = nil
+	if m.monitorChangeTimerSource != 0 {
+		glib.SourceRemove(m.monitorChangeTimerSource)
+		m.monitorChangeTimerSource = 0
 	}
 	m.mu.Unlock()
 

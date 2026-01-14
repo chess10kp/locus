@@ -13,7 +13,7 @@ import (
 // ModuleUpdateInfo stores update information for a module
 type ModuleUpdateInfo struct {
 	Module    Module
-	Widget    gtk.IWidget
+	Widgets   []gtk.IWidget // Multiple widgets (one per monitor)
 	Timer     *time.Timer
 	Listeners []EventListener
 	Active    bool
@@ -27,8 +27,9 @@ type UpdateScheduler struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
 	mu             sync.RWMutex
-	widgetMap      map[string]gtk.IWidget
+	widgetMap      map[string][]gtk.IWidget // Multiple widgets per module
 	running        bool
+	paused         bool // Temporarily pause updates during recreation
 	callbacks      map[string]func()
 }
 
@@ -40,7 +41,7 @@ func NewUpdateScheduler(registry *ModuleRegistry) *UpdateScheduler {
 		updates:   make(map[string]*ModuleUpdateInfo),
 		ctx:       ctx,
 		cancel:    cancel,
-		widgetMap: make(map[string]gtk.IWidget),
+		widgetMap: make(map[string][]gtk.IWidget),
 		running:   false,
 		callbacks: make(map[string]func()),
 	}
@@ -86,7 +87,7 @@ func (s *UpdateScheduler) Stop() {
 	log.Printf("Update scheduler stopped")
 }
 
-// ScheduleModule schedules updates for a module
+// ScheduleModule schedules updates for a module and adds a widget
 func (s *UpdateScheduler) ScheduleModule(name string, widget gtk.IWidget) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -96,31 +97,36 @@ func (s *UpdateScheduler) ScheduleModule(name string, widget gtk.IWidget) error 
 		return fmt.Errorf("module '%s' not found", name)
 	}
 
-	if _, exists := s.updates[name]; exists {
-		return fmt.Errorf("module '%s' is already scheduled", name)
+	info, moduleExists := s.updates[name]
+	if !moduleExists {
+		// First widget for this module, create the info
+		info = &ModuleUpdateInfo{
+			Module:  module,
+			Widgets: []gtk.IWidget{widget},
+			Active:  false,
+		}
+
+		switch module.UpdateMode() {
+		case UpdateModePeriodic:
+			s.schedulePeriodic(name, info)
+		case UpdateModeEventDriven:
+			s.scheduleEventDriven(name, info)
+		case UpdateModeStatic, UpdateModeOnDemand:
+			info.Active = true
+		default:
+			return fmt.Errorf("unsupported update mode: %v", module.UpdateMode())
+		}
+
+		s.updates[name] = info
+		s.widgetMap[name] = []gtk.IWidget{widget}
+
+		log.Printf("Scheduled module '%s' with update mode: %v", name, module.UpdateMode())
+	} else {
+		// Additional widget for this module (e.g., on another monitor)
+		info.Widgets = append(info.Widgets, widget)
+		s.widgetMap[name] = append(s.widgetMap[name], widget)
+		log.Printf("Added widget for already scheduled module '%s' (total widgets: %d)", name, len(info.Widgets))
 	}
-
-	info := &ModuleUpdateInfo{
-		Module: module,
-		Widget: widget,
-		Active: false,
-	}
-
-	switch module.UpdateMode() {
-	case UpdateModePeriodic:
-		s.schedulePeriodic(name, info)
-	case UpdateModeEventDriven:
-		s.scheduleEventDriven(name, info)
-	case UpdateModeStatic, UpdateModeOnDemand:
-		info.Active = true
-	default:
-		return fmt.Errorf("unsupported update mode: %v", module.UpdateMode())
-	}
-
-	s.updates[name] = info
-	s.widgetMap[name] = widget
-
-	log.Printf("Scheduled module '%s' with update mode: %v", name, module.UpdateMode())
 
 	return nil
 }
@@ -222,15 +228,31 @@ func (s *UpdateScheduler) UpdateModule(name string) error {
 
 // updateModule updates a module's widget
 func (s *UpdateScheduler) updateModule(name string) error {
+	s.mu.RLock()
+	paused := s.paused
+	s.mu.RUnlock()
+
+	if paused {
+		log.Printf("[SCHEDULER] Skipping update for '%s' (scheduler paused)", name)
+		return nil
+	}
+
 	startTime := time.Now()
 	log.Printf("[SCHEDULER] Updating module '%s'", name)
 
-	widget, ok := s.widgetMap[name]
-	if !ok {
-		return fmt.Errorf("widget not found for module '%s'", name)
+	widgets, ok := s.widgetMap[name]
+	if !ok || len(widgets) == 0 {
+		return fmt.Errorf("widgets not found for module '%s'", name)
 	}
 
-	err := s.registry.UpdateModuleWidget(name, widget)
+	var lastError error
+	for i, widget := range widgets {
+		err := s.registry.UpdateModuleWidget(name, widget)
+		if err != nil {
+			log.Printf("Failed to update widget %d for module '%s': %v", i, name, err)
+			lastError = err
+		}
+	}
 
 	duration := time.Since(startTime)
 	if duration > 500*time.Millisecond {
@@ -239,7 +261,7 @@ func (s *UpdateScheduler) updateModule(name string) error {
 		log.Printf("[SCHEDULER] Module '%s' update completed in %v", name, duration)
 	}
 
-	return err
+	return lastError
 }
 
 // UpdateAll updates all scheduled modules
@@ -290,17 +312,26 @@ func (s *UpdateScheduler) GetScheduledModules() []string {
 	return names
 }
 
-// GetModuleWidget returns a module's widget
-func (s *UpdateScheduler) GetModuleWidget(name string) (gtk.IWidget, bool) {
+// GetModuleWidgets returns all widgets for a module
+func (s *UpdateScheduler) GetModuleWidgets(name string) ([]gtk.IWidget, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	widget, exists := s.widgetMap[name]
-	return widget, exists
+	widgets, exists := s.widgetMap[name]
+	return widgets, exists
 }
 
-// SetModuleWidget sets a module's widget
-func (s *UpdateScheduler) SetModuleWidget(name string, widget gtk.IWidget) error {
+// GetModuleWidget returns the first widget for a module (for compatibility)
+func (s *UpdateScheduler) GetModuleWidget(name string) (gtk.IWidget, bool) {
+	widgets, exists := s.GetModuleWidgets(name)
+	if !exists || len(widgets) == 0 {
+		return nil, false
+	}
+	return widgets[0], true
+}
+
+// SetModuleWidgets sets all widgets for a module
+func (s *UpdateScheduler) SetModuleWidgets(name string, widgets []gtk.IWidget) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -308,10 +339,10 @@ func (s *UpdateScheduler) SetModuleWidget(name string, widget gtk.IWidget) error
 		return fmt.Errorf("module '%s' is not scheduled", name)
 	}
 
-	s.widgetMap[name] = widget
+	s.widgetMap[name] = widgets
 
 	if info, ok := s.updates[name]; ok {
-		info.Widget = widget
+		info.Widgets = widgets
 	}
 
 	return nil
@@ -363,7 +394,7 @@ func (s *UpdateScheduler) HandleIPCMessage(message string) bool {
 		s.mu.RUnlock()
 
 		if ok && info.Module.UpdateMode() == UpdateModeOnDemand {
-			log.Printf("[SCHEDULER] Updating widget for ON_DEMAND module: %s", handledModule)
+			log.Printf("[SCHEDULER] Updating widgets for ON_DEMAND module: %s", handledModule)
 			err := s.updateModule(handledModule)
 			log.Printf("[SCHEDULER] Widget update result for '%s': %v", handledModule, err)
 		}
@@ -377,14 +408,21 @@ func (s *UpdateScheduler) HandleIPCMessage(message string) bool {
 // HandleClick handles a click event for a module
 func (s *UpdateScheduler) HandleClick(name string) bool {
 	s.mu.RLock()
-	widget, exists := s.widgetMap[name]
+	widgets, exists := s.widgetMap[name]
 	s.mu.RUnlock()
 
-	if !exists {
+	if !exists || len(widgets) == 0 {
 		return false
 	}
 
-	return s.registry.HandleModuleClick(name, widget)
+	// Handle click on all widgets for this module
+	for _, widget := range widgets {
+		if s.registry.HandleModuleClick(name, widget) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // run runs the scheduler's main loop
@@ -418,4 +456,20 @@ func (s *UpdateScheduler) IsRunning() bool {
 	defer s.mu.RUnlock()
 
 	return s.running
+}
+
+// Pause temporarily pauses all updates
+func (s *UpdateScheduler) Pause() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.paused = true
+	log.Printf("Scheduler paused")
+}
+
+// Resume resumes all updates
+func (s *UpdateScheduler) Resume() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.paused = false
+	log.Printf("Scheduler resumed")
 }
